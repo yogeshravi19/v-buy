@@ -478,6 +478,26 @@ function App() {
           ...w.transactions
         ]
       }))
+
+      // Numerically decrement stock in real time
+      setOutlets(outs => outs.map(o => {
+        if (o.id !== cart.outlet.id) return o
+        return {
+          ...o,
+          menu_items: (o.menu_items || []).map(item => {
+            const ordered = cart.items.find(ci => ci.id === item.id)
+            if (!ordered) return item
+            const currentStock = item.stock_qty !== undefined ? item.stock_qty : 30
+            const nextStock = Math.max(0, currentStock - ordered.qty)
+            return {
+              ...item,
+              stock_qty: nextStock,
+              available: nextStock > 0
+            }
+          })
+        }
+      }))
+
       setCart({ outlet: null, items: [] })
       setBusy(false)
       setTab('orders')
@@ -521,7 +541,24 @@ function App() {
 
   function toggleItemAvailability(outletId, itemId) {
     setOutlets(outs => outs.map(o => o.id !== outletId ? o : {
-      ...o, menu_items: (o.menu_items || []).map(i => i.id === itemId ? { ...i, available: !i.available } : i)
+      ...o, menu_items: (o.menu_items || []).map(i => {
+        if (i.id !== itemId) return i
+        const isAvail = i.available !== false
+        const nextAvail = !isAvail
+        const nextQty = nextAvail ? (i.stock_qty || 30) : 0
+        return { ...i, available: nextAvail, stock_qty: nextQty }
+      })
+    }))
+  }
+
+  function updateItemStockQty(outletId, itemId, newQty) {
+    const qty = Math.max(0, parseInt(newQty, 10) || 0)
+    setOutlets(outs => outs.map(o => o.id !== outletId ? o : {
+      ...o, menu_items: (o.menu_items || []).map(i => i.id === itemId ? {
+        ...i,
+        stock_qty: qty,
+        available: qty > 0
+      } : i)
     }))
   }
 
@@ -750,6 +787,7 @@ function App() {
             wallet={wallet}
             setWallet={setWallet}
             setNotice={setNotice}
+            updateItemStockQty={updateItemStockQty}
           />
         )}
       </main>
@@ -1115,8 +1153,13 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart }) {
                     <strong>{item.name}</strong>
                     <div className="item-sub-meta">
                       <span className="item-cat-pill">{item.category}</span>
-                      {item.available === false && (
+                      {(item.available === false || item.stock_qty === 0) && (
                         <span className="sold-out-pill">Sold Out</span>
+                      )}
+                      {item.available !== false && (item.stock_qty !== undefined && item.stock_qty <= 10 && item.stock_qty > 0) && (
+                        <span style={{ fontSize: '10px', color: '#B45309', fontWeight: 800, background: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>
+                          Only {item.stock_qty} left!
+                        </span>
                       )}
                     </div>
                   </div>
@@ -1124,8 +1167,8 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart }) {
 
                 <div className="menu-action">
                   <span className="item-price">{money(item.price)}</span>
-                  {item.available === false || !outlet.is_open ? (
-                    <span className="unavailable-btn">Closed</span>
+                  {item.available === false || item.stock_qty === 0 || !outlet.is_open ? (
+                    <span className="unavailable-btn">{!outlet.is_open ? 'Closed' : 'Sold Out'}</span>
                   ) : inCart ? (
                     <div className="item-stepper">
                       <button onClick={() => removeFromCart(item.id)} title="Decrease quantity">
@@ -1495,18 +1538,27 @@ function WalletView({ wallet, topUp, busy, currentUser }) {
 // STAFF & ADMIN CONSOLES
 // ─────────────────────────────────────────────────────────────────────────────
 function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
-  advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice }) {
+  advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice, updateItemStockQty }) {
 
   const [scanInput, setScanInput]                 = useState('')
   const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitstudent.ac.in')
   const [creditAmount, setCreditAmount]           = useState('500')
   const [tvMode, setTvMode]                       = useState(false)
-  const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'menu' | 'summary' | 'tv'
+  const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'pos' | 'menu' | 'summary' | 'tv'
   const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'orders' | 'event' | 'scanner'
   const [soundEnabled, setSoundEnabled]           = useState(true)
   const [ordersSearch, setOrdersSearch]           = useState('')
   const [ordersFilterStatus, setOrdersFilterStatus] = useState('all')
   const [itemSearchQuery, setItemSearchQuery]     = useState('')
+
+  // Foodiv Vendor Formula states
+  const [canteenMode, setCanteenMode]             = useState('normal') // 'normal' | 'rush' | 'pause'
+  const [kdsViewMode, setKdsViewMode]             = useState('kanban') // 'kanban' | 'list'
+  const [kdsMobileCol, setKdsMobileCol]           = useState('all') // 'all' | 'placed' | 'preparing' | 'ready'
+  const [selectedKotOrder, setSelectedKotOrder]   = useState(null)
+  const [posCart, setPosCart]                     = useState({}) // itemId -> { item, qty }
+  const [posPaymentMode, setPosPaymentMode]       = useState('cash') // 'cash' | 'upi'
+  const [activeMenuCat, setActiveMenuCat]         = useState('all')
 
   const isStaff = profile.role === 'staff'
   const isAdmin = profile.role === 'admin'
@@ -1519,7 +1571,85 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 
   const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString())
   const todayRevenue = todayOrders.reduce((s, o) => s + o.total, 0)
-  const readyCount = myOrders.filter(o => o.status === 'ready').length
+  const placedOrders = myOrders.filter(o => o.status === 'placed')
+  const prepOrders   = myOrders.filter(o => o.status === 'preparing')
+  const readyOrders  = myOrders.filter(o => o.status === 'ready')
+
+  // Categories in myOutlet
+  const menuCategories = useMemo(() => {
+    const cats = new Set(['all'])
+    ;(myOutlet.menu_items || []).forEach(i => {
+      if (i.category) cats.add(i.category.toLowerCase())
+    })
+    return Array.from(cats)
+  }, [myOutlet])
+
+  // Foodiv POS Quick Counter Punch Handlers
+  function addPosItem(item) {
+    setPosCart(prev => {
+      const existing = prev[item.id]
+      return {
+        ...prev,
+        [item.id]: { item, qty: existing ? existing.qty + 1 : 1 }
+      }
+    })
+  }
+
+  function removePosItem(itemId) {
+    setPosCart(prev => {
+      const existing = prev[itemId]
+      if (!existing) return prev
+      if (existing.qty <= 1) {
+        const next = { ...prev }
+        delete next[itemId]
+        return next
+      }
+      return { ...prev, [itemId]: { ...existing, qty: existing.qty - 1 } }
+    })
+  }
+
+  function handlePunchWalkinOrder() {
+    const cartEntries = Object.values(posCart)
+    if (!cartEntries.length) return setNotice('⚠️ Please add at least 1 item to punch counter order.')
+    const total = cartEntries.reduce((s, ci) => s + (ci.item.price * ci.qty), 0)
+    const newId = Math.floor(3000 + Math.random() * 7000)
+    const token = Math.floor(100 + Math.random() * 900).toString()
+
+    const newOrder = {
+      id: newId,
+      user_id: 'counter-walkin',
+      outlet_id: myOutlet.id,
+      outlets: { name: myOutlet.name, location: myOutlet.location },
+      token,
+      status: 'placed',
+      source: 'counter',
+      payment_method: posPaymentMode,
+      total,
+      created_at: new Date().toISOString(),
+      order_items: cartEntries.map(ci => ({
+        item_id: ci.item.id,
+        name: ci.item.name,
+        price: ci.item.price,
+        qty: ci.qty,
+        notes: 'Walk-in Counter Sale'
+      }))
+    }
+
+    // Numerically decrement stock for walk-in items
+    cartEntries.forEach(ci => {
+      const currentStock = ci.item.stock_qty !== undefined ? ci.item.stock_qty : 30
+      if (updateItemStockQty) {
+        updateItemStockQty(myOutlet.id, ci.item.id, Math.max(0, currentStock - ci.qty))
+      }
+    })
+
+    setOrders(prev => [newOrder, ...prev])
+    if (soundEnabled) playNewOrderChime()
+    setSelectedKotOrder(newOrder)
+    setPosCart({})
+    setStaffTab('queue')
+    setNotice(`⚡ Walk-in Token #${token} generated and added to Kitchen KDS!`)
+  }
 
   // Filtered orders for Admin Live Stream
   const filteredCampusOrders = orders.filter(o => {
@@ -1590,69 +1720,250 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
     setNotice(`✅ Transferred ${money(amt)} event allowance to ${creditUserEmail}`)
   }
 
-  // Per-outlet revenue breakdown (admin)
-  const outletRevenues = outlets.filter(o => !o.is_event).map(o => {
-    const outletOrders = orders.filter(ord => ord.outlet_id === o.id)
-    return {
-      outlet: o,
-      count: outletOrders.length,
-      revenue: outletOrders.reduce((s, ord) => s + ord.total, 0),
-    }
-  }).sort((a, b) => b.revenue - a.revenue)
+  // Render a Single KOT Ticket Card (Foodiv Standard)
+  function renderKotCard(order) {
+    const mins = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
+    const timerClass = mins > 14 ? 'time-pill-red' : mins > 7 ? 'time-pill-amber' : 'time-pill-green'
+    const isReady = order.status === 'ready'
+    const isPrep  = order.status === 'preparing'
+    const isPlaced = order.status === 'placed'
+
+    return (
+      <div key={order.id} className={`kot-ticket kot-ticket-${order.status} ${isReady ? 'pulse-ready-glow' : ''}`}>
+        <div className="kot-ticket-header">
+          <div>
+            <span className="kot-ticket-token">#{order.token}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ord #{order.id}</span>
+              <span className={`kot-source-badge ${order.source === 'counter' ? 'source-counter' : 'source-app'}`}>
+                {order.source === 'counter' ? '🏪 Counter' : '📱 App'}
+              </span>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span className={`kot-time-pill ${timerClass}`}>
+              <Clock size={11} /> {mins}m {mins > 14 ? '⚠️ RUSH' : ''}
+            </span>
+            <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-main)', marginTop: '4px' }}>
+              {money(order.total)}
+            </strong>
+          </div>
+        </div>
+
+        <div className="kot-items-table">
+          {(order.order_items || []).map((it, idx) => (
+            <div key={idx} className="kot-item-entry">
+              <div>
+                <span className="kot-item-qty">{it.qty}×</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{it.name}</span>
+                {it.notes && <div style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic', paddingLeft: 28 }}>📝 {it.notes}</div>}
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{money(it.price * it.qty)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+          {isPlaced && (
+            <button
+              className="btn-primary btn-spring"
+              style={{ flex: 1, padding: '7px 10px', fontSize: '12px', background: '#F59E0B' }}
+              onClick={() => advanceOrderStatus(order.id)}
+            >
+              👨‍🍳 Accept & Cook
+            </button>
+          )}
+          {isPrep && (
+            <button
+              className="btn-primary btn-spring"
+              style={{ flex: 1, padding: '7px 10px', fontSize: '12px', background: '#2563EB' }}
+              onClick={() => {
+                advanceOrderStatus(order.id)
+                if (soundEnabled) playNewOrderChime()
+              }}
+            >
+              🔔 Mark Ready
+            </button>
+          )}
+          {isReady && (
+            <button
+              className="btn-primary btn-spring"
+              style={{ flex: 1, padding: '7px 10px', fontSize: '12px', background: '#059669' }}
+              onClick={() => advanceOrderStatus(order.id)}
+            >
+              ✅ Hand Over (Collect)
+            </button>
+          )}
+          <button
+            className="btn-secondary btn-spring"
+            style={{ padding: '7px 10px', fontSize: '12px' }}
+            onClick={() => setSelectedKotOrder(order)}
+            title="View thermal kitchen ticket"
+          >
+            <FileText size={14} /> Slip
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <section className="tab-content-enter">
-      {/* ── STAFF CONTROLS HEADER ── */}
+      {/* ── FOODIV THERMAL KOT SLIP MODAL ── */}
+      {selectedKotOrder && (
+        <div className="receipt-overlay" onClick={() => setSelectedKotOrder(null)}>
+          <div className="receipt-modal-card modal-enter" onClick={e => e.stopPropagation()}>
+            <div className="thermal-receipt">
+              <div style={{ textAlign: 'center', borderBottom: '1px dashed #475569', paddingBottom: '12px', marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' }}>CAMPUSBITE · VIT CHENNAI</div>
+                <strong style={{ fontSize: '15px', display: 'block', margin: '4px 0' }}>{selectedKotOrder.outlets?.name || myOutlet.name}</strong>
+                <div style={{ fontSize: '11px', color: '#64748B' }}>Kitchen Order Ticket (KOT)</div>
+              </div>
+
+              <div style={{ textAlign: 'center', background: '#F1F5F9', padding: '10px', borderRadius: '6px', margin: '12px 0' }}>
+                <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOKEN NUMBER</div>
+                <div style={{ fontSize: '32px', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>#{selectedKotOrder.token}</div>
+                <div style={{ fontSize: '11px', marginTop: 4 }}>
+                  {selectedKotOrder.source === 'counter' ? '🏪 COUNTER SALE' : '📱 ONLINE APP ORDER'}
+                </div>
+              </div>
+
+              <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#64748B' }}>
+                <span>Order #{selectedKotOrder.id}</span>
+                <span>{new Date(selectedKotOrder.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', margin: '10px 0' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #CBD5E1', textAlign: 'left' }}>
+                    <th style={{ paddingBottom: 4 }}>QTY</th>
+                    <th style={{ paddingBottom: 4 }}>ITEM</th>
+                    <th style={{ paddingBottom: 4, textAlign: 'right' }}>AMT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedKotOrder.order_items || []).map((it, i) => (
+                    <tr key={i} style={{ borderBottom: '1px dashed #E2E8F0' }}>
+                      <td style={{ padding: '6px 0', fontWeight: 700 }}>{it.qty}x</td>
+                      <td style={{ padding: '6px 0' }}>
+                        {it.name}
+                        {it.notes && <div style={{ fontSize: '10px', color: '#64748B' }}>* {it.notes}</div>}
+                      </td>
+                      <td style={{ padding: '6px 0', textAlign: 'right' }}>{money(it.price * it.qty)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div style={{ borderTop: '1px dashed #475569', paddingTop: '10px', marginTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
+                <span>TOTAL CHARGED</span>
+                <span>{money(selectedKotOrder.total)}</span>
+              </div>
+
+              <div style={{ textAlign: 'center', marginTop: '16px', borderTop: '1px dashed #CBD5E1', paddingTop: '10px', fontSize: '10px', color: '#64748B' }}>
+                <div>Status: {selectedKotOrder.status.toUpperCase()}</div>
+                <div style={{ marginTop: 2 }}>Present token when ready for pickup</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
+                <button
+                  className="btn-primary btn-spring"
+                  style={{ flex: 1, padding: '8px' }}
+                  onClick={() => window.print()}
+                >
+                  🖨️ Print KOT
+                </button>
+                <button
+                  className="btn-secondary btn-spring"
+                  style={{ padding: '8px 14px' }}
+                  onClick={() => setSelectedKotOrder(null)}
+                >
+                  ✕ Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STAFF CONTROLS HEADER (FOODIV FORMULA) ── */}
       {isStaff && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px', background: '#FFFFFF', padding: '14px 18px', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-            <div>
-              <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>{myOutlet.name}</strong>
-              <small style={{ display: 'block', color: 'var(--text-muted)' }}>{myOutlet.location}</small>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Canteen Rush Status bar */}
+          <div className="canteen-mode-bar">
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Canteen Operational Flow:</span>
+            <button
+              className={`canteen-mode-btn btn-spring ${canteenMode === 'normal' ? 'active-normal' : ''}`}
+              onClick={() => {
+                setCanteenMode('normal')
+                setNotice('🟢 Kitchen flow set to Normal (5-10 min prep)')
+              }}
+            >
+              🟢 Normal (5-10m)
+            </button>
+            <button
+              className={`canteen-mode-btn btn-spring ${canteenMode === 'rush' ? 'active-rush' : ''}`}
+              onClick={() => {
+                setCanteenMode('rush')
+                setNotice('🟡 Rush Hour activated! Prep time alert sent to students (+15m).')
+              }}
+            >
+              🟡 Rush Hour (+15m)
+            </button>
+            <button
+              className={`canteen-mode-btn btn-spring ${canteenMode === 'pause' ? 'active-pause' : ''}`}
+              onClick={() => {
+                setCanteenMode('pause')
+                setNotice('🔴 Kitchen Paused — no new online orders accepted.')
+              }}
+            >
+              🔴 Kitchen Paused
+            </button>
+
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button
                 className="btn-secondary btn-spring"
-                style={{ padding: '6px 12px', fontSize: '12px' }}
+                style={{ padding: '5px 10px', fontSize: '11px' }}
                 onClick={() => {
                   setSoundEnabled(s => !s)
                   if (!soundEnabled) playNewOrderChime()
                 }}
               >
-                {soundEnabled ? <Volume2 size={14} color="#16A34A" /> : <VolumeX size={14} color="#DC2626" />}
-                <span>{soundEnabled ? 'Chimes: ON' : 'Chimes: MUTE'}</span>
+                {soundEnabled ? <Volume2 size={13} color="#16A34A" /> : <VolumeX size={13} color="#DC2626" />}
+                <span>{soundEnabled ? 'Chime ON' : 'Chime MUTE'}</span>
               </button>
               <button
                 className="btn-secondary btn-spring"
-                style={{ padding: '6px 12px', fontSize: '12px' }}
+                style={{ padding: '5px 10px', fontSize: '11px' }}
                 onClick={playNewOrderChime}
-                title="Test kitchen order alert speaker"
               >
-                🔔 Test Sound
+                🔔 Test
               </button>
               <button
                 className="btn-primary btn-spring"
-                style={{ background: myOutlet.is_open ? '#059669' : '#DC2626', padding: '6px 14px', fontSize: '12px' }}
+                style={{ background: myOutlet.is_open ? '#059669' : '#DC2626', padding: '5px 12px', fontSize: '11px' }}
                 onClick={() => toggleOutletOpen(myOutlet.id)}
               >
-                {myOutlet.is_open ? '🟢 Counter Open' : '🔴 Counter Closed'}
+                {myOutlet.is_open ? '🟢 Open' : '🔴 Closed'}
               </button>
             </div>
           </div>
 
-          <nav className="nav-tabs" style={{ marginBottom: '20px' }}>
+          <nav className="nav-tabs" style={{ marginBottom: '18px' }}>
             {[
-              { key: 'queue', label: 'Live Queue', icon: <Clock3 size={16} /> },
-              { key: 'menu', label: 'Menu Control', icon: <Edit size={16} /> },
-              { key: 'summary', label: 'Daily Summary', icon: <BarChart2 size={16} /> },
-              { key: 'tv', label: 'TV Screen', icon: <Monitor size={16} /> },
+              { key: 'queue', label: 'KDS Live Queue', icon: <Clock3 size={16} />, badge: myOrders.length },
+              { key: 'pos', label: 'POS Counter Punch', icon: <ShoppingBag size={16} /> },
+              { key: 'menu', label: '86-Stock Control', icon: <Edit size={16} /> },
+              { key: 'summary', label: 'Shift Billing', icon: <BarChart2 size={16} /> },
+              { key: 'tv', label: 'TV Display', icon: <Monitor size={16} /> },
             ].map(t => (
-              <button key={t.key}
+              <button
+                key={t.key}
                 className={staffTab === t.key ? 'active' : ''}
                 onClick={() => t.key === 'tv' ? setTvMode(true) : setStaffTab(t.key)}
               >
                 {t.icon} {t.label}
-                {t.key === 'queue' && readyCount > 0 && <span className="nav-badge">{readyCount}</span>}
+                {t.badge > 0 && <span className="nav-badge">{t.badge}</span>}
               </button>
             ))}
           </nav>
@@ -1685,146 +1996,475 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
         </div>
       )}
 
-      {/* ── STAFF QUEUE TAB ── */}
+      {/* ── STAFF TAB: KDS LIVE QUEUE (FOODIV 3-COLUMN KANBAN FORMULA) ── */}
       {isStaff && staffTab === 'queue' && (
         <>
-          {/* Quick scan box */}
-          <div className="admin-card">
-            <h3><QrCode size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Counter Fast Collection Scanner</h3>
-            <form onSubmit={handleScanSubmit} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+          {/* Quick Handover Scanner */}
+          <div className="admin-card" style={{ padding: '14px 18px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <QrCode size={18} color="var(--blue-primary)" />
+                <strong style={{ fontSize: '14px' }}>Counter Fast Token Handover</strong>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className={`filter-pill btn-spring ${kdsViewMode === 'kanban' ? 'active' : ''}`}
+                  onClick={() => setKdsViewMode('kanban')}
+                >
+                  📋 3-Col Kanban
+                </button>
+                <button
+                  className={`filter-pill btn-spring ${kdsViewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setKdsViewMode('list')}
+                >
+                  📄 Stream
+                </button>
+              </div>
+            </div>
+            <form onSubmit={handleScanSubmit} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <input
                 value={scanInput}
                 onChange={e => setScanInput(e.target.value)}
-                placeholder="Scan student QR code or type 3-digit token (e.g. 248)..."
-                style={{ flex: 1, padding: '11px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0, fontFamily: 'var(--font-body)' }}
+                placeholder="Scan student QR or type 3-digit token (e.g. 248)..."
+                style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 0, fontSize: '13px' }}
               />
-              <button type="submit" className="btn-primary btn-spring">Verify & Hand Over</button>
+              <button type="submit" className="btn-primary btn-spring" style={{ padding: '9px 16px', fontSize: '12px' }}>
+                Verify & Hand Over
+              </button>
             </form>
           </div>
 
-          <div className="queue-summary-bar">
-            <div className="queue-stat"><span className="qs-num">{myOrders.filter(o => o.status === 'placed').length}</span><span>Placed</span></div>
-            <div className="queue-stat"><span className="qs-num qs-prep">{myOrders.filter(o => o.status === 'preparing').length}</span><span>Preparing</span></div>
-            <div className="queue-stat"><span className="qs-num qs-ready">{myOrders.filter(o => o.status === 'ready').length}</span><span>Ready</span></div>
-            <button className="tv-btn btn-spring" onClick={() => setTvMode(true)}><Monitor size={15} /> Open TV Board</button>
+          {/* Kanban / List Filter for Mobile */}
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '8px' }}>
+            {[
+              { key: 'all', label: `All Active (${myOrders.length})` },
+              { key: 'placed', label: `🟡 New (${placedOrders.length})` },
+              { key: 'preparing', label: `🔵 Cooking (${prepOrders.length})` },
+              { key: 'ready', label: `🟢 Ready (${readyOrders.length})` },
+            ].map(col => (
+              <button
+                key={col.key}
+                className={`filter-pill btn-spring ${kdsMobileCol === col.key ? 'active' : ''}`}
+                onClick={() => setKdsMobileCol(col.key)}
+              >
+                {col.label}
+              </button>
+            ))}
           </div>
 
-          <h3 style={{ fontSize: '18px', margin: '20px 0 12px', fontFamily: 'var(--font-heading)' }}>
-            Kitchen Order Tickets (chronological queue)
-          </h3>
-          {!myOrders.length ? (
-            <div className="empty-state"><CheckCircle2 size={36} /><h3>All clear!</h3><p>No active orders in kitchen queue.</p></div>
-          ) : (
-            myOrders.map(order => {
-              const mins = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
-              const timerColor = mins > 15 ? '#DC2626' : mins > 8 ? '#D97706' : '#059669'
-              return (
-                <div className={`kot-card kot-${order.status} ${order.status === 'ready' ? 'pulse-ready-glow' : ''}`} key={order.id}>
-                  <div className="kot-header">
-                    <div>
-                      <strong className="kot-token">TOKEN #{order.token}</strong>
-                      <span className="kot-orderid">Order #{order.id}</span>
-                      <span style={{ fontSize: '12px', color: timerColor, marginLeft: 10, fontWeight: 700 }}>
-                        <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
-                        {mins} min ago {mins > 15 ? '⚠️ RUSH' : ''}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', fontWeight: 800 }}>{money(order.total)}</span>
-                      <span className={`status-badge ${order.status}`}>{order.status}</span>
-                    </div>
+          {kdsViewMode === 'kanban' ? (
+            /* ── FOODIV 3-COLUMN KDS BOARD ── */
+            <div className="kds-board">
+              {/* Column 1: Placed / New */}
+              {(kdsMobileCol === 'all' || kdsMobileCol === 'placed') && (
+                <div className="kds-column">
+                  <div className="kds-col-header col-new">
+                    <span>🟡 1. New Orders</span>
+                    <span className="kds-col-count">{placedOrders.length}</span>
                   </div>
-                  <div className="kot-items">
-                    {(order.order_items || []).map((item, idx) => (
-                      <div key={idx} className="kot-item-row">
-                        <span className="kot-qty">{item.qty}×</span>
-                        <span className="kot-item-name">{item.name}</span>
-                        {item.notes && <span className="kot-notes">📝 {item.notes}</span>}
+                  <div className="kds-col-body">
+                    {!placedOrders.length ? (
+                      <div style={{ textAlign: 'center', padding: '32px 12px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                        No pending orders
                       </div>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
-                    {order.status !== 'ready' && (
-                      <button className="btn-primary btn-spring" onClick={() => advanceOrderStatus(order.id)}>
-                        Mark as {order.status === 'placed' ? '🔥 Preparing' : '✅ Ready for Student'}
-                      </button>
-                    )}
-                    {order.status === 'ready' && (
-                      <button className="btn-primary btn-spring" style={{ background: '#059669' }} onClick={() => advanceOrderStatus(order.id)}>
-                        ✅ Mark Collected / Handed Over
-                      </button>
+                    ) : (
+                      placedOrders.map(renderKotCard)
                     )}
                   </div>
                 </div>
-              )
-            })
+              )}
+
+              {/* Column 2: Preparing / In Kitchen */}
+              {(kdsMobileCol === 'all' || kdsMobileCol === 'preparing') && (
+                <div className="kds-column">
+                  <div className="kds-col-header col-prep">
+                    <span>🔵 2. In Kitchen (Cooking)</span>
+                    <span className="kds-col-count">{prepOrders.length}</span>
+                  </div>
+                  <div className="kds-col-body">
+                    {!prepOrders.length ? (
+                      <div style={{ textAlign: 'center', padding: '32px 12px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                        Kitchen idle
+                      </div>
+                    ) : (
+                      prepOrders.map(renderKotCard)
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Column 3: Ready for Pickup */}
+              {(kdsMobileCol === 'all' || kdsMobileCol === 'ready') && (
+                <div className="kds-column">
+                  <div className="kds-col-header col-ready">
+                    <span>🟢 3. Ready at Counter</span>
+                    <span className="kds-col-count">{readyOrders.length}</span>
+                  </div>
+                  <div className="kds-col-body">
+                    {!readyOrders.length ? (
+                      <div style={{ textAlign: 'center', padding: '32px 12px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                        No tokens ready
+                      </div>
+                    ) : (
+                      readyOrders.map(renderKotCard)
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Stream List View */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
+              {!myOrders.length ? (
+                <div className="empty-state"><CheckCircle2 size={36} /><h3>All clear!</h3><p>No active orders in kitchen queue.</p></div>
+              ) : (
+                myOrders
+                  .filter(o => kdsMobileCol === 'all' || o.status === kdsMobileCol)
+                  .map(renderKotCard)
+              )}
+            </div>
           )}
         </>
       )}
 
-      {/* ── STAFF MENU TAB ── */}
-      {isStaff && staffTab === 'menu' && (
+      {/* ── STAFF TAB: POS COUNTER PUNCH (FOODIV FORMULA) ── */}
+      {isStaff && staffTab === 'pos' && (
         <div className="admin-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
             <div>
-              <h3>{myOutlet.name} — Menu Stock Control</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Toggle item availability instantly</p>
+              <h3><ShoppingBag size={18} style={{ marginRight: 8, verticalAlign: 'middle', color: 'var(--blue-primary)' }} />Walk-In Counter Point of Sale (POS)</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Punch orders directly for students paying at physical counter</p>
             </div>
-            <div style={{ width: '220px' }}>
-              <input
-                value={itemSearchQuery}
-                onChange={e => setItemSearchQuery(e.target.value)}
-                placeholder="Search items..."
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '13px' }}
-              />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {['cash', 'upi'].map(pm => (
+                <button
+                  key={pm}
+                  className={`filter-pill btn-spring ${posPaymentMode === pm ? 'active' : ''}`}
+                  onClick={() => setPosPaymentMode(pm)}
+                >
+                  {pm === 'cash' ? '💵 Cash at Counter' : '📲 Direct UPI QR'}
+                </button>
+              ))}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
-            {(myOutlet.menu_items || [])
-              .filter(i => !itemSearchQuery.trim() || i.name.toLowerCase().includes(itemSearchQuery.toLowerCase()))
-              .map(item => (
-                <div key={item.id} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
-                    <strong style={{ fontSize: '13.5px', marginLeft: 8 }}>{item.name}</strong>
-                    <small style={{ display: 'block', color: 'var(--text-muted)', marginTop: 2 }}>{money(item.price)}</small>
-                  </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1.8fr) minmax(260px, 1.2fr)', gap: '18px' }}>
+            {/* Left: Item Picker */}
+            <div>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '10px' }}>
+                {menuCategories.map(cat => (
                   <button
-                    className={`toggle-avail-btn btn-spring ${item.available !== false ? 'avail-in' : 'avail-out'}`}
-                    onClick={() => toggleItemAvailability(myOutlet.id, item.id)}
+                    key={cat}
+                    className={`filter-pill btn-spring ${activeMenuCat === cat ? 'active' : ''}`}
+                    onClick={() => setActiveMenuCat(cat)}
                   >
-                    {item.available !== false ? '✅ In Stock' : '❌ Sold Out'}
+                    {cat.toUpperCase()}
                   </button>
+                ))}
+              </div>
+
+              <div className="pos-order-grid">
+                {(myOutlet.menu_items || [])
+                  .filter(it => it.available !== false)
+                  .filter(it => activeMenuCat === 'all' || (it.category && it.category.toLowerCase() === activeMenuCat))
+                  .map(item => {
+                    const inCart = posCart[item.id]?.qty || 0
+                    return (
+                      <div key={item.id} className="pos-item-card">
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                            <strong style={{ fontSize: '13px' }}>{item.name}</strong>
+                          </div>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                            {money(item.price)}
+                          </span>
+                        </div>
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          {inCart > 0 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button className="qty-btn" onClick={() => removePosItem(item.id)}><Minus size={12} /></button>
+                              <span style={{ fontWeight: 800, fontSize: '13px' }}>{inCart}</span>
+                              <button className="qty-btn" onClick={() => addPosItem(item)}><Plus size={12} /></button>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn-secondary btn-spring"
+                              style={{ padding: '4px 10px', fontSize: '11px', width: '100%' }}
+                              onClick={() => addPosItem(item)}
+                            >
+                              + Add
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+
+            {/* Right: Counter Bill Summary */}
+            <div style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <h4 style={{ fontSize: '14px', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                  Walk-In Ticket Summary
+                </h4>
+                {Object.keys(posCart).length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '30px 0' }}>
+                    No items selected.<br />Tap items on the left to add.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                    {Object.values(posCart).map(ci => (
+                      <div key={ci.item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                        <div>
+                          <strong>{ci.qty}x</strong> {ci.item.name}
+                        </div>
+                        <span>{money(ci.item.price * ci.qty)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '12px', marginTop: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 900, marginBottom: '12px' }}>
+                  <span>Bill Total</span>
+                  <span style={{ color: 'var(--blue-primary)' }}>
+                    {money(Object.values(posCart).reduce((s, ci) => s + (ci.item.price * ci.qty), 0))}
+                  </span>
                 </div>
-              ))}
+                <button
+                  className="btn-primary btn-spring"
+                  style={{ width: '100%', padding: '11px', fontSize: '13px', background: '#059669' }}
+                  onClick={handlePunchWalkinOrder}
+                >
+                  ⚡ Issue Token & Print KOT
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── STAFF SUMMARY TAB ── */}
+      {/* ── STAFF MENU TAB: NUMERICAL STOCK & PORTION INVENTORY CONTROL ── */}
+      {isStaff && staffTab === 'menu' && (() => {
+        const outletMenuItems = myOutlet.menu_items || []
+        const inStockCount = outletMenuItems.filter(i => (i.stock_qty !== undefined ? i.stock_qty : (i.available !== false ? 30 : 0)) > 10).length
+        const lowStockCount = outletMenuItems.filter(i => {
+          const s = i.stock_qty !== undefined ? i.stock_qty : (i.available !== false ? 30 : 0)
+          return s > 0 && s <= 10
+        }).length
+        const outStockCount = outletMenuItems.filter(i => (i.stock_qty !== undefined ? i.stock_qty : (i.available !== false ? 30 : 0)) === 0).length
+
+        return (
+          <div className="admin-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>{myOutlet.name} — Portion Stock & 86-Control</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                  Real-time numerical portion counts · Auto-86s when portion count reaches 0
+                </p>
+              </div>
+              <div style={{ width: '220px' }}>
+                <input
+                  value={itemSearchQuery}
+                  onChange={e => setItemSearchQuery(e.target.value)}
+                  placeholder="Search items..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                />
+              </div>
+            </div>
+
+            {/* Inventory Status Overview Banner */}
+            <div className="stock-summary-banner">
+              <div className="stock-summary-stat">
+                <span>Total Items:</span>
+                <strong>{outletMenuItems.length}</strong>
+              </div>
+              <div className="stock-summary-stat" style={{ color: '#166534' }}>
+                <span>In Stock:</span>
+                <strong>🟢 {inStockCount}</strong>
+              </div>
+              <div className="stock-summary-stat" style={{ color: '#92400E' }}>
+                <span>Low Stock (&le;10):</span>
+                <strong>🟡 {lowStockCount}</strong>
+              </div>
+              <div className="stock-summary-stat" style={{ color: '#991B1B' }}>
+                <span>Sold Out (86):</span>
+                <strong>🔴 {outStockCount}</strong>
+              </div>
+              <button
+                className="btn-secondary btn-spring"
+                style={{ marginLeft: 'auto', padding: '5px 12px', fontSize: '11px' }}
+                onClick={() => {
+                  outletMenuItems.forEach(it => updateItemStockQty(myOutlet.id, it.id, 30))
+                  setNotice('✅ All active items restocked to 30 portions!')
+                }}
+              >
+                ⚡ Restock All (30)
+              </button>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '14px' }}>
+              {menuCategories.map(cat => (
+                <button
+                  key={cat}
+                  className={`filter-pill btn-spring ${activeMenuCat === cat ? 'active' : ''}`}
+                  onClick={() => setActiveMenuCat(cat)}
+                >
+                  {cat.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* Numerical Stock Control Grid */}
+            <div className="stock-control-grid">
+              {outletMenuItems
+                .filter(i => activeMenuCat === 'all' || (i.category && i.category.toLowerCase() === activeMenuCat))
+                .filter(i => !itemSearchQuery.trim() || i.name.toLowerCase().includes(itemSearchQuery.toLowerCase()))
+                .map(item => {
+                  const stockQty = item.stock_qty !== undefined ? item.stock_qty : (item.available !== false ? 30 : 0)
+                  const isZero = stockQty === 0
+                  const isLow = stockQty > 0 && stockQty <= 10
+
+                  return (
+                    <div key={item.id} className={`stock-control-card ${isZero ? 'is-zero' : ''}`}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                            <strong style={{ fontSize: '13.5px', color: 'var(--text-main)' }}>{item.name}</strong>
+                          </div>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                            {money(item.price)} · {item.category || 'general'}
+                          </span>
+                        </div>
+                        <span className={`stock-status-pill ${isZero ? 'stock-pill-out' : isLow ? 'stock-pill-low' : 'stock-pill-ok'}`}>
+                          {isZero ? '🔴 Sold Out (0)' : isLow ? `🟡 Low: ${stockQty} left` : `🟢 ${stockQty} in stock`}
+                        </span>
+                      </div>
+
+                      {/* Stepper + Input + Batch Presets */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px', gap: '8px', flexWrap: 'wrap' }}>
+                        <div className="stock-stepper-wrap">
+                          <button
+                            className="stock-step-btn btn-spring"
+                            onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty - 1)}
+                            disabled={stockQty <= 0}
+                            title="Decrease portions by 1"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            max="999"
+                            value={stockQty}
+                            onChange={e => updateItemStockQty(myOutlet.id, item.id, parseInt(e.target.value, 10) || 0)}
+                            className="stock-num-input"
+                            title="Directly edit remaining portions"
+                          />
+                          <button
+                            className="stock-step-btn btn-spring"
+                            onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty + 1)}
+                            title="Increase portions by 1"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+
+                        {/* Quick Presets and Fast 86 Toggle */}
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <button
+                            className="stock-preset-btn btn-spring"
+                            onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty + 10)}
+                            title="Add 10 portions"
+                          >
+                            +10
+                          </button>
+                          <button
+                            className="stock-preset-btn btn-spring"
+                            onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty + 25)}
+                            title="Add 25 portions"
+                          >
+                            +25
+                          </button>
+                          <button
+                            className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
+                            onClick={() => updateItemStockQty(myOutlet.id, item.id, isZero ? 30 : 0)}
+                            title={isZero ? 'Restock to 30 portions' : 'Zero out / 86 item'}
+                          >
+                            {isZero ? '✅ Restock (30)' : '❌ 86 (0)'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── STAFF SUMMARY TAB: SHIFT BILLING & CASH RECONCILIATION ── */}
       {isStaff && staffTab === 'summary' && (
         <div className="admin-card">
-          <h3><BarChart2 size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Today's Shift Summary — {myOutlet.name}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3><BarChart2 size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Daily Shift Billing — {myOutlet.name}</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Shift gross revenue, token volumes, and cash reconciliation</p>
+            </div>
+            <button
+              className="btn-secondary btn-spring"
+              style={{ padding: '7px 14px', fontSize: '12px' }}
+              onClick={() => exportOrdersCSV(todayOrders)}
+            >
+              <Download size={14} /> Export Shift CSV
+            </button>
+          </div>
+
           <div className="sales-grid" style={{ marginTop: '16px' }}>
             <div className="sales-stat-box">
-              <h4>Revenue Today</h4>
+              <h4>Shift Gross Collection</h4>
               <p>{money(todayRevenue)}</p>
             </div>
             <div className="sales-stat-box">
-              <h4>Orders Today</h4>
+              <h4>Orders Processed</h4>
               <p>{todayOrders.length}</p>
             </div>
             <div className="sales-stat-box">
-              <h4>Active Queue</h4>
+              <h4>Active in Kitchen</h4>
               <p>{myOrders.length}</p>
             </div>
             <div className="sales-stat-box">
-              <h4>Avg Order Value</h4>
+              <h4>Avg Ticket Size</h4>
               <p>{todayOrders.length ? money(Math.round(todayRevenue / todayOrders.length)) : '—'}</p>
             </div>
           </div>
 
-          <h4 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '15px' }}>Top Selling Items Today</h4>
+          <div style={{ marginTop: '20px', padding: '14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 800, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Payment Channel Reconciliation
+            </h4>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '140px', background: '#FFFFFF', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <span style={{ fontSize: '11px', color: '#64748B' }}>Online / Campus Wallet</span>
+                <strong style={{ display: 'block', fontSize: '18px', color: 'var(--blue-primary)', marginTop: 2 }}>
+                  {money(todayOrders.filter(o => o.source !== 'counter').reduce((s, o) => s + o.total, 0))}
+                </strong>
+              </div>
+              <div style={{ flex: 1, minWidth: '140px', background: '#FFFFFF', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <span style={{ fontSize: '11px', color: '#64748B' }}>Counter Direct (Cash / POS)</span>
+                <strong style={{ display: 'block', fontSize: '18px', color: '#059669', marginTop: 2 }}>
+                  {money(todayOrders.filter(o => o.source === 'counter').reduce((s, o) => s + o.total, 0))}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <h4 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '15px' }}>Top Fast-Moving Items Today</h4>
           {(() => {
             const freq = {}
             todayOrders.forEach(o => (o.order_items || []).forEach(i => {
