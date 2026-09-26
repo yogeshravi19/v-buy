@@ -244,12 +244,10 @@ const DEMO_OUTLETS = [
 ]
 
 const TEST_USERS = [
-  { full_name: 'Rahul Sharma', email: 'rahul.s@vitstudent.ac.in', password: 'password123', role: 'customer', cust_type: 'student', balance: 550 },
-  { full_name: 'Dr. Ananth Kumar', email: 'ananth.k@vit.ac.in', password: 'password123', role: 'customer', cust_type: 'faculty', balance: 1400 },
-  { full_name: 'Priya V (Event Crew)', email: 'event.priya@vitstudent.ac.in', password: 'password123', role: 'customer', cust_type: 'event_team', balance: 500 },
-  { full_name: 'Dakshin Chitra Staff', email: 'staff.dakshin@gazebo.vit.ac.in', password: 'password123', role: 'staff', outlet_id: 'g3', balance: 200 },
-  { full_name: 'Georgia Staff', email: 'staff.georgia@northsquare.vit.ac.in', password: 'password123', role: 'staff', outlet_id: 'n1', balance: 200 },
-  { full_name: 'Campus Admin', email: 'admin.management@vit.ac.in', password: 'password123', role: 'admin', balance: 10000 },
+  { id: 'usr-student', full_name: 'Rahul Sharma (Student)', phone: '9876543210', email: 'rahul.s@vitstudent.ac.in', password: 'password123', role: 'student', cust_type: 'student', reg_no: '22BCE1042', balance: 550 },
+  { id: 'usr-staff', full_name: 'Ramesh (Gazebo Staff)', phone: '9876543220', email: 'staff.gazebo@vit.ac.in', password: 'password123', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 250 },
+  { id: 'usr-owner', full_name: 'Suresh Kumar (Gazebo Owner)', phone: '9876543230', email: 'owner.gazebo@vit.ac.in', password: 'password123', role: 'owner', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 18450 },
+  { id: 'usr-admin', full_name: 'Overall Super Admin', phone: '9876543200', email: 'superadmin.campus@vit.ac.in', password: 'password123', role: 'admin', is_superadmin: true, balance: 50000 },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -279,6 +277,32 @@ function App() {
       { id: 2, amount: -190, kind: 'Order #2041 — Dakshin Chitra', ref: 'ord_2041', created_at: new Date(Date.now() - 900000).toISOString() },
     ]
   })
+
+  // Live Audit Log System Telemetry
+  const [auditLogs, setAuditLogs] = useState([
+    { id: 'aud-1', timestamp: new Date(Date.now() - 35 * 60 * 1000).toISOString(), actor: 'Rahul Sharma', role: 'student', category: 'ORDER', action: 'ORDER_PLACED', details: 'Order #2041 placed at Dakshin Chitra (₹190) via Campus Wallet', status: 'SUCCESS' },
+    { id: 'aud-2', timestamp: new Date(Date.now() - 34 * 60 * 1000).toISOString(), actor: 'System Worker', role: 'system', category: 'STOCK_86', action: 'STOCK_DECREMENT', details: 'Veg Fried Rice stock decremented: 30 -> 29 (Dakshin Chitra)', status: 'SUCCESS' },
+    { id: 'aud-3', timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(), actor: 'Ramesh (Staff)', role: 'staff', category: 'ORDER', action: 'KDS_STATUS_CHANGE', details: 'Order #2041 marked "In Kitchen" (Token #248)', status: 'SUCCESS' },
+    { id: 'aud-4', timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(), actor: 'Ramesh (Staff)', role: 'staff', category: 'ORDER', action: 'KDS_STATUS_CHANGE', details: 'Order #2041 marked "Ready for Pickup" — Audio Chime triggered', status: 'SUCCESS' },
+    { id: 'aud-5', timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(), actor: 'Suresh Kumar (Owner)', role: 'owner', category: 'OUTLET', action: 'RUSH_MODE_TOGGLE', details: 'Gazebo C1 activated Rush Mode (+15m buffer)', status: 'SUCCESS' },
+    { id: 'aud-6', timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), actor: 'Overall Super Admin', role: 'admin', category: 'SECURITY', action: 'ROLE_UPDATE', details: 'Assigned Ramesh as Staff to Gazebo C1', status: 'SUCCESS' },
+  ])
+
+  const addAuditLog = useCallback((actor, role, category, action, details) => {
+    setAuditLogs(prev => [
+      {
+        id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        timestamp: new Date().toISOString(),
+        actor: actor || 'User',
+        role: role || 'user',
+        category,
+        action,
+        details,
+        status: 'SUCCESS'
+      },
+      ...prev
+    ])
+  }, [])
 
   const [cart, setCart]               = useState({ outlet: null, items: [] })
   const [tab, setTab]                 = useState('browse')
@@ -504,6 +528,7 @@ function App() {
       setBusy(false)
       setTab('orders')
       setNotice(`🎉 Order #${newId} placed! Pickup Token: #${token}`)
+      addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(total)}) via Campus Wallet`)
     }, 700)
   }
 
@@ -539,6 +564,7 @@ function App() {
     }))
     setBusy(false)
     setNotice(`✅ Added ${money(amount)} to wallet! New balance: ${money(wallet.balance + amount)}`)
+    addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'WALLET', 'WALLET_TOPUP', `Credited ${money(amount)} via Razorpay UPI (${ref})`)
   }
 
   function toggleItemAvailability(outletId, itemId) {
@@ -551,6 +577,7 @@ function App() {
         return { ...i, available: nextAvail, stock_qty: nextQty }
       })
     }))
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'STOCK_86', 'AVAILABILITY_TOGGLE', `Toggled availability for item #${itemId} in outlet ${outletId}`)
   }
 
   function updateItemStockQty(outletId, itemId, newQty) {
@@ -562,17 +589,28 @@ function App() {
         available: qty > 0
       } : i)
     }))
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'STOCK_86', 'STOCK_UPDATE', `Updated stock for item #${itemId} to ${qty} units in outlet ${outletId}`)
   }
 
   function toggleOutletOpen(outletId) {
-    setOutlets(outs => outs.map(o => o.id === outletId ? { ...o, is_open: !o.is_open } : o))
+    let outletName = outletId
+    setOutlets(outs => outs.map(o => {
+      if (o.id !== outletId) return o
+      outletName = o.name
+      return { ...o, is_open: !o.is_open }
+    }))
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'OUTLET', 'OUTLET_TOGGLE', `Toggled open/close state for ${outletName}`)
   }
 
   function advanceOrderStatus(orderId) {
     setOrders(ords => ords.map(o => {
       if (o.id !== orderId) return o
       const idx = statuses.indexOf(o.status)
-      return idx < statuses.length - 1 ? { ...o, status: statuses[idx + 1] } : o
+      const nextStatus = idx < statuses.length - 1 ? statuses[idx + 1] : o.status
+      if (nextStatus !== o.status) {
+        addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'ORDER', 'KDS_STATUS_CHANGE', `Order #${orderId} moved to "${nextStatus}" (Token #${o.token})`)
+      }
+      return { ...o, status: nextStatus }
     }))
   }
 
@@ -585,10 +623,11 @@ function App() {
 
   if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
 
-  const role      = currentUser.role || 'customer'
-  const isCustomer = role === 'customer'
+  const role      = currentUser.role || 'student'
+  const isCustomer = role === 'student' || role === 'customer'
   const isStaff   = role === 'staff'
-  const isAdmin   = role === 'admin'
+  const isOwner   = role === 'owner'
+  const isAdmin   = role === 'admin' || role === 'superadmin'
 
   return (
     <div className="app-shell">
@@ -635,7 +674,11 @@ function App() {
             <Download size={13} />
             <span>Install App</span>
           </button>
-          <span className="role-tag-badge">{currentUser.cust_type || currentUser.role}</span>
+          <span className="role-tag-badge">
+            {role === 'owner' ? '🏪 Canteen Owner' :
+             role === 'staff' ? '👨‍🍳 Kitchen Staff' :
+             role === 'admin' || role === 'superadmin' ? '🛡️ Super Admin' : '🎓 Student'}
+          </span>
           {isCustomer && (
             <div className="wallet-badge-top" onClick={() => setTab('wallet')}>
               <Banknote size={16} />
@@ -662,9 +705,10 @@ function App() {
           <div>
             <p className="eyebrow">VIT CHENNAI CAMPUS · {currentUser.full_name}</p>
             <h1>
-              {isCustomer && <><span style={{color:'#60A5FA'}}>What's your next order,</span><br /><em>{currentUser.full_name.split(' ')[0]}?</em></>}
-              {isStaff    && <>Kitchen Operations Console<br /><em>Outlet: {currentUser.outlet_id || 'Gazebo Counter'}</em></>}
-              {isAdmin    && <>Campus Management &<br /><em>Analytics Dashboard</em></>}
+              {isCustomer && <><span style={{color:'#60A5FA'}}>What's your next order,</span><br /><em>{currentUser.full_name?.split(' ')[0] || 'Student'}?</em></>}
+              {isStaff    && <>Kitchen Operations Console<br /><em>Outlet: {currentUser.outlet_name || 'Gazebo Counter'}</em></>}
+              {isOwner    && <>Canteen Franchisee Portal<br /><em>Outlet: {currentUser.outlet_name || 'Gazebo C1'}</em></>}
+              {isAdmin    && <>Campus Super Admin &<br /><em>Operations Telemetry</em></>}
             </h1>
           </div>
           <div className="hero-stats">
@@ -692,6 +736,22 @@ function App() {
                 </div>
                 <div className="stat-pill">
                   <strong>{orders.filter(o => o.status === 'ready').length}</strong>
+                  <small>Ready</small>
+                </div>
+              </>
+            )}
+            {isOwner && (
+              <>
+                <div className="stat-pill">
+                  <strong>{money(orders.filter(o => o.outlet_id === (currentUser.outlet_id || 'g1')).reduce((s, o) => s + o.total, 0))}</strong>
+                  <small>Today's Sales</small>
+                </div>
+                <div className="stat-pill">
+                  <strong>{orders.filter(o => o.outlet_id === (currentUser.outlet_id || 'g1')).length}</strong>
+                  <small>Outlet Orders</small>
+                </div>
+                <div className="stat-pill">
+                  <strong>{orders.filter(o => o.outlet_id === (currentUser.outlet_id || 'g1') && o.status === 'ready').length}</strong>
                   <small>Ready</small>
                 </div>
               </>
@@ -774,6 +834,19 @@ function App() {
           </div>
         )}
 
+        {/* ── SHOP OWNER CONSOLE (CANTEEN FRANCHISEE) ── */}
+        {isOwner && (
+          <ShopOwnerConsole
+            profile={currentUser}
+            orders={orders}
+            outlets={outlets}
+            toggleOutletOpen={toggleOutletOpen}
+            updateItemStockQty={updateItemStockQty}
+            setNotice={setNotice}
+            addAuditLog={addAuditLog}
+          />
+        )}
+
         {/* ── STAFF / ADMIN CONSOLES ── */}
         {(isStaff || isAdmin) && (
           <StaffAdminConsole
@@ -790,6 +863,8 @@ function App() {
             setWallet={setWallet}
             setNotice={setNotice}
             updateItemStockQty={updateItemStockQty}
+            auditLogs={auditLogs}
+            addAuditLog={addAuditLog}
           />
         )}
       </main>
@@ -1611,17 +1686,318 @@ function WalletView({ wallet, topUp, busy, currentUser }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SHOP OWNER CONSOLE (CANTEEN FRANCHISEE / OWNER PORTAL)
+// ─────────────────────────────────────────────────────────────────────────────
+function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateItemStockQty, setNotice, addAuditLog }) {
+  const [ownerTab, setOwnerTab] = useState('overview') // 'overview' | 'menu' | 'staff' | 'settlement'
+  const [rushMode, setRushMode] = useState(false)
+  const [editingPriceItem, setEditingPriceItem] = useState(null)
+  const [newPriceVal, setNewPriceVal] = useState('')
+  const [itemSearch, setItemSearch] = useState('')
+
+  const myOutlet = outlets.find(o => o.id === profile.outlet_id) || outlets[0]
+  const myOrders = orders.filter(o => o.outlet_id === myOutlet.id)
+  const todayOrders = myOrders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString())
+  const todayRevenue = todayOrders.reduce((s, o) => s + o.total, 0)
+  const activeOrdersCount = myOrders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
+  const avgOrderVal = todayOrders.length > 0 ? Math.round(todayRevenue / todayOrders.length) : 0
+
+  function handleSavePrice(item) {
+    const p = parseFloat(newPriceVal)
+    if (!p || p <= 0) return setNotice('⚠️ Please enter a valid price amount')
+    item.price = p
+    setEditingPriceItem(null)
+    setNewPriceVal('')
+    setNotice(`✅ Price for "${item.name}" updated to ${money(p)}`)
+    if (addAuditLog) addAuditLog(profile.full_name, 'owner', 'MENU', 'PRICE_CHANGE', `Updated price of "${item.name}" to ${money(p)} (${myOutlet.name})`)
+  }
+
+  return (
+    <div className="tab-content-enter">
+      {/* Owner Top Header */}
+      <div className="admin-card" style={{ marginBottom: '16px', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', color: '#FFFFFF', border: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', padding: '3px 8px', borderRadius: '12px', fontWeight: 800 }}>
+                🏪 CANTEEN OWNER PORTAL
+              </span>
+              <span style={{ fontSize: '12px', opacity: 0.8 }}>{myOutlet.location}</span>
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '6px 0 2px', color: '#FFFFFF' }}>{myOutlet.name}</h2>
+            <p style={{ fontSize: '13px', opacity: 0.85, margin: 0 }}>Owner: {profile.full_name} · Contact: {profile.phone || '+91 9876543230'}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              className="btn-secondary btn-spring"
+              style={{ padding: '7px 14px', fontSize: '12px', background: rushMode ? '#FEF3C7' : '#FFFFFF', color: rushMode ? '#92400E' : 'var(--text-main)' }}
+              onClick={() => {
+                const next = !rushMode
+                setRushMode(next)
+                setNotice(next ? '⚡ Rush Hour mode activated (+15m buffer added to customer estimates)' : 'Rush mode deactivated')
+                if (addAuditLog) addAuditLog(profile.full_name, 'owner', 'OUTLET', 'RUSH_MODE', `${myOutlet.name} rush mode: ${next ? 'ON' : 'OFF'}`)
+              }}
+            >
+              {rushMode ? '🟡 Rush Mode ACTIVE (+15m)' : '⏱️ Enable Rush Buffer'}
+            </button>
+            <button
+              className="btn-primary btn-spring"
+              style={{ background: myOutlet.is_open ? '#059669' : '#DC2626', padding: '7px 16px', fontSize: '12px' }}
+              onClick={() => toggleOutletOpen(myOutlet.id)}
+            >
+              {myOutlet.is_open ? '🟢 Canteen Open' : '🔴 Canteen Closed'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Owner Subnavigation */}
+      <div className="admin-subnav">
+        {[
+          { key: 'overview', label: '📊 Today Overview', icon: <PieChart size={15} /> },
+          { key: 'menu', label: '📋 Menu & Pricing Manager', icon: <Edit size={15} /> },
+          { key: 'staff', label: '👨‍🍳 Staff on Duty', icon: <Users size={15} /> },
+          { key: 'settlement', label: '💰 Daily Payout & Settlement', icon: <Banknote size={15} /> },
+        ].map(t => (
+          <button
+            key={t.key}
+            className={`admin-subnav-btn btn-spring ${ownerTab === t.key ? 'active' : ''}`}
+            onClick={() => setOwnerTab(t.key)}
+          >
+            {t.icon} <span>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── TAB 1: OVERVIEW ── */}
+      {ownerTab === 'overview' && (
+        <>
+          <div className="owner-stat-grid">
+            <div className="owner-stat-card">
+              <span className="owner-stat-label">Today Revenue</span>
+              <div className="owner-stat-val" style={{ color: 'var(--blue-primary)' }}>{money(todayRevenue)}</div>
+              <div className="owner-stat-sub">🟢 Verified via Campus Wallet & POS</div>
+            </div>
+            <div className="owner-stat-card">
+              <span className="owner-stat-label">Orders Processed</span>
+              <div className="owner-stat-val">{todayOrders.length}</div>
+              <div className="owner-stat-sub" style={{ color: 'var(--text-muted)' }}>{activeOrdersCount} in active kitchen queue</div>
+            </div>
+            <div className="owner-stat-card">
+              <span className="owner-stat-label">Average Order Size</span>
+              <div className="owner-stat-val">{money(avgOrderVal)}</div>
+              <div className="owner-stat-sub">📈 Healthy student dining spend</div>
+            </div>
+            <div className="owner-stat-card">
+              <span className="owner-stat-label">Available Menu Items</span>
+              <div className="owner-stat-val">{(myOutlet.menu_items || []).filter(i => i.available !== false).length} / {(myOutlet.menu_items || []).length}</div>
+              <div className="owner-stat-sub" style={{ color: (myOutlet.menu_items || []).filter(i => i.stock_qty === 0).length > 0 ? '#DC2626' : '#059669' }}>
+                {(myOutlet.menu_items || []).filter(i => i.stock_qty === 0).length} Sold Out (86)
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-card">
+            <h3>Recent Orders at {myOutlet.name}</h3>
+            {!todayOrders.length ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0' }}>No orders placed today yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                {todayOrders.slice(0, 5).map(o => (
+                  <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                    <div>
+                      <strong style={{ fontSize: '14px', color: 'var(--blue-primary)' }}>TOKEN #{o.token}</strong>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: 8 }}>Order #{o.id}</span>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                        {(o.order_items || []).map(i => `${i.qty}× ${i.name}`).join(', ')}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <strong style={{ fontSize: '14px' }}>{money(o.total)}</strong>
+                      <span className={`status-badge ${o.status}`} style={{ display: 'block', marginTop: 4 }}>{o.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── TAB 2: MENU & PRICING MANAGER ── */}
+      {ownerTab === 'menu' && (
+        <div className="admin-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <h3>Menu & Live Pricing Control</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Modify item pricing, portion counts, or mark 86 (Sold out) instantly.</p>
+            </div>
+            <input
+              value={itemSearch}
+              onChange={e => setItemSearch(e.target.value)}
+              placeholder="Search dishes..."
+              style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(myOutlet.menu_items || [])
+              .filter(i => !itemSearch.trim() || i.name.toLowerCase().includes(itemSearch.toLowerCase()))
+              .map(item => {
+                const foodImg = getFoodImage(item.name, item.category)
+                const isEditing = editingPriceItem === item.id
+                const stockQty = item.stock_qty !== undefined ? item.stock_qty : 30
+                const isZero = stockQty === 0
+
+                return (
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src={foodImg.url} alt={item.name} className="order-item-mini-thumb" style={{ width: 44, height: 44, borderRadius: 8 }} />
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                          <strong style={{ fontSize: '14px' }}>{item.name}</strong>
+                          <span className="item-cat-pill">{item.category}</span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                          Portions: <strong style={{ color: isZero ? '#DC2626' : '#059669' }}>{stockQty}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {isEditing ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <input
+                            type="number"
+                            value={newPriceVal}
+                            onChange={e => setNewPriceVal(e.target.value)}
+                            style={{ width: '70px', padding: '6px', fontSize: '13px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)' }}
+                            autoFocus
+                          />
+                          <button className="btn-primary btn-spring" style={{ padding: '6px 10px', fontSize: '11px' }} onClick={() => handleSavePrice(item)}>
+                            Save
+                          </button>
+                          <button className="btn-secondary btn-spring" style={{ padding: '6px 8px', fontSize: '11px' }} onClick={() => setEditingPriceItem(null)}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <strong style={{ fontSize: '15px' }}>{money(item.price)}</strong>
+                          <button className="btn-secondary btn-spring" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => { setEditingPriceItem(item.id); setNewPriceVal(item.price.toString()) }}>
+                            <Edit size={12} /> Edit Price
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
+                        onClick={() => updateItemStockQty(myOutlet.id, item.id, isZero ? 30 : 0)}
+                      >
+                        {isZero ? '✅ Restock (30)' : '❌ 86 (0)'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: STAFF ON DUTY ── */}
+      {ownerTab === 'staff' && (
+        <div className="admin-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div>
+              <h3>Staff Roster — {myOutlet.name}</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Kitchen and counter operators assigned to this outlet.</p>
+            </div>
+            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setNotice('ℹ️ To assign new staff, submit campus staff ID to Super Admin.')}>
+              + Request Staff Addition
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[
+              { name: 'Ramesh K', role: 'Head Cook & KOT Handler', phone: '+91 9876543220', shift: 'Morning & Lunch (07:30 - 15:30)', status: 'ON DUTY' },
+              { name: 'Murugan P', role: 'Counter Cashier & Walk-in POS', phone: '+91 9876543221', shift: 'Full Day (08:00 - 18:00)', status: 'ON DUTY' },
+              { name: 'Selvan T', role: 'Kitchen Helper / Stock Keeper', phone: '+91 9876543222', shift: 'Evening Shift (15:00 - 21:30)', status: 'OFF DUTY' },
+            ].map((st, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ fontSize: '14px' }}>{st.name}</strong>
+                    <span style={{ fontSize: '11px', background: st.status === 'ON DUTY' ? '#DCFCE7' : '#F1F5F9', color: st.status === 'ON DUTY' ? '#166534' : '#64748B', padding: '2px 8px', borderRadius: '10px', fontWeight: 800 }}>
+                      {st.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                    {st.role} · {st.phone} · Shift: {st.shift}
+                  </div>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--blue-primary)', fontWeight: 700 }}>
+                  Assigned to {myOutlet.id.toUpperCase()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: SETTLEMENT & PAYOUT REPORT ── */}
+      {ownerTab === 'settlement' && (
+        <div className="admin-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <h3>Daily Financial Settlement & Bank Payout</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Prepaid campus wallet collections disbursed directly to vendor account.</p>
+            </div>
+            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => window.print()}>
+              <Download size={13} /> Export Daily Payout Statement
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '18px' }}>
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Wallet Gross Collections</span>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--blue-primary)', marginTop: 4 }}>{money(todayRevenue * 0.85)}</div>
+            </div>
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Direct Counter Cash / UPI</span>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#059669', marginTop: 4 }}>{money(todayRevenue * 0.15)}</div>
+            </div>
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Campus Royalty / Fee (3%)</span>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#92400E', marginTop: 4 }}>- {money(todayRevenue * 0.03)}</div>
+            </div>
+            <div style={{ background: '#ECFDF5', padding: '14px', borderRadius: '10px', border: '1px solid #A7F3D0' }}>
+              <span style={{ fontSize: '11px', color: '#047857', textTransform: 'uppercase', fontWeight: 800 }}>Net Disbursable Payout</span>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#065F46', marginTop: 4 }}>{money(todayRevenue * 0.97)}</div>
+            </div>
+          </div>
+
+          <div style={{ padding: '12px 14px', background: '#F1F5F9', borderRadius: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            ℹ️ Daily campus dining settlements are batch-credited at 23:00 IST every night to the registered vendor bank account (Indian Bank VIT Branch · IFSC: IDIB000V088).
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STAFF & ADMIN CONSOLES
 // ─────────────────────────────────────────────────────────────────────────────
 function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
-  advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice, updateItemStockQty }) {
+  advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice, updateItemStockQty, auditLogs = [], addAuditLog }) {
 
   const [scanInput, setScanInput]                 = useState('')
   const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitstudent.ac.in')
   const [creditAmount, setCreditAmount]           = useState('500')
   const [tvMode, setTvMode]                       = useState(false)
   const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'pos' | 'menu' | 'summary' | 'tv'
-  const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'orders' | 'event' | 'scanner'
+  const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'orders' | 'audit' | 'event' | 'scanner'
+  const [auditFilter, setAuditFilter]             = useState('ALL') // 'ALL' | 'ORDER' | 'STOCK_86' | 'OUTLET' | 'SECURITY'
   const [soundEnabled, setSoundEnabled]           = useState(true)
   const [ordersSearch, setOrdersSearch]           = useState('')
   const [ordersFilterStatus, setOrdersFilterStatus] = useState('all')
@@ -2081,6 +2457,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
             { key: 'kpi', label: '📊 Campus Overview', count: null },
             { key: 'canteens', label: '🏪 Canteen Management', count: outlets.filter(o => !o.is_event).length },
             { key: 'orders', label: '📦 Live Campus Stream', count: orders.length },
+            { key: 'audit', label: '🛡️ Audit Log & System Telemetry', count: (auditLogs || []).length },
             { key: 'event', label: '🎪 Riviera Fest Mode', count: eventMode ? 'LIVE' : null },
             { key: 'scanner', label: '🔍 Token & QR Scanner', count: null },
           ].map(tab => (
@@ -2886,23 +3263,172 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           })()}
         </div>
       )}
+
+      {/* ── ADMIN: AUDIT LOG & RENDER SYSTEM TELEMETRY ── */}
+      {isAdmin && adminTab === 'audit' && (
+        <div className="audit-log-card">
+          {/* Render Cloud Telemetry Instructions Box */}
+          <div className="render-info-card">
+            <div className="render-info-badge">
+              <Sparkles size={12} /> Live Render Cloud Deployment
+            </div>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '4px 0 6px', color: '#FFFFFF' }}>
+              🌐 Where to Check Live Server & API Logs on Render.com
+            </h3>
+            <p style={{ fontSize: '13px', opacity: 0.9, lineHeight: 1.5, margin: 0 }}>
+              CampusBite runs live on Render's global cloud. To inspect production HTTP request streams, API latency, database calls, and server events:
+            </p>
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', background: 'rgba(255,255,255,0.06)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div>1️⃣ Log into your Render account at <a href="https://dashboard.render.com" target="_blank" rel="noreferrer" style={{ color: '#60A5FA', fontWeight: 700, textDecoration: 'underline' }}>dashboard.render.com</a>.</div>
+              <div>2️⃣ Click on your active service: <strong>campusbite-web</strong> (Frontend CDN) or <strong>campusbite-api</strong> (FastAPI Backend).</div>
+              <div>3️⃣ In the left-hand sidebar menu, click the <strong>"Logs"</strong> tab (📄).</div>
+              <div>4️⃣ All real-time incoming requests, status codes (200/400/500), deploy builds, and console logs stream live in that terminal!</div>
+            </div>
+          </div>
+
+          {/* In-App Audit Trail */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <h3>Campus Operations Audit Trail</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Every order event, stock modification, role change, and wallet grant is tamper-logged.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {['ALL', 'ORDER', 'STOCK_86', 'OUTLET', 'SECURITY'].map(cat => (
+                <button
+                  key={cat}
+                  className={`filter-pill btn-spring ${auditFilter === cat ? 'active' : ''}`}
+                  onClick={() => setAuditFilter(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table className="audit-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Actor / User</th>
+                  <th>Role</th>
+                  <th>Category</th>
+                  <th>Event Action</th>
+                  <th>Details</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(auditLogs || [])
+                  .filter(l => auditFilter === 'ALL' || l.category === auditFilter)
+                  .map(log => {
+                    const tagClass = log.category === 'ORDER' ? 'tag-order' :
+                                     log.category === 'STOCK_86' ? 'tag-stock' :
+                                     log.category === 'OUTLET' ? 'tag-outlet' :
+                                     log.category === 'WALLET' ? 'tag-wallet' : 'tag-security'
+                    return (
+                      <tr key={log.id}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {new Date(log.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </td>
+                        <td><strong>{log.actor}</strong></td>
+                        <td><span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>{log.role}</span></td>
+                        <td><span className={`audit-tag ${tagClass}`}>{log.category}</span></td>
+                        <td><strong style={{ fontSize: '12px' }}>{log.action}</strong></td>
+                        <td style={{ color: 'var(--text-main)', fontSize: '12.5px' }}>{log.details}</td>
+                        <td>
+                          <span style={{ fontSize: '10.5px', background: '#DCFCE7', color: '#166534', padding: '2px 7px', borderRadius: '4px', fontWeight: 800 }}>
+                            {log.status}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AUTH SCREEN
+// AUTH SCREEN (Mobile Number + OTP Primary, Email Secondary)
 // ─────────────────────────────────────────────────────────────────────────────
 function AuthScreen({ onLoginUser }) {
-  const [isSignUp, setIsSignUp]   = useState(false)
-  const [email, setEmail]         = useState('')
-  const [password, setPassword]   = useState('')
-  const [fullName, setFullName]   = useState('')
-  const [role, setRole]           = useState('customer')
-  const [custType, setCustType]   = useState('student')
-  const [error, setError]         = useState('')
+  const [authMethod, setAuthMethod]   = useState('phone') // 'phone' (primary) | 'email' (secondary)
+  const [isSignUp, setIsSignUp]       = useState(false)
+  
+  // Phone OTP State
+  const [phoneStep, setPhoneStep]     = useState('input') // 'input' | 'otp'
+  const [phone, setPhone]             = useState('9876543210')
+  const [otp, setOtp]                 = useState('')
+  const [resendTimer, setResendTimer] = useState(30)
+  
+  // Profile Info
+  const [fullName, setFullName]       = useState('')
+  const [secondaryEmail, setSecondaryEmail] = useState('')
+  const [role, setRole]               = useState('student') // 'student' | 'staff' | 'owner' | 'admin'
+  const [custType, setCustType]       = useState('student')
+  const [password, setPassword]       = useState('')
+  const [email, setEmail]             = useState('')
+  const [error, setError]             = useState('')
 
-  async function handleSubmit(e) {
+  // Resend OTP countdown timer
+  useEffect(() => {
+    let interval = null
+    if (phoneStep === 'otp' && resendTimer > 0) {
+      interval = setInterval(() => setResendTimer(t => t - 1), 1000)
+    }
+    return () => { if (interval) clearInterval(interval) }
+  }, [phoneStep, resendTimer])
+
+  function handleSendOtp(e) {
+    if (e) e.preventDefault()
+    setError('')
+    const cleanPhone = phone.replace(/\D/g, '')
+    if (cleanPhone.length < 10) {
+      return setError('Please enter a valid 10-digit mobile number')
+    }
+    setPhoneStep('otp')
+    setResendTimer(30)
+    setOtp('')
+  }
+
+  function handleVerifyOtp(e) {
+    if (e) e.preventDefault()
+    setError('')
+    if (!otp || otp.length < 4) {
+      return setError('Please enter the 4-digit OTP sent to your phone')
+    }
+
+    // Match phone against test users
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10)
+    const matched = TEST_USERS.find(u => u.phone?.replace(/\D/g, '').slice(-10) === cleanPhone)
+
+    if (matched) {
+      onLoginUser(matched)
+    } else {
+      // Create new profile with specified role & optional secondary email
+      const isSuper = role === 'admin'
+      const newProfile = {
+        id: `usr-${Date.now()}`,
+        full_name: fullName.trim() || `VIT User (+91 ${cleanPhone})`,
+        phone: cleanPhone,
+        email: secondaryEmail.trim() || `${cleanPhone}@campusbite.vit.ac.in`,
+        role: role,
+        cust_type: role === 'student' ? custType : (role === 'owner' ? 'vendor' : 'staff'),
+        is_superadmin: isSuper,
+        outlet_id: role === 'owner' || role === 'staff' ? 'g1' : undefined,
+        outlet_name: role === 'owner' || role === 'staff' ? 'Gazebo C1 — Snacks & Fast Food' : undefined,
+        balance: role === 'owner' ? 12000 : (role === 'admin' ? 50000 : 500)
+      }
+      onLoginUser(newProfile)
+    }
+  }
+
+  async function handleEmailSubmit(e) {
     e.preventDefault()
     setError('')
     if (supabase) {
@@ -2920,7 +3446,7 @@ function AuthScreen({ onLoginUser }) {
           if (matched) return onLoginUser(matched)
           return setError(authErr.message)
         }
-        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'customer', cust_type: 'student', balance: 500 })
+        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'student', cust_type: 'student', balance: 500 })
       }
     } else {
       const matched = TEST_USERS.find(u => u.email === email)
@@ -2943,72 +3469,269 @@ function AuthScreen({ onLoginUser }) {
             <br />VIT Chennai Campus — CampusBite System.
           </p>
         </div>
-        <small style={{ color: '#64748B' }}>© 2026 VIT Chennai · V-BUY Campus System</small>
+        <small style={{ color: '#64748B' }}>© 2026 VIT Chennai · V-BUY Campus Dining System</small>
       </div>
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
-          <h2>{isSignUp ? 'Create Campus Account' : 'Sign in to V-BUY'}</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-            {isSignUp ? 'Register with your college email' : 'Use your VIT credentials to access wallet & orders'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
+              VIT Chennai Auth
+            </span>
+          </div>
+
+          <h2>{isSignUp ? 'Create Campus Account' : 'Sign In to CampusBite'}</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
+            {authMethod === 'phone'
+              ? 'Instant verification via Mobile Number OTP (Primary method)'
+              : 'Sign in using your institutional email & password'}
           </p>
 
-          <form onSubmit={handleSubmit}>
-            {isSignUp && (
-              <div className="form-group">
-                <label>Full Name</label>
-                <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" required />
-              </div>
-            )}
-            <div className="form-group">
-              <label>College Email ID</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="student@vitstudent.ac.in" required />
-            </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-            </div>
-            {isSignUp && (
-              <>
-                <div className="form-group">
-                  <label>Account Role</label>
-                  <select value={role} onChange={e => setRole(e.target.value)}>
-                    <option value="customer">Student / Faculty / Outsider</option>
-                    <option value="staff">Kitchen Staff / Shop Manager</option>
-                    <option value="admin">Campus Management Admin</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Customer Type</label>
-                  <select value={custType} onChange={e => setCustType(e.target.value)}>
-                    <option value="student">Student</option>
-                    <option value="faculty">Faculty</option>
-                    <option value="outsider">Outsider / Guest</option>
-                    <option value="event_team">Riviera Event Team</option>
-                  </select>
-                </div>
-              </>
-            )}
-            {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
-            <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
-              {isSignUp ? 'Create Account' : 'Sign In'} <ArrowRight size={16} />
+          {/* Primary / Secondary Method Toggle Tabs */}
+          <div className="auth-tabs-toggle">
+            <button
+              type="button"
+              className={`auth-tab-btn ${authMethod === 'phone' ? 'active' : ''}`}
+              onClick={() => { setAuthMethod('phone'); setError(''); setPhoneStep('input') }}
+            >
+              📱 Mobile OTP (Primary)
             </button>
-          </form>
+            <button
+              type="button"
+              className={`auth-tab-btn ${authMethod === 'email' ? 'active' : ''}`}
+              onClick={() => { setAuthMethod('email'); setError('') }}
+            >
+              ✉️ Email ID (Secondary)
+            </button>
+          </div>
 
-          <p style={{ textAlign: 'center', marginTop: '18px', fontSize: '14px', color: 'var(--text-muted)' }}>
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          {/* ════ PRIMARY FLOW: MOBILE NUMBER + OTP ════ */}
+          {authMethod === 'phone' && (
+            <div>
+              {phoneStep === 'input' ? (
+                <form onSubmit={handleSendOtp}>
+                  {isSignUp && (
+                    <div className="form-group">
+                      <label>Full Name</label>
+                      <input
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        placeholder="e.g. Rahul Sharma"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label>Mobile Number (Primary Identity)</label>
+                    <div className="phone-input-group">
+                      <span className="phone-prefix">🇮🇳 +91</span>
+                      <input
+                        type="tel"
+                        maxLength="10"
+                        className="phone-number-field"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
+                        placeholder="9876543210"
+                        required
+                      />
+                    </div>
+                    <small style={{ color: 'var(--text-muted)', fontSize: '11.5px', marginTop: '4px', display: 'block' }}>
+                      We will send a 4-digit verification code to this Indian mobile number.
+                    </small>
+                  </div>
+
+                  {isSignUp && (
+                    <>
+                      <div className="form-group">
+                        <label>College Email ID <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '11.5px' }}>(Optional / Secondary info)</span></label>
+                        <input
+                          type="email"
+                          value={secondaryEmail}
+                          onChange={e => setSecondaryEmail(e.target.value)}
+                          placeholder="student@vitstudent.ac.in (Optional backup)"
+                        />
+                        <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                          Optional backup for monthly statements and festival passes. Mobile OTP is your primary login.
+                        </small>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Select Dashboard / Campus Role</label>
+                        <select value={role} onChange={e => setRole(e.target.value)}>
+                          <option value="student">🎓 Student (Browse, Cart & Wallet)</option>
+                          <option value="staff">👨‍🍳 Shop Staff (KDS Kanban & 86-Stock)</option>
+                          <option value="owner">🏪 Shop Owner (Revenue & Franchisee Portal)</option>
+                          <option value="admin">🛡️ Overall Super Admin (Me — Campus Telemetry & Control)</option>
+                        </select>
+                      </div>
+
+                      {role === 'student' && (
+                        <div className="form-group">
+                          <label>Student / Member Category</label>
+                          <select value={custType} onChange={e => setCustType(e.target.value)}>
+                            <option value="student">Hosteller / Day Scholar</option>
+                            <option value="faculty">Faculty Member</option>
+                            <option value="outsider">Campus Guest / Visitor</option>
+                            <option value="event_team">Riviera Fest Committee</option>
+                          </select>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
+
+                  <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}>
+                    Send 4-Digit OTP <ArrowRight size={16} />
+                  </button>
+                </form>
+              ) : (
+                /* OTP Verification Step */
+                <form onSubmit={handleVerifyOtp}>
+                  <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                    <p style={{ fontSize: '14px', color: 'var(--text-main)', margin: '0 0 4px', fontWeight: 600 }}>
+                      Enter 4-digit OTP sent to
+                    </p>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#F1F5F9', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>
+                      <span>🇮🇳 +91 {phone}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPhoneStep('input')}
+                        style={{ border: 0, background: 'none', color: 'var(--blue-primary)', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Simulated Campus SMS Gateway Banner */}
+                  <div className="sms-preview-banner">
+                    <div>
+                      <strong>💬 VIT SMS Gateway:</strong><br />
+                      <span>Your V-BUY verification code is <strong>4826</strong> (Valid for 5 mins).</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                      onClick={() => setOtp('4826')}
+                    >
+                      Auto-fill 4826
+                    </button>
+                  </div>
+
+                  <div className="form-group" style={{ textAlign: 'center' }}>
+                    <input
+                      type="text"
+                      maxLength="4"
+                      autoFocus
+                      className="otp-box-input"
+                      style={{ width: '160px', height: '52px', letterSpacing: '12px', paddingLeft: '22px' }}
+                      value={otp}
+                      onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="••••"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '12.5px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Didn't receive SMS?"}
+                    </span>
+                    {resendTimer === 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleSendOtp()}
+                        style={{ border: 0, background: 'none', color: 'var(--blue-primary)', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Resend Code
+                      </button>
+                    )}
+                  </div>
+
+                  {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
+
+                  <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                    Verify & Access Dashboard <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* ════ SECONDARY FLOW: COLLEGE EMAIL & PASSWORD ════ */}
+          {authMethod === 'email' && (
+            <form onSubmit={handleEmailSubmit}>
+              {isSignUp && (
+                <div className="form-group">
+                  <label>Full Name</label>
+                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" required />
+                </div>
+              )}
+              <div className="form-group">
+                <label>College Email ID</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="student@vitstudent.ac.in" required />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+              </div>
+              {isSignUp && (
+                <>
+                  <div className="form-group">
+                    <label>Account Role</label>
+                    <select value={role} onChange={e => setRole(e.target.value)}>
+                      <option value="student">Student (Customer)</option>
+                      <option value="staff">Kitchen Staff</option>
+                      <option value="owner">Canteen Owner</option>
+                      <option value="admin">Super Admin</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Customer Category</label>
+                    <select value={custType} onChange={e => setCustType(e.target.value)}>
+                      <option value="student">Student</option>
+                      <option value="faculty">Faculty</option>
+                      <option value="outsider">Outsider / Guest</option>
+                      <option value="event_team">Riviera Event Team</option>
+                    </select>
+                  </div>
+                </>
+              )}
+              {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
+              <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
+                {isSignUp ? 'Create Account' : 'Sign In with Email'} <ArrowRight size={16} />
+              </button>
+            </form>
+          )}
+
+          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+            {isSignUp ? 'Already have a registered number?' : "First time on V-BUY?"}{' '}
             <a href="#" style={{ color: 'var(--blue-primary)', fontWeight: '700' }}
-              onClick={e => { e.preventDefault(); setIsSignUp(s => !s) }}>
-              {isSignUp ? 'Sign In' : 'Sign Up'}
+              onClick={e => { e.preventDefault(); setIsSignUp(s => !s); setPhoneStep('input'); setError('') }}>
+              {isSignUp ? 'Sign In' : 'Register New Account'}
             </a>
           </p>
 
+          {/* Quick Login - 4 Explicit Dashboards */}
           <div className="quick-test-box">
-            <p>Quick Login — Test Profiles</p>
+            <p>Direct Test Login — Choose Dashboard:</p>
             <div className="quick-chip-grid">
               {TEST_USERS.map((u, i) => (
-                <button key={i} className="quick-chip" onClick={() => onLoginUser(u)}>
-                  {u.full_name.split(' ')[0]} <span style={{ opacity: 0.7 }}>({u.role})</span>
+                <button
+                  key={i}
+                  className="quick-chip"
+                  onClick={() => onLoginUser(u)}
+                  title={`Login as ${u.full_name} (${u.role})`}
+                >
+                  <span>
+                    {u.role === 'student' ? '🎓' : u.role === 'staff' ? '👨‍🍳' : u.role === 'owner' ? '🏪' : '🛡️'}
+                  </span>
+                  <span>{u.full_name.split(' ')[0]}</span>
+                  <span style={{ opacity: 0.7, fontSize: '10.5px' }}>
+                    ({u.role === 'admin' ? 'Super Admin' : u.role})
+                  </span>
                 </button>
               ))}
             </div>
