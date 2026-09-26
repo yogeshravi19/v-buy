@@ -7,9 +7,11 @@ import {
   CheckCircle2, RefreshCw, AlertCircle, Award, Coffee, UtensilsCrossed, Repeat,
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
   Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
-  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare
+  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2
 } from 'lucide-react'
 import './styles.css'
+import { getFoodImage } from './lib/foodImages'
+import QRCode from 'qrcode'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -1142,15 +1144,35 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart }) {
         <div className="menu-list">
           {(outlet.menu_items || []).map(item => {
             const inCart = outletCartItems.find(i => i.id === item.id)
+            const foodImg = getFoodImage(item.name, item.category)
             return (
               <div className="menu-row" key={item.id}>
                 <div className="item-info">
-                  <span
-                    className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'}
-                    title={item.is_veg !== false ? 'Vegetarian' : 'Non-Vegetarian'}
-                  />
+                  <div className="food-thumb-box">
+                    <img
+                      src={foodImg.url}
+                      alt={item.name}
+                      className="food-thumb-img"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div className="food-thumb-fallback" style={{ display: 'none' }}>
+                      {foodImg.emoji}
+                    </div>
+                  </div>
                   <div className="item-details">
-                    <strong>{item.name}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'}
+                        title={item.is_veg !== false ? 'Vegetarian' : 'Non-Vegetarian'}
+                      />
+                      <strong>{item.name}</strong>
+                    </div>
                     <div className="item-sub-meta">
                       <span className="item-cat-pill">{item.category}</span>
                       {(item.available === false || item.stock_qty === 0) && (
@@ -1215,27 +1237,36 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
               Clear Cart
             </button>
           </div>
-          {cart.items.map(item => (
-            <div className="cart-item-row" key={item.id}>
-              <div className="cart-item-left">
-                <div className="cart-qty-control">
-                  <button onClick={() => removeFromCart(item.id)}><Minus size={13} /></button>
-                  <span>{item.qty}</span>
-                  <button onClick={() => addToCart(cart.outlet, item)}><Plus size={13} /></button>
-                </div>
-                <div>
-                  <span className="cart-item-name">{item.name}</span>
-                  <input
-                    className="cart-notes-input"
-                    placeholder="Add note (e.g. less spicy)..."
-                    value={item.notes || ''}
-                    onChange={e => updateCartItemNotes(item.id, e.target.value)}
+          {cart.items.map(item => {
+            const foodImg = getFoodImage(item.name, item.category)
+            return (
+              <div className="cart-item-row" key={item.id}>
+                <div className="cart-item-left" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <img
+                    src={foodImg.url}
+                    alt={item.name}
+                    className="cart-thumb-img"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
+                  <div className="cart-qty-control">
+                    <button onClick={() => removeFromCart(item.id)}><Minus size={13} /></button>
+                    <span>{item.qty}</span>
+                    <button onClick={() => addToCart(cart.outlet, item)}><Plus size={13} /></button>
+                  </div>
+                  <div>
+                    <span className="cart-item-name">{item.name}</span>
+                    <input
+                      className="cart-notes-input"
+                      placeholder="Add note (e.g. less spicy)..."
+                      value={item.notes || ''}
+                      onChange={e => updateCartItemNotes(item.id, e.target.value)}
+                    />
+                  </div>
                 </div>
+                <span className="cart-item-price">{money(item.price * item.qty)}</span>
               </div>
-              <span className="cart-item-price">{money(item.price * item.qty)}</span>
-            </div>
-          ))}
+            )
+          })}
           {wallet.balance < total && (
             <p className="cart-balance-warn">
               <AlertCircle size={14} /> Balance {money(wallet.balance)} — need {money(total - wallet.balance)} more
@@ -1292,16 +1323,32 @@ function ReceiptModal({ order, onClose }) {
           <span style={{ color: '#059669', fontWeight: 700 }}>PAID (VIT Campus Wallet)</span>
         </div>
 
+        {/* Canteen Scannable QR Code on Receipt */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', margin: '14px 0', padding: '12px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+          <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={75} />
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Pickup Pass & Verification</div>
+            <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)' }}>TOKEN #{order.token}</div>
+            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '2px' }}>✓ Verified e-Invoice</div>
+          </div>
+        </div>
+
         <div style={{ margin: '14px 0 10px', borderTop: '1px solid #E2E8F0', paddingTop: '10px' }}>
           <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>
             Itemized Order
           </div>
-          {(order.order_items || []).map((it, idx) => (
-            <div key={idx} className="receipt-row">
-              <span>{it.qty}× {it.name} {it.notes ? `(${it.notes})` : ''}</span>
-              <span>{money((it.price || 0) * (it.qty || 1))}</span>
-            </div>
-          ))}
+          {(order.order_items || []).map((it, idx) => {
+            const foodImg = getFoodImage(it.name)
+            return (
+              <div key={idx} className="receipt-row" style={{ alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <img src={foodImg.url} alt={it.name} className="order-item-mini-thumb" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <span>{it.qty}× {it.name} {it.notes ? `(${it.notes})` : ''}</span>
+                </div>
+                <span>{money((it.price || 0) * (it.qty || 1))}</span>
+              </div>
+            )
+          })}
         </div>
 
         <div className="receipt-row total-row">
@@ -1356,6 +1403,7 @@ function OrdersView({ orders, repeatOrder }) {
 }
 
 function OrderCard({ order, repeatOrder, onShowReceipt }) {
+  const [showQrModal, setShowQrModal] = useState(false)
   const stepIndex = statuses.indexOf(order.status)
   const isReady   = order.status === 'ready'
   const isCancelled = order.status === 'cancelled'
@@ -1363,6 +1411,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt }) {
 
   return (
     <article className={`order-card ${isCancelled ? 'order-cancelled' : ''} ${isReady ? 'pulse-ready-glow' : ''}`}>
+      {showQrModal && <QrEnlargeModal order={order} onClose={() => setShowQrModal(false)} />}
       <div className="order-head">
         <div>
           <span className="location-tag">ORDER #{order.id} · {order.outlets?.name || order.outlet_id}</span>
@@ -1374,6 +1423,11 @@ function OrderCard({ order, repeatOrder, onShowReceipt }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <span className={`status-badge ${order.status}`}>{order.status}</span>
+          {!isCancelled && (
+            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setShowQrModal(true)} title="Show full QR for counter scan">
+              <QrCode size={13} /> QR Pass
+            </button>
+          )}
           <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => onShowReceipt && onShowReceipt(order)}>
             <FileText size={13} /> Receipt
           </button>
@@ -1396,25 +1450,47 @@ function OrderCard({ order, repeatOrder, onShowReceipt }) {
         </div>
       )}
 
+      {/* ── Order Items with Food Images ── */}
       <div className="order-items-list">
-        {(order.order_items || []).map((item, idx) => (
-          <div key={idx} className="item-chip-wrap">
-            <span className="item-chip">{item.name} × {item.qty}</span>
-            {item.notes && <span className="item-notes-chip">📝 {item.notes}</span>}
-          </div>
-        ))}
+        {(order.order_items || []).map((item, idx) => {
+          const foodImg = getFoodImage(item.name)
+          return (
+            <div key={idx} className="item-chip-wrap">
+              <div className="order-item-mini-card">
+                <img
+                  src={foodImg.url}
+                  alt={item.name}
+                  className="order-item-mini-thumb"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="item-chip">{item.name} × {item.qty}</span>
+              </div>
+              {item.notes && <span className="item-notes-chip">📝 {item.notes}</span>}
+            </div>
+          )
+        })}
       </div>
 
-      {isReady && (
-        <div className="pickup-box pulse-ready-glow">
-          <div>
-            <h4>READY FOR PICKUP! 🎉</h4>
-            <p style={{ color: '#047857', fontSize: '13px' }}>Show token or QR at counter to collect your meal.</p>
-            <div className="token-badge" style={{ marginTop: 8 }}>TOKEN #{order.token}</div>
+      {/* ── Order QR Code Banner (Active immediately upon order placement) ── */}
+      {!isCancelled && (
+        <div className={`order-qr-banner ${isReady ? 'pulse-ready-glow' : ''}`}>
+          <div className="order-qr-meta">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="token-badge" style={{ margin: 0 }}>TOKEN #{order.token}</div>
+              {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 8px', borderRadius: '6px' }}>🎉 READY FOR PICKUP</span>}
+            </div>
+            <span className="order-qr-hint">
+              {isReady ? 'Ready at counter! Present QR to staff' : 'Order placed! Counter verification QR code generated'}
+            </span>
+            <button className="btn-secondary btn-spring qr-zoom-btn" onClick={() => setShowQrModal(true)}>
+              <Maximize2 size={12} /> Fullscreen QR Pass
+            </button>
           </div>
-          <div className="qr-container">
-            <SvgQrCode value={`CB1.${order.id}.${order.token}`} size={90} />
-            <small style={{ marginTop: '4px', fontWeight: '700', fontSize: '10px', color: '#475569' }}>Scan at Counter</small>
+          <div className="order-qr-thumb-wrap" onClick={() => setShowQrModal(true)} title="Tap to enlarge QR Pass">
+            <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={76} />
+            <small style={{ display: 'block', textAlign: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>
+              TAP TO ZOOM
+            </small>
           </div>
         </div>
       )}
@@ -1751,16 +1827,31 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
         </div>
 
         <div className="kot-items-table">
-          {(order.order_items || []).map((it, idx) => (
-            <div key={idx} className="kot-item-entry">
-              <div>
-                <span className="kot-item-qty">{it.qty}×</span>
-                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{it.name}</span>
-                {it.notes && <div style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic', paddingLeft: 28 }}>📝 {it.notes}</div>}
+          {(order.order_items || []).map((it, idx) => {
+            const foodImg = getFoodImage(it.name)
+            return (
+              <div key={idx} className="kot-item-entry" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <img src={foodImg.url} alt={it.name} className="kot-item-thumb" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <span className="kot-item-qty">{it.qty}×</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{it.name}</span>
+                  {it.notes && <span style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic', marginLeft: 4 }}>({it.notes})</span>}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{money(it.price * it.qty)}</span>
               </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{money(it.price * it.qty)}</span>
-            </div>
-          ))}
+            )
+          })}
+        </div>
+
+        {/* Verification QR on Canteen KOT */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC', padding: '6px 10px', borderRadius: '8px', margin: '8px 0', border: '1px solid #E2E8F0' }}>
+          <div>
+            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Canteen Scan / Match</span>
+            <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--blue-primary)' }}>TOKEN #{order.token}</div>
+          </div>
+          <div style={{ cursor: 'pointer' }} onClick={() => setSelectedKotOrder(order)} title="Tap to expand Slip & QR">
+            <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={44} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
@@ -1863,6 +1954,19 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               <div style={{ textAlign: 'center', marginTop: '16px', borderTop: '1px dashed #CBD5E1', paddingTop: '10px', fontSize: '10px', color: '#64748B' }}>
                 <div>Status: {selectedKotOrder.status.toUpperCase()}</div>
                 <div style={{ marginTop: 2 }}>Present token when ready for pickup</div>
+              </div>
+
+              {/* Scannable Verification QR Code on Thermal Slip */}
+              <div style={{ textAlign: 'center', marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #CBD5E1' }}>
+                <div style={{ display: 'inline-block', background: '#FFFFFF', padding: '6px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                  <ScannableQrCode value={`CB1.${selectedKotOrder.id}.${selectedKotOrder.token}`} size={110} />
+                </div>
+                <div style={{ fontSize: '10px', color: '#64748B', marginTop: 4, letterSpacing: '0.5px' }}>
+                  SCAN OR MATCH WITH STUDENT APP
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--blue-primary)', marginTop: 2 }}>
+                  TOKEN #{selectedKotOrder.token}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
@@ -2169,16 +2273,26 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   .filter(it => activeMenuCat === 'all' || (it.category && it.category.toLowerCase() === activeMenuCat))
                   .map(item => {
                     const inCart = posCart[item.id]?.qty || 0
+                    const foodImg = getFoodImage(item.name, item.category)
                     return (
                       <div key={item.id} className="pos-item-card">
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
-                            <strong style={{ fontSize: '13px' }}>{item.name}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <img
+                            src={foodImg.url}
+                            alt={item.name}
+                            className="order-item-mini-thumb"
+                            style={{ width: '38px', height: '38px', borderRadius: '8px' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                              <strong style={{ fontSize: '13px' }}>{item.name}</strong>
+                            </div>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                              {money(item.price)}
+                            </span>
                           </div>
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
-                            {money(item.price)}
-                          </span>
                         </div>
                         <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           {inCart > 0 ? (
@@ -2328,18 +2442,28 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   const stockQty = item.stock_qty !== undefined ? item.stock_qty : (item.available !== false ? 30 : 0)
                   const isZero = stockQty === 0
                   const isLow = stockQty > 0 && stockQty <= 10
+                  const foodImg = getFoodImage(item.name, item.category)
 
                   return (
                     <div key={item.id} className={`stock-control-card ${isZero ? 'is-zero' : ''}`}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
-                            <strong style={{ fontSize: '13.5px', color: 'var(--text-main)' }}>{item.name}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <img
+                            src={foodImg.url}
+                            alt={item.name}
+                            className="order-item-mini-thumb"
+                            style={{ width: '40px', height: '40px', borderRadius: '8px' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                              <strong style={{ fontSize: '13.5px', color: 'var(--text-main)' }}>{item.name}</strong>
+                            </div>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                              {money(item.price)} · {item.category || 'general'}
+                            </span>
                           </div>
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
-                            {money(item.price)} · {item.category || 'general'}
-                          </span>
                         </div>
                         <span className={`stock-status-pill ${isZero ? 'stock-pill-out' : isLow ? 'stock-pill-low' : 'stock-pill-ok'}`}>
                           {isZero ? '🔴 Sold Out (0)' : isLow ? `🟡 Low: ${stockQty} left` : `🟢 ${stockQty} in stock`}
@@ -2927,6 +3051,86 @@ function SvgQrCode({ value, size = 90 }) {
         <rect key={idx} x={cell.c * cs} y={cell.r * cs} width={cs + 0.3} height={cs + 0.3} fill="#0F172A" />
       ))}
     </svg>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCANNABLE QR CODE (High-Res QR with SVG Fallback)
+// ─────────────────────────────────────────────────────────────────────────────
+function ScannableQrCode({ value, size = 90, label = '', onEnlarge }) {
+  const [dataUrl, setDataUrl] = useState('')
+
+  useEffect(() => {
+    let active = true
+    if (value) {
+      QRCode.toDataURL(value, {
+        width: size * 3,
+        margin: 1,
+        color: { dark: '#0F172A', light: '#FFFFFF' }
+      }).then(url => {
+        if (active) setDataUrl(url)
+      }).catch(() => {})
+    }
+    return () => { active = false }
+  }, [value, size])
+
+  return (
+    <div className="qr-scannable-wrap" onClick={onEnlarge} style={{ cursor: onEnlarge ? 'pointer' : 'default' }}>
+      {dataUrl ? (
+        <img
+          src={dataUrl}
+          alt={`QR-${value}`}
+          style={{ width: size, height: size, borderRadius: '8px', display: 'block', background: '#FFFFFF', padding: '3px', border: '1px solid #E2E8F0' }}
+        />
+      ) : (
+        <SvgQrCode value={value} size={size} />
+      )}
+      {label && <span className="qr-scannable-label">{label}</span>}
+    </div>
+  )
+}
+
+function QrEnlargeModal({ order, onClose }) {
+  if (!order) return null
+  return (
+    <div className="ios-modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+      <div className="qr-modal-card modal-enter" onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div>
+            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              Campus Dining Pickup Pass
+            </span>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, margin: '2px 0 0', color: 'var(--blue-primary)' }}>
+              TOKEN #{order.token}
+            </h3>
+          </div>
+          <button className="cart-clear-btn" onClick={onClose} style={{ padding: '6px' }}><X size={18} /></button>
+        </div>
+
+        <div style={{ textAlign: 'center', background: '#FFFFFF', padding: '16px', borderRadius: '16px', border: '2px dashed var(--blue-primary)', boxShadow: '0 8px 24px rgba(30,58,138,0.1)' }}>
+          <div style={{ display: 'inline-block' }}>
+            <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={180} />
+          </div>
+          <p style={{ marginTop: '12px', fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>
+            Order #{order.id} · {order.outlets?.name || order.outlet_id}
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '6px' }}>
+            <span className={`status-badge ${order.status}`}>{order.status.toUpperCase()}</span>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px' }}>
+              PAID {money(order.total)}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+          💡 Present this QR at the counter for automated verification and token collection.
+        </div>
+
+        <button className="btn-primary btn-spring" style={{ width: '100%', marginTop: '16px', padding: '10px', justifyContent: 'center' }} onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </div>
   )
 }
 
