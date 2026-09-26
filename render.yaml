@@ -25,7 +25,10 @@ services:
       - key: QR_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        sync: false
+        fromService:
+          name: campusbite-web
+          type: web
+          property: host
       - key: PHONEPE_MERCHANT_ID
         sync: false
       - key: PHONEPE_SALT_KEY
