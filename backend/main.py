@@ -85,7 +85,8 @@ async def health():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "capacitor://localhost", "ionic://localhost"],
+    allow_origins=[FRONTEND_URL, "http://localhost:5173", "capacitor://localhost", "ionic://localhost"],
+    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

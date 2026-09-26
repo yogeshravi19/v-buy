@@ -2,7 +2,7 @@
 # CampusBite (V-BUY) — Render.com Unified Full-Stack Blueprint
 # Deploys both:
 # 1. FastAPI Python Backend Web Service
-# 2. Vite React PWA Frontend Static Site (with SPA routing)
+# 2. Vite React PWA Frontend Static Site (Globally distributed via CDN)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 services:
@@ -25,10 +25,7 @@ services:
       - key: QR_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        fromService:
-          name: campusbite-web
-          type: web
-          property: host
+        sync: false
       - key: PHONEPE_MERCHANT_ID
         sync: false
       - key: PHONEPE_SALT_KEY
@@ -45,12 +42,11 @@ services:
         sync: false
 
   # ── 2. Frontend Web App & PWA (Vite + React 19 + PWA Service Worker) ────────
-  - type: web
+  # NOTE: Static sites on Render are automatically deployed to a global CDN.
+  # Therefore, 'region' and 'plan' are not valid properties for static sites.
+  - type: static
     name: campusbite-web
-    runtime: static
     rootDir: frontend
-    plan: free
-    region: singapore
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:
