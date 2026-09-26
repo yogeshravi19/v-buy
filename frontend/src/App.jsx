@@ -16,7 +16,6 @@ import StaffDashboard from './pages/staff/StaffDashboard'
 import StudentDashboard from './pages/student/StudentDashboard'
 import ShopDashboard from './pages/shop/ShopDashboard'
 import SuperAdminDashboard from './pages/admin/AdminDashboard'
-import LandingPage from './pages/landing/LandingPage'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -261,20 +260,6 @@ const TEST_USERS = [
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [session, setSession]         = useState(null)
-
-  // Separate route: /landing is dedicated to the startup landing page
-  const isLandingRoute = window.location.pathname === '/landing' || window.location.hash === '#/landing'
-
-  useEffect(() => {
-    const demo = localStorage.getItem('vfood_demo_user')
-    if (demo) {
-      try {
-        setCurrentUser(JSON.parse(demo))
-      } catch {}
-      localStorage.removeItem('vfood_demo_user')
-    }
-  }, [])
-
   const [outlets, setOutlets]         = useState(DEMO_OUTLETS)
   const [eventMode, setEventMode]     = useState(false)
   const [orders, setOrders]           = useState([
@@ -397,13 +382,6 @@ function App() {
   const [isOnline, setIsOnline]       = useState(navigator.onLine)
   const [ab3Slot, setAb3Slot]         = useState(getAB3TimeSlot())
   const prevOrderCountRef             = useRef(0)
-
-  // ── Feature 3: Loyalty Streak (Free tier) ──
-  const [loyaltyProgress, setLoyaltyProgress] = useState({
-    completed_orders: 8,
-    free_items_earned: 1,
-    free_items_redeemed: 0
-  })
 
   // ── Feature 4: Referral Program ──
   const [referralCode, setReferralCode] = useState('VIT-VFOOD26')
@@ -868,18 +846,8 @@ function App() {
         addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'ORDER', 'KDS_STATUS_CHANGE', `Order #${orderId} moved to "${nextStatus}" (Token #${o.token})`)
       }
 
-      // Feature 3: Increment loyalty streak on collection
       // Feature 4: Reward referral bonus on first collected order
       if (nextStatus === 'collected' && o.status !== 'collected') {
-        setLoyaltyProgress(prev => {
-          const nextCompleted = (prev?.completed_orders || 0) + 1
-          const nextEarned = (nextCompleted % 10 === 0) ? (prev?.free_items_earned || 0) + 1 : (prev?.free_items_earned || 0)
-          return {
-            ...prev,
-            completed_orders: nextCompleted,
-            free_items_earned: nextEarned
-          }
-        })
 
         // On first collected order, credit referral bonus
         setReferrals(prevRefs => prevRefs.map(r => {
@@ -895,31 +863,8 @@ function App() {
     }))
   }
 
-  // ── SEPARATE LANDING PAGE ROUTE (/landing) ──
-  if (isLandingRoute) {
-    return (
-      <LandingPage
-        onLaunchApp={() => {
-          window.location.href = '/'
-        }}
-        onQuickLogin={(targetRole) => {
-          let matched = null
-          if (targetRole === 'student') matched = TEST_USERS[0]
-          else if (targetRole === 'staff') matched = TEST_USERS[1]
-          else if (targetRole === 'shop_admin') matched = TEST_USERS[2]
-          else if (targetRole === 'super_admin') matched = TEST_USERS[3]
-          if (matched) {
-            localStorage.setItem('vfood_demo_user', JSON.stringify(matched))
-            window.location.href = '/'
-          }
-        }}
-      />
-    )
-  }
-
   async function handleSignOut() {
     if (supabase) await supabase.auth.signOut()
-    localStorage.removeItem('vfood_demo_user')
     setCurrentUser(null)
     setSession(null)
     setTab('browse')
@@ -1190,7 +1135,6 @@ function App() {
               topUp={topUp}
               busy={busy}
               currentUser={currentUser}
-              loyaltyProgress={loyaltyProgress}
               referralCode={referralCode}
               referrals={referrals}
               setNotice={setNotice}
@@ -2457,53 +2401,6 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOYALTY STREAK CARD (Phase 2 Step 3: Free Tier Streak)
-// ─────────────────────────────────────────────────────────────────────────────
-function LoyaltyStreakCard({ loyaltyProgress }) {
-  const completed = loyaltyProgress?.completed_orders || 0
-  const earned = loyaltyProgress?.free_items_earned || 0
-  const redeemed = loyaltyProgress?.free_items_redeemed || 0
-  const availableRewards = Math.max(0, earned - redeemed)
-  const streakMod = completed % 10
-  const ordersUntilFree = 10 - streakMod
-  const progressPercent = (streakMod / 10) * 100
-
-  return (
-    <div className="loyalty-card">
-      <div className="loyalty-header">
-        <div className="loyalty-title">
-          <span>🔥</span>
-          <span>Campus Loyalty Streak</span>
-        </div>
-        <div className="streak-counter-pill">
-          <Award size={13} /> {completed} Orders Completed
-        </div>
-      </div>
-
-      <p style={{ margin: '0 0 8px', fontSize: 13, color: '#E0E7FF' }}>
-        {ordersUntilFree === 10
-          ? `🎉 You reached a 10-order milestone! Free item unlocked.`
-          : `Only ${ordersUntilFree} more ${ordersUntilFree === 1 ? 'order' : 'orders'} to earn your next FREE food item!`}
-      </p>
-
-      <div className="loyalty-progress-track">
-        <div className="loyalty-progress-fill" style={{ width: `${progressPercent}%` }} />
-      </div>
-
-      <div className="loyalty-footer-info">
-        <span>Milestone: {streakMod} / 10 orders</span>
-        {availableRewards > 0 ? (
-          <span style={{ background: '#10B981', color: '#FFFFFF', padding: '2px 8px', borderRadius: 12, fontWeight: 800, fontSize: 11 }}>
-            🎁 {availableRewards} Free Meal Ready!
-          </span>
-        ) : (
-          <span style={{ opacity: 0.8 }}>Free tier · Auto-counts on pickup</span>
-        )}
-      </div>
-    </div>
-  )
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REFERRAL PROGRAM SECTION (Phase 2 Step 4: Friend Invites)
@@ -2791,7 +2688,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
 // ─────────────────────────────────────────────────────────────────────────────
 // WALLET VIEW
 // ─────────────────────────────────────────────────────────────────────────────
-function WalletView({ wallet, topUp, busy, currentUser, loyaltyProgress, referralCode, referrals, setNotice, creditWalletBalance }) {
+function WalletView({ wallet, topUp, busy, currentUser, referralCode, referrals, setNotice, creditWalletBalance }) {
   const [filter, setFilter] = useState('all') // 'all' | 'credit' | 'debit'
   const [customAmt, setCustomAmt] = useState('')
 
@@ -2853,18 +2750,6 @@ function WalletView({ wallet, topUp, busy, currentUser, loyaltyProgress, referra
         </form>
       </div>
 
-      {/* ── Feature 3: Loyalty Streak (Free tier) ── */}
-      <div style={{ marginTop: '20px' }}>
-        <LoyaltyStreakCard loyaltyProgress={loyaltyProgress} />
-      </div>
-
-      {/* ── Feature 4: Referral Program ── */}
-      <ReferralSection
-        referralCode={referralCode}
-        referrals={referrals}
-        setNotice={setNotice}
-        creditWalletBalance={creditWalletBalance}
-      />
 
       <div className="section-heading" style={{ marginTop: '24px' }}>
         <div><h2>Transaction Ledger</h2></div>
@@ -4970,14 +4855,13 @@ function AuthScreen({ onLoginUser }) {
                   key={i}
                   className="quick-chip"
                   onClick={() => onLoginUser(u)}
-                  title={`Login as ${u.full_name} (${u.role})`}
+                  title={`Login as ${u.role}`}
                 >
-                  <span>
+                  <span style={{ fontSize: '13px' }}>
                     {u.role === 'student' ? '🎓' : u.role === 'staff' ? '👨‍🍳' : u.role === 'owner' ? '🏪' : '🛡️'}
                   </span>
-                  <span>{u.full_name.split(' ')[0]}</span>
-                  <span style={{ opacity: 0.7, fontSize: '10.5px' }}>
-                    ({u.role === 'admin' ? 'Super Admin' : u.role})
+                  <span style={{ fontWeight: 700 }}>
+                    {u.role === 'student' ? 'Student' : u.role === 'staff' ? 'Staff' : u.role === 'owner' ? 'Shop Owner' : 'Super Admin'}
                   </span>
                 </button>
               ))}

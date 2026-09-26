@@ -48,20 +48,6 @@ type PickupSlot = {
   max_orders: number
   current_orders: number
 }
-type LoyaltyProgress = {
-  user_id: string
-  orders_completed: number
-  streak_days: number
-  last_order_date: string | null
-  vouchers_earned: number
-}
-type ReferralItem = {
-  id: string
-  friend_name: string
-  status: string
-  reward_given: boolean
-  created_at: string
-}
 
 const formatMoney = (v: number) => `₹${Number(v || 0).toLocaleString('en-IN')}`
 
@@ -74,8 +60,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
   const user = useAuthStore(state => state.user)
   const currentUserId = user?.id || profile?.id || 'usr-student'
 
-  // Navigation tabs
-  const [tab, setTab] = useState<'menu' | 'orders' | 'wallet' | 'loyalty' | 'referrals'>('menu')
+  // Navigation tabs (Menu, Orders, Wallet)
+  const [tab, setTab] = useState<'menu' | 'orders' | 'wallet'>('menu')
   const [showCart, setShowCart] = useState<boolean>(false)
 
   // Menu State
@@ -116,21 +102,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
   const [ratingStars, setRatingStars] = useState<number>(5)
   const [ratingComment, setRatingComment] = useState<string>('')
   const [isSubmittingRating, setIsSubmittingRating] = useState<boolean>(false)
-
-  // Loyalty & Referrals State
-  const [loyalty, setLoyalty] = useState<LoyaltyProgress>({
-    user_id: currentUserId,
-    orders_completed: 8,
-    streak_days: 4,
-    last_order_date: new Date().toISOString(),
-    vouchers_earned: 1
-  })
-  const [referralCode, setReferralCode] = useState<string>('VIT-VFOOD26')
-  const [referralsList, setReferralsList] = useState<ReferralItem[]>([
-    { id: 'ref-1', friend_name: 'Priya Patel', status: 'completed', reward_given: true, created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-    { id: 'ref-2', friend_name: 'Aditya Verma', status: 'pending', reward_given: false, created_at: new Date(Date.now() - 3600000 * 5).toISOString() }
-  ])
-  const [copiedLink, setCopiedLink] = useState<boolean>(false)
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. DATA INITIALIZATION & REALTIME
@@ -606,7 +577,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
       )}
 
       {/* ── MAIN CONTENT BY TAB ── */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 pt-4 pb-28">
         {tab === 'menu' && (
           <div>
             {!selectedOutlet ? (
@@ -681,22 +652,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
                     <input
                       type="text"
-                      placeholder="Search dishes, snacks, beverages..."
+                      placeholder="Search menu..."
                       value={menuSearch}
                       onChange={e => setMenuSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
                     />
                   </div>
                   <button
                     onClick={() => setVegOnly(prev => !prev)}
-                    className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                    className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all flex-shrink-0 ${
                       vegOnly
                         ? 'bg-emerald-950 border-emerald-500 text-emerald-300'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
                     <Leaf className="h-3.5 w-3.5" />
-                    <span>Veg Only</span>
+                    <span className="hidden sm:inline">Veg Only</span>
+                    <span className="sm:hidden">Veg</span>
                   </button>
                 </div>
 
@@ -889,18 +861,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
 
                       {/* 4-Step Visual Progress Bar */}
                       <div className="mt-4 pt-3 border-t border-slate-800/80">
-                        <div className="grid grid-cols-4 gap-1 text-center">
-                          <div className={`p-1.5 rounded-lg text-[10px] font-bold ${isPlaced || isPrep || isReady || isCollected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                            1. Placed
+                        <div className="grid grid-cols-4 gap-1.5 text-center">
+                          <div className={`py-1 px-0.5 rounded-lg text-[10px] font-bold tracking-tight ${isPlaced || isPrep || isReady || isCollected ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-800/80 text-slate-500'}`}>
+                            Placed
                           </div>
-                          <div className={`p-1.5 rounded-lg text-[10px] font-bold ${isPrep || isReady || isCollected ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-500'}`}>
-                            2. Preparing 🔥
+                          <div className={`py-1 px-0.5 rounded-lg text-[10px] font-bold tracking-tight ${isPrep || isReady || isCollected ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-slate-800/80 text-slate-500'}`}>
+                            Prep 🔥
                           </div>
-                          <div className={`p-1.5 rounded-lg text-[10px] font-bold ${isReady || isCollected ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'}`}>
-                            3. Ready 🎉
+                          <div className={`py-1 px-0.5 rounded-lg text-[10px] font-bold tracking-tight ${isReady || isCollected ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'bg-slate-800/80 text-slate-500'}`}>
+                            Ready 🎉
                           </div>
-                          <div className={`p-1.5 rounded-lg text-[10px] font-bold ${isCollected ? 'bg-slate-700 text-slate-200' : 'bg-slate-800 text-slate-500'}`}>
-                            4. Collected ✓
+                          <div className={`py-1 px-0.5 rounded-lg text-[10px] font-bold tracking-tight ${isCollected ? 'bg-slate-700 text-slate-200 shadow-sm' : 'bg-slate-800/80 text-slate-500'}`}>
+                            Done ✓
                           </div>
                         </div>
                       </div>
@@ -1008,106 +980,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
           </div>
         )}
 
-        {tab === 'loyalty' && (
-          /* Loyalty Progress & Streak */
-          <div className="space-y-4">
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-950 to-slate-900 border border-indigo-700/50">
-              <div className="flex items-center gap-2 mb-2">
-                <Award className="h-5 w-5 text-indigo-400" />
-                <h3 className="font-extrabold text-base text-white">Campus Dining Loyalty Streak</h3>
-              </div>
-              <p className="text-xs text-slate-300">
-                Collect 10 orders to earn a ₹50 Free Meal Voucher! Every collected order builds your streak.
-              </p>
-
-              {/* Progress Bar */}
-              <div className="mt-4">
-                <div className="flex justify-between text-xs font-bold text-slate-300 mb-1">
-                  <span>Progress to Next Voucher</span>
-                  <span className="text-indigo-400">{loyalty.orders_completed % 10} / 10 Orders</span>
-                </div>
-                <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-orange-500 rounded-full transition-all duration-500"
-                    style={{ width: `${((loyalty.orders_completed % 10) / 10) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800">
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Current Streak</span>
-                  <div className="text-xl font-black text-amber-400 mt-0.5">{loyalty.streak_days} Days 🔥</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Earned Vouchers</span>
-                  <div className="text-xl font-black text-emerald-400 mt-0.5">{loyalty.vouchers_earned} Vouchers 🎟️</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === 'referrals' && (
-          /* Referral Program & Sharing */
-          <div className="space-y-4">
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-600/40">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-5 w-5 text-emerald-400" />
-                <h3 className="font-extrabold text-base text-white">Refer a Friend, Earn ₹25</h3>
-              </div>
-              <p className="text-xs text-slate-300">
-                Share your referral code. When a friend places their first order, you both get ₹25 credited to your wallets!
-              </p>
-
-              {/* Code Box */}
-              <div className="mt-4 p-3 rounded-xl bg-slate-950 border-2 border-dashed border-emerald-500/60 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Your Referral Code</span>
-                  <div className="font-mono font-black text-lg text-emerald-400">{referralCode}</div>
-                </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(referralCode)
-                    setCopiedLink(true)
-                    setTimeout(() => setCopiedLink(false), 2500)
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition-all"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  <span>{copiedLink ? 'Copied!' : 'Copy Code'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Referral Stats */}
-            <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Referred Friends</h4>
-              <div className="space-y-2">
-                {referralsList.map(ref => (
-                  <div key={ref.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="font-semibold text-white">{ref.friend_name}</div>
-                      <div className="text-[10px] text-slate-400 capitalize">{ref.status}</div>
-                    </div>
-                    <span className="font-bold text-emerald-400 font-mono">
-                      {ref.reward_given ? '+₹25 Credited' : 'Pending First Order'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* ── BOTTOM NAVIGATION DOCK ── */}
-      <nav className="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-2 py-2 flex justify-around">
+      {/* ── BOTTOM NAVIGATION DOCK (Mobile-First 3 Tabs) ── */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-4 py-2 flex items-center justify-around shadow-2xl">
         <button
           onClick={() => setTab('menu')}
-          className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-bold transition-all ${
-            tab === 'menu' ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'
+          className={`flex-1 flex flex-col items-center gap-1 py-1 rounded-xl text-xs font-bold transition-all ${
+            tab === 'menu' ? 'text-orange-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Store className="h-5 w-5" />
@@ -1116,42 +996,25 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
 
         <button
           onClick={() => setTab('orders')}
-          className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-bold transition-all ${
-            tab === 'orders' ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'
+          className={`flex-1 flex flex-col items-center gap-1 py-1 rounded-xl text-xs font-bold transition-all relative ${
+            tab === 'orders' ? 'text-orange-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Clock className="h-5 w-5" />
           <span>Orders</span>
+          {orders.some(o => ['placed', 'preparing', 'ready'].includes(o.status)) && (
+            <span className="absolute top-0 right-1/3 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-slate-900 animate-pulse" />
+          )}
         </button>
 
         <button
           onClick={() => setTab('wallet')}
-          className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-bold transition-all ${
-            tab === 'wallet' ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'
+          className={`flex-1 flex flex-col items-center gap-1 py-1 rounded-xl text-xs font-bold transition-all ${
+            tab === 'wallet' ? 'text-orange-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Wallet className="h-5 w-5" />
           <span>Wallet</span>
-        </button>
-
-        <button
-          onClick={() => setTab('loyalty')}
-          className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-bold transition-all ${
-            tab === 'loyalty' ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Award className="h-5 w-5" />
-          <span>Loyalty</span>
-        </button>
-
-        <button
-          onClick={() => setTab('referrals')}
-          className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-bold transition-all ${
-            tab === 'referrals' ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Users className="h-5 w-5" />
-          <span>Refer</span>
         </button>
       </nav>
 
