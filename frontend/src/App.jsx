@@ -531,18 +531,60 @@ function App() {
 
   function repeatOrder(order) {
     const targetOutlet = outlets.find(o => o.id === order.outlet_id) || {
-      id: order.outlet_id, name: order.outlets?.name || 'Campus Outlet', location: 'VIT Campus'
+      id: order.outlet_id, name: order.outlets?.name || 'Campus Outlet', location: 'VIT Campus',
+      menu_items: []
     }
+
+    // Flag (don't silently drop) any item that's since gone unavailable
+    const itemsToLoad = (order.order_items || []).map(orderItem => {
+      const currentItem = (targetOutlet.menu_items || []).find(
+        m => m.id === orderItem.item_id || m.name?.toLowerCase().trim() === orderItem.name?.toLowerCase().trim()
+      )
+
+      let isAvailable = true
+      let unavailableReason = null
+
+      if (!currentItem) {
+        isAvailable = false
+        unavailableReason = 'Item no longer offered on menu'
+      } else if (currentItem.available === false) {
+        isAvailable = false
+        unavailableReason = 'Marked 86 / Sold Out at counter'
+      } else if (currentItem.stock_qty !== undefined && currentItem.stock_qty <= 0) {
+        isAvailable = false
+        unavailableReason = '0 portions left (Out of stock)'
+      }
+
+      return {
+        id: currentItem ? currentItem.id : (orderItem.item_id || Math.floor(Math.random() * 90000)),
+        name: orderItem.name,
+        price: currentItem ? currentItem.price : orderItem.price,
+        qty: orderItem.qty,
+        available: isAvailable,
+        unavailableReason,
+        notes: orderItem.notes || ''
+      }
+    })
+
     setCart({
       outlet: targetOutlet,
-      items: (order.order_items || []).map(i => ({ id: i.item_id, name: i.name, price: i.price, qty: i.qty, available: true, notes: '' }))
+      items: itemsToLoad
     })
     setTab('browse')
-    setNotice(`♻️ Loaded ${order.order_items.length} items from Order #${order.id} into cart!`)
+
+    const unavailableList = itemsToLoad.filter(i => !i.available)
+    if (unavailableList.length > 0) {
+      setNotice(`⚠️ Reorder ("My Usual") loaded! Note: ${unavailableList.map(i => i.name).join(', ')} is currently unavailable and flagged in your cart.`)
+    } else {
+      setNotice(`♻️ Reorder ("My Usual") loaded! All ${itemsToLoad.length} items from Order #${order.id} added to cart.`)
+    }
   }
 
   async function placeOrder() {
     if (!cart.items.length) return
+    if (cart.items.some(i => !i.available)) {
+      return setNotice('⚠️ Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
+    }
     const total = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0)
     if (wallet.balance < total) {
       return setNotice(`Insufficient balance (${money(wallet.balance)}). Top up ${money(total - wallet.balance)} to continue.`)
@@ -880,6 +922,8 @@ function App() {
               removeFromCart={removeFromCart}
               ab3Slot={ab3Slot}
               getItemRatingStats={getItemRatingStats}
+              orders={orders}
+              repeatOrder={repeatOrder}
             />
           </div>
         )}
@@ -954,11 +998,15 @@ function App() {
 // BROWSE TAB (with veg filter, price filter, AB3 time slot, rating sorting)
 // ─────────────────────────────────────────────────────────────────────────────
 function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLocationFilter,
-  query, setQuery, vegOnly, setVegOnly, priceFilter, setPriceFilter, cart, addToCart, removeFromCart, ab3Slot, getItemRatingStats }) {
+  query, setQuery, vegOnly, setVegOnly, priceFilter, setPriceFilter, cart, addToCart, removeFromCart, ab3Slot, getItemRatingStats, orders, repeatOrder }) {
 
   const LOCATIONS = ['All', 'Gazebo', 'North Square', 'AB3 Amphitheatre', 'Academic Blocks', 'Campus Outlets & Stores']
   const PRICE_OPTS = [{ label: 'All Prices', val: 'All' }, { label: 'Under ₹50', val: 'u50' }, { label: 'Under ₹100', val: 'u100' }, { label: 'Under ₹200', val: 'u200' }]
   const [sortBy, setSortBy] = useState('popular') // 'popular' | 'rating' | 'price_asc' | 'price_desc'
+
+  const myUsualOrder = useMemo(() => {
+    return (orders || []).find(o => o.status === 'collected' && (o.order_items || []).length > 0)
+  }, [orders])
 
   // Apply local item-level filters to each outlet
   const filteredOutlets = useMemo(() => visibleOutlets.map(o => {
@@ -1038,6 +1086,40 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
           </div>
         </div>
       </div>
+
+      {/* ── Feature 2: My Usual Quick Reorder Banner ── */}
+      {myUsualOrder && !query && locationFilter === 'All' && !vegOnly && priceFilter === 'All' && (
+        <div className="my-usual-banner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '38px', height: '38px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              display: 'grid', placeItems: 'center', color: '#fff', fontSize: '18px', flexShrink: 0
+            }}>
+              ⚡
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong style={{ fontSize: '14px', color: '#065F46' }}>My Usual (Reorder in 1-Tap)</strong>
+                <span style={{ fontSize: '11px', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  {myUsualOrder.outlets?.name || myUsualOrder.outlet_id}
+                </span>
+              </div>
+              <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#334155' }}>
+                {(myUsualOrder.order_items || []).map(i => `${i.name} × ${i.qty}`).join(', ')} · <strong>{money(myUsualOrder.total)}</strong>
+              </p>
+            </div>
+          </div>
+          <button
+            className="reorder-btn btn-spring"
+            onClick={() => repeatOrder && repeatOrder(myUsualOrder)}
+            style={{ padding: '7px 14px', fontSize: '12.5px', borderRadius: '8px' }}
+            title="Reorder your usual meal into cart"
+          >
+            <Repeat size={13} /> Reorder My Usual
+          </button>
+        </div>
+      )}
 
       <div className="section-heading">
         <div>
@@ -1409,6 +1491,8 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
   const [expanded, setExpanded] = useState(false)
   const total = cart.items.reduce((s, i) => s + i.price * i.qty, 0)
   const qty   = cart.items.reduce((s, i) => s + i.qty, 0)
+  const hasUnavailable = cart.items.some(i => i.available === false)
+  const unavailableItems = cart.items.filter(i => i.available === false)
 
   return (
     <div className={`cart-dock ${expanded ? 'cart-dock-expanded' : ''}`}>
@@ -1420,36 +1504,85 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
               Clear Cart
             </button>
           </div>
+
+          {hasUnavailable && (
+            <div className="cart-clear-unavailable-banner">
+              <div>
+                <strong>⚠️ {unavailableItems.length} item(s) currently out of stock</strong>
+                <div style={{ fontSize: '11.5px', marginTop: 2 }}>Remove flagged items to proceed to checkout.</div>
+              </div>
+              <button
+                className="cart-remove-flagged-btn"
+                onClick={() => {
+                  const cleaned = cart.items.filter(i => i.available !== false)
+                  setCart({ outlet: cleaned.length ? cart.outlet : null, items: cleaned })
+                }}
+              >
+                Remove Out-of-Stock
+              </button>
+            </div>
+          )}
+
           {cart.items.map(item => {
             const foodImg = getFoodImage(item.name, item.category)
+            const isAvail = item.available !== false
             return (
-              <div className="cart-item-row" key={item.id}>
+              <div className={`cart-item-row ${!isAvail ? 'unavailable-item' : ''}`} key={item.id}>
                 <div className="cart-item-left" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <img
                     src={foodImg.url}
                     alt={item.name}
                     className="cart-thumb-img"
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    style={{ opacity: !isAvail ? 0.5 : 1 }}
                   />
                   <div className="cart-qty-control">
                     <button onClick={() => removeFromCart(item.id)}><Minus size={13} /></button>
                     <span>{item.qty}</span>
-                    <button onClick={() => addToCart(cart.outlet, item)}><Plus size={13} /></button>
+                    <button onClick={() => isAvail && addToCart(cart.outlet, item)} disabled={!isAvail}><Plus size={13} /></button>
                   </div>
                   <div>
-                    <span className="cart-item-name">{item.name}</span>
-                    <input
-                      className="cart-notes-input"
-                      placeholder="Add note (e.g. less spicy)..."
-                      value={item.notes || ''}
-                      onChange={e => updateCartItemNotes(item.id, e.target.value)}
-                    />
+                    <span className="cart-item-name" style={{ textDecoration: !isAvail ? 'line-through' : 'none', color: !isAvail ? '#B91C1C' : 'inherit' }}>
+                      {item.name}
+                    </span>
+                    {!isAvail && (
+                      <div className="cart-item-unavailable-chip">
+                        <AlertCircle size={11} /> {item.unavailableReason || 'Unavailable / Sold Out'}
+                      </div>
+                    )}
+                    {isAvail && (
+                      <input
+                        className="cart-notes-input"
+                        placeholder="Add note (e.g. less spicy)..."
+                        value={item.notes || ''}
+                        onChange={e => updateCartItemNotes(item.id, e.target.value)}
+                      />
+                    )}
                   </div>
                 </div>
-                <span className="cart-item-price">{money(item.price * item.qty)}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span className="cart-item-price">{money(item.price * item.qty)}</span>
+                  {!isAvail && (
+                    <div>
+                      <button
+                        className="cart-remove-flagged-btn"
+                        onClick={() => removeFromCart(item.id)}
+                        style={{ marginTop: 4 }}
+                        title="Remove out-of-stock item"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}
+          {hasUnavailable && (
+            <p className="cart-balance-warn" style={{ color: '#DC2626', background: '#FEE2E2', borderColor: '#FECACA' }}>
+              <AlertCircle size={14} /> Remove flagged out-of-stock item(s) to continue checkout.
+            </p>
+          )}
           {wallet.balance < total && (
             <p className="cart-balance-warn">
               <AlertCircle size={14} /> Balance {money(wallet.balance)} — need {money(total - wallet.balance)} more
@@ -1460,12 +1593,17 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
 
       <div className="cart-dock-bar">
         <button className="cart-expand-btn" onClick={() => setExpanded(e => !e)}>
-          <strong>{qty} Items</strong>
+          <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>⚠️ Has Unavailable</span>}</strong>
           <small>{cart.outlet?.name}</small>
         </button>
         <div className="cart-dock-total">{money(total)}</div>
-        <button className="btn-primary" onClick={placeOrder} disabled={busy || wallet.balance < total}>
-          {busy ? 'Placing...' : 'Place Order'} <ArrowRight size={18} />
+        <button
+          className="btn-primary"
+          onClick={placeOrder}
+          disabled={busy || wallet.balance < total || hasUnavailable}
+          style={{ background: hasUnavailable ? '#DC2626' : undefined }}
+        >
+          {busy ? 'Placing...' : hasUnavailable ? 'Remove Unavailable' : 'Place Order'} <ArrowRight size={18} />
         </button>
       </div>
     </div>
@@ -1694,6 +1832,7 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
   const [receiptOrder, setReceiptOrder] = useState(null)
   const active   = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled')
   const past     = orders.filter(o => o.status === 'collected' || o.status === 'cancelled')
+  const mostRecentPast = past.find(o => o.status === 'collected' && (o.order_items || []).length > 0)
 
   return (
     <section className="tab-content-enter">
@@ -1713,6 +1852,40 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
             />
           ))}
         </>
+      )}
+
+      {/* ── Feature 2: My Usual Quick Reorder Banner ── */}
+      {mostRecentPast && (
+        <div className="my-usual-banner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '42px', height: '42px', borderRadius: '12px',
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              display: 'grid', placeItems: 'center', color: '#fff', fontSize: '20px', flexShrink: 0
+            }}>
+              ⚡
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong style={{ fontSize: '15px', color: '#065F46' }}>My Usual (1-Tap Reorder)</strong>
+                <span style={{ fontSize: '11px', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  {mostRecentPast.outlets?.name || mostRecentPast.outlet_id}
+                </span>
+              </div>
+              <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: '#334155' }}>
+                {(mostRecentPast.order_items || []).map(i => `${i.name} × ${i.qty}`).join(', ')} · <strong>{money(mostRecentPast.total)}</strong>
+              </p>
+            </div>
+          </div>
+          <button
+            className="reorder-btn btn-spring"
+            onClick={() => repeatOrder(mostRecentPast)}
+            style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px' }}
+            title="Reorder this exact meal into your cart"
+          >
+            <Repeat size={14} /> Reorder My Usual
+          </button>
+        </div>
       )}
 
       <div className="section-heading"><div><h2>Past Orders</h2></div><span>{past.length} completed</span></div>
@@ -1787,8 +1960,13 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
             <FileText size={13} /> Receipt
           </button>
           {!isCancelled && (
-            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => repeatOrder(order)}>
-              <Repeat size={13} /> Repeat
+            <button
+              className="btn-secondary btn-spring reorder-btn"
+              style={{ padding: '6px 14px', fontSize: '12px' }}
+              onClick={() => repeatOrder(order)}
+              title="Reorder this past order into your cart"
+            >
+              <Repeat size={13} /> Reorder
             </button>
           )}
         </div>
