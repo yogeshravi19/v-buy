@@ -42,10 +42,11 @@ services:
         sync: false
 
   # ── 2. Frontend Web App & PWA (Vite + React 19 + PWA Service Worker) ────────
-  # NOTE: Static sites on Render are automatically deployed to a global CDN.
-  # Therefore, 'region' and 'plan' are not valid properties for static sites.
-  - type: static
+  # In Render Blueprint spec: static sites use 'type: web' with 'runtime: static'.
+  # Note: Static sites are deployed to Render's global CDN, so 'region' and 'plan' are omitted.
+  - type: web
     name: campusbite-web
+    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
