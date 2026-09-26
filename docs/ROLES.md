@@ -70,16 +70,27 @@ V-BUY enforces a strict four-tier role hierarchy governed by PostgreSQL Row-Leve
 ---
 
 ## Schema RLS Policy Mapping Reference
-PostgreSQL RLS policies in `supabase/migrations/` enforce these boundaries directly in the database:
+PostgreSQL RLS policies in `supabase/migrations/008_four_tier_roles_invites_and_stock.sql` enforce these boundaries directly in the database:
 - `orders`:
   - Students: `SELECT` own orders (`auth.uid() = user_id`); `INSERT` via `place_order_wallet()`.
-  - Staff / Shop Admin: `SELECT` and `UPDATE` status where `outlet_id` matches user's assigned outlet profile.
+  - Staff / Shop Admin: `SELECT` and `UPDATE` status where `outlet_id = public.get_my_outlet()`.
   - Super Admin: Unrestricted `ALL` access across all rows.
 - `menu_items`:
-  - Public/Student: `SELECT` where `is_active = true`.
-  - Staff / Shop Admin: `UPDATE` stock and availability for their `outlet_id`.
-  - Super Admin: Unrestricted `ALL` access.
-- `wallet_transactions` & `wallets`:
+  - Public/Student: `SELECT` all active menu items.
+  - Staff: `UPDATE` `stock_qty` and `available` where `outlet_id = public.get_my_outlet()`.
+  - Shop Admin: Full `ALL` CRUD operations where `outlet_id = public.get_my_outlet()`.
+  - Super Admin: Unrestricted `ALL` access across all outlets.
+- `stock_adjustments`:
+  - Staff & Shop Admin: `SELECT` adjustment history where `outlet_id = public.get_my_outlet()`.
+  - Super Admin: `ALL` access for auditing.
+- `invites`:
+  - Shop Admin: `ALL` invites scoped strictly to their `outlet_id` (staff only).
+  - Super Admin: `ALL` invites across all roles and outlets.
+- `profiles`:
+  - Users: `SELECT` and `UPDATE` own profile (`id = auth.uid()`).
+  - Shop Admin: `SELECT` and manage team members where `outlet_id = public.get_my_outlet()` and `role = 'staff'`.
+  - Super Admin: Full `ALL` management across all roles.
+- `wallets` & `wallet_txns`:
   - Students: `SELECT` only rows where `wallet_id` belongs to `auth.uid()`.
   - Stored Procedures (`SECURITY DEFINER`): System-managed debit and credit execution.
-  - Super Admin: Read-only access for financial auditing.
+  - Super Admin: Read-only access for financial auditing and platform profit tracking.

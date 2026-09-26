@@ -12,7 +12,7 @@ CampusBite FastAPI Backend
 
 from __future__ import annotations
 
-import os, hashlib, hmac, base64, json, time, logging
+import os, hashlib, hmac, base64, json, time, logging, secrets
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Optional, List, Dict, Any
@@ -135,14 +135,20 @@ async def get_current_user(authorization: str = Header(...)) -> dict:
 
 async def require_staff(user=Depends(get_current_user)) -> dict:
     row = sb.from_("profiles").select("role,outlet_id").eq("id", user["id"]).single().execute()
-    if not row.data or row.data["role"] not in ("staff", "admin"):
-        raise HTTPException(403, "Staff or admin role required")
+    if not row.data or row.data["role"] not in ("staff", "shop_admin", "super_admin", "admin"):
+        raise HTTPException(403, "Staff, shop admin, or super admin role required")
+    return {**user, "role": row.data["role"], "outlet_id": row.data["outlet_id"]}
+
+async def require_shop_admin(user=Depends(get_current_user)) -> dict:
+    row = sb.from_("profiles").select("role,outlet_id").eq("id", user["id"]).single().execute()
+    if not row.data or row.data["role"] not in ("shop_admin", "super_admin", "admin"):
+        raise HTTPException(403, "Shop admin or super admin role required")
     return {**user, "role": row.data["role"], "outlet_id": row.data["outlet_id"]}
 
 async def require_admin(user=Depends(get_current_user)) -> dict:
     row = sb.from_("profiles").select("role").eq("id", user["id"]).single().execute()
-    if not row.data or row.data["role"] != "admin":
-        raise HTTPException(403, "Admin role required")
+    if not row.data or row.data["role"] not in ("super_admin", "admin"):
+        raise HTTPException(403, "Super admin role required")
     return user
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -426,7 +432,7 @@ async def advance_order(order_id: int, bg: BackgroundTasks, user=Depends(require
     order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data
     if not order:
         raise HTTPException(404, "Order not found")
-    if user["role"] == "staff" and order["outlet_id"] != user["outlet_id"]:
+    if user["role"] in ("staff", "shop_admin") and order["outlet_id"] != user["outlet_id"]:
         raise HTTPException(403, "Wrong outlet")
 
     next_status = STATUS_TRANSITIONS.get(order["status"])
@@ -448,7 +454,7 @@ async def cancel_order(order_id: int, request: Request, bg: BackgroundTasks, use
     order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data
     if not order:
         raise HTTPException(404, "Order not found")
-    if user["role"] == "staff" and order["outlet_id"] != user["outlet_id"]:
+    if user["role"] in ("staff", "shop_admin") and order["outlet_id"] != user["outlet_id"]:
         raise HTTPException(403, "Wrong outlet")
     if order["status"] in ("collected", "cancelled"):
         raise HTTPException(400, "Cannot cancel at this stage")
@@ -530,6 +536,98 @@ async def admin_credit_wallet(req: AdminCreditRequest, user=Depends(require_admi
         "p_note": req.note,
     }).execute()
     return {"credited": req.amount, "to": req.user_id}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Stock adjustment endpoint
+# ──────────────────────────────────────────────────────────────────────────────
+class StockAdjustRequest(BaseModel):
+    item_id: int
+    new_qty: int = Field(..., ge=0)
+    reason: Optional[str] = "manual_adjustment"
+
+@app.post("/staff/stock/adjust")
+async def adjust_item_stock(req: StockAdjustRequest, user=Depends(require_staff)):
+    item = sb.from_("menu_items").select("*").eq("id", req.item_id).single().execute().data
+    if not item:
+        raise HTTPException(404, "Menu item not found")
+    if user["role"] in ("staff", "shop_admin") and item["outlet_id"] != user["outlet_id"]:
+        raise HTTPException(403, "Cannot adjust stock for another outlet")
+
+    old_qty = item.get("stock_qty") or 0
+    delta = req.new_qty - old_qty
+    sb.from_("menu_items").update({
+        "stock_qty": req.new_qty,
+        "available": (req.new_qty > 0)
+    }).eq("id", req.item_id).execute()
+
+    sb.from_("stock_adjustments").insert({
+        "outlet_id": item["outlet_id"],
+        "item_id": req.item_id,
+        "adjusted_by": user["id"],
+        "qty_change": delta,
+        "previous_qty": old_qty,
+        "new_qty": req.new_qty,
+        "reason": req.reason,
+    }).execute()
+
+    return {"success": True, "item_id": req.item_id, "previous_qty": old_qty, "new_qty": req.new_qty}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Invite endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+class InviteCreateRequest(BaseModel):
+    role: str = Field(..., pattern="^(staff|shop_admin)$")
+    outlet_id: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+@app.post("/admin/invites/create")
+async def create_user_invite(req: InviteCreateRequest, user=Depends(require_staff)):
+    if user["role"] == "staff":
+        raise HTTPException(403, "Staff cannot create invites")
+    if user["role"] == "shop_admin":
+        if req.role != "staff":
+            raise HTTPException(403, "Shop admins can only invite staff")
+        if req.outlet_id != user["outlet_id"]:
+            raise HTTPException(403, "Shop admins can only invite for their own outlet")
+
+    code = secrets.token_hex(4).upper()
+    res = sb.from_("invites").insert({
+        "code": code,
+        "email": req.email,
+        "phone": req.phone,
+        "role": req.role,
+        "outlet_id": req.outlet_id,
+        "invited_by": user["id"],
+        "status": "pending"
+    }).execute()
+
+    return {"success": True, "code": code, "role": req.role, "outlet_id": req.outlet_id}
+
+class InviteAcceptRequest(BaseModel):
+    code: str
+
+@app.post("/invites/accept")
+async def accept_user_invite(req: InviteAcceptRequest, user=Depends(get_current_user)):
+    code_clean = req.code.strip().upper()
+    inv = sb.from_("invites").select("*").eq("code", code_clean).single().execute().data
+    if not inv:
+        raise HTTPException(404, "Invalid invite code")
+    if inv["status"] != "pending":
+        raise HTTPException(400, f"Invite is already {inv['status']}")
+
+    sb.from_("profiles").update({
+        "role": inv["role"],
+        "outlet_id": inv["outlet_id"],
+        "added_by": inv["invited_by"]
+    }).eq("id", user["id"]).execute()
+
+    sb.from_("invites").update({
+        "status": "accepted",
+        "accepted_by": user["id"]
+    }).eq("id", inv["id"]).execute()
+
+    return {"success": True, "role": inv["role"], "outlet_id": inv["outlet_id"]}
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MSG91 notification helpers (fire-and-forget)
