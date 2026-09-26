@@ -261,19 +261,19 @@ const TEST_USERS = [
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [session, setSession]         = useState(null)
-  const [showLanding, setShowLanding] = useState(true)
 
-  const handleQuickDemoLogin = (targetRole) => {
-    let matched = null
-    if (targetRole === 'student') matched = TEST_USERS[0]
-    else if (targetRole === 'staff') matched = TEST_USERS[1]
-    else if (targetRole === 'shop_admin') matched = TEST_USERS[2]
-    else if (targetRole === 'super_admin') matched = TEST_USERS[3]
-    if (matched) {
-      setCurrentUser(matched)
-      setShowLanding(false)
+  // Separate route: /landing is dedicated to the startup landing page
+  const isLandingRoute = window.location.pathname === '/landing' || window.location.hash === '#/landing'
+
+  useEffect(() => {
+    const demo = localStorage.getItem('vfood_demo_user')
+    if (demo) {
+      try {
+        setCurrentUser(JSON.parse(demo))
+      } catch {}
+      localStorage.removeItem('vfood_demo_user')
     }
-  }
+  }, [])
 
   const [outlets, setOutlets]         = useState(DEMO_OUTLETS)
   const [eventMode, setEventMode]     = useState(false)
@@ -895,30 +895,38 @@ function App() {
     }))
   }
 
-  async function handleSignOut() {
-    if (supabase) await supabase.auth.signOut()
-    setCurrentUser(null)
-    setSession(null)
-    setTab('browse')
-    setShowLanding(true)
-  }
-
-  if (!currentUser) {
-    if (showLanding) {
-      return (
-        <LandingPage
-          onLaunchApp={() => setShowLanding(false)}
-          onQuickLogin={handleQuickDemoLogin}
-        />
-      )
-    }
+  // ── SEPARATE LANDING PAGE ROUTE (/landing) ──
+  if (isLandingRoute) {
     return (
-      <AuthScreen
-        onLoginUser={setCurrentUser}
-        onBackToLanding={() => setShowLanding(true)}
+      <LandingPage
+        onLaunchApp={() => {
+          window.location.href = '/'
+        }}
+        onQuickLogin={(targetRole) => {
+          let matched = null
+          if (targetRole === 'student') matched = TEST_USERS[0]
+          else if (targetRole === 'staff') matched = TEST_USERS[1]
+          else if (targetRole === 'shop_admin') matched = TEST_USERS[2]
+          else if (targetRole === 'super_admin') matched = TEST_USERS[3]
+          if (matched) {
+            localStorage.setItem('vfood_demo_user', JSON.stringify(matched))
+            window.location.href = '/'
+          }
+        }}
       />
     )
   }
+
+  async function handleSignOut() {
+    if (supabase) await supabase.auth.signOut()
+    localStorage.removeItem('vfood_demo_user')
+    setCurrentUser(null)
+    setSession(null)
+    setTab('browse')
+  }
+
+  // ── MAIN APP DIRECT AUTHENTICATION ──
+  if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
 
   const role      = currentUser.role || 'student'
 
@@ -4595,7 +4603,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH SCREEN (Mobile Number + OTP Primary, Email Secondary)
 // ─────────────────────────────────────────────────────────────────────────────
-function AuthScreen({ onLoginUser, onBackToLanding }) {
+function AuthScreen({ onLoginUser }) {
   const [authMethod, setAuthMethod]   = useState('phone') // 'phone' (primary) | 'email' (secondary)
   const [isSignUp, setIsSignUp]       = useState(false)
   
@@ -4713,27 +4721,10 @@ function AuthScreen({ onLoginUser, onBackToLanding }) {
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
               VIT Chennai Auth
             </span>
-            {onBackToLanding && (
-              <button
-                type="button"
-                onClick={onBackToLanding}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#EA580C',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-              >
-                ← Back to Overview
-              </button>
-            )}
           </div>
 
           <h2>{isSignUp ? 'Create Campus Account' : 'Sign In to CampusBite'}</h2>
