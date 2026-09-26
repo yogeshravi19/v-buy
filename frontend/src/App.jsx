@@ -12,6 +12,10 @@ import {
 import './styles.css'
 import { getFoodImage } from './lib/foodImages'
 import QRCode from 'qrcode'
+import StaffDashboard from './pages/staff/StaffDashboard'
+import StudentDashboard from './pages/student/StudentDashboard'
+import ShopDashboard from './pages/shop/ShopDashboard'
+import SuperAdminDashboard from './pages/admin/AdminDashboard'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -886,10 +890,52 @@ function App() {
   if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
 
   const role      = currentUser.role || 'student'
+
+  // ── DEDICATED ROLE DASHBOARD ROUTING ──
+  // 1. Staff Dashboard: High-frequency operational kitchen/counter cockpit
+  if (role === 'staff') {
+    return (
+      <StaffDashboard
+        forcedOutletId={currentUser.outlet_id || 'g1'}
+        outletName={currentUser.outlet_name || 'Gazebo C1 — Snacks & Fast Food'}
+        onSignOut={handleSignOut}
+      />
+    )
+  }
+
+  // 2. Student Dashboard: Dedicated consumer buying, wallet, menu, loyalty, referral shell
+  if (role === 'student' || role === 'customer') {
+    return (
+      <StudentDashboard
+        onSignOut={handleSignOut}
+      />
+    )
+  }
+
+  // 3. Shop Admin Dashboard: Outlet management, team invite, menu CRUD, analytics & KDS
+  if (role === 'shop_admin' || role === 'owner') {
+    return (
+      <ShopDashboard
+        forcedOutletId={currentUser.outlet_id || 'g1'}
+        outletName={currentUser.outlet_name || 'Gazebo C1 — Snacks & Fast Food'}
+        onSignOut={handleSignOut}
+      />
+    )
+  }
+
+  // 4. Super Admin Dashboard: Platform-wide oversight, cross-outlet feed, hierarchy tree, coupons, audit log
+  if (role === 'super_admin' || role === 'admin' || role === 'superadmin') {
+    return (
+      <SuperAdminDashboard
+        onSignOut={handleSignOut}
+      />
+    )
+  }
+
   const isCustomer = role === 'student' || role === 'customer'
   const isStaff   = role === 'staff'
-  const isOwner   = role === 'owner'
-  const isAdmin   = role === 'admin' || role === 'superadmin'
+  const isOwner   = role === 'owner' || role === 'shop_admin'
+  const isAdmin   = role === 'admin' || role === 'superadmin' || role === 'super_admin'
 
   return (
     <div className="app-shell">

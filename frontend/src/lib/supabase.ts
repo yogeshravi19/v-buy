@@ -33,9 +33,10 @@ export type Database = {
       }
       profiles: {
         Row: {
-          id: string; full_name: string; role: 'customer' | 'staff' | 'admin'
+          id: string; full_name: string; role: 'student' | 'staff' | 'shop_admin' | 'super_admin'
           cust_type: 'student' | 'faculty' | 'outsider' | 'event_team'
           outlet_id: string | null; phone: string | null; created_at: string
+          added_by?: string | null; is_active?: boolean
         }
       }
       wallets: {
@@ -55,22 +56,61 @@ export type Database = {
           payment_method: 'wallet' | 'gateway'
           shop_payout: number; total: number; my_profit: number
           cancel_reason: string | null; expires_at: string | null
+          pickup_slot_id?: string | null; group_id?: string | null
           created_at: string; updated_at: string
         }
       }
       order_items: {
         Row: { order_id: number; item_id: number; name: string; price: number; qty: number }
       }
-      payments: {
+      stock_adjustments: {
         Row: {
-          phonepe_txn_id: string; user_id: string; order_id: number | null
-          amount: number; purpose: 'topup' | 'order_payment'
-          status: 'created' | 'PENDING' | 'SUCCESS' | 'FAILED'
-          created_at: string; updated_at: string
+          id: number; outlet_id: string; item_id: number; adjusted_by: string | null
+          qty_change: number; previous_qty: number | null; new_qty: number | null
+          reason: 'manual_adjustment' | 'order_decrement' | 'counter_pos' | '86_sold_out' | 'restock'
+          created_at: string
+        }
+      }
+      invites: {
+        Row: {
+          id: string; code: string; email: string | null; phone: string | null
+          role: 'staff' | 'shop_admin'; outlet_id: string; invited_by: string
+          expires_at: string; status: 'pending' | 'accepted' | 'revoked' | 'expired'
+          accepted_by: string | null; created_at: string
+        }
+      }
+      pickup_slots: {
+        Row: {
+          id: string; outlet_id: string; slot_time: string; max_orders: number; current_orders: number
+        }
+      }
+      coupons: {
+        Row: {
+          code: string; discount_type: 'flat' | 'percent'; discount_value: number
+          min_order_value: number | null; max_uses: number | null; used_count: number
+          outlet_id: string | null; valid_from: string; valid_to: string; active: boolean
+        }
+      }
+      item_ratings: {
+        Row: {
+          id: string; order_id: number; item_id: number; user_id: string; rating: number
+          review: string | null; created_at: string
+        }
+      }
+      loyalty_progress: {
+        Row: {
+          user_id: string; orders_completed: number; streak_days: number
+          last_order_date: string | null; vouchers_earned: number
+        }
+      }
+      referrals: {
+        Row: {
+          id: string; referrer_id: string; referred_id: string; referral_code: string
+          status: string; reward_given: boolean
         }
       }
       settings: {
-        Row: { id: number; event_mode: boolean }
+        Row: { id: number; event_mode: boolean; updated_at?: string }
       }
     }
   }
