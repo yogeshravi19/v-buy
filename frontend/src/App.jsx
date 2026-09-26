@@ -16,6 +16,7 @@ import StaffDashboard from './pages/staff/StaffDashboard'
 import StudentDashboard from './pages/student/StudentDashboard'
 import ShopDashboard from './pages/shop/ShopDashboard'
 import SuperAdminDashboard from './pages/admin/AdminDashboard'
+import LandingPage from './pages/landing/LandingPage'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -260,6 +261,20 @@ const TEST_USERS = [
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [session, setSession]         = useState(null)
+  const [showLanding, setShowLanding] = useState(true)
+
+  const handleQuickDemoLogin = (targetRole) => {
+    let matched = null
+    if (targetRole === 'student') matched = TEST_USERS[0]
+    else if (targetRole === 'staff') matched = TEST_USERS[1]
+    else if (targetRole === 'shop_admin') matched = TEST_USERS[2]
+    else if (targetRole === 'super_admin') matched = TEST_USERS[3]
+    if (matched) {
+      setCurrentUser(matched)
+      setShowLanding(false)
+    }
+  }
+
   const [outlets, setOutlets]         = useState(DEMO_OUTLETS)
   const [eventMode, setEventMode]     = useState(false)
   const [orders, setOrders]           = useState([
@@ -885,9 +900,25 @@ function App() {
     setCurrentUser(null)
     setSession(null)
     setTab('browse')
+    setShowLanding(true)
   }
 
-  if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
+  if (!currentUser) {
+    if (showLanding) {
+      return (
+        <LandingPage
+          onLaunchApp={() => setShowLanding(false)}
+          onQuickLogin={handleQuickDemoLogin}
+        />
+      )
+    }
+    return (
+      <AuthScreen
+        onLoginUser={setCurrentUser}
+        onBackToLanding={() => setShowLanding(true)}
+      />
+    )
+  }
 
   const role      = currentUser.role || 'student'
 
@@ -4564,7 +4595,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH SCREEN (Mobile Number + OTP Primary, Email Secondary)
 // ─────────────────────────────────────────────────────────────────────────────
-function AuthScreen({ onLoginUser }) {
+function AuthScreen({ onLoginUser, onBackToLanding }) {
   const [authMethod, setAuthMethod]   = useState('phone') // 'phone' (primary) | 'email' (secondary)
   const [isSignUp, setIsSignUp]       = useState(false)
   
@@ -4682,10 +4713,27 @@ function AuthScreen({ onLoginUser }) {
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
               VIT Chennai Auth
             </span>
+            {onBackToLanding && (
+              <button
+                type="button"
+                onClick={onBackToLanding}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#EA580C',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                ← Back to Overview
+              </button>
+            )}
           </div>
 
           <h2>{isSignUp ? 'Create Campus Account' : 'Sign In to CampusBite'}</h2>
