@@ -6,7 +6,7 @@ import {
   QrCode, Search, ShoppingBag, Store, X, ShieldAlert, Sparkles, User, Filter,
   CheckCircle2, RefreshCw, AlertCircle, Award, Coffee, UtensilsCrossed, Repeat,
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
-  Volume2, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
+  Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
   MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare
 } from 'lucide-react'
 import './styles.css'
@@ -700,33 +700,39 @@ function App() {
 
         {/* ── BROWSE TAB ── */}
         {isCustomer && tab === 'browse' && (
-          <BrowseTab
-            outlets={outlets}
-            visibleOutlets={visibleOutlets}
-            eventMode={eventMode}
-            locationFilter={locationFilter}
-            setLocationFilter={setLocationFilter}
-            query={query}
-            setQuery={setQuery}
-            vegOnly={vegOnly}
-            setVegOnly={setVegOnly}
-            priceFilter={priceFilter}
-            setPriceFilter={setPriceFilter}
-            cart={cart}
-            addToCart={addToCart}
-            removeFromCart={removeFromCart}
-            ab3Slot={ab3Slot}
-          />
+          <div className="tab-content-enter" key="browse">
+            <BrowseTab
+              outlets={outlets}
+              visibleOutlets={visibleOutlets}
+              eventMode={eventMode}
+              locationFilter={locationFilter}
+              setLocationFilter={setLocationFilter}
+              query={query}
+              setQuery={setQuery}
+              vegOnly={vegOnly}
+              setVegOnly={setVegOnly}
+              priceFilter={priceFilter}
+              setPriceFilter={setPriceFilter}
+              cart={cart}
+              addToCart={addToCart}
+              removeFromCart={removeFromCart}
+              ab3Slot={ab3Slot}
+            />
+          </div>
         )}
 
         {/* ── ORDERS TAB ── */}
         {isCustomer && tab === 'orders' && (
-          <OrdersView orders={orders} repeatOrder={repeatOrder} />
+          <div className="tab-content-enter" key="orders">
+            <OrdersView orders={orders} repeatOrder={repeatOrder} />
+          </div>
         )}
 
         {/* ── WALLET TAB ── */}
         {isCustomer && tab === 'wallet' && (
-          <WalletView wallet={wallet} topUp={topUp} busy={busy} currentUser={currentUser} />
+          <div className="tab-content-enter" key="wallet">
+            <WalletView wallet={wallet} topUp={topUp} busy={busy} currentUser={currentUser} />
+          </div>
         )}
 
         {/* ── STAFF / ADMIN CONSOLES ── */}
@@ -1210,18 +1216,85 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RECEIPT / INVOICE MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function ReceiptModal({ order, onClose }) {
+  if (!order) return null
+  return (
+    <div className="ios-modal-overlay" onClick={onClose}>
+      <div className="receipt-modal-card modal-enter" onClick={e => e.stopPropagation()}>
+        <div className="receipt-header">
+          <img src="/vit-chennai-logo.png" alt="VIT" style={{ height: 44, margin: '0 auto 8px', display: 'block' }} />
+          <h3>CampusBite · VIT Chennai</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Campus Dining e-Receipt & Tax Invoice</p>
+        </div>
+        <div className="receipt-row">
+          <span>Order ID</span>
+          <strong>#{order.id}</strong>
+        </div>
+        <div className="receipt-row">
+          <span>Token Number</span>
+          <strong style={{ color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)', fontSize: '15px' }}>#{order.token}</strong>
+        </div>
+        <div className="receipt-row">
+          <span>Outlet</span>
+          <span>{order.outlets?.name || order.outlet_id}</span>
+        </div>
+        <div className="receipt-row">
+          <span>Date & Time</span>
+          <span>{new Date(order.created_at).toLocaleString('en-IN')}</span>
+        </div>
+        <div className="receipt-row">
+          <span>Payment Status</span>
+          <span style={{ color: '#059669', fontWeight: 700 }}>PAID (VIT Campus Wallet)</span>
+        </div>
+
+        <div style={{ margin: '14px 0 10px', borderTop: '1px solid #E2E8F0', paddingTop: '10px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            Itemized Order
+          </div>
+          {(order.order_items || []).map((it, idx) => (
+            <div key={idx} className="receipt-row">
+              <span>{it.qty}× {it.name} {it.notes ? `(${it.notes})` : ''}</span>
+              <span>{money((it.price || 0) * (it.qty || 1))}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="receipt-row total-row">
+          <span>Total Paid</span>
+          <span>{money(order.total)}</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <button className="btn-secondary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={() => window.print()}>
+            <Download size={14} /> Print / Save
+          </button>
+          <button className="btn-primary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ORDERS VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function OrdersView({ orders, repeatOrder }) {
+  const [receiptOrder, setReceiptOrder] = useState(null)
   const active   = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled')
   const past     = orders.filter(o => o.status === 'collected' || o.status === 'cancelled')
 
   return (
-    <section>
+    <section className="tab-content-enter">
+      {receiptOrder && <ReceiptModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />}
+
       {active.length > 0 && (
         <>
           <div className="section-heading"><div><h2>Active Orders</h2></div><span>{active.length} in progress</span></div>
-          {active.map(order => <OrderCard key={order.id} order={order} repeatOrder={repeatOrder} />)}
+          {active.map(order => <OrderCard key={order.id} order={order} repeatOrder={repeatOrder} onShowReceipt={setReceiptOrder} />)}
         </>
       )}
 
@@ -1233,32 +1306,37 @@ function OrdersView({ orders, repeatOrder }) {
           <p>Browse Gazebo, North Square, AB3 or Event Stalls to place your first order!</p>
         </div>
       ) : (
-        past.map(order => <OrderCard key={order.id} order={order} repeatOrder={repeatOrder} />)
+        past.map(order => <OrderCard key={order.id} order={order} repeatOrder={repeatOrder} onShowReceipt={setReceiptOrder} />)
       )}
     </section>
   )
 }
 
-function OrderCard({ order, repeatOrder }) {
+function OrderCard({ order, repeatOrder, onShowReceipt }) {
   const stepIndex = statuses.indexOf(order.status)
   const isReady   = order.status === 'ready'
   const isCancelled = order.status === 'cancelled'
+  const minsAgo = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
 
   return (
-    <article className={`order-card ${isCancelled ? 'order-cancelled' : ''}`}>
+    <article className={`order-card ${isCancelled ? 'order-cancelled' : ''} ${isReady ? 'pulse-ready-glow' : ''}`}>
       <div className="order-head">
         <div>
           <span className="location-tag">ORDER #{order.id} · {order.outlets?.name || order.outlet_id}</span>
           <h3>{money(order.total)}</h3>
           <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-            {new Date(order.created_at).toLocaleString('en-IN')}
+            <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+            {new Date(order.created_at).toLocaleString('en-IN')} ({minsAgo} min ago)
           </small>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <span className={`status-badge ${order.status}`}>{order.status}</span>
+          <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => onShowReceipt && onShowReceipt(order)}>
+            <FileText size={13} /> Receipt
+          </button>
           {!isCancelled && (
-            <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => repeatOrder(order)}>
-              <Repeat size={14} /> Repeat
+            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => repeatOrder(order)}>
+              <Repeat size={13} /> Repeat
             </button>
           )}
         </div>
@@ -1285,11 +1363,11 @@ function OrderCard({ order, repeatOrder }) {
       </div>
 
       {isReady && (
-        <div className="pickup-box">
+        <div className="pickup-box pulse-ready-glow">
           <div>
             <h4>READY FOR PICKUP! 🎉</h4>
-            <p style={{ color: '#047857', fontSize: '13px' }}>Show token or QR at the counter.</p>
-            <div className="token-badge">TOKEN #{order.token}</div>
+            <p style={{ color: '#047857', fontSize: '13px' }}>Show token or QR at counter to collect your meal.</p>
+            <div className="token-badge" style={{ marginTop: 8 }}>TOKEN #{order.token}</div>
           </div>
           <div className="qr-container">
             <SvgQrCode value={`CB1.${order.id}.${order.token}`} size={90} />
@@ -1305,11 +1383,29 @@ function OrderCard({ order, repeatOrder }) {
 // WALLET VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function WalletView({ wallet, topUp, busy, currentUser }) {
+  const [filter, setFilter] = useState('all') // 'all' | 'credit' | 'debit'
+  const [customAmt, setCustomAmt] = useState('')
+
   const income  = wallet.transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const spent   = wallet.transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
 
+  const filteredTxns = (wallet.transactions || []).filter(tx => {
+    if (filter === 'credit') return tx.amount > 0
+    if (filter === 'debit') return tx.amount < 0
+    return true
+  })
+
+  function handleCustomTopup(e) {
+    e.preventDefault()
+    const val = parseInt(customAmt, 10)
+    if (val && val > 0) {
+      topUp(val)
+      setCustomAmt('')
+    }
+  }
+
   return (
-    <section>
+    <section className="tab-content-enter">
       <div className="wallet-card">
         <p className="eyebrow"><Banknote size={14} /> CAMPUS PREPAID WALLET · {currentUser.full_name}</p>
         <h2>{money(wallet.balance)}</h2>
@@ -1328,38 +1424,68 @@ function WalletView({ wallet, topUp, busy, currentUser }) {
         <p style={{ marginBottom: '14px', color: '#94A3B8', fontSize: '13px' }}>Instant UPI / Card / Netbanking top-up:</p>
         <div className="topup-grid">
           {[100, 200, 500, 1000, 2000].map(amt => (
-            <button className="topup-btn" key={amt} onClick={() => topUp(amt)} disabled={busy}>
+            <button className="topup-btn btn-spring" key={amt} onClick={() => topUp(amt)} disabled={busy}>
               <Plus size={16} /> {money(amt)}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleCustomTopup} style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+          <input
+            type="number"
+            placeholder="Custom amount (₹)..."
+            value={customAmt}
+            onChange={e => setCustomAmt(e.target.value)}
+            style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#FFFFFF', outline: 0, fontFamily: 'var(--font-body)' }}
+          />
+          <button type="submit" className="btn-primary btn-spring" disabled={busy || !customAmt}>
+            Add Money
+          </button>
+        </form>
+      </div>
+
+      <div className="section-heading" style={{ marginTop: '24px' }}>
+        <div><h2>Transaction Ledger</h2></div>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {['all', 'credit', 'debit'].map(f => (
+            <button
+              key={f}
+              className={`filter-pill ${filter === f ? 'active' : ''}`}
+              style={{ padding: '4px 12px', fontSize: '11.5px' }}
+              onClick={() => setFilter(f)}
+            >
+              {f === 'all' ? 'All' : f === 'credit' ? 'Credits (+)' : 'Debits (-)'}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="section-heading">
-        <div><h2>Transaction Ledger</h2></div>
-        <span>{wallet.transactions.length} transactions</span>
-      </div>
-
       <div className="transaction-list">
-        {(wallet.transactions || []).map(tx => {
-          const isPos = tx.amount > 0
-          return (
-            <div className="transaction-row" key={tx.id}>
-              <div className={`txn-icon ${isPos ? 'txn-in' : 'txn-out'}`}>
-                {isPos ? <TrendingUp size={16} /> : <ShoppingBag size={16} />}
+        {filteredTxns.length === 0 ? (
+          <div className="empty-state" style={{ padding: '24px' }}>
+            <p style={{ color: 'var(--text-muted)' }}>No transactions found for this filter.</p>
+          </div>
+        ) : (
+          filteredTxns.map(tx => {
+            const isPos = tx.amount > 0
+            return (
+              <div className="transaction-row card-lift-hover" key={tx.id}>
+                <div className={`txn-icon ${isPos ? 'txn-in' : 'txn-out'}`}>
+                  {isPos ? <TrendingUp size={16} /> : <ShoppingBag size={16} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ fontSize: '14px' }}>{tx.kind}</strong>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '12px', display: 'block' }}>
+                    {new Date(tx.created_at || Date.now()).toLocaleString('en-IN')} · {tx.ref}
+                  </small>
+                </div>
+                <div className="txn-amount" style={{ color: isPos ? '#059669' : 'var(--text-main)', fontWeight: 800 }}>
+                  {isPos ? '+' : ''}{money(tx.amount)}
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <strong style={{ fontSize: '14px' }}>{tx.kind}</strong>
-                <small style={{ color: 'var(--text-muted)', fontSize: '12px', display: 'block' }}>
-                  {new Date(tx.created_at || Date.now()).toLocaleString('en-IN')} · {tx.ref}
-                </small>
-              </div>
-              <div className="txn-amount" style={{ color: isPos ? '#059669' : 'var(--text-main)' }}>
-                {isPos ? '+' : ''}{money(tx.amount)}
-              </div>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
     </section>
   )
@@ -1371,11 +1497,16 @@ function WalletView({ wallet, topUp, busy, currentUser }) {
 function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice }) {
 
-  const [scanInput, setScanInput]         = useState('')
-  const [creditUserEmail, setCreditUserEmail] = useState('event.priya@vitstudent.ac.in')
-  const [creditAmount, setCreditAmount]   = useState('500')
-  const [tvMode, setTvMode]               = useState(false)
-  const [staffTab, setStaffTab]           = useState('queue') // 'queue' | 'menu' | 'summary' | 'tv'
+  const [scanInput, setScanInput]                 = useState('')
+  const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitstudent.ac.in')
+  const [creditAmount, setCreditAmount]           = useState('500')
+  const [tvMode, setTvMode]                       = useState(false)
+  const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'menu' | 'summary' | 'tv'
+  const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'orders' | 'event' | 'scanner'
+  const [soundEnabled, setSoundEnabled]           = useState(true)
+  const [ordersSearch, setOrdersSearch]           = useState('')
+  const [ordersFilterStatus, setOrdersFilterStatus] = useState('all')
+  const [itemSearchQuery, setItemSearchQuery]     = useState('')
 
   const isStaff = profile.role === 'staff'
   const isAdmin = profile.role === 'admin'
@@ -1390,6 +1521,19 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   const todayRevenue = todayOrders.reduce((s, o) => s + o.total, 0)
   const readyCount = myOrders.filter(o => o.status === 'ready').length
 
+  // Filtered orders for Admin Live Stream
+  const filteredCampusOrders = orders.filter(o => {
+    if (ordersFilterStatus !== 'all' && o.status !== ordersFilterStatus) return false
+    if (!ordersSearch.trim()) return true
+    const q = ordersSearch.toLowerCase()
+    return (
+      (o.id && o.id.toString().includes(q)) ||
+      (o.token && o.token.toString().includes(q)) ||
+      (o.outlets?.name && o.outlets.name.toLowerCase().includes(q)) ||
+      (o.outlet_id && o.outlet_id.toLowerCase().includes(q))
+    )
+  })
+
   // TV mode: full-screen ready tokens display
   if (tvMode) {
     return (
@@ -1403,7 +1547,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
         </div>
         <div className="tv-tokens">
           {myOrders.filter(o => o.status === 'ready').map(o => (
-            <div key={o.id} className="tv-token-card">
+            <div key={o.id} className="tv-token-card pulse-ready-glow">
               <div className="tv-token-num">#{o.token}</div>
               <div className="tv-token-outlet">{o.outlets?.name || o.outlet_id}</div>
             </div>
@@ -1457,94 +1601,163 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   }).sort((a, b) => b.revenue - a.revenue)
 
   return (
-    <section>
-      {/* Staff console tabs */}
+    <section className="tab-content-enter">
+      {/* ── STAFF CONTROLS HEADER ── */}
       {isStaff && (
-        <nav className="nav-tabs" style={{ marginBottom: '24px' }}>
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px', background: '#FFFFFF', padding: '14px 18px', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+            <div>
+              <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>{myOutlet.name}</strong>
+              <small style={{ display: 'block', color: 'var(--text-muted)' }}>{myOutlet.location}</small>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="btn-secondary btn-spring"
+                style={{ padding: '6px 12px', fontSize: '12px' }}
+                onClick={() => {
+                  setSoundEnabled(s => !s)
+                  if (!soundEnabled) playNewOrderChime()
+                }}
+              >
+                {soundEnabled ? <Volume2 size={14} color="#16A34A" /> : <VolumeX size={14} color="#DC2626" />}
+                <span>{soundEnabled ? 'Chimes: ON' : 'Chimes: MUTE'}</span>
+              </button>
+              <button
+                className="btn-secondary btn-spring"
+                style={{ padding: '6px 12px', fontSize: '12px' }}
+                onClick={playNewOrderChime}
+                title="Test kitchen order alert speaker"
+              >
+                🔔 Test Sound
+              </button>
+              <button
+                className="btn-primary btn-spring"
+                style={{ background: myOutlet.is_open ? '#059669' : '#DC2626', padding: '6px 14px', fontSize: '12px' }}
+                onClick={() => toggleOutletOpen(myOutlet.id)}
+              >
+                {myOutlet.is_open ? '🟢 Counter Open' : '🔴 Counter Closed'}
+              </button>
+            </div>
+          </div>
+
+          <nav className="nav-tabs" style={{ marginBottom: '20px' }}>
+            {[
+              { key: 'queue', label: 'Live Queue', icon: <Clock3 size={16} /> },
+              { key: 'menu', label: 'Menu Control', icon: <Edit size={16} /> },
+              { key: 'summary', label: 'Daily Summary', icon: <BarChart2 size={16} /> },
+              { key: 'tv', label: 'TV Screen', icon: <Monitor size={16} /> },
+            ].map(t => (
+              <button key={t.key}
+                className={staffTab === t.key ? 'active' : ''}
+                onClick={() => t.key === 'tv' ? setTvMode(true) : setStaffTab(t.key)}
+              >
+                {t.icon} {t.label}
+                {t.key === 'queue' && readyCount > 0 && <span className="nav-badge">{readyCount}</span>}
+              </button>
+            ))}
+          </nav>
+        </>
+      )}
+
+      {/* ── ADMIN TABS SUBNAV ── */}
+      {isAdmin && (
+        <div className="admin-subnav">
           {[
-            { key: 'queue', label: 'Live Queue', icon: <Clock3 size={16} /> },
-            { key: 'menu', label: 'Menu Control', icon: <Edit size={16} /> },
-            { key: 'summary', label: 'Daily Summary', icon: <BarChart2 size={16} /> },
-            { key: 'tv', label: 'TV Screen', icon: <Monitor size={16} /> },
-          ].map(t => (
-            <button key={t.key}
-              className={staffTab === t.key ? 'active' : ''}
-              onClick={() => t.key === 'tv' ? setTvMode(true) : setStaffTab(t.key)}
+            { key: 'kpi', label: '📊 Campus Overview', count: null },
+            { key: 'canteens', label: '🏪 Canteen Management', count: outlets.filter(o => !o.is_event).length },
+            { key: 'orders', label: '📦 Live Campus Stream', count: orders.length },
+            { key: 'event', label: '🎪 Riviera Fest Mode', count: eventMode ? 'LIVE' : null },
+            { key: 'scanner', label: '🔍 Token & QR Scanner', count: null },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              className={`admin-subnav-btn btn-spring ${adminTab === tab.key ? 'active' : ''}`}
+              onClick={() => setAdminTab(tab.key)}
             >
-              {t.icon} {t.label}
-              {t.key === 'queue' && readyCount > 0 && <span className="nav-badge">{readyCount}</span>}
+              <span>{tab.label}</span>
+              {tab.count && (
+                <span style={{ fontSize: '11px', background: adminTab === tab.key ? 'rgba(255,255,255,0.2)' : '#F1F5F9', padding: '2px 7px', borderRadius: '10px' }}>
+                  {tab.count}
+                </span>
+              )}
             </button>
           ))}
-        </nav>
+        </div>
       )}
 
       {/* ── STAFF QUEUE TAB ── */}
-      {(isStaff && staffTab === 'queue' || isAdmin) && (
+      {isStaff && staffTab === 'queue' && (
         <>
-          {/* QR / Token scanner */}
+          {/* Quick scan box */}
           <div className="admin-card">
-            <h3><QrCode size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Scan QR or Enter Token to Collect</h3>
-            <form onSubmit={handleScanSubmit} style={{ display: 'flex', gap: '12px', marginTop: '14px' }}>
+            <h3><QrCode size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Counter Fast Collection Scanner</h3>
+            <form onSubmit={handleScanSubmit} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
               <input
                 value={scanInput}
                 onChange={e => setScanInput(e.target.value)}
-                placeholder="Scan QR string or type 3-digit token (e.g. 248)..."
-                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0, fontFamily: 'var(--font-body)' }}
+                placeholder="Scan student QR code or type 3-digit token (e.g. 248)..."
+                style={{ flex: 1, padding: '11px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0, fontFamily: 'var(--font-body)' }}
               />
-              <button type="submit" className="btn-primary">Verify & Collect</button>
+              <button type="submit" className="btn-primary btn-spring">Verify & Hand Over</button>
             </form>
           </div>
 
-          {/* Queue summary bar */}
           <div className="queue-summary-bar">
             <div className="queue-stat"><span className="qs-num">{myOrders.filter(o => o.status === 'placed').length}</span><span>Placed</span></div>
             <div className="queue-stat"><span className="qs-num qs-prep">{myOrders.filter(o => o.status === 'preparing').length}</span><span>Preparing</span></div>
             <div className="queue-stat"><span className="qs-num qs-ready">{myOrders.filter(o => o.status === 'ready').length}</span><span>Ready</span></div>
-            <button className="tv-btn" onClick={() => setTvMode(true)}><Monitor size={15} /> Counter TV</button>
+            <button className="tv-btn btn-spring" onClick={() => setTvMode(true)}><Monitor size={15} /> Open TV Board</button>
           </div>
 
-          {/* Active order KOT cards */}
-          <h3 style={{ fontSize: '20px', margin: '20px 0 14px', fontFamily: 'var(--font-heading)' }}>
-            Kitchen Order Tickets (oldest first)
+          <h3 style={{ fontSize: '18px', margin: '20px 0 12px', fontFamily: 'var(--font-heading)' }}>
+            Kitchen Order Tickets (chronological queue)
           </h3>
           {!myOrders.length ? (
-            <div className="empty-state"><CheckCircle2 size={36} /><h3>All clear!</h3><p>No active orders in queue.</p></div>
+            <div className="empty-state"><CheckCircle2 size={36} /><h3>All clear!</h3><p>No active orders in kitchen queue.</p></div>
           ) : (
-            myOrders.map(order => (
-              <div className={`kot-card kot-${order.status}`} key={order.id}>
-                <div className="kot-header">
-                  <div>
-                    <strong className="kot-token">TOKEN #{order.token}</strong>
-                    <span className="kot-orderid">Order #{order.id}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: 8 }}>
-                      <Clock size={11} /> {Math.round((Date.now() - new Date(order.created_at)) / 60000)} min ago
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', fontWeight: 800 }}>{money(order.total)}</span>
-                    <span className={`status-badge ${order.status}`}>{order.status}</span>
-                  </div>
-                </div>
-                <div className="kot-items">
-                  {(order.order_items || []).map((item, idx) => (
-                    <div key={idx} className="kot-item-row">
-                      <span className="kot-qty">{item.qty}×</span>
-                      <span className="kot-item-name">{item.name}</span>
-                      {item.notes && <span className="kot-notes">📝 {item.notes}</span>}
+            myOrders.map(order => {
+              const mins = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
+              const timerColor = mins > 15 ? '#DC2626' : mins > 8 ? '#D97706' : '#059669'
+              return (
+                <div className={`kot-card kot-${order.status} ${order.status === 'ready' ? 'pulse-ready-glow' : ''}`} key={order.id}>
+                  <div className="kot-header">
+                    <div>
+                      <strong className="kot-token">TOKEN #{order.token}</strong>
+                      <span className="kot-orderid">Order #{order.id}</span>
+                      <span style={{ fontSize: '12px', color: timerColor, marginLeft: 10, fontWeight: 700 }}>
+                        <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
+                        {mins} min ago {mins > 15 ? '⚠️ RUSH' : ''}
+                      </span>
                     </div>
-                  ))}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', fontWeight: 800 }}>{money(order.total)}</span>
+                      <span className={`status-badge ${order.status}`}>{order.status}</span>
+                    </div>
+                  </div>
+                  <div className="kot-items">
+                    {(order.order_items || []).map((item, idx) => (
+                      <div key={idx} className="kot-item-row">
+                        <span className="kot-qty">{item.qty}×</span>
+                        <span className="kot-item-name">{item.name}</span>
+                        {item.notes && <span className="kot-notes">📝 {item.notes}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
+                    {order.status !== 'ready' && (
+                      <button className="btn-primary btn-spring" onClick={() => advanceOrderStatus(order.id)}>
+                        Mark as {order.status === 'placed' ? '🔥 Preparing' : '✅ Ready for Student'}
+                      </button>
+                    )}
+                    {order.status === 'ready' && (
+                      <button className="btn-primary btn-spring" style={{ background: '#059669' }} onClick={() => advanceOrderStatus(order.id)}>
+                        ✅ Mark Collected / Handed Over
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {order.status !== 'ready' && (
-                  <button className="btn-primary" style={{ marginTop: '14px' }}
-                    onClick={() => advanceOrderStatus(order.id)}>
-                    Mark as {order.status === 'placed' ? '🔥 Preparing' : '✅ Ready'}
-                  </button>
-                )}
-                {order.status === 'ready' && (
-                  <div className="kot-ready-label">✅ READY — waiting for pickup</div>
-                )}
-              </div>
-            ))
+              )
+            })
           )}
         </>
       )}
@@ -1552,44 +1765,47 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
       {/* ── STAFF MENU TAB ── */}
       {isStaff && staffTab === 'menu' && (
         <div className="admin-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <h3>{myOutlet.name}</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Toggle item availability and counter status</p>
+              <h3>{myOutlet.name} — Menu Stock Control</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Toggle item availability instantly</p>
             </div>
-            <button
-              className={`btn-primary ${!myOutlet.is_open ? '' : ''}`}
-              style={{ background: myOutlet.is_open ? '#059669' : '#DC2626' }}
-              onClick={() => toggleOutletOpen(myOutlet.id)}
-            >
-              {myOutlet.is_open ? '🟢 Counter Open' : '🔴 Counter Closed'}
-            </button>
+            <div style={{ width: '220px' }}>
+              <input
+                value={itemSearchQuery}
+                onChange={e => setItemSearchQuery(e.target.value)}
+                placeholder="Search items..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+              />
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
-            {(myOutlet.menu_items || []).map(item => (
-              <div key={item.id} style={{ padding: '12px 16px', background: '#F8FAFC', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
-                  <strong style={{ fontSize: '13px', marginLeft: 8 }}>{item.name}</strong>
-                  <small style={{ display: 'block', color: 'var(--text-muted)', marginTop: 2 }}>{money(item.price)}</small>
+            {(myOutlet.menu_items || [])
+              .filter(i => !itemSearchQuery.trim() || i.name.toLowerCase().includes(itemSearchQuery.toLowerCase()))
+              .map(item => (
+                <div key={item.id} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                    <strong style={{ fontSize: '13.5px', marginLeft: 8 }}>{item.name}</strong>
+                    <small style={{ display: 'block', color: 'var(--text-muted)', marginTop: 2 }}>{money(item.price)}</small>
+                  </div>
+                  <button
+                    className={`toggle-avail-btn btn-spring ${item.available !== false ? 'avail-in' : 'avail-out'}`}
+                    onClick={() => toggleItemAvailability(myOutlet.id, item.id)}
+                  >
+                    {item.available !== false ? '✅ In Stock' : '❌ Sold Out'}
+                  </button>
                 </div>
-                <button
-                  className={`toggle-avail-btn ${item.available !== false ? 'avail-in' : 'avail-out'}`}
-                  onClick={() => toggleItemAvailability(myOutlet.id, item.id)}
-                >
-                  {item.available !== false ? '✅ In Stock' : '❌ Sold Out'}
-                </button>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
 
-      {/* ── STAFF DAILY SUMMARY TAB ── */}
+      {/* ── STAFF SUMMARY TAB ── */}
       {isStaff && staffTab === 'summary' && (
         <div className="admin-card">
-          <h3><BarChart2 size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Today's Summary — {myOutlet.name}</h3>
-          <div className="sales-grid" style={{ marginTop: '20px' }}>
+          <h3><BarChart2 size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Today's Shift Summary — {myOutlet.name}</h3>
+          <div className="sales-grid" style={{ marginTop: '16px' }}>
             <div className="sales-stat-box">
               <h4>Revenue Today</h4>
               <p>{money(todayRevenue)}</p>
@@ -1608,101 +1824,43 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
             </div>
           </div>
 
-          <h4 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '15px' }}>Top Items Ordered Today</h4>
+          <h4 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '15px' }}>Top Selling Items Today</h4>
           {(() => {
             const freq = {}
             todayOrders.forEach(o => (o.order_items || []).forEach(i => {
               freq[i.name] = (freq[i.name] || 0) + i.qty
             }))
-            return Object.entries(freq)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 5)
-              .map(([name, count]) => (
-                <div key={name} className="top-item-row">
-                  <span>{name}</span>
-                  <div className="top-item-bar-wrap">
-                    <div className="top-item-bar" style={{ width: `${Math.min(100, (count / Math.max(...Object.values(freq))) * 100)}%` }} />
-                  </div>
-                  <span className="top-item-count">{count}× sold</span>
+            const entries = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 5)
+            if (!entries.length) return <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No orders recorded yet today.</p>
+            const maxVal = Math.max(...entries.map(e => e[1]))
+            return entries.map(([name, count]) => (
+              <div key={name} className="top-item-row">
+                <span>{name}</span>
+                <div className="top-item-bar-wrap">
+                  <div className="top-item-bar" style={{ width: `${Math.min(100, (count / maxVal) * 100)}%` }} />
                 </div>
-              ))
+                <span className="top-item-count">{count}× sold</span>
+              </div>
+            ))
           })()}
         </div>
       )}
 
-      {/* ── ADMIN CONSOLE ── */}
-      {isAdmin && (
+      {/* ── ADMIN: KPI OVERVIEW ── */}
+      {isAdmin && adminTab === 'kpi' && (
         <>
-          {/* Event Mode */}
           <div className="admin-card">
-            <h3><Zap size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Riviera Event Mode Control</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
-              Enabling Event Mode closes all 13 campus canteens and activates 20+ Riviera stalls.
-            </p>
-            <button
-              className="btn-primary"
-              style={{ background: eventMode ? '#DC2626' : '#059669' }}
-              onClick={() => {
-                setEventMode(m => !m)
-                setNotice(eventMode ? '📣 Regular canteens OPEN — Event Mode off.' : '🎪 Riviera Event Mode ACTIVE! 20 stalls open.')
-              }}
-            >
-              {eventMode ? '🔴 Disable Event Mode' : '🟢 Activate Riviera Event Mode'}
-            </button>
-          </div>
-
-          {/* Per-outlet revenue breakdown */}
-          <div className="admin-card">
-            <h3><BarChart2 size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Revenue by Outlet</h3>
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {outletRevenues.filter(r => r.count > 0 || r.revenue > 0).map(({ outlet, count, revenue }) => {
-                const maxRev = Math.max(...outletRevenues.map(r => r.revenue), 1)
-                return (
-                  <div key={outlet.id} className="outlet-revenue-row">
-                    <div className="outlet-rev-name">{outlet.name}</div>
-                    <div className="outlet-rev-bar-wrap">
-                      <div className="outlet-rev-bar" style={{ width: `${(revenue / maxRev) * 100}%` }} />
-                    </div>
-                    <div className="outlet-rev-stats">{count} orders · {money(revenue)}</div>
-                  </div>
-                )
-              })}
-              {outletRevenues.every(r => r.count === 0) && (
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No orders placed yet. Place demo orders to see revenue data.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Admin credit event team wallet */}
-          <div className="admin-card">
-            <h3><Users size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Event Team Wallet Credit Tool</h3>
-            <form onSubmit={handleAdminCredit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px' }}>
-              <input
-                type="email" value={creditUserEmail}
-                onChange={e => setCreditUserEmail(e.target.value)}
-                placeholder="Student/Event Crew Email"
-                style={{ flex: 1, minWidth: '200px', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0 }}
-              />
-              <input
-                type="number" value={creditAmount}
-                onChange={e => setCreditAmount(e.target.value)}
-                placeholder="Amount (₹)"
-                style={{ width: '120px', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0 }}
-              />
-              <button type="submit" className="btn-primary">Transfer Allowance</button>
-            </form>
-          </div>
-
-          {/* Overall analytics */}
-          <div className="admin-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3><PieChart size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Campus Analytics Overview</h3>
-              <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3><PieChart size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Campus Dining Executive Overview</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Real-time metrics across all 13 campus outlets</p>
+              </div>
+              <button className="btn-secondary btn-spring" style={{ padding: '8px 16px', fontSize: '13px' }}
                 onClick={() => exportOrdersCSV(orders)}>
                 <Download size={14} /> Export CSV
               </button>
             </div>
-            <div className="sales-grid" style={{ marginTop: '20px' }}>
+            <div className="sales-grid" style={{ marginTop: '16px' }}>
               <div className="sales-stat-box">
                 <h4>Total Revenue</h4>
                 <p>{money(orders.reduce((s, o) => s + o.total, 0))}</p>
@@ -1730,6 +1888,239 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
             </div>
           </div>
         </>
+      )}
+
+      {/* ── ADMIN: CANTEENS BREAKDOWN ── */}
+      {isAdmin && adminTab === 'canteens' && (
+        <div className="admin-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3><Store size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Campus Canteens & Stalls Management</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Live counter controls and revenue breakdown</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {outlets.map(outlet => {
+              const outletOrders = orders.filter(o => o.outlet_id === outlet.id)
+              const rev = outletOrders.reduce((s, o) => s + o.total, 0)
+              const totalRev = Math.max(1, orders.reduce((s, o) => s + o.total, 0))
+              const pct = Math.round((rev / totalRev) * 100)
+              return (
+                <div key={outlet.id} style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ flex: '1 1 240px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <strong style={{ fontSize: '15px' }}>{outlet.name}</strong>
+                      {outlet.is_event && <span style={{ fontSize: '10px', background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '10px', fontWeight: 800 }}>RIVIERA</span>}
+                    </div>
+                    <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>{outlet.location}</small>
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ flex: 1, height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--blue-primary)', borderRadius: '3px' }} />
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{outletOrders.length} orders · {money(rev)}</span>
+                    </div>
+                  </div>
+                  <button
+                    className="btn-primary btn-spring"
+                    style={{ background: outlet.is_open ? '#059669' : '#DC2626', padding: '7px 14px', fontSize: '12px' }}
+                    onClick={() => toggleOutletOpen(outlet.id)}
+                  >
+                    {outlet.is_open ? '🟢 Open' : '🔴 Closed'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── ADMIN: LIVE ORDERS STREAM ── */}
+      {isAdmin && adminTab === 'orders' && (
+        <div className="admin-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+            <div>
+              <h3><Package size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Live Campus Orders Stream</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Real-time feed of all university orders</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <input
+                value={ordersSearch}
+                onChange={e => setOrdersSearch(e.target.value)}
+                placeholder="Search token, ID, canteen..."
+                style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '13px', width: '200px' }}
+              />
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {['all', 'placed', 'preparing', 'ready', 'collected'].map(st => (
+                  <button
+                    key={st}
+                    className={`filter-pill btn-spring ${ordersFilterStatus === st ? 'active' : ''}`}
+                    style={{ padding: '4px 10px', fontSize: '11px' }}
+                    onClick={() => setOrdersFilterStatus(st)}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="orders-table-wrapper">
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th>Order ID</th>
+                  <th>Outlet</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCampusOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                      No orders match your search or filter.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCampusOrders.map(o => (
+                    <tr key={o.id}>
+                      <td><strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--blue-primary)' }}>#{o.token}</strong></td>
+                      <td>#{o.id}</td>
+                      <td>{o.outlets?.name || o.outlet_id}</td>
+                      <td>{(o.order_items || []).map(i => `${i.qty}× ${i.name}`).join(', ')}</td>
+                      <td><strong>{money(o.total)}</strong></td>
+                      <td><span className={`status-badge ${o.status}`}>{o.status}</span></td>
+                      <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td>
+                        {o.status !== 'collected' && (
+                          <button
+                            className="btn-secondary btn-spring"
+                            style={{ padding: '4px 8px', fontSize: '11px' }}
+                            onClick={() => advanceOrderStatus(o.id)}
+                          >
+                            Advance ➔
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADMIN: RIVIERA FEST & ALLOWANCE ── */}
+      {isAdmin && adminTab === 'event' && (
+        <>
+          <div className="admin-card">
+            <h3><Zap size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Riviera Fest Mode Switch</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '14px' }}>
+              Enabling Riviera Event Mode closes standard canteens and activates 20+ festival food stalls.
+            </p>
+            <button
+              className="btn-primary btn-spring"
+              style={{ background: eventMode ? '#DC2626' : '#059669' }}
+              onClick={() => {
+                setEventMode(m => !m)
+                setNotice(eventMode ? '📣 Regular canteens OPEN — Event Mode off.' : '🎪 Riviera Event Mode ACTIVE! 20 stalls open.')
+              }}
+            >
+              {eventMode ? '🔴 Disable Event Mode (Return to Regular Canteens)' : '🟢 Activate Riviera Event Mode'}
+            </button>
+          </div>
+
+          <div className="admin-card">
+            <h3><Users size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Event Crew Wallet Allowance Tool</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '12px' }}>
+              Credit meals allowance directly to Riviera volunteers and organizing committee.
+            </p>
+            <form onSubmit={handleAdminCredit} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <input
+                type="email" value={creditUserEmail}
+                onChange={e => setCreditUserEmail(e.target.value)}
+                placeholder="Student/Crew Email (e.g. crew@vitstudent.ac.in)"
+                style={{ flex: 1, minWidth: '220px', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0 }}
+              />
+              <input
+                type="number" value={creditAmount}
+                onChange={e => setCreditAmount(e.target.value)}
+                placeholder="Amount (₹)"
+                style={{ width: '130px', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0 }}
+              />
+              <button type="submit" className="btn-primary btn-spring">Credit Allowance</button>
+            </form>
+          </div>
+        </>
+      )}
+
+      {/* ── ADMIN: SCANNER & VERIFIER ── */}
+      {isAdmin && adminTab === 'scanner' && (
+        <div className="admin-card">
+          <h3><QrCode size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Token & QR Code Verifier Terminal</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '14px' }}>
+            Instant verification for counter pickups across all canteens
+          </p>
+          <form onSubmit={handleScanSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <input
+              value={scanInput}
+              onChange={e => setScanInput(e.target.value)}
+              placeholder="Scan QR string or type 3-digit token (e.g. 248)..."
+              style={{ flex: 1, padding: '12px 14px', borderRadius: '12px', border: '1.5px solid var(--border-color)', outline: 0, fontFamily: 'var(--font-body)', fontSize: '15px' }}
+            />
+            <button type="submit" className="btn-primary btn-spring">Verify & Collect</button>
+          </form>
+
+          {(() => {
+            const match = orders.find(o =>
+              scanInput.trim() && (
+                o.token === scanInput.trim() ||
+                scanInput.includes(o.token) ||
+                scanInput.includes(o.id.toString())
+              )
+            )
+            if (!match) return null
+            return (
+              <div style={{ background: '#F8FAFC', border: '1.5px solid var(--blue-primary)', borderRadius: '14px', padding: '16px', animation: 'card-in 0.3s ease' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <strong style={{ fontSize: '18px', color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)' }}>TOKEN #{match.token}</strong>
+                  <span className={`status-badge ${match.status}`}>{match.status}</span>
+                </div>
+                <p style={{ margin: '4px 0', fontSize: '14px' }}><strong>Outlet:</strong> {match.outlets?.name || match.outlet_id}</p>
+                <p style={{ margin: '4px 0', fontSize: '14px' }}><strong>Order ID:</strong> #{match.id}</p>
+                <p style={{ margin: '4px 0', fontSize: '14px' }}><strong>Total:</strong> {money(match.total)}</p>
+                <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                  <strong>Items:</strong>
+                  <ul style={{ margin: '6px 0 0 20px', fontSize: '13.5px' }}>
+                    {(match.order_items || []).map((it, idx) => (
+                      <li key={idx}>{it.qty}× {it.name} {it.notes ? `(📝 ${it.notes})` : ''}</li>
+                    ))}
+                  </ul>
+                </div>
+                {match.status !== 'collected' && (
+                  <button
+                    className="btn-primary btn-spring"
+                    style={{ marginTop: '14px', width: '100%', justifyContent: 'center' }}
+                    onClick={() => {
+                      setOrders(ords => ords.map(o => o.id === match.id ? { ...o, status: 'collected' } : o))
+                      setScanInput('')
+                      setNotice(`✅ Order #${match.id} (Token #${match.token}) collected!`)
+                    }}
+                  >
+                    Confirm Collection & Hand Over Meal
+                  </button>
+                )}
+              </div>
+            )
+          })()}
+        </div>
       )}
     </section>
   )
