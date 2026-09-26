@@ -76,7 +76,7 @@ function exportOrdersCSV(orders) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `vbuy-orders-${new Date().toISOString().split('T')[0]}.csv`
+  a.download = `vfood-orders-${new Date().toISOString().split('T')[0]}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -406,7 +406,7 @@ function App() {
   })
 
   // ── Feature 4: Referral Program ──
-  const [referralCode, setReferralCode] = useState('VIT-VBUY26')
+  const [referralCode, setReferralCode] = useState('VIT-VFOOD26')
   const [referrals, setReferrals] = useState([
     { id: 'ref-1', friend_name: 'Priya Patel', status: 'completed', reward_credited: true, date: '2026-09-24' },
     { id: 'ref-2', friend_name: 'Aditya Verma', status: 'pending', reward_credited: false, date: '2026-09-26' }
@@ -438,7 +438,7 @@ function App() {
   const [appliedCoupon, setAppliedCoupon] = useState(null)
 
   function startGroupCart() {
-    const code = 'VBUY-' + Math.floor(10 + Math.random() * 90)
+    const code = 'VFOOD-' + Math.floor(10 + Math.random() * 90)
     setActiveGroup({
       id: 'grp-' + Date.now(),
       code,
@@ -514,10 +514,10 @@ function App() {
   // Realtime subscription + new-order sound alert for staff
   useEffect(() => {
     if (!supabase || !session) return
-    const channel = supabase.channel('vbuy-live')
+    const channel = supabase.channel('vfood-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         if (payload.new?.status === 'ready' && Notification.permission === 'granted') {
-          new Notification('V-BUY — Order Ready! 🎉', {
+          new Notification('V-FOOD — Order Ready! 🎉', {
             body: `Order #${payload.new.id} (Token #${payload.new.token}) is ready for pickup!`,
             icon: '/vit-chennai-logo.png'
           })
@@ -797,7 +797,7 @@ function App() {
           key: 'rzp_test_demo_key',
           amount: amount * 100,
           currency: 'INR',
-          name: 'VIT Chennai V-BUY',
+          name: 'VIT Chennai V-FOOD',
           description: 'Campus Wallet Top-Up',
           handler: () => creditWalletBalance(amount),
           modal: { ondismiss: () => creditWalletBalance(amount) }
@@ -2424,7 +2424,7 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
-                  placeholder="e.g. VBUY-82"
+                  placeholder="e.g. VFOOD-82"
                   value={inputCode}
                   onChange={e => setInputCode(e.target.value.toUpperCase())}
                   style={{ flex: 1, padding: '8px 12px', fontSize: 13, fontWeight: 800, borderRadius: 8, border: '1px solid #CBD5E1', textTransform: 'uppercase' }}
@@ -4699,7 +4699,7 @@ function AuthScreen({ onLoginUser, onBackToLanding }) {
       <div className="login-art">
         <div className="login-art-top">
           <img src="/vit-chennai-logo.png" alt="VIT Chennai" className="vit-logo-img" />
-          <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-BUY</span>
+          <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-FOOD</span>
         </div>
         <div>
           <h1>Unified Food<br />Ordering, Prepaid<br /><span>Wallet & Riviera</span></h1>
@@ -4708,7 +4708,7 @@ function AuthScreen({ onLoginUser, onBackToLanding }) {
             <br />VIT Chennai Campus — CampusBite System.
           </p>
         </div>
-        <small style={{ color: '#64748B' }}>© 2026 VIT Chennai · V-BUY Campus Dining System</small>
+        <small style={{ color: '#64748B' }}>© 2026 VIT Chennai · V-FOOD Campus Dining System</small>
       </div>
 
       <div className="login-form-wrapper">
@@ -4865,7 +4865,7 @@ function AuthScreen({ onLoginUser, onBackToLanding }) {
                   <div className="sms-preview-banner">
                     <div>
                       <strong>💬 VIT SMS Gateway:</strong><br />
-                      <span>Your V-BUY verification code is <strong>4826</strong> (Valid for 5 mins).</span>
+                      <span>Your V-FOOD verification code is <strong>4826</strong> (Valid for 5 mins).</span>
                     </div>
                     <button
                       type="button"
@@ -4963,7 +4963,7 @@ function AuthScreen({ onLoginUser, onBackToLanding }) {
           )}
 
           <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
-            {isSignUp ? 'Already have a registered number?' : "First time on V-BUY?"}{' '}
+            {isSignUp ? 'Already have a registered number?' : "First time on V-FOOD?"}{' '}
             <a href="#" style={{ color: 'var(--blue-primary)', fontWeight: '700' }}
               onClick={e => { e.preventDefault(); setIsSignUp(s => !s); setPhoneStep('input'); setError('') }}>
               {isSignUp ? 'Sign In' : 'Register New Account'}

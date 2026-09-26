@@ -47,7 +47,7 @@ export default function AuthPage() {
             <UtensilsCrossed size={32} className="text-orange-400" />
           </div>
           <h1 className="text-3xl font-extrabold font-heading tracking-tight bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">
-            V-BUY
+            V-FOOD
           </h1>
           <p className="text-white/50 text-sm mt-1 font-sans">VIT Chennai Smart Dining & Wallet</p>
         </div>

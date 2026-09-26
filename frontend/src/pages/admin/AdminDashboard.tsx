@@ -419,7 +419,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `VBUY_Platform_Financial_Audit_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', `VFOOD_Platform_Financial_Audit_${new Date().toISOString().split('T')[0]}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -449,7 +449,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-base md:text-lg text-white">
-                V-BUY Super Admin Console
+                V-FOOD Super Admin Console
               </h1>
               <span className="px-2 py-0.5 rounded-full text-xs font-black bg-purple-500/10 text-purple-400 border border-purple-500/30">
                 UNRESTRICTED SCOPE

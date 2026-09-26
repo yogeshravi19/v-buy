@@ -125,7 +125,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
     last_order_date: new Date().toISOString(),
     vouchers_earned: 1
   })
-  const [referralCode, setReferralCode] = useState<string>('VIT-VBUY26')
+  const [referralCode, setReferralCode] = useState<string>('VIT-VFOOD26')
   const [referralsList, setReferralsList] = useState<ReferralItem[]>([
     { id: 'ref-1', friend_name: 'Priya Patel', status: 'completed', reward_given: true, created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
     { id: 'ref-2', friend_name: 'Aditya Verma', status: 'pending', reward_given: false, created_at: new Date(Date.now() - 3600000 * 5).toISOString() }
@@ -547,7 +547,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-black text-base tracking-tight bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
-                V-BUY
+                V-FOOD
               </span>
               <span className="text-[10px] font-extrabold bg-orange-950 border border-orange-800 text-orange-300 px-1.5 py-0.2 rounded-full uppercase">
                 STUDENT

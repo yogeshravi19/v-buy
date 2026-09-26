@@ -844,7 +844,7 @@ export default function CustomerDashboard() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-extrabold font-heading text-lg tracking-tight bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">V-BUY</h1>
+              <h1 className="font-extrabold font-heading text-lg tracking-tight bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">V-FOOD</h1>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400 border border-orange-500/25">VITC</span>
             </div>
             <p className="text-[11px] text-white/40 leading-tight font-sans">{profile?.full_name || 'VIT Chennai Student'}</p>
