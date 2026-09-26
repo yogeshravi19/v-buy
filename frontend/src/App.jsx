@@ -379,6 +379,78 @@ function App() {
   const [ab3Slot, setAb3Slot]         = useState(getAB3TimeSlot())
   const prevOrderCountRef             = useRef(0)
 
+  // ── Feature 3: Loyalty Streak (Free tier) ──
+  const [loyaltyProgress, setLoyaltyProgress] = useState({
+    completed_orders: 8,
+    free_items_earned: 1,
+    free_items_redeemed: 0
+  })
+
+  // ── Feature 4: Referral Program ──
+  const [referralCode, setReferralCode] = useState('VIT-VBUY26')
+  const [referrals, setReferrals] = useState([
+    { id: 'ref-1', friend_name: 'Priya Patel', status: 'completed', reward_credited: true, date: '2026-09-24' },
+    { id: 'ref-2', friend_name: 'Aditya Verma', status: 'pending', reward_credited: false, date: '2026-09-26' }
+  ])
+
+  // ── Feature 5: Group Ordering ──
+  const [activeGroup, setActiveGroup] = useState(null)
+  const [showGroupModal, setShowGroupModal] = useState(false)
+
+  // ── Feature 7: Scheduled Pickup Slots ──
+  const [pickupSlots, setPickupSlots] = useState([
+    { id: 'slot-1', outlet_id: 'g1', time_label: '12:45 PM - 01:00 PM', max_orders: 15, current_orders: 6 },
+    { id: 'slot-2', outlet_id: 'g1', time_label: '01:00 PM - 01:15 PM', max_orders: 15, current_orders: 15 }, // FULL
+    { id: 'slot-3', outlet_id: 'g1', time_label: '01:15 PM - 01:30 PM', max_orders: 15, current_orders: 4 },
+    { id: 'slot-4', outlet_id: 'g1', time_label: '01:30 PM - 01:45 PM', max_orders: 15, current_orders: 2 },
+    { id: 'slot-5', outlet_id: 'g1', time_label: '01:45 PM - 02:00 PM', max_orders: 15, current_orders: 0 },
+    { id: 'slot-6', outlet_id: 'g1', time_label: '05:00 PM - 05:15 PM', max_orders: 15, current_orders: 1 },
+    { id: 'slot-7', outlet_id: 'g1', time_label: '05:15 PM - 05:30 PM', max_orders: 15, current_orders: 3 }
+  ])
+  const [selectedSlotId, setSelectedSlotId] = useState(null)
+  const [isScheduled, setIsScheduled] = useState(false)
+
+  // ── Feature 8: Coupons & Promo Codes ──
+  const [availableCoupons, setAvailableCoupons] = useState([
+    { code: 'CAMPUS50', discount_type: 'flat', discount_value: 50, min_order_value: 120, max_uses: 500, used_count: 142, description: '₹50 Flat OFF on orders above ₹120' },
+    { code: 'VBIT15', discount_type: 'percent', discount_value: 15, min_order_value: 80, max_uses: 1000, used_count: 310, description: '15% OFF on orders above ₹80' },
+    { code: 'RIVIERA26', discount_type: 'flat', discount_value: 30, min_order_value: 60, max_uses: 300, used_count: 88, description: 'Riviera Special: ₹30 Flat OFF' }
+  ])
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+
+  function startGroupCart() {
+    const code = 'VBUY-' + Math.floor(10 + Math.random() * 90)
+    setActiveGroup({
+      id: 'grp-' + Date.now(),
+      code,
+      creatorName: currentUser?.full_name || 'Rahul Sharma',
+      members: [currentUser?.full_name ? `${currentUser.full_name} (Host)` : 'You (Host)'],
+      items: []
+    })
+    setShowGroupModal(false)
+    setNotice(`👥 Group Cart #${code} created! Share this join code with your friends.`)
+    addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'GROUP_CREATED', `Created group cart #${code}`)
+  }
+
+  function joinGroupCart(code) {
+    if (!code || !code.trim()) return
+    setActiveGroup({
+      id: 'grp-joined',
+      code: code.trim().toUpperCase(),
+      creatorName: 'Friend',
+      members: ['Host', `${currentUser?.full_name || 'You'} (Joined)`],
+      items: []
+    })
+    setShowGroupModal(false)
+    setNotice(`👥 Joined Group Cart #${code.trim().toUpperCase()}!`)
+  }
+
+  function leaveGroupCart() {
+    setActiveGroup(null)
+    setShowGroupModal(false)
+    setNotice('Exited group cart.')
+  }
+
   // Online/offline detection
   useEffect(() => {
     const onOnline = () => setIsOnline(true)
@@ -585,30 +657,87 @@ function App() {
     if (cart.items.some(i => !i.available)) {
       return setNotice('⚠️ Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
     }
-    const total = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0)
-    if (wallet.balance < total) {
-      return setNotice(`Insufficient balance (${money(wallet.balance)}). Top up ${money(total - wallet.balance)} to continue.`)
+
+    const baseTotal = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0)
+    let discount = 0
+
+    // Feature 8: Validate and calculate coupon discount
+    if (appliedCoupon) {
+      if (appliedCoupon.min_order_value && baseTotal < appliedCoupon.min_order_value) {
+        return setNotice(`⚠️ Coupon ${appliedCoupon.code} requires a minimum order of ${money(appliedCoupon.min_order_value)}.`)
+      }
+      if (appliedCoupon.discount_type === 'flat') {
+        discount = Math.min(baseTotal, appliedCoupon.discount_value)
+      } else if (appliedCoupon.discount_type === 'percent') {
+        discount = Math.min(baseTotal, Math.round((baseTotal * appliedCoupon.discount_value) / 100))
+      }
     }
+
+    const studentDebit = Math.max(0, baseTotal - discount)
+
+    if (wallet.balance < studentDebit) {
+      return setNotice(`Insufficient balance (${money(wallet.balance)}). Top up ${money(studentDebit - wallet.balance)} to continue.`)
+    }
+
+    // Feature 7: Validate scheduled pickup slot
+    if (isScheduled && selectedSlotId) {
+      const slot = pickupSlots.find(s => s.id === selectedSlotId)
+      if (slot && slot.current_orders >= slot.max_orders) {
+        return setNotice('⚠️ This pickup slot is full! Please choose another slot or Order Now.')
+      }
+    }
+
     setBusy(true)
     const newId = Math.floor(2000 + Math.random() * 8000)
     const token = Math.floor(100 + Math.random() * 900).toString()
+
     setTimeout(() => {
+      const selectedSlot = isScheduled ? pickupSlots.find(s => s.id === selectedSlotId) : null
       const newOrder = {
-        id: newId, user_id: currentUser?.id || 'usr-1',
+        id: newId,
+        user_id: currentUser?.id || 'usr-1',
         outlet_id: cart.outlet.id,
         outlets: { name: cart.outlet.name, location: cart.outlet.location },
-        token, status: 'placed', total,
+        token,
+        status: 'placed',
+        total: baseTotal,           // shop_payout & platform 5% margin preserved on unmodified total
+        student_paid: studentDebit,
+        discount,
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
+        pickup_slot_id: selectedSlot?.id || null,
+        pickup_slot_time: selectedSlot?.time_label || null,
+        group_id: activeGroup ? activeGroup.id : null,
+        is_group_payer: activeGroup ? true : false,
         created_at: new Date().toISOString(),
         order_items: cart.items.map(i => ({ item_id: i.id, name: i.name, price: i.price, qty: i.qty, notes: i.notes || '' }))
       }
+
       setOrders(prev => [newOrder, ...prev])
+
+      // Atomic wallet debit: Only studentDebit is deducted
       setWallet(w => ({
-        balance: w.balance - total,
+        balance: w.balance - studentDebit,
         transactions: [
-          { id: Date.now(), amount: -total, kind: `Order #${newId} — ${cart.outlet.name}`, ref: `ord_${newId}`, created_at: new Date().toISOString() },
+          {
+            id: Date.now(),
+            amount: -studentDebit,
+            kind: `Order #${newId} — ${cart.outlet.name}${appliedCoupon ? ` (Promo ${appliedCoupon.code} -₹${discount})` : ''}${selectedSlot ? ' [Scheduled]' : ''}`,
+            ref: `ord_${newId}`,
+            created_at: new Date().toISOString()
+          },
           ...w.transactions
         ]
       }))
+
+      // Increment slot usage
+      if (selectedSlot) {
+        setPickupSlots(slots => slots.map(s => s.id === selectedSlot.id ? { ...s, current_orders: s.current_orders + 1 } : s))
+      }
+
+      // Increment coupon usage
+      if (appliedCoupon) {
+        setAvailableCoupons(coups => coups.map(c => c.code === appliedCoupon.code ? { ...c, used_count: c.used_count + 1 } : c))
+      }
 
       // Numerically decrement stock in real time
       setOutlets(outs => outs.map(o => {
@@ -630,10 +759,14 @@ function App() {
       }))
 
       setCart({ outlet: null, items: [] })
+      setAppliedCoupon(null)
+      setIsScheduled(false)
+      setSelectedSlotId(null)
+      if (activeGroup) setActiveGroup(null)
       setBusy(false)
       setTab('orders')
-      setNotice(`🎉 Order #${newId} placed! Pickup Token: #${token}`)
-      addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(total)}) via Campus Wallet`)
+      setNotice(`🎉 Order #${newId} placed! Pickup Token: #${token}${selectedSlot ? ` · Scheduled for ${selectedSlot.time_label}` : ''}`)
+      addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(studentDebit)}${discount > 0 ? `, saved ₹${discount}` : ''}) via Campus Wallet`)
     }, 700)
   }
 
@@ -715,6 +848,30 @@ function App() {
       if (nextStatus !== o.status) {
         addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'ORDER', 'KDS_STATUS_CHANGE', `Order #${orderId} moved to "${nextStatus}" (Token #${o.token})`)
       }
+
+      // Feature 3: Increment loyalty streak on collection
+      // Feature 4: Reward referral bonus on first collected order
+      if (nextStatus === 'collected' && o.status !== 'collected') {
+        setLoyaltyProgress(prev => {
+          const nextCompleted = (prev?.completed_orders || 0) + 1
+          const nextEarned = (nextCompleted % 10 === 0) ? (prev?.free_items_earned || 0) + 1 : (prev?.free_items_earned || 0)
+          return {
+            ...prev,
+            completed_orders: nextCompleted,
+            free_items_earned: nextEarned
+          }
+        })
+
+        // On first collected order, credit referral bonus
+        setReferrals(prevRefs => prevRefs.map(r => {
+          if (r.status === 'pending') {
+            creditWalletBalance(30)
+            return { ...r, status: 'completed', reward_credited: true }
+          }
+          return r
+        }))
+      }
+
       return { ...o, status: nextStatus }
     }))
   }
@@ -943,7 +1100,17 @@ function App() {
         {/* ── WALLET TAB ── */}
         {isCustomer && tab === 'wallet' && (
           <div className="tab-content-enter" key="wallet">
-            <WalletView wallet={wallet} topUp={topUp} busy={busy} currentUser={currentUser} />
+            <WalletView
+              wallet={wallet}
+              topUp={topUp}
+              busy={busy}
+              currentUser={currentUser}
+              loyaltyProgress={loyaltyProgress}
+              referralCode={referralCode}
+              referrals={referrals}
+              setNotice={setNotice}
+              creditWalletBalance={creditWalletBalance}
+            />
           </div>
         )}
 
@@ -958,6 +1125,8 @@ function App() {
             setNotice={setNotice}
             addAuditLog={addAuditLog}
             getItemRatingStats={getItemRatingStats}
+            pickupSlots={pickupSlots}
+            setPickupSlots={setPickupSlots}
           />
         )}
 
@@ -980,15 +1149,48 @@ function App() {
             auditLogs={auditLogs}
             addAuditLog={addAuditLog}
             getItemRatingStats={getItemRatingStats}
+            pickupSlots={pickupSlots}
+            setPickupSlots={setPickupSlots}
+            availableCoupons={availableCoupons}
+            setAvailableCoupons={setAvailableCoupons}
           />
         )}
       </main>
 
       {/* Cart dock */}
       {isCustomer && cart.items.length > 0 && (
-        <CartDock cart={cart} wallet={wallet} busy={busy} placeOrder={placeOrder}
-          addToCart={addToCart} removeFromCart={removeFromCart} updateCartItemNotes={updateCartItemNotes}
-          setCart={setCart} />
+        <CartDock
+          cart={cart}
+          wallet={wallet}
+          busy={busy}
+          placeOrder={placeOrder}
+          addToCart={addToCart}
+          removeFromCart={removeFromCart}
+          updateCartItemNotes={updateCartItemNotes}
+          setCart={setCart}
+          pickupSlots={pickupSlots}
+          isScheduled={isScheduled}
+          setIsScheduled={setIsScheduled}
+          selectedSlotId={selectedSlotId}
+          setSelectedSlotId={setSelectedSlotId}
+          activeGroup={activeGroup}
+          setShowGroupModal={setShowGroupModal}
+          availableCoupons={availableCoupons}
+          appliedCoupon={appliedCoupon}
+          setAppliedCoupon={setAppliedCoupon}
+          setNotice={setNotice}
+        />
+      )}
+
+      {/* ── Feature 5: Group Ordering Modal ── */}
+      {showGroupModal && (
+        <GroupCartModal
+          activeGroup={activeGroup}
+          startGroupCart={startGroupCart}
+          joinGroupCart={joinGroupCart}
+          leaveGroupCart={leaveGroupCart}
+          onClose={() => setShowGroupModal(false)}
+        />
       )}
     </div>
   )
@@ -1487,12 +1689,53 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
 // ─────────────────────────────────────────────────────────────────────────────
 // CART DOCK (expanded with notes)
 // ─────────────────────────────────────────────────────────────────────────────
-function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, updateCartItemNotes, setCart }) {
+function CartDock({
+  cart, wallet, busy, placeOrder, addToCart, removeFromCart, updateCartItemNotes, setCart,
+  pickupSlots = [], isScheduled, setIsScheduled, selectedSlotId, setSelectedSlotId,
+  activeGroup, setShowGroupModal, availableCoupons = [], appliedCoupon, setAppliedCoupon, setNotice
+}) {
   const [expanded, setExpanded] = useState(false)
-  const total = cart.items.reduce((s, i) => s + i.price * i.qty, 0)
-  const qty   = cart.items.reduce((s, i) => s + i.qty, 0)
+  const [couponInput, setCouponInput] = useState('')
+
+  const subtotal = cart.items.reduce((s, i) => s + i.price * i.qty, 0)
+  const qty = cart.items.reduce((s, i) => s + i.qty, 0)
   const hasUnavailable = cart.items.some(i => i.available === false)
   const unavailableItems = cart.items.filter(i => i.available === false)
+
+  // Compute discount on student-facing total
+  let discount = 0
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === 'flat') {
+      discount = Math.min(subtotal, appliedCoupon.discount_value)
+    } else if (appliedCoupon.discount_type === 'percent') {
+      discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
+    }
+  }
+  const finalDebit = Math.max(0, subtotal - discount)
+
+  const outletSlots = pickupSlots.filter(s => s.outlet_id === cart.outlet?.id || s.outlet_id === 'g1')
+
+  function handleApplyCoupon(codeToApply) {
+    const code = (codeToApply || couponInput).trim().toUpperCase()
+    if (!code) return
+    const found = availableCoupons.find(c => c.code.toUpperCase() === code)
+    if (!found) {
+      if (setNotice) setNotice(`⚠️ Coupon code "${code}" is invalid or expired.`)
+      return
+    }
+    if (found.min_order_value && subtotal < found.min_order_value) {
+      if (setNotice) setNotice(`⚠️ Coupon "${code}" requires minimum order value of ${money(found.min_order_value)}.`)
+      return
+    }
+    setAppliedCoupon(found)
+    setCouponInput('')
+    if (setNotice) setNotice(`🎉 Coupon "${found.code}" applied! You save with this offer.`)
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null)
+    if (setNotice) setNotice('Coupon removed.')
+  }
 
   return (
     <div className={`cart-dock ${expanded ? 'cart-dock-expanded' : ''}`}>
@@ -1505,6 +1748,84 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
             </button>
           </div>
 
+          {/* ── Feature 5: Group Ordering Banner ── */}
+          {activeGroup ? (
+            <div className="group-ticket-banner">
+              <span>👥 Group Cart #{activeGroup.code} (Payer: You)</span>
+              <button
+                className="cart-clear-btn"
+                style={{ color: '#FFFFFF', padding: '2px 8px', fontSize: '11px', background: 'rgba(255,255,255,0.2)' }}
+                onClick={() => setShowGroupModal && setShowGroupModal(true)}
+              >
+                Manage ({activeGroup.members.length})
+              </button>
+            </div>
+          ) : (
+            <button
+              className="btn-secondary btn-spring"
+              style={{ padding: '6px 12px', fontSize: '12px', width: '100%', marginBottom: '12px', justifyContent: 'center' }}
+              onClick={() => setShowGroupModal && setShowGroupModal(true)}
+            >
+              <Users size={13} /> Start Group Cart (Order Together)
+            </button>
+          )}
+
+          {/* ── Feature 7: Scheduled Pickup Slots Selector ── */}
+          <div style={{ marginBottom: '14px' }}>
+            <div className="slot-toggle-bar">
+              <button
+                className={`slot-toggle-opt ${!isScheduled ? 'active' : ''}`}
+                onClick={() => { setIsScheduled(false); setSelectedSlotId(null) }}
+              >
+                <Zap size={13} /> Order Now (Immediate Prep)
+              </button>
+              <button
+                className={`slot-toggle-opt ${isScheduled ? 'active' : ''}`}
+                onClick={() => {
+                  setIsScheduled(true)
+                  if (!selectedSlotId && outletSlots.length > 0) {
+                    const firstAvail = outletSlots.find(s => s.current_orders < s.max_orders)
+                    if (firstAvail) setSelectedSlotId(firstAvail.id)
+                  }
+                }}
+              >
+                <Clock size={13} /> Schedule Pickup
+              </button>
+            </div>
+
+            {isScheduled && (
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  Select today's pickup time slot (batch-prepped by kitchen):
+                </p>
+                <div className="slots-grid">
+                  {outletSlots.map(slot => {
+                    const isFull = slot.current_orders >= slot.max_orders
+                    const isSelected = selectedSlotId === slot.id
+                    const remaining = Math.max(0, slot.max_orders - slot.current_orders)
+
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        className={`slot-pill ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''}`}
+                        disabled={isFull}
+                        onClick={() => setSelectedSlotId(slot.id)}
+                        title={isFull ? 'This slot has reached capacity (15/15)' : `${remaining} spots remaining`}
+                      >
+                        <div style={{ fontWeight: 800 }}>{slot.time_label}</div>
+                        <div style={{ fontSize: '10px', color: isFull ? '#EF4444' : '#059669', marginTop: 2 }}>
+                          {isFull ? '⚠️ FULL (15/15)' : `${remaining} slots left`}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Feature 2: Unavailable Items Warning ── */}
           {hasUnavailable && (
             <div className="cart-clear-unavailable-banner">
               <div>
@@ -1523,6 +1844,7 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
             </div>
           )}
 
+          {/* Cart items list */}
           {cart.items.map(item => {
             const foodImg = getFoodImage(item.name, item.category)
             const isAvail = item.available !== false
@@ -1578,14 +1900,80 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
               </div>
             )
           })}
+
+          {/* ── Feature 8: Coupons & Promo Codes ── */}
+          <div className="coupon-box" style={{ marginTop: '12px' }}>
+            {appliedCoupon ? (
+              <div className="applied-coupon-pill">
+                <span>🏷️ Promo <strong>{appliedCoupon.code}</strong> Applied: -{money(discount)}</span>
+                <button
+                  type="button"
+                  style={{ background: 'transparent', border: 0, color: '#15803D', fontWeight: 800, cursor: 'pointer', fontSize: '11.5px' }}
+                  onClick={handleRemoveCoupon}
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="coupon-input-row">
+                  <input
+                    className="coupon-input"
+                    placeholder="Enter Coupon / Promo Code..."
+                    value={couponInput}
+                    onChange={e => setCouponInput(e.target.value)}
+                  />
+                  <button
+                    className="btn-secondary btn-spring"
+                    style={{ padding: '6px 14px', fontSize: '12px' }}
+                    onClick={() => handleApplyCoupon()}
+                    disabled={!couponInput.trim()}
+                  >
+                    Apply
+                  </button>
+                </div>
+                <div className="coupon-chip-row">
+                  {availableCoupons.map(c => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      className="coupon-tag-btn btn-spring"
+                      onClick={() => handleApplyCoupon(c.code)}
+                    >
+                      {c.code} ({c.discount_type === 'flat' ? `₹${c.discount_value} OFF` : `${c.discount_value}% OFF`})
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Price breakdown */}
+            <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #E2E8F0', fontSize: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                <span>Dishes Subtotal:</span>
+                <span>{money(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16A34A', fontWeight: 700, marginTop: 2 }}>
+                  <span>Promo Discount:</span>
+                  <span>-{money(discount)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>
+                <span>Wallet Debit:</span>
+                <span>{money(finalDebit)}</span>
+              </div>
+            </div>
+          </div>
+
           {hasUnavailable && (
             <p className="cart-balance-warn" style={{ color: '#DC2626', background: '#FEE2E2', borderColor: '#FECACA' }}>
               <AlertCircle size={14} /> Remove flagged out-of-stock item(s) to continue checkout.
             </p>
           )}
-          {wallet.balance < total && (
+          {wallet.balance < finalDebit && (
             <p className="cart-balance-warn">
-              <AlertCircle size={14} /> Balance {money(wallet.balance)} — need {money(total - wallet.balance)} more
+              <AlertCircle size={14} /> Balance {money(wallet.balance)} — need {money(finalDebit - wallet.balance)} more
             </p>
           )}
         </div>
@@ -1594,16 +1982,19 @@ function CartDock({ cart, wallet, busy, placeOrder, addToCart, removeFromCart, u
       <div className="cart-dock-bar">
         <button className="cart-expand-btn" onClick={() => setExpanded(e => !e)}>
           <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>⚠️ Has Unavailable</span>}</strong>
-          <small>{cart.outlet?.name}</small>
+          <small>{cart.outlet?.name}{isScheduled ? ' · Scheduled' : ''}</small>
         </button>
-        <div className="cart-dock-total">{money(total)}</div>
+        <div className="cart-dock-total">
+          {discount > 0 && <small style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.6)', marginRight: 6, fontSize: '12px' }}>{money(subtotal)}</small>}
+          {money(finalDebit)}
+        </div>
         <button
           className="btn-primary"
           onClick={placeOrder}
-          disabled={busy || wallet.balance < total || hasUnavailable}
+          disabled={busy || wallet.balance < finalDebit || hasUnavailable || (isScheduled && !selectedSlotId)}
           style={{ background: hasUnavailable ? '#DC2626' : undefined }}
         >
-          {busy ? 'Placing...' : hasUnavailable ? 'Remove Unavailable' : 'Place Order'} <ArrowRight size={18} />
+          {busy ? 'Placing...' : hasUnavailable ? 'Remove Unavailable' : isScheduled ? 'Schedule Order' : 'Place Order'} <ArrowRight size={18} />
         </button>
       </div>
     </div>
@@ -1826,6 +2217,276 @@ function RatingModal({ order, onClose, submitItemRating, itemRatings = [] }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// VISUAL ORDER STEPPER (Phase 2 Step 6)
+// ─────────────────────────────────────────────────────────────────────────────
+function OrderStepper({ status }) {
+  const steps = [
+    { key: 'placed', label: 'Placed', icon: Clock3 },
+    { key: 'preparing', label: 'Preparing', icon: UtensilsCrossed },
+    { key: 'ready', label: 'Ready', icon: Bell },
+    { key: 'collected', label: 'Collected', icon: CheckCircle2 }
+  ]
+  const currentIndex = steps.findIndex(s => s.key === status)
+
+  return (
+    <div className="order-stepper-container">
+      <div className="order-stepper-line">
+        <div
+          className="order-stepper-fill"
+          style={{ width: currentIndex >= 0 ? `${(currentIndex / (steps.length - 1)) * 100}%` : '0%' }}
+        />
+      </div>
+      {steps.map((step, idx) => {
+        const IconComponent = step.icon
+        const isDone = idx < currentIndex
+        const isCurrent = idx === currentIndex
+        const isPending = idx > currentIndex
+
+        return (
+          <div
+            key={step.key}
+            className={`stepper-node ${isDone ? 'active' : ''} ${isCurrent ? 'current' : ''} ${isPending ? 'pending' : ''}`}
+          >
+            <div className="stepper-circle">
+              {isDone ? <Check size={15} /> : <IconComponent size={14} />}
+            </div>
+            <span className="stepper-label">{step.label}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GROUP CART MODAL (Phase 2 Step 5)
+// ─────────────────────────────────────────────────────────────────────────────
+function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroupCart, onClose }) {
+  const [inputCode, setInputCode] = useState('')
+
+  return (
+    <div className="ios-modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+      <div className="rating-modal-card modal-enter" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: '#EDE9FE', color: '#7C3AED', display: 'grid', placeItems: 'center' }}>
+              <Users size={18} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 900, margin: 0, color: 'var(--blue-primary)' }}>Group Food Ordering</h3>
+              <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>Order together with friends · 1 person pays at checkout</p>
+            </div>
+          </div>
+          <button className="cart-clear-btn" onClick={onClose} style={{ padding: 6 }}><X size={18} /></button>
+        </div>
+
+        {activeGroup ? (
+          <div style={{ background: '#F8FAFC', borderRadius: 12, padding: 14, border: '1px solid #E2E8F0', marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#6D28D9' }}>Active Group Cart</span>
+              <span className="group-badge-chip">Join Code: {activeGroup.code}</span>
+            </div>
+            <p style={{ fontSize: 12.5, color: '#475569', margin: '8px 0 12px' }}>
+              Share this code with roommates or batchmates so they can add items to your cart:
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                readOnly
+                value={`https://campusbite-web.onrender.com/?join=${activeGroup.code}`}
+                style={{ flex: 1, padding: '7px 10px', fontSize: 11.5, borderRadius: 8, border: '1px solid #CBD5E1', background: '#FFFFFF' }}
+              />
+              <button
+                className="btn-secondary btn-spring"
+                style={{ padding: '6px 12px', fontSize: 11.5 }}
+                onClick={() => {
+                  if (navigator.clipboard) navigator.clipboard.writeText(activeGroup.code)
+                  alert(`Copied Join Code: ${activeGroup.code}`)
+                }}
+              >
+                Copy
+              </button>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-muted)' }}>Group Members:</span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                {activeGroup.members.map((m, idx) => (
+                  <span key={idx} style={{ background: '#EDE9FE', color: '#6D28D9', padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+                    👤 {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button
+              className="btn-secondary btn-spring"
+              style={{ width: '100%', marginTop: 16, color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2' }}
+              onClick={leaveGroupCart}
+            >
+              Exit Group Cart
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14 }}>
+              <h4 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 800 }}>Start a New Group</h4>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-muted)' }}>
+                You will be the group payer. A join code will be generated to share with your friends.
+              </p>
+              <button
+                className="btn-primary btn-spring"
+                style={{ width: '100%', padding: '9px 14px', fontSize: 13, background: 'linear-gradient(135deg, #7C3AED, #6D28D9)' }}
+                onClick={startGroupCart}
+              >
+                <Users size={14} /> Create Group Cart
+              </button>
+            </div>
+
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14 }}>
+              <h4 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 800 }}>Join Friend's Group</h4>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-muted)' }}>
+                Enter the 6-character code shared by your friend to order food with them:
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  placeholder="e.g. VBUY-82"
+                  value={inputCode}
+                  onChange={e => setInputCode(e.target.value.toUpperCase())}
+                  style={{ flex: 1, padding: '8px 12px', fontSize: 13, fontWeight: 800, borderRadius: 8, border: '1px solid #CBD5E1', textTransform: 'uppercase' }}
+                />
+                <button
+                  className="btn-secondary btn-spring"
+                  disabled={!inputCode.trim()}
+                  onClick={() => joinGroupCart(inputCode)}
+                >
+                  Join
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button className="btn-secondary btn-spring" style={{ width: '100%', marginTop: 14 }} onClick={onClose}>
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOYALTY STREAK CARD (Phase 2 Step 3: Free Tier Streak)
+// ─────────────────────────────────────────────────────────────────────────────
+function LoyaltyStreakCard({ loyaltyProgress }) {
+  const completed = loyaltyProgress?.completed_orders || 0
+  const earned = loyaltyProgress?.free_items_earned || 0
+  const redeemed = loyaltyProgress?.free_items_redeemed || 0
+  const availableRewards = Math.max(0, earned - redeemed)
+  const streakMod = completed % 10
+  const ordersUntilFree = 10 - streakMod
+  const progressPercent = (streakMod / 10) * 100
+
+  return (
+    <div className="loyalty-card">
+      <div className="loyalty-header">
+        <div className="loyalty-title">
+          <span>🔥</span>
+          <span>Campus Loyalty Streak</span>
+        </div>
+        <div className="streak-counter-pill">
+          <Award size={13} /> {completed} Orders Completed
+        </div>
+      </div>
+
+      <p style={{ margin: '0 0 8px', fontSize: 13, color: '#E0E7FF' }}>
+        {ordersUntilFree === 10
+          ? `🎉 You reached a 10-order milestone! Free item unlocked.`
+          : `Only ${ordersUntilFree} more ${ordersUntilFree === 1 ? 'order' : 'orders'} to earn your next FREE food item!`}
+      </p>
+
+      <div className="loyalty-progress-track">
+        <div className="loyalty-progress-fill" style={{ width: `${progressPercent}%` }} />
+      </div>
+
+      <div className="loyalty-footer-info">
+        <span>Milestone: {streakMod} / 10 orders</span>
+        {availableRewards > 0 ? (
+          <span style={{ background: '#10B981', color: '#FFFFFF', padding: '2px 8px', borderRadius: 12, fontWeight: 800, fontSize: 11 }}>
+            🎁 {availableRewards} Free Meal Ready!
+          </span>
+        ) : (
+          <span style={{ opacity: 0.8 }}>Free tier · Auto-counts on pickup</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFERRAL PROGRAM SECTION (Phase 2 Step 4: Friend Invites)
+// ─────────────────────────────────────────────────────────────────────────────
+function ReferralSection({ referralCode, referrals, setNotice, creditWalletBalance }) {
+  const [claimedCode, setClaimedCode] = useState('')
+  const completedReferrals = (referrals || []).filter(r => r.status === 'completed')
+  const totalEarned = completedReferrals.length * 30
+
+  function handleCopy() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(referralCode)
+      setNotice(`📋 Referral code ${referralCode} copied to clipboard!`)
+    }
+  }
+
+  function handleApplyReferral(e) {
+    e.preventDefault()
+    if (!claimedCode.trim()) return
+    if (claimedCode.trim().toUpperCase() === referralCode.toUpperCase()) {
+      return setNotice('⚠️ You cannot use your own referral code!')
+    }
+    // Simulate welcome credit for referred friend
+    if (creditWalletBalance) {
+      creditWalletBalance(30)
+      setNotice(`🎉 Referral code applied! ₹30 welcome bonus credited to your wallet.`)
+      setClaimedCode('')
+    }
+  }
+
+  return (
+    <div className="referral-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#DCFCE7', color: '#16A34A', display: 'grid', placeItems: 'center' }}>
+            <Sparkles size={16} />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text-main)' }}>Refer Friends & Earn ₹30</h4>
+            <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>Both of you get ₹30 when your friend completes their first meal</p>
+          </div>
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D' }}>{money(totalEarned)} earned</span>
+      </div>
+
+      <div className="referral-code-wrap">
+        <span className="referral-code-text">{referralCode}</span>
+        <button className="btn-secondary btn-spring" style={{ padding: '6px 14px', fontSize: 12 }} onClick={handleCopy}>
+          Copy Code
+        </button>
+      </div>
+
+      <form onSubmit={handleApplyReferral} style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+        <input
+          placeholder="Have a friend's referral code?"
+          value={claimedCode}
+          onChange={e => setClaimedCode(e.target.value.toUpperCase())}
+          style={{ flex: 1, padding: '7px 12px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)' }}
+        />
+        <button type="submit" className="btn-secondary btn-spring" disabled={!claimedCode.trim()} style={{ fontSize: 12 }}>
+          Claim ₹30
+        </button>
+      </form>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ORDERS VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
@@ -1972,16 +2633,27 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
         </div>
       </div>
 
-      {!isCancelled && (
-        <div className="timeline">
-          {statuses.slice(0, 4).map((st, i) => (
-            <div key={st} className={`timeline-step ${i <= stepIndex ? 'done' : ''}`}>
-              <div className="timeline-dot" />
-              <span className="timeline-label">{st}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* ── Feature 6: Visual Order Stepper ── */}
+      {!isCancelled && <OrderStepper status={order.status} />}
+
+      {/* ── Badges for Scheduled Slots & Group Orders ── */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+        {order.pickup_slot_time && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '3px 8px', borderRadius: 6, fontSize: '11px', fontWeight: 700 }}>
+            <Clock size={12} /> Scheduled Pickup: {order.pickup_slot_time}
+          </span>
+        )}
+        {order.group_id && (
+          <span className="group-badge-chip">
+            <Users size={12} /> Group Order {order.is_group_payer ? '(Payer: You)' : ''}
+          </span>
+        )}
+        {order.coupon_code && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 6, fontSize: '11px', fontWeight: 700 }}>
+            🏷️ Promo {order.coupon_code} Applied
+          </span>
+        )}
+      </div>
 
       {/* ── Order Items with Food Images ── */}
       <div className="order-items-list">
@@ -2034,7 +2706,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
 // ─────────────────────────────────────────────────────────────────────────────
 // WALLET VIEW
 // ─────────────────────────────────────────────────────────────────────────────
-function WalletView({ wallet, topUp, busy, currentUser }) {
+function WalletView({ wallet, topUp, busy, currentUser, loyaltyProgress, referralCode, referrals, setNotice, creditWalletBalance }) {
   const [filter, setFilter] = useState('all') // 'all' | 'credit' | 'debit'
   const [customAmt, setCustomAmt] = useState('')
 
@@ -2095,6 +2767,19 @@ function WalletView({ wallet, topUp, busy, currentUser }) {
           </button>
         </form>
       </div>
+
+      {/* ── Feature 3: Loyalty Streak (Free tier) ── */}
+      <div style={{ marginTop: '20px' }}>
+        <LoyaltyStreakCard loyaltyProgress={loyaltyProgress} />
+      </div>
+
+      {/* ── Feature 4: Referral Program ── */}
+      <ReferralSection
+        referralCode={referralCode}
+        referrals={referrals}
+        setNotice={setNotice}
+        creditWalletBalance={creditWalletBalance}
+      />
 
       <div className="section-heading" style={{ marginTop: '24px' }}>
         <div><h2>Transaction Ledger</h2></div>

@@ -2826,3 +2826,311 @@ body::before {
   align-items: center;
   gap: 8px;
 }
+
+/* ── Features 3-8: Engagement, Queues & Checkout CSS ── */
+
+/* Feature 3: Loyalty Streak */
+.loyalty-card {
+  background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);
+  border-radius: var(--r-xl);
+  padding: 18px 20px;
+  color: #FFFFFF;
+  margin-bottom: 18px;
+  box-shadow: 0 10px 25px rgba(49, 46, 129, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+.loyalty-card::after {
+  content: '🏆';
+  position: absolute;
+  right: -10px;
+  bottom: -15px;
+  font-size: 90px;
+  opacity: 0.12;
+  pointer-events: none;
+}
+.loyalty-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.loyalty-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.streak-counter-pill {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #FCD34D;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.loyalty-progress-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px 0 6px;
+}
+.loyalty-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #F59E0B, #10B981);
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+.loyalty-footer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #E0E7FF;
+}
+
+/* Feature 4: Referral Program */
+.referral-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--r-xl);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+.referral-code-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1.5px dashed #CBD5E1;
+  padding: 8px 14px;
+  border-radius: var(--r-lg);
+  margin: 12px 0;
+}
+.referral-code-text {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: #1E3E62;
+  letter-spacing: 1px;
+  flex: 1;
+}
+
+/* Feature 5: Group Ordering */
+.group-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #EDE9FE;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.group-ticket-banner {
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Feature 6: Visual Order Stepper */
+.order-stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin: 16px 0 12px;
+  padding: 0 8px;
+}
+.order-stepper-line {
+  position: absolute;
+  top: 16px;
+  left: 30px;
+  right: 30px;
+  height: 3px;
+  background: #E2E8F0;
+  z-index: 1;
+}
+.order-stepper-fill {
+  height: 100%;
+  background: #10B981;
+  transition: width 0.4s ease;
+}
+.stepper-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  z-index: 2;
+}
+.stepper-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  color: #94A3B8;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  transition: all 0.3s ease;
+}
+.stepper-node.active .stepper-circle {
+  background: #10B981;
+  border-color: #059669;
+  color: #FFFFFF;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+.stepper-node.current .stepper-circle {
+  background: #3B82F6;
+  border-color: #2563EB;
+  color: #FFFFFF;
+  animation: pulse-ring 1.5s infinite;
+}
+.stepper-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: capitalize;
+}
+.stepper-node.active .stepper-label,
+.stepper-node.current .stepper-label {
+  color: #0F172A;
+  font-weight: 800;
+}
+
+/* Feature 7: Scheduled Pickup Slots */
+.slot-toggle-bar {
+  display: flex;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: var(--r-lg);
+  margin-bottom: 12px;
+}
+.slot-toggle-opt {
+  flex: 1;
+  padding: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--r-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+.slot-toggle-opt.active {
+  background: #FFFFFF;
+  color: var(--text-main);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding: 4px 1px;
+}
+.slot-pill {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  background: #FFFFFF;
+  font-size: 11.5px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+.slot-pill:hover:not(.full) {
+  border-color: #3B82F6;
+  background: #EFF6FF;
+}
+.slot-pill.selected {
+  border-color: #2563EB;
+  background: #DBEAFE;
+  color: #1E40AF;
+  font-weight: 800;
+}
+.slot-pill.full {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+  color: #94A3B8;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Feature 8: Coupons */
+.coupon-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--r-lg);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.coupon-input-row {
+  display: flex;
+  gap: 8px;
+}
+.coupon-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.coupon-chip-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.coupon-tag-btn {
+  background: #FFFFFF;
+  border: 1px dashed #3B82F6;
+  color: #2563EB;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.applied-coupon-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #DCFCE7;
+  border: 1px solid #86EFAC;
+  color: #15803D;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
