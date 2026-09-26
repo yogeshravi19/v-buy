@@ -1,0 +1,21 @@
+{
+  "appId": "com.campusbite.app",
+  "appName": "CampusBite",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f172a",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "Dark",
+      "backgroundColor": "#0f172a"
+    }
+  }
+}

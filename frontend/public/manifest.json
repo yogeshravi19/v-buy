@@ -1,0 +1,51 @@
+{
+  "name": "CampusBite — VIT Chennai Smart Dining & Wallet",
+  "short_name": "CampusBite",
+  "description": "Pre-order meals from VIT Chennai canteens, skip the rush, pay seamlessly from your prepaid campus wallet.",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#0B192C",
+  "theme_color": "#0B192C",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["food", "utilities", "lifestyle"],
+  "icons": [
+    {
+      "src": "/vit-chennai-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vit-chennai-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Canteens",
+      "short_name": "Browse",
+      "description": "Browse Gazebo, North Square & AB3 food counters",
+      "url": "/?tab=browse",
+      "icons": [{ "src": "/vit-chennai-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Orders & Token",
+      "short_name": "Orders",
+      "description": "Track active food preparation tokens live",
+      "url": "/?tab=orders",
+      "icons": [{ "src": "/vit-chennai-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Campus Wallet",
+      "short_name": "Wallet",
+      "description": "Check balance and recharge prepaid wallet",
+      "url": "/?tab=wallet",
+      "icons": [{ "src": "/vit-chennai-logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

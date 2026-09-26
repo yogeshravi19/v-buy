@@ -1,0 +1,34 @@
+# CampusBite — Render deployment config
+# This file is used by render.com to build and run the FastAPI backend
+
+services:
+  - type: web
+    name: campusbite-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: PHONEPE_MERCHANT_ID
+        sync: false
+      - key: PHONEPE_SALT_KEY
+        sync: false
+      - key: PHONEPE_SALT_INDEX
+        value: "1"
+      - key: PHONEPE_ENV
+        value: SANDBOX
+      - key: PHONEPE_BASE_URL
+        value: https://api-preprod.phonepe.com/apis/pg-sandbox
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_WHATSAPP_INTEGRATED_NUMBER
+        sync: false
+      - key: QR_SECRET
+        generateValue: true
+      - key: WEBHOOK_BASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

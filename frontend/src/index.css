@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+  body {
+    background-color: #040407;
+    color: #f1f5f9;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, .font-heading {
+    font-family: 'Syne', sans-serif;
+  }
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* ─── Ultra-Premium Cards & Glassmorphism ─── */
+  .card {
+    @apply bg-[#0c0c14]/90 border border-white/10 rounded-2xl transition-all duration-300;
+  }
+  .card:hover {
+    @apply border-white/20 shadow-xl shadow-black/40;
+  }
+  .card-glow {
+    @apply bg-gradient-to-b from-[#12121e]/90 to-[#0a0a12]/90 border border-white/10 rounded-2xl relative overflow-hidden backdrop-blur-xl;
+  }
+  .card-glow:hover {
+    @apply border-brand-500/40 shadow-2xl shadow-brand-500/10;
+  }
+  .card-glass {
+    @apply backdrop-blur-2xl bg-white/5 border border-white/10 rounded-2xl;
+  }
+
+  /* ─── Modern Buttons ─── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold
+           transition-all duration-200 active:scale-95 disabled:opacity-40
+           disabled:cursor-not-allowed disabled:active:scale-100 select-none;
+  }
+  .btn-primary {
+    @apply btn px-5 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400
+           text-white font-bold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 text-sm tracking-wide;
+  }
+  .btn-secondary {
+    @apply btn px-5 py-3 bg-white/10 hover:bg-white/20 text-white border
+           border-white/10 hover:border-white/20 text-sm backdrop-blur-md;
+  }
+  .btn-danger {
+    @apply btn px-5 py-3 bg-rose-500/90 hover:bg-rose-500 text-white text-sm shadow-lg shadow-rose-500/20;
+  }
+  .btn-sm {
+    @apply px-3 py-2 text-xs rounded-lg;
+  }
+  .btn-icon {
+    @apply btn w-10 h-10 p-0 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10;
+  }
+
+  /* ─── Inputs ─── */
+  .input {
+    @apply w-full bg-[#10101a] border border-white/10 rounded-xl px-4 py-3
+           text-white placeholder-white/30 text-sm font-sans
+           focus:outline-none focus:border-orange-500/60 focus:ring-2
+           focus:ring-orange-500/20 transition-all duration-200;
+  }
+  .label {
+    @apply block text-[11px] font-bold text-white/50 uppercase tracking-widest mb-1.5;
+  }
+
+  /* ─── Badges ─── */
+  .badge {
+    @apply inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full tracking-wide;
+  }
+  .badge-green  { @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/30; }
+  .badge-amber  { @apply badge bg-amber-500/15   text-amber-300   border border-amber-500/30; }
+  .badge-red    { @apply badge bg-rose-500/15    text-rose-400    border border-rose-500/30; }
+  .badge-blue   { @apply badge bg-cyan-500/15    text-cyan-400    border border-cyan-500/30; }
+  .badge-purple { @apply badge bg-violet-500/15  text-violet-300  border border-violet-500/30; }
+  .badge-gray   { @apply badge bg-white/10       text-white/70    border border-white/10; }
+
+  /* ─── Veg / Non-veg dot ─── */
+  .veg-dot {
+    @apply w-4 h-4 rounded-sm border-2 border-emerald-500 flex items-center justify-center flex-shrink-0 bg-emerald-950/40;
+  }
+  .veg-dot::after {
+    content: '';
+    @apply w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400;
+  }
+  .nonveg-dot {
+    @apply w-4 h-4 rounded-sm border-2 border-rose-500 flex items-center justify-center flex-shrink-0 bg-rose-950/40;
+  }
+  .nonveg-dot::after {
+    content: '';
+    @apply w-2 h-2 rounded-full bg-rose-400 shadow-sm shadow-rose-400;
+  }
+
+  /* ─── Status pills ─── */
+  .status-payment_pending { @apply badge bg-yellow-500/15 text-yellow-300 border border-yellow-500/30; }
+  .status-placed          { @apply badge bg-cyan-500/15   text-cyan-300   border border-cyan-500/30; }
+  .status-preparing       { @apply badge bg-orange-500/15 text-orange-300 border border-orange-500/30; }
+  .status-ready           { @apply badge bg-emerald-500/15 text-emerald-300 border border-emerald-500/30; }
+  .status-collected       { @apply badge bg-white/10 text-white/50 border border-white/10; }
+  .status-cancelled       { @apply badge bg-rose-500/15 text-rose-300 border border-rose-500/30; }
+
+  /* ─── Bottom nav (mobile) ─── */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 bg-[#07070d]/95 backdrop-blur-2xl
+           border-t border-white/10 flex items-center safe-area-inset-bottom;
+  }
+  .bottom-nav-item {
+    @apply flex-1 flex flex-col items-center py-3 gap-1 text-white/40
+           hover:text-white transition-colors duration-150 cursor-pointer;
+  }
+  .bottom-nav-item.active { @apply text-orange-400 font-bold; }
+
+  /* ─── Skeleton loader ─── */
+  .skeleton {
+    @apply bg-white/5 rounded-xl animate-pulse;
+  }
+
+  .divider { @apply border-t border-white/10 my-4; }
+
+  /* ─── Wallet amount display ─── */
+  .wallet-balance {
+    @apply text-4xl font-extrabold tracking-tight text-white font-mono;
+    text-shadow: 0 0 35px rgba(249,115,22,0.4);
+  }
+}
+
+/* ─── Ambient Glow & Mesh ─── */
+.bg-ambient-mesh {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(249, 115, 22, 0.12), transparent 70%),
+    radial-gradient(ellipse 50% 30% at 85% 60%, rgba(16, 185, 129, 0.06), transparent 60%),
+    radial-gradient(ellipse 50% 30% at 15% 80%, rgba(0, 229, 255, 0.05), transparent 60%);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 5px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 9999px; }
+
+.safe-area-inset-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem); }
