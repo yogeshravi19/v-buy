@@ -44,7 +44,7 @@ A simple guide to the tools, libraries, and services that power V-BUY, explained
   - Safely holds student wallets, shop menus, and live order queues.
   - Automatically updates kitchen screens instantly the moment an order is placed, with no page refreshing.
   - Runs strict security rules inside the database so users can only view their own data.
-- **Why we chose it**: It gives us bank-grade database security and instant live updates out of the box. Full details are in the `DATABASE.md` guide.
+- **Why we chose it**: It gives us bank-grade database security and instant live updates out of the box. Full details are in the `04-the-database.md` guide.
 
 ---
 

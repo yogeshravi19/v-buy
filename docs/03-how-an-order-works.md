@@ -1,4 +1,4 @@
-# Order Lifecycle & System Workflow
+# How an Order Works: The Complete Lifecycle
 
 A simple, step-by-step walk-through of how orders move through V-BUY from start to finish.
 
@@ -11,7 +11,9 @@ A simple, step-by-step walk-through of how orders move through V-BUY from start 
 - **Fee Rules**:
   - **UPI / RuPay**: 0% fee. If a student adds ₹100, they pay ₹100 and receive exactly ₹100 in their wallet.
   - **Credit / Debit Cards**: A small bank processing fee is calculated using the reverse formula (`Amount / 0.9765`) so the student still receives the full clean amount in their wallet.
-- Once PhonePe confirms the payment, our server verifies the signature and runs `credit_wallet()` to safely add the money to the student's balance.
+- Once PhonePe completes the transaction, it sends an automatic instant notification called a **webhook** to our server.
+- Our server verifies the digital signature to ensure the notification is genuine, then credits the student's wallet balance.
+- **Safety Guarantee**: Every payment uses an unchangeable transaction key. Even if the network sends the confirmation twice by mistake, the database guarantees the wallet is only credited once.
 - **Key Rule**: PhonePe is used ONLY for wallet top-ups. Food orders are never routed through PhonePe directly.
 
 ---
@@ -30,7 +32,7 @@ A simple, step-by-step walk-through of how orders move through V-BUY from start 
 
 ## 3. Instant Order Placement & Wallet Debit
 
-- When the student taps **Place Order**, the database runs the secure `place_order_wallet` procedure:
+- When the student taps **Place Order**, the database runs a secure procedure:
   - Confirms the canteen is currently open.
   - Confirms all requested dishes have enough stock.
   - Confirms the student has enough money in their campus wallet.

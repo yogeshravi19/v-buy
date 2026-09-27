@@ -1,4 +1,4 @@
-# Understanding the V-BUY Database
+# The Database: How Data is Stored and Protected
 
 A plain-English guide to how Supabase stores information, connects campus food shops, keeps money safe, and updates kitchen screens in real time.
 

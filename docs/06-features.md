@@ -1,6 +1,6 @@
-# V-BUY Feature Catalog
+# Feature Catalog: Active & Retired Features
 
-A plain-English overview of the active features built into V-BUY, along with features that have been removed.
+A plain-English overview of the active features built into V-BUY, along with features that have been retired.
 
 ---
 
