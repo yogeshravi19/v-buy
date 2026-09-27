@@ -887,9 +887,9 @@ function App() {
             <span>Install App</span>
           </button>
           <span className="role-tag-badge">
-            {role === 'owner' ? '🏪 Shop Owner' :
+            {role === 'owner' || role === 'shop_admin' ? '🏪 Shop Owner' :
              role === 'staff' ? '👨‍🍳 Shop Staff' :
-             role === 'admin' || role === 'superadmin' ? '🛡️ Super Admin (Me)' : '👤 User'}
+             role === 'admin' || role === 'superadmin' || role === 'super_admin' ? '🛡️ Super Admin (Me)' : '👤 User'}
           </span>
           {isCustomer && (
             <div className="wallet-badge-top" onClick={() => setTab('wallet')}>
@@ -4849,21 +4849,26 @@ function AuthScreen({ onLoginUser }) {
           <div className="quick-test-box">
             <p>Direct Test Login — Choose Dashboard:</p>
             <div className="quick-chip-grid">
-              {TEST_USERS.map((u, i) => (
-                <button
-                  key={i}
-                  className="quick-chip"
-                  onClick={() => onLoginUser(u)}
-                  title={`Login as ${u.full_name}`}
-                >
-                  <span style={{ fontSize: '13px' }}>
-                    {u.role === 'user' ? '👤' : u.role === 'staff' ? '👨‍🍳' : u.role === 'owner' ? '🏪' : '🛡️'}
-                  </span>
-                  <span style={{ fontWeight: 700 }}>
-                    {u.role === 'user' ? 'User' : u.role === 'staff' ? 'Shop Staff' : u.role === 'owner' ? 'Shop Owner' : 'Super Admin (Me)'}
-                  </span>
-                </button>
-              ))}
+              {TEST_USERS.map((u, i) => {
+                const isCust = u.role === 'user' || u.role === 'student' || u.role === 'customer'
+                const isStf  = u.role === 'staff'
+                const isOwn  = u.role === 'owner' || u.role === 'shop_admin'
+                
+                const emoji = isCust ? '👤' : isStf ? '👨‍🍳' : isOwn ? '🏪' : '🛡️'
+                const label = isCust ? 'User' : isStf ? 'Shop Staff' : isOwn ? 'Shop Owner' : 'Super Admin (Me)'
+
+                return (
+                  <button
+                    key={i}
+                    className="quick-chip"
+                    onClick={() => onLoginUser(u)}
+                    title={`Login as ${u.full_name}`}
+                  >
+                    <span style={{ fontSize: '13px' }}>{emoji}</span>
+                    <span style={{ fontWeight: 700 }}>{label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
