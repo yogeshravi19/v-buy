@@ -332,7 +332,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>One-tap 'Sold Out':</strong> Ran out of samosas? Tap '86 Item' to immediately stop student orders.</span>
+                  <span><strong>One-tap 'Sold Out':</strong> Ran out of samosas? Tap 'Mark Unavailable' to immediately stop student orders.</span>
                 </li>
               </ul>
             </div>

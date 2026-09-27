@@ -966,7 +966,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                 <div className="font-mono font-black text-3xl text-white mt-1">
                   {analytics.total_orders || 0}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Completed student & walk-in meals</p>
+                <p className="text-[11px] text-slate-400 mt-1">Completed student pre-orders</p>
               </div>
 
               <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/60 to-slate-900 border border-amber-600/40">

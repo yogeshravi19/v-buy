@@ -222,9 +222,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
         setAuditLogs([
           { id: 101, outlet_id: 'g1', outlet_name: 'Gazebo C1', item_id: 101, item_name: 'Veg Puff', qty_change: -2, previous_qty: 35, new_qty: 33, reason: 'order_decrement', adjusted_by_name: 'Order #4021', created_at: new Date(Date.now() - 4 * 60000).toISOString() },
           { id: 102, outlet_id: 'g1', outlet_name: 'Gazebo C1', item_id: 104, item_name: 'Paneer Roll', qty_change: -2, previous_qty: 8, new_qty: 6, reason: 'order_decrement', adjusted_by_name: 'Order #4021', created_at: new Date(Date.now() - 4 * 60000).toISOString() },
-          { id: 103, outlet_id: 'g3', outlet_name: 'Dakshin Chitra', item_id: 301, item_name: 'Veg Fried Rice', qty_change: -1, previous_qty: 20, new_qty: 19, reason: 'counter_pos', adjusted_by_name: 'Ramesh (Staff)', created_at: new Date(Date.now() - 15 * 60000).toISOString() },
+          { id: 103, outlet_id: 'g3', outlet_name: 'Dakshin Chitra', item_id: 301, item_name: 'Veg Fried Rice', qty_change: -1, previous_qty: 20, new_qty: 19, reason: 'manual_adjustment', adjusted_by_name: 'Ramesh (Staff)', created_at: new Date(Date.now() - 15 * 60000).toISOString() },
           { id: 104, outlet_id: 'g1', outlet_name: 'Gazebo C1', item_id: 103, item_name: 'Chicken Cutlet', qty_change: 20, previous_qty: 0, new_qty: 20, reason: 'restock', adjusted_by_name: 'Suresh Kumar (Admin)', created_at: new Date(Date.now() - 35 * 60000).toISOString() },
-          { id: 105, outlet_id: 'g1', outlet_name: 'Gazebo C1', item_id: 102, item_name: 'Samosa (2 pcs)', qty_change: 0, previous_qty: 3, new_qty: 0, reason: '86_sold_out', adjusted_by_name: 'Murugan (Staff)', created_at: new Date(Date.now() - 55 * 60000).toISOString() }
+          { id: 105, outlet_id: 'g1', outlet_name: 'Gazebo C1', item_id: 102, item_name: 'Samosa (2 pcs)', qty_change: 0, previous_qty: 3, new_qty: 0, reason: 'marked_unavailable', adjusted_by_name: 'Murugan (Staff)', created_at: new Date(Date.now() - 55 * 60000).toISOString() }
         ])
       }
 

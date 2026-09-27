@@ -67,7 +67,7 @@ export type Database = {
         Row: {
           id: number; outlet_id: string; item_id: number; adjusted_by: string | null
           qty_change: number; previous_qty: number | null; new_qty: number | null
-          reason: 'manual_adjustment' | 'order_decrement' | 'counter_pos' | '86_sold_out' | 'restock'
+          reason: 'manual_adjustment' | 'order_decrement' | 'marked_unavailable' | 'restock'
           created_at: string
         }
       }

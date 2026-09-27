@@ -2278,30 +2278,6 @@ body::before {
   color: #991B1B;
 }
 
-/* POS Quick Walk-in Ordering Grid */
-.pos-order-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 4px;
-  margin: 12px 0;
-}
-.pos-item-card {
-  background: #FFFFFF;
-  border: 1px solid var(--border-color);
-  border-radius: var(--r-md);
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.2s;
-}
-.pos-item-card:hover {
-  border-color: var(--blue-primary);
-  background: #F8FAFC;
-}
 
 /* Thermal KOT Slip Modal */
 .thermal-receipt {
@@ -2460,6 +2436,7 @@ body::before {
   color: var(--blue-primary);
 }
 
+.stock-avail-btn,
 .stock-86-btn {
   padding: 4px 10px;
   font-size: 11px;

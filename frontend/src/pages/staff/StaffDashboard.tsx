@@ -142,10 +142,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null)
   const [isVerifying, setIsVerifying] = useState<boolean>(false)
 
-  // Walk-in Quick POS Drawer
-  const [showWalkinDrawer, setShowWalkinDrawer] = useState<boolean>(false)
-  const [walkinCart, setWalkinCart] = useState<{ item: StaffMenuItem; qty: number }[]>([])
-  const [walkinProcessing, setWalkinProcessing] = useState<boolean>(false)
 
   const prevActiveOrderCountRef = useRef<number>(0)
 
@@ -451,7 +447,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5. MANUAL STOCK ADJUSTMENTS (+/-, 86 Sold Out, Restock)
+  // 5. MANUAL STOCK ADJUSTMENTS (+/-, Availability Toggle, Restock)
   // ─────────────────────────────────────────────────────────────────────────────
   const handleStockAdjust = async (item: StaffMenuItem, delta: number) => {
     const currentQty = item.stock_qty ?? 0
@@ -501,10 +497,10 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     }
   }
 
-  const handleToggle86 = async (item: StaffMenuItem) => {
+  const handleToggleAvailability = async (item: StaffMenuItem) => {
     const isCurrentlyOut = (item.stock_qty ?? 0) === 0 || !item.available
     const newQty = isCurrentlyOut ? 20 : 0
-    const reason = isCurrentlyOut ? 'restock' : '86_sold_out'
+    const reason = isCurrentlyOut ? 'restock' : 'marked_unavailable'
 
     setMenuItems(prev => prev.map(m => (m.id === item.id ? { ...m, stock_qty: newQty, available: newQty > 0 } : m)))
 
@@ -519,51 +515,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         .from('menu_items')
         .update({ stock_qty: newQty, available: newQty > 0 })
         .eq('id', item.id)
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 6. WALK-IN COUNTER ORDER CREATION
-  // ─────────────────────────────────────────────────────────────────────────────
-  const handleCreateWalkinOrder = async () => {
-    if (walkinCart.length === 0) return
-    setWalkinProcessing(true)
-
-    const payloadItems = walkinCart.map(c => ({ item_id: c.item.id, qty: c.qty }))
-
-    try {
-      const { error } = await supabase.rpc('create_counter_order', {
-        p_outlet_id: effectiveOutletId,
-        p_items: payloadItems,
-        p_payment_method: 'cash'
-      })
-
-      if (error) {
-        const randToken = String(Math.floor(100 + Math.random() * 900))
-        const totalAmount = walkinCart.reduce((acc, c) => acc + c.item.price * c.qty, 0)
-        const newOrder: Order = {
-          id: Date.now(),
-          outlet_id: effectiveOutletId,
-          token: randToken,
-          status: 'ready',
-          total: totalAmount,
-          created_at: new Date().toISOString(),
-          order_items: walkinCart.map(c => ({ item_id: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty }))
-        }
-        setOrders(prev => [newOrder, ...prev])
-      } else {
-        fetchOutletData()
-      }
-
-      playSuccessChime()
-      setWalkinCart([])
-      setShowWalkinDrawer(false)
-      setBannerAlert('✅ Counter walk-in order generated & stock updated!')
-      setTimeout(() => setBannerAlert(null), 3500)
-    } catch (err: any) {
-      alert('Walk-in creation error: ' + (err?.message || 'Check items'))
-    } finally {
-      setWalkinProcessing(false)
     }
   }
 
@@ -605,7 +556,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     if (!slotGrouping) return null
     const groups: { [key: string]: Order[] } = {}
     filteredOrders.forEach(order => {
-      const key = order.pickup_slot_label || 'Immediate / Walk-in'
+      const key = order.pickup_slot_label || 'Immediate Pickup'
       if (!groups[key]) groups[key] = []
       groups[key].push(order)
     })
@@ -770,14 +721,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
             <span>Scan to Collect</span>
           </button>
 
-          {/* Quick Counter POS */}
-          <button
-            onClick={() => setShowWalkinDrawer(true)}
-            className="hidden md:flex px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs items-center gap-1.5 transition-all"
-          >
-            <ShoppingBag className="h-4 w-4 text-orange-400" />
-            <span>Walk-in POS</span>
-          </button>
 
           {/* Refresh sync */}
           <button
@@ -872,7 +815,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
           </div>
           <div className="text-2xl font-black text-white mt-1">{menuItems.length}</div>
           <div className="text-[11px] text-slate-400 mt-0.5">
-            {menuItems.filter(m => (m.stock_qty ?? 0) === 0 || !m.available).length} Sold Out (86)
+            {menuItems.filter(m => (m.stock_qty ?? 0) === 0 || !m.available).length} Sold Out
           </div>
         </div>
       </div>
@@ -901,7 +844,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
             }`}
           >
             <Layers className="h-4 w-4" />
-            <span>Inventory & 86 Stepper</span>
+            <span>Inventory & Availability</span>
           </button>
 
           <button
@@ -993,12 +936,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 <p className="text-xs max-w-sm mt-1 text-slate-500">
                   New incoming orders from students will show up here in real-time with an audible chime.
                 </p>
-                <button
-                  onClick={() => setShowWalkinDrawer(true)}
-                  className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-semibold text-slate-300 border border-slate-700"
-                >
-                  Create Walk-in POS Order
-                </button>
               </div>
             ) : slotGrouping && slotGroupedOrders ? (
               <div className="space-y-6">
@@ -1030,7 +967,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
             <div className="lg:col-span-2 space-y-3">
               <div className="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
                 <div>
-                  <h2 className="font-bold text-sm text-white">Live Stock Stepper & 86 Toggles</h2>
+                  <h2 className="font-bold text-sm text-white">Live Stock Stepper & Availability</h2>
                   <p className="text-xs text-slate-400">Quick +/- controls instantly log to audit ledger and sync with student app.</p>
                 </div>
                 <span className="text-xs text-slate-400 font-mono">
@@ -1059,7 +996,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             <span className="font-bold text-sm text-white">{item.name}</span>
                             {isSoldOut && (
                               <span className="px-2 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase">
-                                86 SOLD OUT
+                                SOLD OUT
                               </span>
                             )}
                           </div>
@@ -1103,14 +1040,14 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                         </button>
 
                         <button
-                          onClick={() => handleToggle86(item)}
+                          onClick={() => handleToggleAvailability(item)}
                           className={`h-8 px-3 rounded font-bold text-xs ml-2 transition-all active:scale-95 ${
                             isSoldOut
                               ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                               : 'bg-rose-600/80 hover:bg-rose-600 text-white'
                           }`}
                         >
-                          {isSoldOut ? 'Restock (+20)' : '86 Item'}
+                          {isSoldOut ? 'Mark Available' : 'Mark Unavailable'}
                         </button>
                       </div>
                     </div>
@@ -1301,82 +1238,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         </div>
       )}
 
-      {/* ── QUICK WALK-IN POS DRAWER ── */}
-      {showWalkinDrawer && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
-          <div className="bg-slate-900 border-l border-slate-800 w-full max-w-md h-full flex flex-col p-5 shadow-2xl animate-in slide-in-from-right duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-orange-400" />
-                <div>
-                  <h3 className="font-extrabold text-base text-white">Walk-in Counter POS</h3>
-                  <p className="text-xs text-slate-400">Tap items to create cash/counter order</p>
-                </div>
-              </div>
-              <button onClick={() => setShowWalkinDrawer(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {menuItems.map(item => {
-                const inCart = walkinCart.find(c => c.item.id === item.id)
-                const isOutOfStock = (item.stock_qty ?? 0) <= 0
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      if (isOutOfStock) return
-                      setWalkinCart(prev => {
-                        const existing = prev.find(c => c.item.id === item.id)
-                        if (existing) {
-                          return prev.map(c => (c.item.id === item.id ? { ...c, qty: c.qty + 1 } : c))
-                        }
-                        return [...prev, { item, qty: 1 }]
-                      })
-                    }}
-                    className={`p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
-                      isOutOfStock
-                        ? 'opacity-40 bg-slate-950 border-slate-800 cursor-not-allowed'
-                        : inCart
-                        ? 'bg-orange-950/30 border-orange-500'
-                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-white">{item.name}</div>
-                      <div className="text-xs text-slate-400">₹{item.price} · Stock: {item.stock_qty ?? 0}</div>
-                    </div>
-                    {inCart && (
-                      <span className="font-mono text-sm font-extrabold text-orange-400 px-2 py-0.5 rounded bg-orange-950 border border-orange-800">
-                        {inCart.qty}x
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="border-t border-slate-800 pt-4 mt-3">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs text-slate-400">Total Items: {walkinCart.reduce((a, b) => a + b.qty, 0)}</span>
-                <span className="font-mono font-black text-xl text-white">
-                  ₹{walkinCart.reduce((a, b) => a + b.item.price * b.qty, 0)}
-                </span>
-              </div>
-              <button
-                onClick={handleCreateWalkinOrder}
-                disabled={walkinCart.length === 0 || walkinProcessing}
-                className="w-full py-3.5 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg"
-              >
-                {walkinProcessing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                <span>Take Payment & Issue Token</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

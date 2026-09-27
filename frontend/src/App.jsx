@@ -652,12 +652,9 @@ function App() {
       if (!currentItem) {
         isAvailable = false
         unavailableReason = 'Item no longer offered on menu'
-      } else if (currentItem.available === false) {
+      } else if (currentItem.available === false || (currentItem.stock_qty !== undefined && currentItem.stock_qty <= 0)) {
         isAvailable = false
-        unavailableReason = 'Marked 86 / Sold Out at counter'
-      } else if (currentItem.stock_qty !== undefined && currentItem.stock_qty <= 0) {
-        isAvailable = false
-        unavailableReason = '0 portions left (Out of stock)'
+        unavailableReason = 'Sold Out'
       }
 
       return {
@@ -844,11 +841,11 @@ function App() {
         if (i.id !== itemId) return i
         const isAvail = i.available !== false
         const nextAvail = !isAvail
-        const nextQty = nextAvail ? (i.stock_qty || 30) : 0
+        const nextQty = nextAvail ? (i.stock_qty && i.stock_qty > 0 ? i.stock_qty : 30) : 0
         return { ...i, available: nextAvail, stock_qty: nextQty }
       })
     }))
-    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'STOCK_86', 'AVAILABILITY_TOGGLE', `Toggled availability for item #${itemId} in outlet ${outletId}`)
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'AVAILABILITY', 'AVAILABILITY_TOGGLE', `Marked item #${itemId} ${!isAvail ? 'available' : 'unavailable'} in outlet ${outletId}`)
   }
 
   function updateItemStockQty(outletId, itemId, newQty) {
@@ -860,7 +857,7 @@ function App() {
         available: qty > 0
       } : i)
     }))
-    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'STOCK_86', 'STOCK_UPDATE', `Updated stock for item #${itemId} to ${qty} units in outlet ${outletId}`)
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'INVENTORY', 'STOCK_UPDATE', `Updated stock for item #${itemId} to ${qty} units in outlet ${outletId}`)
   }
 
   function addMenuItem(outletId, itemData) {
@@ -2139,7 +2136,7 @@ function CartDock({
           {hasUnavailable && (
             <div className="cart-clear-unavailable-banner">
               <div>
-                <strong>⚠️ {unavailableItems.length} item(s) currently out of stock</strong>
+                <strong>⚠️ {unavailableItems.length} item(s) currently sold out</strong>
                 <div style={{ fontSize: '11.5px', marginTop: 2 }}>Remove flagged items to proceed to checkout.</div>
               </div>
               <button
@@ -2149,7 +2146,7 @@ function CartDock({
                   setCart({ outlet: cleaned.length ? cart.outlet : null, items: cleaned })
                 }}
               >
-                Remove Out-of-Stock
+                Remove Sold Out
               </button>
             </div>
           )}
@@ -2179,7 +2176,7 @@ function CartDock({
                     </span>
                     {!isAvail && (
                       <div className="cart-item-unavailable-chip">
-                        <AlertCircle size={11} /> {item.unavailableReason || 'Unavailable / Sold Out'}
+                        <AlertCircle size={11} /> {item.unavailableReason || 'Sold Out'}
                       </div>
                     )}
                     {isAvail && (
@@ -3278,29 +3275,33 @@ function FoodItemModal({
             )}
           </div>
 
-          {/* Availability Status */}
+          {/* Kitchen Availability Status */}
           <div className="food-form-group">
             <label className="food-form-label">Kitchen Status & Availability</label>
-            <div className="availability-toggle-group">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: available && stockQty > 0 ? '#059669' : '#DC2626' }}>
+                  {available && stockQty > 0 ? '🟢 Available' : '🔴 Sold Out'}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {available && stockQty > 0 ? `${stockQty} portions in kitchen` : 'Displays as "Sold Out" to students'}
+                </div>
+              </div>
               <button
                 type="button"
-                className={`avail-btn in-stock ${available && stockQty > 0 ? 'active' : ''}`}
+                className={`stock-avail-btn btn-spring ${available && stockQty > 0 ? 'btn-action-zero' : 'btn-action-restock'}`}
+                style={{ padding: '8px 16px', fontSize: '12px', minWidth: '150px' }}
                 onClick={() => {
-                  setAvailable(true)
-                  if (stockQty === 0) setStockQty(30)
+                  if (available && stockQty > 0) {
+                    setAvailable(false)
+                    setStockQty(0)
+                  } else {
+                    setAvailable(true)
+                    setStockQty(stockQty > 0 ? stockQty : 30)
+                  }
                 }}
               >
-                🟢 Available / In Stock ({stockQty > 0 ? stockQty : 30} portions)
-              </button>
-              <button
-                type="button"
-                className={`avail-btn out-stock ${!available || stockQty === 0 ? 'active' : ''}`}
-                onClick={() => {
-                  setAvailable(false)
-                  setStockQty(0)
-                }}
-              >
-                🔴 Mark 86 (Sold Out / Unavailable)
+                {available && stockQty > 0 ? 'Mark Unavailable' : 'Mark Available'}
               </button>
             </div>
           </div>
@@ -3463,7 +3464,7 @@ function ShopOwnerConsole({
             <div className="owner-stat-card">
               <span className="owner-stat-label">Today Revenue</span>
               <div className="owner-stat-val" style={{ color: 'var(--blue-primary)' }}>{money(todayRevenue)}</div>
-              <div className="owner-stat-sub">🟢 Verified via Campus Wallet & POS</div>
+              <div className="owner-stat-sub">🟢 Pre-paid via Campus Wallet</div>
             </div>
             <div className="owner-stat-card">
               <span className="owner-stat-label">Orders Processed</span>
@@ -3479,7 +3480,7 @@ function ShopOwnerConsole({
               <span className="owner-stat-label">Available Menu Items</span>
               <div className="owner-stat-val">{(myOutlet.menu_items || []).filter(i => i.available !== false && (i.stock_qty === undefined || i.stock_qty > 0)).length} / {(myOutlet.menu_items || []).length}</div>
               <div className="owner-stat-sub" style={{ color: (myOutlet.menu_items || []).filter(i => i.stock_qty === 0 || i.available === false).length > 0 ? '#DC2626' : '#059669' }}>
-                {(myOutlet.menu_items || []).filter(i => i.stock_qty === 0 || i.available === false).length} Sold Out (86)
+                {(myOutlet.menu_items || []).filter(i => i.stock_qty === 0 || i.available === false).length} Sold Out
               </div>
             </div>
           </div>
@@ -3518,7 +3519,7 @@ function ShopOwnerConsole({
             <div>
               <h3><UtensilsCrossed size={18} style={{ marginRight: 8, verticalAlign: 'middle', color: 'var(--blue-primary)' }} />Menu & Food Items Management</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '2px 0 0' }}>
-                Add dishes, update prices & portions, delete items, or toggle live kitchen 86 availability.
+                Add dishes, update prices & portions, delete items, or manage item availability.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -3587,12 +3588,12 @@ function ShopOwnerConsole({
                         )}
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span>Price: <strong style={{ color: 'var(--blue-primary)', fontSize: '13px' }}>{money(item.price)}</strong></span>
-                          <span>Portions: <strong style={{ color: isZero ? '#DC2626' : '#059669', fontSize: '13px' }}>{item.available === false ? '0 (Unavailable)' : stockQty}</strong></span>
+                          <span>Portions: <strong style={{ color: isZero ? '#DC2626' : '#059669', fontSize: '13px' }}>{item.available === false || isZero ? '0 (Sold Out)' : stockQty}</strong></span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Controls Toolbar: Stepper, 86, Edit, Delete */}
+                    {/* Controls Toolbar: Stepper, Availability Toggle, Edit, Delete */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       {/* Portion Stepper */}
                       <div className="stock-stepper-wrap" style={{ marginRight: '4px' }}>
@@ -3621,13 +3622,14 @@ function ShopOwnerConsole({
                         </button>
                       </div>
 
-                      {/* Fast 86 Toggle */}
+                      {/* Availability Toggle */}
                       <button
-                        className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
-                        onClick={() => updateItemStockQty(myOutlet.id, item.id, isZero ? 30 : 0)}
-                        title={isZero ? 'Restock to 30 portions' : 'Zero out (86) item'}
+                        type="button"
+                        className={`stock-avail-btn btn-spring ${item.available === false || isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
+                        onClick={() => toggleItemAvailability(myOutlet.id, item.id)}
+                        title={item.available === false || isZero ? 'Mark item available' : 'Mark item unavailable'}
                       >
-                        {isZero ? '✅ Restock (30)' : '❌ 86 (0)'}
+                        {item.available === false || isZero ? 'Mark Available' : 'Mark Unavailable'}
                       </button>
 
                       {/* Full Edit Modal Button */}
@@ -3704,7 +3706,7 @@ function ShopOwnerConsole({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
               { name: 'Ramesh K', role: 'Head Cook & KOT Handler', phone: '+91 9876543220', shift: 'Morning & Lunch (07:30 - 15:30)', status: 'ON DUTY' },
-              { name: 'Murugan P', role: 'Counter Cashier & Walk-in POS', phone: '+91 9876543221', shift: 'Full Day (08:00 - 18:00)', status: 'ON DUTY' },
+              { name: 'Murugan P', role: 'Pickup Verification & QR Scanner', phone: '+91 9876543221', shift: 'Full Day (08:00 - 18:00)', status: 'ON DUTY' },
               { name: 'Selvan T', role: 'Kitchen Helper / Stock Keeper', phone: '+91 9876543222', shift: 'Evening Shift (15:00 - 21:30)', status: 'OFF DUTY' },
             ].map((st, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
@@ -3779,9 +3781,9 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitstudent.ac.in')
   const [creditAmount, setCreditAmount]           = useState('500')
   const [tvMode, setTvMode]                       = useState(false)
-  const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'pos' | 'menu' | 'summary' | 'tv'
+  const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'menu' | 'summary' | 'tv'
   const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'menu' | 'orders' | 'audit' | 'event' | 'scanner'
-  const [auditFilter, setAuditFilter]             = useState('ALL') // 'ALL' | 'ORDER' | 'STOCK_86' | 'OUTLET' | 'SECURITY'
+  const [auditFilter, setAuditFilter]             = useState('ALL') // 'ALL' | 'ORDER' | 'INVENTORY' | 'OUTLET' | 'SECURITY'
   const [soundEnabled, setSoundEnabled]           = useState(true)
   const [ordersSearch, setOrdersSearch]           = useState('')
   const [ordersFilterStatus, setOrdersFilterStatus] = useState('all')
@@ -3797,8 +3799,6 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   const [kdsViewMode, setKdsViewMode]             = useState('kanban') // 'kanban' | 'list'
   const [kdsMobileCol, setKdsMobileCol]           = useState('all') // 'all' | 'placed' | 'preparing' | 'ready'
   const [selectedKotOrder, setSelectedKotOrder]   = useState(null)
-  const [posCart, setPosCart]                     = useState({}) // itemId -> { item, qty }
-  const [posPaymentMode, setPosPaymentMode]       = useState('cash') // 'cash' | 'upi'
   const [activeMenuCat, setActiveMenuCat]         = useState('all')
 
   const isStaff = profile.role === 'staff'
@@ -3825,73 +3825,6 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
     })
     return Array.from(cats)
   }, [myOutlet])
-
-  // Foodiv POS Quick Counter Punch Handlers
-  function addPosItem(item) {
-    setPosCart(prev => {
-      const existing = prev[item.id]
-      return {
-        ...prev,
-        [item.id]: { item, qty: existing ? existing.qty + 1 : 1 }
-      }
-    })
-  }
-
-  function removePosItem(itemId) {
-    setPosCart(prev => {
-      const existing = prev[itemId]
-      if (!existing) return prev
-      if (existing.qty <= 1) {
-        const next = { ...prev }
-        delete next[itemId]
-        return next
-      }
-      return { ...prev, [itemId]: { ...existing, qty: existing.qty - 1 } }
-    })
-  }
-
-  function handlePunchWalkinOrder() {
-    const cartEntries = Object.values(posCart)
-    if (!cartEntries.length) return setNotice('⚠️ Please add at least 1 item to punch counter order.')
-    const total = cartEntries.reduce((s, ci) => s + (ci.item.price * ci.qty), 0)
-    const newId = Math.floor(3000 + Math.random() * 7000)
-    const token = Math.floor(100 + Math.random() * 900).toString()
-
-    const newOrder = {
-      id: newId,
-      user_id: 'counter-walkin',
-      outlet_id: myOutlet.id,
-      outlets: { name: myOutlet.name, location: myOutlet.location },
-      token,
-      status: 'placed',
-      source: 'counter',
-      payment_method: posPaymentMode,
-      total,
-      created_at: new Date().toISOString(),
-      order_items: cartEntries.map(ci => ({
-        item_id: ci.item.id,
-        name: ci.item.name,
-        price: ci.item.price,
-        qty: ci.qty,
-        notes: 'Walk-in Counter Sale'
-      }))
-    }
-
-    // Numerically decrement stock for walk-in items
-    cartEntries.forEach(ci => {
-      const currentStock = ci.item.stock_qty !== undefined ? ci.item.stock_qty : 30
-      if (updateItemStockQty) {
-        updateItemStockQty(myOutlet.id, ci.item.id, Math.max(0, currentStock - ci.qty))
-      }
-    })
-
-    setOrders(prev => [newOrder, ...prev])
-    if (soundEnabled) playNewOrderChime()
-    setSelectedKotOrder(newOrder)
-    setPosCart({})
-    setStaffTab('queue')
-    setNotice(`⚡ Walk-in Token #${token} generated and added to Kitchen KDS!`)
-  }
 
   // Filtered orders for Admin Live Stream
   const filteredCampusOrders = orders.filter(o => {
@@ -4222,7 +4155,6 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           <nav className="nav-tabs" style={{ marginBottom: '18px' }}>
             {[
               { key: 'queue', label: 'KDS Live Queue', icon: <Clock3 size={16} />, badge: myOrders.length },
-              { key: 'pos', label: 'POS Counter Punch', icon: <ShoppingBag size={16} /> },
               { key: 'menu', label: '📋 Menu & Food Items', icon: <Edit size={16} />, badge: (myOutlet.menu_items || []).length },
               { key: 'summary', label: 'Shift Billing', icon: <BarChart2 size={16} /> },
               { key: 'tv', label: 'TV Display', icon: <Monitor size={16} /> },
@@ -4398,135 +4330,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
         </>
       )}
 
-      {/* ── STAFF TAB: POS COUNTER PUNCH (FOODIV FORMULA) ── */}
-      {isStaff && staffTab === 'pos' && (
-        <div className="admin-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-            <div>
-              <h3><ShoppingBag size={18} style={{ marginRight: 8, verticalAlign: 'middle', color: 'var(--blue-primary)' }} />Walk-In Counter Point of Sale (POS)</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Punch orders directly for students paying at physical counter</p>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {['cash', 'upi'].map(pm => (
-                <button
-                  key={pm}
-                  className={`filter-pill btn-spring ${posPaymentMode === pm ? 'active' : ''}`}
-                  onClick={() => setPosPaymentMode(pm)}
-                >
-                  {pm === 'cash' ? '💵 Cash at Counter' : '📲 Direct UPI QR'}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1.8fr) minmax(260px, 1.2fr)', gap: '18px' }}>
-            {/* Left: Item Picker */}
-            <div>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '10px' }}>
-                {menuCategories.map(cat => (
-                  <button
-                    key={cat}
-                    className={`filter-pill btn-spring ${activeMenuCat === cat ? 'active' : ''}`}
-                    onClick={() => setActiveMenuCat(cat)}
-                  >
-                    {cat.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              <div className="pos-order-grid">
-                {(myOutlet.menu_items || [])
-                  .filter(it => it.available !== false)
-                  .filter(it => activeMenuCat === 'all' || (it.category && it.category.toLowerCase() === activeMenuCat))
-                  .map(item => {
-                    const inCart = posCart[item.id]?.qty || 0
-                    const foodImg = getFoodImage(item.name, item.category)
-                    return (
-                      <div key={item.id} className="pos-item-card">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <img
-                            src={foodImg.url}
-                            alt={item.name}
-                            className="order-item-mini-thumb"
-                            style={{ width: '38px', height: '38px', borderRadius: '8px' }}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
-                              <strong style={{ fontSize: '13px' }}>{item.name}</strong>
-                            </div>
-                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
-                              {money(item.price)}
-                            </span>
-                          </div>
-                        </div>
-                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          {inCart > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <button className="qty-btn" onClick={() => removePosItem(item.id)}><Minus size={12} /></button>
-                              <span style={{ fontWeight: 800, fontSize: '13px' }}>{inCart}</span>
-                              <button className="qty-btn" onClick={() => addPosItem(item)}><Plus size={12} /></button>
-                            </div>
-                          ) : (
-                            <button
-                              className="btn-secondary btn-spring"
-                              style={{ padding: '4px 10px', fontSize: '11px', width: '100%' }}
-                              onClick={() => addPosItem(item)}
-                            >
-                              + Add
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-              </div>
-            </div>
-
-            {/* Right: Counter Bill Summary */}
-            <div style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <h4 style={{ fontSize: '14px', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                  Walk-In Ticket Summary
-                </h4>
-                {Object.keys(posCart).length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '30px 0' }}>
-                    No items selected.<br />Tap items on the left to add.
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-                    {Object.values(posCart).map(ci => (
-                      <div key={ci.item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                        <div>
-                          <strong>{ci.qty}x</strong> {ci.item.name}
-                        </div>
-                        <span>{money(ci.item.price * ci.qty)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '12px', marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 900, marginBottom: '12px' }}>
-                  <span>Bill Total</span>
-                  <span style={{ color: 'var(--blue-primary)' }}>
-                    {money(Object.values(posCart).reduce((s, ci) => s + (ci.item.price * ci.qty), 0))}
-                  </span>
-                </div>
-                <button
-                  className="btn-primary btn-spring"
-                  style={{ width: '100%', padding: '11px', fontSize: '13px', background: '#059669' }}
-                  onClick={handlePunchWalkinOrder}
-                >
-                  ⚡ Issue Token & Print KOT
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── STAFF MENU TAB: NUMERICAL STOCK & PORTION INVENTORY CONTROL ── */}
       {isStaff && staffTab === 'menu' && (() => {
@@ -4542,9 +4346,9 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           <div className="admin-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h3>{myOutlet.name} — Portion Stock & 86-Control</h3>
+                <h3>{myOutlet.name} — Portion Stock & Availability</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-                  Real-time numerical portion counts · Auto-86s when portion count reaches 0
+                  Real-time numerical portion counts · Automatically marks Sold Out when portion count reaches 0
                 </p>
               </div>
               <div style={{ width: '220px' }}>
@@ -4572,7 +4376,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                 <strong>🟡 {lowStockCount}</strong>
               </div>
               <div className="stock-summary-stat" style={{ color: '#991B1B' }}>
-                <span>Sold Out (86):</span>
+                <span>Sold Out:</span>
                 <strong>🔴 {outStockCount}</strong>
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -4694,7 +4498,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                           </button>
                         </div>
 
-                        {/* Quick Presets and Fast 86 Toggle */}
+                        {/* Quick Presets and Availability Toggle */}
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             className="stock-preset-btn btn-spring"
@@ -4711,11 +4515,12 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             +25
                           </button>
                           <button
-                            className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
-                            onClick={() => updateItemStockQty(myOutlet.id, item.id, isZero ? 30 : 0)}
-                            title={isZero ? 'Restock to 30 portions' : 'Zero out / 86 item'}
+                            type="button"
+                            className={`stock-avail-btn btn-spring ${item.available === false || isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
+                            onClick={() => toggleItemAvailability(myOutlet.id, item.id)}
+                            title={item.available === false || isZero ? 'Mark item available' : 'Mark item unavailable'}
                           >
-                            {isZero ? '✅ Restock (30)' : '❌ 86 (0)'}
+                            {item.available === false || isZero ? 'Mark Available' : 'Mark Unavailable'}
                           </button>
                           <button
                             className="btn-secondary btn-spring"
@@ -4789,19 +4594,19 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 
           <div style={{ marginTop: '20px', padding: '14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
             <h4 style={{ fontSize: '13px', fontWeight: 800, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Payment Channel Reconciliation
+              Digital Pre-Order Settlement (Wallet Only)
             </h4>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: '140px', background: '#FFFFFF', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                <span style={{ fontSize: '11px', color: '#64748B' }}>Online / Campus Wallet</span>
+                <span style={{ fontSize: '11px', color: '#64748B' }}>Settled Pre-Paid Revenue</span>
                 <strong style={{ display: 'block', fontSize: '18px', color: 'var(--blue-primary)', marginTop: 2 }}>
-                  {money(todayOrders.filter(o => o.source !== 'counter').reduce((s, o) => s + o.total, 0))}
+                  {money(todayRevenue)}
                 </strong>
               </div>
               <div style={{ flex: 1, minWidth: '140px', background: '#FFFFFF', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                <span style={{ fontSize: '11px', color: '#64748B' }}>Counter Direct (Cash / POS)</span>
-                <strong style={{ display: 'block', fontSize: '18px', color: '#059669', marginTop: 2 }}>
-                  {money(todayOrders.filter(o => o.source === 'counter').reduce((s, o) => s + o.total, 0))}
+                <span style={{ fontSize: '11px', color: '#64748B' }}>Payment Model</span>
+                <strong style={{ display: 'block', fontSize: '13px', color: '#059669', marginTop: 4 }}>
+                  ✅ 100% Pre-Paid via Campus Wallet
                 </strong>
               </div>
             </div>
@@ -5123,11 +4928,12 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
-                            className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
-                            onClick={() => updateItemStockQty(currentTargetOutlet.id, item.id, isZero ? 30 : 0)}
-                            title={isZero ? 'Restock to 30 portions' : 'Mark 86 (0)'}
+                            type="button"
+                            className={`stock-avail-btn btn-spring ${item.available === false || isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
+                            onClick={() => toggleItemAvailability(currentTargetOutlet.id, item.id)}
+                            title={item.available === false || isZero ? 'Mark item available' : 'Mark item unavailable'}
                           >
-                            {isZero ? '✅ Restock' : '❌ 86'}
+                            {item.available === false || isZero ? 'Mark Available' : 'Mark Unavailable'}
                           </button>
                           <button
                             className="btn-secondary btn-spring"
@@ -5380,7 +5186,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Every order event, stock modification, role change, and wallet grant is tamper-logged.</p>
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
-              {['ALL', 'ORDER', 'STOCK_86', 'OUTLET', 'SECURITY'].map(cat => (
+              {['ALL', 'ORDER', 'INVENTORY', 'AVAILABILITY', 'OUTLET', 'SECURITY'].map(cat => (
                 <button
                   key={cat}
                   className={`filter-pill btn-spring ${auditFilter === cat ? 'active' : ''}`}
@@ -5410,7 +5216,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   .filter(l => auditFilter === 'ALL' || l.category === auditFilter)
                   .map(log => {
                     const tagClass = log.category === 'ORDER' ? 'tag-order' :
-                                     log.category === 'STOCK_86' ? 'tag-stock' :
+                                     (log.category === 'INVENTORY' || log.category === 'AVAILABILITY') ? 'tag-stock' :
                                      log.category === 'OUTLET' ? 'tag-outlet' :
                                      log.category === 'WALLET' ? 'tag-wallet' : 'tag-security'
                     return (
