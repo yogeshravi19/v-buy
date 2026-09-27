@@ -244,8 +244,8 @@ export const CANTEEN_STAFF_OWNER_MAP = [
 ]
 
 const TEST_USERS = [
-  { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 500 },
-  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 50000 },
+  { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 0 },
+  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
   ...CANTEEN_STAFF_OWNER_MAP.flatMap(c => [
     {
       id: `usr-staff-${c.id}`,
@@ -256,7 +256,7 @@ const TEST_USERS = [
       role: 'staff',
       outlet_id: c.id,
       outlet_name: c.name,
-      balance: 250
+      balance: 0
     },
     {
       id: `usr-owner-${c.id}`,
@@ -267,7 +267,7 @@ const TEST_USERS = [
       role: 'shop_admin',
       outlet_id: c.id,
       outlet_name: c.name,
-      balance: 18450
+      balance: 0
     }
   ])
 ]
@@ -280,74 +280,24 @@ function App() {
   const [session, setSession]         = useState(null)
   const [outlets, setOutlets]         = useState(DEMO_OUTLETS)
   const [eventMode, setEventMode]     = useState(false)
-  const [orders, setOrders]           = useState([
-    {
-      id: 2041, user_id: 'usr-1', outlet_id: 'g3',
-      outlets: { name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)' },
-      token: '248', status: 'ready', total: 190,
-      created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-      order_items: [
-        { item_id: 301, name: 'Veg Fried Rice', price: 80, qty: 1, notes: '' },
-        { item_id: 302, name: 'Chicken Fried Rice', price: 110, qty: 1, notes: 'extra spicy' },
-      ]
-    },
-    {
-      id: 2042, user_id: 'usr-student', outlet_id: 'g1',
-      outlets: { name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)' },
-      token: '108', status: 'placed', total: 40,
-      created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      order_items: [
-        { item_id: 101, name: 'Veg Puff', price: 20, qty: 1, notes: 'crispy' },
-        { item_id: 102, name: 'Samosa (2 pcs)', price: 20, qty: 1, notes: 'with mint chutney' }
-      ]
-    },
-    {
-      id: 2043, user_id: 'usr-2', outlet_id: 'n1',
-      outlets: { name: 'Georgia (North Square C1)', location: 'North Square' },
-      token: '312', status: 'preparing', total: 65,
-      created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-      order_items: [
-        { item_id: 501, name: 'Masala Tea', price: 15, qty: 1, notes: 'less sugar' },
-        { item_id: 504, name: 'Cheese Maggi', price: 50, qty: 1, notes: 'extra cheesy' }
-      ]
-    },
-    {
-      id: 2044, user_id: 'usr-3', outlet_id: 'ab3',
-      outlets: { name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre' },
-      token: '405', status: 'ready', total: 145,
-      created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
-      order_items: [
-        { item_id: 902, name: 'Masala Dosa', price: 55, qty: 1, notes: '' },
-        { item_id: 903, name: 'Full South Indian Veg Meal', price: 90, qty: 1, notes: '' }
-      ]
-    },
-    {
-      id: 2045, user_id: 'usr-4', outlet_id: 'n2',
-      outlets: { name: 'Alpha Non-Veg (North Square C2)', location: 'North Square' },
-      token: '519', status: 'placed', total: 130,
-      created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-      order_items: [
-        { item_id: 603, name: 'Chicken Biryani', price: 130, qty: 1, notes: 'extra raitha' }
-      ]
-    }
-  ])
-  const [wallet, setWallet] = useState({
-    balance: 550,
-    transactions: [
-      { id: 1, amount: 740, kind: 'Razorpay UPI Topup', ref: 'pay_Nzk3817', created_at: new Date(Date.now() - 3600000).toISOString() },
-      { id: 2, amount: -190, kind: 'Order #2041 — Dakshin Chitra', ref: 'ord_2041', created_at: new Date(Date.now() - 900000).toISOString() },
-    ]
+  const [orders, setOrders]           = useState([])
+  const [wallet, setWallet]           = useState({
+    balance: 0,
+    transactions: []
   })
 
-  // Live Audit Log System Telemetry
-  const [auditLogs, setAuditLogs] = useState([
-    { id: 'aud-1', timestamp: new Date(Date.now() - 35 * 60 * 1000).toISOString(), actor: 'Rahul Sharma', role: 'student', category: 'ORDER', action: 'ORDER_PLACED', details: 'Order #2041 placed at Dakshin Chitra (₹190) via Campus Wallet', status: 'SUCCESS' },
-    { id: 'aud-2', timestamp: new Date(Date.now() - 34 * 60 * 1000).toISOString(), actor: 'System Worker', role: 'system', category: 'STOCK_86', action: 'STOCK_DECREMENT', details: 'Veg Fried Rice stock decremented: 30 -> 29 (Dakshin Chitra)', status: 'SUCCESS' },
-    { id: 'aud-3', timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(), actor: 'Ramesh (Staff)', role: 'staff', category: 'ORDER', action: 'KDS_STATUS_CHANGE', details: 'Order #2041 marked "In Kitchen" (Token #248)', status: 'SUCCESS' },
-    { id: 'aud-4', timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(), actor: 'Ramesh (Staff)', role: 'staff', category: 'ORDER', action: 'KDS_STATUS_CHANGE', details: 'Order #2041 marked "Ready for Pickup" — Audio Chime triggered', status: 'SUCCESS' },
-    { id: 'aud-5', timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(), actor: 'Suresh Kumar (Owner)', role: 'owner', category: 'OUTLET', action: 'RUSH_MODE_TOGGLE', details: 'Gazebo C1 activated Rush Mode (+15m buffer)', status: 'SUCCESS' },
-    { id: 'aud-6', timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), actor: 'Overall Super Admin', role: 'admin', category: 'SECURITY', action: 'ROLE_UPDATE', details: 'Assigned Ramesh as Staff to Gazebo C1', status: 'SUCCESS' },
-  ])
+  // Sync wallet balance whenever active user changes
+  useEffect(() => {
+    if (currentUser) {
+      setWallet({
+        balance: Number(currentUser.balance || 0),
+        transactions: []
+      })
+    }
+  }, [currentUser])
+
+  // Live Audit Log System Telemetry (Starts clean and records live user interactions)
+  const [auditLogs, setAuditLogs] = useState([])
 
   const addAuditLog = useCallback((actor, role, category, action, details) => {
     setAuditLogs(prev => [
@@ -365,15 +315,8 @@ function App() {
     ])
   }, [])
 
-  // ── Phase 2 Step 1: Item Ratings (Read-Only Additions) ───────────────────
-  const [itemRatings, setItemRatings] = useState([
-    { id: 1, order_id: 2040, item_id: 101, user_id: 'usr-student', rating: 5, comment: 'Crispy and piping hot puff!', created_at: new Date(Date.now() - 86400000).toISOString() },
-    { id: 2, order_id: 2040, item_id: 102, user_id: 'usr-student', rating: 4, comment: 'Great mint chutney', created_at: new Date(Date.now() - 86400000).toISOString() },
-    { id: 3, order_id: 2038, item_id: 301, user_id: 'usr-2', rating: 5, comment: 'Best fried rice on campus', created_at: new Date(Date.now() - 172800000).toISOString() },
-    { id: 4, order_id: 2038, item_id: 302, user_id: 'usr-3', rating: 5, comment: 'Generous chicken portions', created_at: new Date(Date.now() - 172800000).toISOString() },
-    { id: 5, order_id: 2035, item_id: 501, user_id: 'usr-4', rating: 4, comment: 'Strong ginger aroma', created_at: new Date(Date.now() - 250000000).toISOString() },
-    { id: 6, order_id: 2035, item_id: 504, user_id: 'usr-5', rating: 5, comment: 'Loads of cheese!', created_at: new Date(Date.now() - 250000000).toISOString() },
-  ])
+  // Item Ratings (Starts clean for live rating submissions)
+  const [itemRatings, setItemRatings] = useState([])
 
   const getItemRatingStats = useCallback((itemId) => {
     const matching = itemRatings.filter(r => r.item_id === itemId)
@@ -2674,7 +2617,7 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
         <div className="empty-state">
           <ShoppingBag size={36} />
           <h3>No orders yet</h3>
-          <p>Browse Gazebo, North Square, AB3 or Event Stalls to place your first order!</p>
+          <p>Browse Gazebo, North Square, AB3 or Campus Outlets to place your first order!</p>
         </div>
       ) : (
         past.map(order => (
@@ -4697,7 +4640,7 @@ function AuthScreen({ onLoginUser }) {
         is_superadmin: isSuper,
         outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
         outlet_name: role === 'owner' || role === 'staff' ? chosenCanteen.name : undefined,
-        balance: role === 'owner' ? 12000 : (role === 'admin' ? 50000 : 500)
+        balance: 0
       }
       onLoginUser(newProfile)
     }
@@ -4728,7 +4671,7 @@ function AuthScreen({ onLoginUser }) {
           role,
           outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
           outlet_name: role === 'owner' || role === 'staff' ? chosenCanteen.name : undefined,
-          balance: 500
+          balance: 0
         })
       } else {
         const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
@@ -4745,11 +4688,11 @@ function AuthScreen({ onLoginUser }) {
           }
         } catch (_) {}
         if (matchedTest) return onLoginUser(matchedTest)
-        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'user', balance: 500 })
+        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'user', balance: 0 })
       }
     } else {
       if (matchedTest) onLoginUser(matchedTest)
-      else onLoginUser({ id: 'usr-new', full_name: fullName || email.split('@')[0], email, role, balance: 500 })
+      else onLoginUser({ id: 'usr-new', full_name: fullName || email.split('@')[0], email, role, balance: 0 })
     }
   }
 
