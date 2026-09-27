@@ -415,6 +415,7 @@ function App() {
   const [cart, setCart]               = useState({ outlet: null, items: [] })
   const [tab, setTab]                 = useState('browse')
   const [locationFilter, setLocationFilter] = useState('All')
+  const [walletPrefill, setWalletPrefill] = useState(null)
   const [query, setQuery]             = useState('')
   const [notice, setNotice]           = useState('')
   const [busy, setBusy]               = useState(false)
@@ -684,7 +685,13 @@ function App() {
     }
   }
 
-  async function placeOrder() {
+  function handleTopUpDeficit(amount) {
+    setWalletPrefill(amount)
+    setTab('wallet')
+    setNotice(`Deficit auto-filled: ₹${amount} needed to checkout. Click 'Add Money' to top up!`)
+  }
+
+  async function placeOrder(deliveryInfo = {}) {
     if (!cart.items.length) return
     if (cart.items.some(i => !i.available)) {
       return setNotice('Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
@@ -738,6 +745,9 @@ function App() {
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
         pickup_slot_id: selectedSlot?.id || null,
         pickup_slot_time: selectedSlot?.time_label || null,
+        delivery_mode: deliveryInfo?.deliveryMode || 'pickup',
+        room_details: deliveryInfo?.roomDetails || null,
+        contact_phone: deliveryInfo?.contactPhone || null,
         group_id: activeGroup ? activeGroup.id : null,
         is_group_payer: activeGroup ? true : false,
         created_at: new Date().toISOString(),
@@ -1222,6 +1232,7 @@ function App() {
               repeatOrder={repeatOrder}
               itemRatings={itemRatings}
               submitItemRating={submitItemRating}
+              onExploreCanteens={() => setTab('browse')}
             />
           </div>
         )}
@@ -1236,6 +1247,8 @@ function App() {
               currentUser={currentUser}
               setNotice={setNotice}
               creditWalletBalance={creditWalletBalance}
+              prefilledAmount={walletPrefill}
+              setPrefilledAmount={setWalletPrefill}
             />
           </div>
         )}
@@ -1312,6 +1325,7 @@ function App() {
           appliedCoupon={appliedCoupon}
           setAppliedCoupon={setAppliedCoupon}
           setNotice={setNotice}
+          onTopUpDeficit={handleTopUpDeficit}
         />
       )}
 
@@ -1339,6 +1353,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
   const PRICE_OPTS = [{ label: 'All Prices', val: 'All' }, { label: 'Under ₹50', val: 'u50' }, { label: 'Under ₹100', val: 'u100' }, { label: 'Under ₹200', val: 'u200' }]
   const [sortBy, setSortBy] = useState('popular') // 'popular' | 'rating' | 'price_asc' | 'price_desc'
   const [activeMindCat, setActiveMindCat] = useState('all')
+  const [selectedCanteenId, setSelectedCanteenId] = useState('all')
 
   const myUsualOrder = useMemo(() => {
     return (orders || []).find(o => o.status === 'collected' && (o.order_items || []).length > 0)
@@ -1346,6 +1361,10 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
 
   // Apply local item-level filters to each outlet
   const filteredOutlets = useMemo(() => visibleOutlets.map(o => {
+    if (selectedCanteenId !== 'all' && o.id !== selectedCanteenId) {
+      return null
+    }
+
     let items = o.menu_items || []
     // AB3 time-of-day filter (only active when browsing all items without an explicit category filter)
     if (o.id === 'ab3' && activeMindCat === 'all') {
@@ -1379,7 +1398,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
     }
 
     return { ...o, menu_items: items }
-  }).filter(o => o.menu_items.length > 0), [visibleOutlets, activeMindCat, query, vegOnly, priceFilter, ab3Slot, sortBy, getItemRatingStats])
+  }).filter(Boolean).filter(o => o.menu_items.length > 0), [visibleOutlets, selectedCanteenId, activeMindCat, query, vegOnly, priceFilter, ab3Slot, sortBy, getItemRatingStats])
 
   return (
     <>
@@ -1395,8 +1414,50 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
         <div className="filter-pills">
           {LOCATIONS.map(loc => (
             <button key={loc} className={`filter-pill ${locationFilter === loc ? 'active' : ''}`}
-              onClick={() => setLocationFilter(loc)}>{loc}</button>
+              onClick={() => { setLocationFilter(loc); setSelectedCanteenId('all'); }}>{loc}</button>
           ))}
+        </div>
+
+        {/* ── Canteen Rapid Switcher Rail ── */}
+        <div className="canteen-rail-container">
+          <div className="canteen-rail-header">
+            <span className="canteen-rail-title">
+              <Store size={14} /> Campus Canteens & Stalls ({visibleOutlets.length})
+            </span>
+            {selectedCanteenId !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setSelectedCanteenId('all')}
+                style={{ border: 0, background: 'none', color: 'var(--blue-primary)', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Reset to All Canteens
+              </button>
+            )}
+          </div>
+          <div className="canteen-rail-scroll">
+            <button
+              type="button"
+              className={`canteen-rail-chip ${selectedCanteenId === 'all' ? 'active' : ''}`}
+              onClick={() => setSelectedCanteenId('all')}
+            >
+              <span className="canteen-rail-avatar">All</span>
+              <span>All Canteens</span>
+            </button>
+            {visibleOutlets.map(out => (
+              <button
+                key={out.id}
+                type="button"
+                className={`canteen-rail-chip ${selectedCanteenId === out.id ? 'active' : ''}`}
+                onClick={() => setSelectedCanteenId(curr => curr === out.id ? 'all' : out.id)}
+              >
+                <span className="canteen-rail-avatar">{out.name.charAt(0)}</span>
+                <span>{out.name}</span>
+                {out.is_open && (
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Campus "What's on your mind?" Category Quick Bar ── */}
@@ -2013,10 +2074,14 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
 function CartDock({
   cart, wallet, busy, placeOrder, addToCart, removeFromCart, updateCartItemNotes, setCart,
   pickupSlots = [], isScheduled, setIsScheduled, selectedSlotId, setSelectedSlotId,
-  activeGroup, setShowGroupModal, availableCoupons = [], appliedCoupon, setAppliedCoupon, setNotice
+  activeGroup, setShowGroupModal, availableCoupons = [], appliedCoupon, setAppliedCoupon, setNotice,
+  onTopUpDeficit
 }) {
   const [expanded, setExpanded] = useState(false)
   const [couponInput, setCouponInput] = useState('')
+  const [deliveryMode, setDeliveryMode] = useState('pickup') // 'pickup' | 'room'
+  const [roomDetails, setRoomDetails] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
 
   const subtotal = cart.items.reduce((s, i) => s + i.price * i.qty, 0)
   const qty = cart.items.reduce((s, i) => s + i.qty, 0)
@@ -2033,6 +2098,8 @@ function CartDock({
     }
   }
   const finalDebit = Math.max(0, subtotal - discount)
+  const isInsufficient = wallet.balance < finalDebit
+  const deficit = Math.max(0, finalDebit - wallet.balance)
 
   const outletSlots = pickupSlots.filter(s => s.outlet_id === cart.outlet?.id || s.outlet_id === 'g1')
 
@@ -2067,6 +2134,49 @@ function CartDock({
             <button className="cart-clear-btn" onClick={() => { setCart({ outlet: null, items: [] }); setExpanded(false) }}>
               Clear Cart
             </button>
+          </div>
+
+          {/* ── Delivery Mode Toggle (Pickup vs Room / Hostel Delivery) ── */}
+          <div className="delivery-mode-container">
+            <div className="delivery-mode-segmented">
+              <button
+                type="button"
+                className={`delivery-mode-btn ${deliveryMode === 'pickup' ? 'active' : ''}`}
+                onClick={() => setDeliveryMode('pickup')}
+              >
+                <Store size={14} /> Campus Pickup
+              </button>
+              <button
+                type="button"
+                className={`delivery-mode-btn ${deliveryMode === 'room' ? 'active' : ''}`}
+                onClick={() => setDeliveryMode('room')}
+              >
+                <MapPin size={14} /> Hostel Room Delivery
+              </button>
+            </div>
+            {deliveryMode === 'room' && (
+              <div className="room-delivery-fields">
+                <div className="room-delivery-input-group">
+                  <label>Hostel Block & Room Number</label>
+                  <input
+                    placeholder="e.g. Block D - Room 304 (Mens / Ladies Hostel)"
+                    value={roomDetails}
+                    onChange={e => setRoomDetails(e.target.value)}
+                  />
+                </div>
+                <div className="room-delivery-input-group">
+                  <label>Student Contact Phone</label>
+                  <input
+                    placeholder="e.g. 9876543210 (for delivery executive call)"
+                    value={contactPhone}
+                    onChange={e => setContactPhone(e.target.value)}
+                  />
+                </div>
+                <div className="delivery-eta-hint">
+                  <Clock size={12} /> Room delivery usually arrives 15-20 mins after preparation
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Feature 5: Group Ordering Banner ── */}
@@ -2268,7 +2378,7 @@ function CartDock({
               </>
             )}
 
-            {/* Enhanced Bill Details (Figma Cart 01-05 1 Pattern) */}
+            {/* Enhanced Bill Details */}
             <div className="bill-summary-card">
               <div className="bill-summary-title">
                 <Receipt size={14} /> Bill Summary
@@ -2278,7 +2388,7 @@ function CartDock({
                 <span>{money(subtotal)}</span>
               </div>
               <div className="bill-summary-row">
-                <span>Campus Pickup Fee</span>
+                <span>Campus Fulfillment ({deliveryMode === 'room' ? 'Room Delivery' : 'Self Pickup'})</span>
                 <span style={{ color: '#059669', fontWeight: 700 }}>FREE</span>
               </div>
               {discount > 0 && (
@@ -2294,14 +2404,30 @@ function CartDock({
             </div>
           </div>
 
+          {/* ── Deficit-Aware Wallet Top-Up Alert ── */}
+          {isInsufficient && (
+            <div className="cart-deficit-alert-banner">
+              <div className="deficit-text-group">
+                <div className="deficit-title">
+                  <CreditCard size={15} /> Insufficient Wallet Balance
+                </div>
+                <div className="deficit-sub">
+                  Balance: {money(wallet.balance)} · Missing: <strong>{money(deficit)}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-deficit-action"
+                onClick={() => onTopUpDeficit && onTopUpDeficit(deficit)}
+              >
+                + Top Up {money(deficit)}
+              </button>
+            </div>
+          )}
+
           {hasUnavailable && (
             <p className="cart-balance-warn" style={{ color: '#DC2626', background: '#FEE2E2', borderColor: '#FECACA' }}>
               <AlertCircle size={14} /> Remove flagged out-of-stock item(s) to continue checkout.
-            </p>
-          )}
-          {wallet.balance < finalDebit && (
-            <p className="cart-balance-warn">
-              <AlertCircle size={14} /> Balance {money(wallet.balance)} — need {money(finalDebit - wallet.balance)} more
             </p>
           )}
         </div>
@@ -2310,20 +2436,33 @@ function CartDock({
       <div className="cart-dock-bar">
         <button className="cart-expand-btn" onClick={() => setExpanded(e => !e)}>
           <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>Has Unavailable</span>}</strong>
-          <small>{cart.outlet?.name}{isScheduled ? ' · Scheduled' : ''}</small>
+          <small>{cart.outlet?.name}{deliveryMode === 'room' ? ' · Room Delivery' : isScheduled ? ' · Scheduled' : ' · Pickup'}</small>
         </button>
         <div className="cart-dock-total">
           {discount > 0 && <small style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.6)', marginRight: 6, fontSize: '12px' }}>{money(subtotal)}</small>}
           {money(finalDebit)}
         </div>
-        <button
-          className="btn-primary"
-          onClick={placeOrder}
-          disabled={busy || wallet.balance < finalDebit || hasUnavailable || (isScheduled && !selectedSlotId)}
-          style={{ background: hasUnavailable ? '#DC2626' : undefined }}
-        >
-          {busy ? 'Placing...' : hasUnavailable ? 'Remove Unavailable' : isScheduled ? 'Schedule Order' : 'Place Order'} <ArrowRight size={18} />
-        </button>
+        {isInsufficient ? (
+          <button
+            type="button"
+            className="btn-primary btn-deficit-topup"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (onTopUpDeficit) onTopUpDeficit(deficit)
+            }}
+          >
+            + Top Up {money(deficit)} & Pay
+          </button>
+        ) : (
+          <button
+            className="btn-primary"
+            onClick={() => placeOrder({ deliveryMode, roomDetails, contactPhone })}
+            disabled={busy || isInsufficient || hasUnavailable || (isScheduled && !selectedSlotId)}
+            style={{ background: hasUnavailable ? '#DC2626' : undefined }}
+          >
+            {busy ? 'Placing...' : hasUnavailable ? 'Remove Unavailable' : isScheduled ? 'Schedule Order' : 'Place Order'} <ArrowRight size={18} />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -2741,84 +2880,141 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
 // ─────────────────────────────────────────────────────────────────────────────
 // ORDERS VIEW
 // ─────────────────────────────────────────────────────────────────────────────
-function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
+function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExploreCanteens }) {
   const [receiptOrder, setReceiptOrder] = useState(null)
   const active   = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled')
   const past     = orders.filter(o => o.status === 'collected' || o.status === 'cancelled')
   const mostRecentPast = past.find(o => o.status === 'collected' && (o.order_items || []).length > 0)
+  const [ordersTab, setOrdersTab] = useState(active.length > 0 ? 'active' : 'past')
 
   return (
     <section className="tab-content-enter">
       {receiptOrder && <ReceiptModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />}
 
-      {active.length > 0 && (
+      {/* ── Segmented Orders Toggle (Active vs Past) ── */}
+      <div className="orders-segmented-bar">
+        <button
+          type="button"
+          className={`orders-tab-btn ${ordersTab === 'active' ? 'active' : ''}`}
+          onClick={() => setOrdersTab('active')}
+        >
+          <Clock size={15} />
+          <span>Active Orders</span>
+          <span className={`orders-tab-counter ${active.length > 0 ? 'pulse-live' : ''}`}>
+            {active.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`orders-tab-btn ${ordersTab === 'past' ? 'active' : ''}`}
+          onClick={() => setOrdersTab('past')}
+        >
+          <Package size={15} />
+          <span>Past Orders</span>
+          <span className="orders-tab-counter">
+            {past.length}
+          </span>
+        </button>
+      </div>
+
+      {ordersTab === 'active' && (
         <>
-          <div className="section-heading"><div><h2>Active Orders</h2></div><span>{active.length} in progress</span></div>
-          {active.map(order => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              repeatOrder={repeatOrder}
-              onShowReceipt={setReceiptOrder}
-              itemRatings={itemRatings}
-              submitItemRating={submitItemRating}
-            />
-          ))}
+          {active.length === 0 ? (
+            <div className="orders-empty-card">
+              <div className="orders-empty-icon-wrap">
+                <UtensilsCrossed size={28} />
+              </div>
+              <h3>No Active Orders Today!</h3>
+              <p>You don't have any meals currently being prepared or awaiting pickup. Explore campus canteens to place an order!</p>
+              <button
+                type="button"
+                className="btn-primary btn-spring"
+                style={{ margin: '0 auto', display: 'inline-flex' }}
+                onClick={() => onExploreCanteens && onExploreCanteens()}
+              >
+                <Store size={15} /> Explore Campus Canteens
+              </button>
+            </div>
+          ) : (
+            active.map(order => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                repeatOrder={repeatOrder}
+                onShowReceipt={setReceiptOrder}
+                itemRatings={itemRatings}
+                submitItemRating={submitItemRating}
+              />
+            ))
+          )}
         </>
       )}
 
-      {/* ── Feature 2: My Usual Quick Reorder Banner ── */}
-      {mostRecentPast && (
-        <div className="my-usual-banner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '42px', height: '42px', borderRadius: '12px',
-              background: 'linear-gradient(135deg, #10B981, #059669)',
-              display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0
-            }}>
-              <Zap size={20} strokeWidth={2} className="fill-white" />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <strong style={{ fontSize: '15px', color: '#065F46' }}>My Usual (1-Tap Reorder)</strong>
-                <span style={{ fontSize: '11px', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                  {mostRecentPast.outlets?.name || mostRecentPast.outlet_id}
-                </span>
+      {ordersTab === 'past' && (
+        <>
+          {/* ── Feature 2: My Usual Quick Reorder Banner ── */}
+          {mostRecentPast && (
+            <div className="my-usual-banner">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0
+                }}>
+                  <Zap size={20} strokeWidth={2} className="fill-white" />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ fontSize: '15px', color: '#065F46' }}>My Usual (1-Tap Reorder)</strong>
+                    <span style={{ fontSize: '11px', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                      {mostRecentPast.outlets?.name || mostRecentPast.outlet_id}
+                    </span>
+                  </div>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: '#334155' }}>
+                    {(mostRecentPast.order_items || []).map(i => `${i.name} × ${i.qty}`).join(', ')} · <strong>{money(mostRecentPast.total)}</strong>
+                  </p>
+                </div>
               </div>
-              <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: '#334155' }}>
-                {(mostRecentPast.order_items || []).map(i => `${i.name} × ${i.qty}`).join(', ')} · <strong>{money(mostRecentPast.total)}</strong>
-              </p>
+              <button
+                className="reorder-btn btn-spring"
+                onClick={() => repeatOrder(mostRecentPast)}
+                style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px' }}
+                title="Reorder this exact meal into your cart"
+              >
+                <Repeat size={14} /> Reorder My Usual
+              </button>
             </div>
-          </div>
-          <button
-            className="reorder-btn btn-spring"
-            onClick={() => repeatOrder(mostRecentPast)}
-            style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px' }}
-            title="Reorder this exact meal into your cart"
-          >
-            <Repeat size={14} /> Reorder My Usual
-          </button>
-        </div>
-      )}
+          )}
 
-      <div className="section-heading"><div><h2>Past Orders</h2></div><span>{past.length} completed</span></div>
-      {!past.length && !active.length ? (
-        <div className="empty-state">
-          <ShoppingBag size={36} />
-          <h3>No orders yet</h3>
-          <p>Browse Gazebo, North Square, AB3 or Campus Outlets to place your first order!</p>
-        </div>
-      ) : (
-        past.map(order => (
-          <OrderCard
-            key={order.id}
-            order={order}
-            repeatOrder={repeatOrder}
-            onShowReceipt={setReceiptOrder}
-            itemRatings={itemRatings}
-            submitItemRating={submitItemRating}
-          />
-        ))
+          {!past.length ? (
+            <div className="orders-empty-card">
+              <div className="orders-empty-icon-wrap">
+                <ShoppingBag size={28} />
+              </div>
+              <h3>No Past Orders Recorded</h3>
+              <p>Your previous orders and digital receipts will show up here as soon as you complete your first order.</p>
+              <button
+                type="button"
+                className="btn-primary btn-spring"
+                style={{ margin: '0 auto', display: 'inline-flex' }}
+                onClick={() => onExploreCanteens && onExploreCanteens()}
+              >
+                <Store size={15} /> Order Now
+              </button>
+            </div>
+          ) : (
+            past.map(order => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                repeatOrder={repeatOrder}
+                onShowReceipt={setReceiptOrder}
+                itemRatings={itemRatings}
+                submitItemRating={submitItemRating}
+              />
+            ))
+          )}
+        </>
       )}
     </section>
   )
@@ -2851,6 +3047,11 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
             <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
             {new Date(order.created_at).toLocaleString('en-IN')} ({minsAgo} min ago)
           </small>
+          {order.delivery_mode === 'room' && (
+            <div className="delivery-badge">
+              <MapPin size={11} /> Room: {order.room_details || 'Hostel Room'} {order.contact_phone ? `· 📞 ${order.contact_phone}` : ''}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <span className={`status-badge ${order.status}`}>{order.status}</span>
@@ -2958,9 +3159,15 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
 // ─────────────────────────────────────────────────────────────────────────────
 // WALLET VIEW
 // ─────────────────────────────────────────────────────────────────────────────
-function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletBalance }) {
+function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletBalance, prefilledAmount, setPrefilledAmount }) {
   const [filter, setFilter] = useState('all') // 'all' | 'credit' | 'debit'
-  const [customAmt, setCustomAmt] = useState('')
+  const [customAmt, setCustomAmt] = useState(prefilledAmount ? String(prefilledAmount) : '')
+
+  useEffect(() => {
+    if (prefilledAmount) {
+      setCustomAmt(String(prefilledAmount))
+    }
+  }, [prefilledAmount])
 
   const income  = wallet.transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const spent   = wallet.transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
@@ -2977,6 +3184,7 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
     if (val && val > 0) {
       topUp(val)
       setCustomAmt('')
+      if (setPrefilledAmount) setPrefilledAmount(null)
     }
   }
 
@@ -2996,6 +3204,31 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
             <span style={{ color: '#94A3B8' }}>Spent: {money(Math.abs(spent))}</span>
           </div>
         </div>
+
+        {prefilledAmount && (
+          <div style={{
+            background: 'rgba(56, 189, 248, 0.15)',
+            border: '1.5px solid #38BDF8',
+            borderRadius: '10px',
+            padding: '8px 14px',
+            margin: '12px 0 6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#38BDF8',
+            fontSize: '12.5px',
+            fontWeight: 700
+          }}>
+            <span>💡 Auto-filled <strong>{money(prefilledAmount)}</strong> needed for your cart checkout</span>
+            <button
+              type="button"
+              style={{ background: 'transparent', border: 0, color: '#FFFFFF', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}
+              onClick={() => { if (setPrefilledAmount) setPrefilledAmount(null); setCustomAmt(''); }}
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
         <p style={{ marginBottom: '14px', color: '#94A3B8', fontSize: '13px' }}>Instant UPI / Card / Netbanking top-up:</p>
         <div className="topup-grid">
