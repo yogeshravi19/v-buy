@@ -8,7 +8,7 @@ import {
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
   Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
   MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt, Trash2,
-  ChefHat, Tag, Printer, Sandwich, Soup, GlassWater, Cake, Utensils, Flame, Shield
+  ChefHat, Tag, Printer, Sandwich, Soup, GlassWater, Cake, Utensils, Flame, Shield, ChevronRight, Headphones, Home
 } from 'lucide-react'
 import { VegIndicator } from './components/VegIndicator'
 import './styles.css'
@@ -77,7 +77,7 @@ function exportOrdersCSV(orders) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `vfood-orders-${new Date().toISOString().split('T')[0]}.csv`
+  a.download = `vbuy-orders-${new Date().toISOString().split('T')[0]}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -230,19 +230,19 @@ const DEMO_OUTLETS = [
 ]
 
 export const CANTEEN_STAFF_OWNER_MAP = [
-  { id: 'g1',  name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)', staffPhone: '9876541001', ownerPhone: '9876542001', staffEmail: 'staff.g1@vfood.vit.ac.in', ownerEmail: 'owner.g1@vfood.vit.ac.in' },
-  { id: 'g2',  name: 'Gazebo C2 — Desserts & Sweets', location: 'Gazebo (Main Canteen)', staffPhone: '9876541002', ownerPhone: '9876542002', staffEmail: 'staff.g2@vfood.vit.ac.in', ownerEmail: 'owner.g2@vfood.vit.ac.in' },
-  { id: 'g3',  name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541003', ownerPhone: '9876542003', staffEmail: 'staff.g3@vfood.vit.ac.in', ownerEmail: 'owner.g3@vfood.vit.ac.in' },
-  { id: 'g4',  name: 'Lassi House (Gazebo C4)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541004', ownerPhone: '9876542004', staffEmail: 'staff.g4@vfood.vit.ac.in', ownerEmail: 'owner.g4@vfood.vit.ac.in' },
-  { id: 'n1',  name: 'Georgia (North Square C1)', location: 'North Square', staffPhone: '9876541005', ownerPhone: '9876542005', staffEmail: 'staff.n1@vfood.vit.ac.in', ownerEmail: 'owner.n1@vfood.vit.ac.in' },
-  { id: 'n2',  name: 'Alpha Non-Veg (North Square C2)', location: 'North Square', staffPhone: '9876541006', ownerPhone: '9876542006', staffEmail: 'staff.n2@vfood.vit.ac.in', ownerEmail: 'owner.n2@vfood.vit.ac.in' },
-  { id: 'n3',  name: "Sri's (North Square C3)", location: 'North Square', staffPhone: '9876541007', ownerPhone: '9876542007', staffEmail: 'staff.n3@vfood.vit.ac.in', ownerEmail: 'owner.n3@vfood.vit.ac.in' },
-  { id: 'n4',  name: 'Juice & Rice Corner (North Square C4)', location: 'North Square', staffPhone: '9876541008', ownerPhone: '9876542008', staffEmail: 'staff.n4@vfood.vit.ac.in', ownerEmail: 'owner.n4@vfood.vit.ac.in' },
-  { id: 'ab3', name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre', staffPhone: '9876541009', ownerPhone: '9876542009', staffEmail: 'staff.ab3@vfood.vit.ac.in', ownerEmail: 'owner.ab3@vfood.vit.ac.in' },
-  { id: 'ab1', name: 'AB1 Canteen', location: 'Academic Blocks', staffPhone: '9876541010', ownerPhone: '9876542010', staffEmail: 'staff.ab1@vfood.vit.ac.in', ownerEmail: 'owner.ab1@vfood.vit.ac.in' },
-  { id: 'ab2', name: 'AB2 Georgia Canteen', location: 'Academic Blocks', staffPhone: '9876541011', ownerPhone: '9876542011', staffEmail: 'staff.ab2@vfood.vit.ac.in', ownerEmail: 'owner.ab2@vfood.vit.ac.in' },
-  { id: 'av',  name: 'Aavin Centre', location: 'Campus Outlets & Stores', staffPhone: '9876541012', ownerPhone: '9876542012', staffEmail: 'staff.av@vfood.vit.ac.in', ownerEmail: 'owner.av@vfood.vit.ac.in' },
-  { id: 'vm',  name: 'V Mart Provisional Store', location: 'Campus Outlets & Stores', staffPhone: '9876541013', ownerPhone: '9876542013', staffEmail: 'staff.vm@vfood.vit.ac.in', ownerEmail: 'owner.vm@vfood.vit.ac.in' },
+  { id: 'g1',  name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)', staffPhone: '9876541001', ownerPhone: '9876542001', staffEmail: 'staff.g1@vbuy.vit.ac.in', ownerEmail: 'owner.g1@vbuy.vit.ac.in' },
+  { id: 'g2',  name: 'Gazebo C2 — Desserts & Sweets', location: 'Gazebo (Main Canteen)', staffPhone: '9876541002', ownerPhone: '9876542002', staffEmail: 'staff.g2@vbuy.vit.ac.in', ownerEmail: 'owner.g2@vbuy.vit.ac.in' },
+  { id: 'g3',  name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541003', ownerPhone: '9876542003', staffEmail: 'staff.g3@vbuy.vit.ac.in', ownerEmail: 'owner.g3@vbuy.vit.ac.in' },
+  { id: 'g4',  name: 'Lassi House (Gazebo C4)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541004', ownerPhone: '9876542004', staffEmail: 'staff.g4@vbuy.vit.ac.in', ownerEmail: 'owner.g4@vbuy.vit.ac.in' },
+  { id: 'n1',  name: 'Georgia (North Square C1)', location: 'North Square', staffPhone: '9876541005', ownerPhone: '9876542005', staffEmail: 'staff.n1@vbuy.vit.ac.in', ownerEmail: 'owner.n1@vbuy.vit.ac.in' },
+  { id: 'n2',  name: 'Alpha Non-Veg (North Square C2)', location: 'North Square', staffPhone: '9876541006', ownerPhone: '9876542006', staffEmail: 'staff.n2@vbuy.vit.ac.in', ownerEmail: 'owner.n2@vbuy.vit.ac.in' },
+  { id: 'n3',  name: "Sri's (North Square C3)", location: 'North Square', staffPhone: '9876541007', ownerPhone: '9876542007', staffEmail: 'staff.n3@vbuy.vit.ac.in', ownerEmail: 'owner.n3@vbuy.vit.ac.in' },
+  { id: 'n4',  name: 'Juice & Rice Corner (North Square C4)', location: 'North Square', staffPhone: '9876541008', ownerPhone: '9876542008', staffEmail: 'staff.n4@vbuy.vit.ac.in', ownerEmail: 'owner.n4@vbuy.vit.ac.in' },
+  { id: 'ab3', name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre', staffPhone: '9876541009', ownerPhone: '9876542009', staffEmail: 'staff.ab3@vbuy.vit.ac.in', ownerEmail: 'owner.ab3@vbuy.vit.ac.in' },
+  { id: 'ab1', name: 'AB1 Canteen', location: 'Academic Blocks', staffPhone: '9876541010', ownerPhone: '9876542010', staffEmail: 'staff.ab1@vbuy.vit.ac.in', ownerEmail: 'owner.ab1@vbuy.vit.ac.in' },
+  { id: 'ab2', name: 'AB2 Georgia Canteen', location: 'Academic Blocks', staffPhone: '9876541011', ownerPhone: '9876542011', staffEmail: 'staff.ab2@vbuy.vit.ac.in', ownerEmail: 'owner.ab2@vbuy.vit.ac.in' },
+  { id: 'av',  name: 'Aavin Centre', location: 'Campus Outlets & Stores', staffPhone: '9876541012', ownerPhone: '9876542012', staffEmail: 'staff.av@vbuy.vit.ac.in', ownerEmail: 'owner.av@vbuy.vit.ac.in' },
+  { id: 'vm',  name: 'V Mart Provisional Store', location: 'Campus Outlets & Stores', staffPhone: '9876541013', ownerPhone: '9876542013', staffEmail: 'staff.vm@vbuy.vit.ac.in', ownerEmail: 'owner.vm@vbuy.vit.ac.in' },
 ]
 
 export const MIND_CATEGORIES = [
@@ -285,8 +285,8 @@ export function matchesMindCategory(item, catId) {
 }
 
 const TEST_USERS = [
-  { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 0 },
-  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
+  { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vbuy.vit.ac.in', password: 'Password@123', role: 'user', balance: 0 },
+  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vbuy.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
   ...CANTEEN_STAFF_OWNER_MAP.flatMap(c => [
     {
       id: `usr-staff-${c.id}`,
@@ -446,12 +446,12 @@ function App() {
   const [availableCoupons, setAvailableCoupons] = useState([
     { code: 'CAMPUS50', discount_type: 'flat', discount_value: 50, min_order_value: 120, max_uses: 500, used_count: 142, description: '₹50 Flat OFF on orders above ₹120' },
     { code: 'VBIT15', discount_type: 'percent', discount_value: 15, min_order_value: 80, max_uses: 1000, used_count: 310, description: '15% OFF on orders above ₹80' },
-    { code: 'VFOOD30', discount_type: 'flat', discount_value: 30, min_order_value: 60, max_uses: 300, used_count: 88, description: 'Campus Special: ₹30 Flat OFF' }
+    { code: 'VBUY30', discount_type: 'flat', discount_value: 30, min_order_value: 60, max_uses: 300, used_count: 88, description: 'Campus Special: ₹30 Flat OFF' }
   ])
   const [appliedCoupon, setAppliedCoupon] = useState(null)
 
   function startGroupCart() {
-    const code = 'VFOOD-' + Math.floor(10 + Math.random() * 90)
+    const code = 'VBUY-' + Math.floor(10 + Math.random() * 90)
     setActiveGroup({
       id: 'grp-' + Date.now(),
       code,
@@ -531,10 +531,10 @@ function App() {
   // Realtime subscription + new-order sound alert for staff
   useEffect(() => {
     if (!supabase || !session) return
-    const channel = supabase.channel('vfood-live')
+    const channel = supabase.channel('vbuy-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         if (payload.new?.status === 'ready' && Notification.permission === 'granted') {
-          new Notification('V-FOOD — Order Ready!', {
+          new Notification('V-BUY — Order Ready!', {
             body: `Order #${payload.new.id} (Token #${payload.new.token}) is ready for pickup!`,
             icon: '/vit-chennai-logo.png'
           })
@@ -1018,7 +1018,7 @@ function App() {
         <div className="ios-modal-overlay" onClick={() => setShowIosPrompt(false)}>
           <div className="ios-modal-card" onClick={e => e.stopPropagation()}>
             <div className="ios-modal-header">
-              <h3>Install V-FOOD on iOS</h3>
+              <h3>Install V-BUY on iOS</h3>
               <button className="close-btn" onClick={() => setShowIosPrompt(false)}><X size={18} /></button>
             </div>
             <div className="ios-modal-steps">
@@ -1032,7 +1032,7 @@ function App() {
               </div>
               <div className="ios-step">
                 <span className="ios-step-num">3</span>
-                <p>Tap <strong>"Add"</strong> in the top right. V-FOOD will launch full-screen as a native app!</p>
+                <p>Tap <strong>"Add"</strong> in the top right. V-BUY will launch full-screen as a native app!</p>
               </div>
             </div>
             <button className="btn-primary" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }} onClick={() => setShowIosPrompt(false)}>
@@ -1046,13 +1046,13 @@ function App() {
       <header className="topbar">
         <a href="#" className="brand-wrapper" onClick={e => { e.preventDefault(); if (isCustomer) setTab('browse') }}>
           <img src="/vit-chennai-logo.png" alt="VIT Chennai" className="vit-logo-img" />
-          <span className="brand-title">V-<span>FOOD</span></span>
+          <span className="brand-title">V-<span>BUY</span></span>
         </a>
         <div className="top-actions">
           {!isOnline && (
             <span className="offline-badge"><WifiOff size={13} /> Offline</span>
           )}
-          <button className="install-app-btn" onClick={handleInstallClick} title="Install V-FOOD as Mobile or Desktop App">
+          <button className="install-app-btn" onClick={handleInstallClick} title="Install V-BUY as Mobile or Desktop App">
             <Download size={13} />
             <span>Install App</span>
           </button>
@@ -1187,6 +1187,9 @@ function App() {
             <button className={tab === 'wallet' ? 'active' : ''} onClick={() => setTab('wallet')}>
               <CreditCard size={18} /> Wallet
             </button>
+            <button className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>
+              <User size={18} /> Profile
+            </button>
           </nav>
         )}
 
@@ -1249,6 +1252,20 @@ function App() {
               creditWalletBalance={creditWalletBalance}
               prefilledAmount={walletPrefill}
               setPrefilledAmount={setWalletPrefill}
+            />
+          </div>
+        )}
+
+        {/* ── PROFILE TAB ── */}
+        {isCustomer && tab === 'profile' && (
+          <div className="tab-content-enter" key="profile">
+            <ProfileView
+              currentUser={currentUser}
+              wallet={wallet}
+              orders={orders}
+              onNavigate={setTab}
+              onSignOut={handleSignOut}
+              setNotice={setNotice}
             />
           </div>
         )}
@@ -2851,7 +2868,7 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
-                  placeholder="e.g. VFOOD-82"
+                  placeholder="e.g. VBUY-82"
                   value={inputCode}
                   onChange={e => setInputCode(e.target.value.toUpperCase())}
                   style={{ flex: 1, padding: '8px 12px', fontSize: 13, fontWeight: 800, borderRadius: 8, border: '1px solid #CBD5E1', textTransform: 'uppercase' }}
@@ -3296,6 +3313,239 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
             )
           })
         )}
+      </div>
+    </section>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROFILE VIEW (USER DASHBOARD)
+// ─────────────────────────────────────────────────────────────────────────────
+function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNotice }) {
+  const [hostelBlock, setHostelBlock] = useState(() => localStorage.getItem('vbuy_hostel_block') || "Block D (Men's)")
+  const [roomNum, setRoomNum] = useState(() => localStorage.getItem('vbuy_hostel_room') || '412')
+  const [isEditingAddress, setIsEditingAddress] = useState(false)
+
+  const activeOrdersCount = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
+  const totalOrdersCount = orders.length
+
+  const initials = (currentUser?.full_name || 'User')
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'US'
+
+  function saveHostelDetails(e) {
+    e.preventDefault()
+    localStorage.setItem('vbuy_hostel_block', hostelBlock)
+    localStorage.setItem('vbuy_hostel_room', roomNum)
+    setIsEditingAddress(false)
+    if (setNotice) setNotice('Hostel delivery address updated successfully.')
+  }
+
+  return (
+    <section className="profile-container tab-content-enter">
+      {/* Hero Identity Card */}
+      <div className="profile-hero-card">
+        <div className="profile-avatar-wrap">
+          <div className="profile-avatar">{initials}</div>
+          <div className="profile-online-dot" title="Account Active" />
+        </div>
+        <div className="profile-hero-info">
+          <h2>{currentUser?.full_name || 'V-BUY Campus User'}</h2>
+          <div className="profile-hero-meta">
+            <span className="profile-role-pill">
+              <User size={12} strokeWidth={2.5} /> User
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Reg ID: 22BCE1984
+            </span>
+          </div>
+          <div className="profile-contact-text">
+            <span>{currentUser?.email || 'student@vitchennai.ac.in'}</span>
+            <span>·</span>
+            <span>{currentUser?.phone || '+91 98401 23456'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats Grid */}
+      <div className="profile-stats-grid">
+        <div className="profile-stat-box">
+          <div className="profile-stat-label">
+            <Banknote size={14} color="var(--blue-primary)" /> Campus Wallet
+          </div>
+          <div className="profile-stat-value" style={{ color: 'var(--blue-primary)' }}>
+            {money(wallet?.balance || 0)}
+          </div>
+          <button className="profile-stat-action" onClick={() => onNavigate('wallet')}>
+            Top Up Balance <ChevronRight size={14} />
+          </button>
+        </div>
+
+        <div className="profile-stat-box">
+          <div className="profile-stat-label">
+            <Clock size={14} color="var(--emerald)" /> Active Orders
+          </div>
+          <div className="profile-stat-value" style={{ color: activeOrdersCount > 0 ? 'var(--emerald)' : 'var(--text-main)' }}>
+            {activeOrdersCount} {activeOrdersCount === 1 ? 'order' : 'orders'}
+          </div>
+          <button className="profile-stat-action" onClick={() => onNavigate('orders')}>
+            Track Live Orders <ChevronRight size={14} />
+          </button>
+        </div>
+
+        <div className="profile-stat-box">
+          <div className="profile-stat-label">
+            <Package size={14} color="#6366F1" /> Total Orders
+          </div>
+          <div className="profile-stat-value">
+            {totalOrdersCount}
+          </div>
+          <button className="profile-stat-action" onClick={() => onNavigate('orders')}>
+            View Order History <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Campus Delivery Address Section */}
+      <div className="profile-section-card">
+        <div className="profile-section-header">
+          <MapPin size={16} /> Campus Delivery Destination
+        </div>
+
+        {isEditingAddress ? (
+          <form onSubmit={saveHostelDetails} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Hostel Block</label>
+                <select
+                  value={hostelBlock}
+                  onChange={e => setHostelBlock(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#F8FAFC', color: 'var(--text-main)', fontSize: 13, outline: 'none' }}
+                >
+                  <option value="Block A (Men's)">Block A (Men's)</option>
+                  <option value="Block B (Men's)">Block B (Men's)</option>
+                  <option value="Block C (Men's)">Block C (Men's)</option>
+                  <option value="Block D (Men's)">Block D (Men's)</option>
+                  <option value="Block E (Ladies')">Block E (Ladies')</option>
+                  <option value="Block F (Ladies')">Block F (Ladies')</option>
+                  <option value="Architecture Block (AB3)">Architecture Block (AB3)</option>
+                  <option value="Academic Block 1 (AB1)">Academic Block 1 (AB1)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Room Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 412"
+                  value={roomNum}
+                  onChange={e => setRoomNum(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#F8FAFC', color: 'var(--text-main)', fontSize: 13, outline: 'none' }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+              <button type="button" className="btn-secondary" onClick={() => setIsEditingAddress(false)} style={{ padding: '8px 16px', fontSize: 13 }}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" style={{ padding: '8px 18px', fontSize: 13 }}>
+                Save Destination
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="profile-info-row">
+            <div className="profile-info-left">
+              <div className="profile-icon-pill">
+                <Home size={18} />
+              </div>
+              <div>
+                <div className="profile-info-title">{hostelBlock} · Room {roomNum}</div>
+                <div className="profile-info-desc">Default hostel room drop-off point for evening delivery orders</div>
+              </div>
+            </div>
+            <button className="filter-pill" onClick={() => setIsEditingAddress(true)} style={{ padding: '5px 12px', fontSize: 12 }}>
+              Edit
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Account Settings & App Information */}
+      <div className="profile-section-card">
+        <div className="profile-section-header">
+          <Settings size={16} /> Preferences & Campus System Info
+        </div>
+
+        <div className="profile-info-row">
+          <div className="profile-info-left">
+            <div className="profile-icon-pill">
+              <Bell size={18} />
+            </div>
+            <div>
+              <div className="profile-info-title">Order Status Alerts</div>
+              <div className="profile-info-desc">Instant push notifications & SMS when kitchen readies your order</div>
+            </div>
+          </div>
+          <span className="profile-info-badge" style={{ color: 'var(--emerald)', background: '#ECFDF5', borderColor: '#A7F3D0' }}>
+            Enabled
+          </span>
+        </div>
+
+        <div className="profile-info-row">
+          <div className="profile-info-left">
+            <div className="profile-icon-pill">
+              <CreditCard size={18} />
+            </div>
+            <div>
+              <div className="profile-info-title">Primary Payment Mode</div>
+              <div className="profile-info-desc">PhonePe UPI Gateway & Pre-loaded V-BUY Digital Wallet</div>
+            </div>
+          </div>
+          <span className="profile-info-badge">
+            PhonePe / Wallet
+          </span>
+        </div>
+
+        <div className="profile-info-row">
+          <div className="profile-info-left">
+            <div className="profile-icon-pill">
+              <Headphones size={18} />
+            </div>
+            <div>
+              <div className="profile-info-title">Campus Dining Helpdesk</div>
+              <div className="profile-info-desc">dining-support@vitchennai.ac.in · Ext: 3993</div>
+            </div>
+          </div>
+          <span className="profile-info-badge">
+            Helpdesk Open
+          </span>
+        </div>
+
+        <div className="profile-info-row">
+          <div className="profile-info-left">
+            <div className="profile-icon-pill">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <div className="profile-info-title">V-BUY Version</div>
+              <div className="profile-info-desc">Production Campus Release · PWA & Realtime Webhooks</div>
+            </div>
+          </div>
+          <span className="profile-info-badge">
+            v2.4.0
+          </span>
+        </div>
+      </div>
+
+      {/* Sign Out Card */}
+      <div className="profile-section-card" style={{ padding: '16px 20px' }}>
+        <button className="profile-logout-btn" onClick={onSignOut}>
+          <LogOut size={18} /> Sign Out of V-BUY Account
+        </button>
       </div>
     </section>
   )
@@ -5580,7 +5830,7 @@ function AuthScreen({ onLoginUser }) {
         id: `usr-${Date.now()}`,
         full_name: fullName.trim() || `User (+91 ${cleanPhone})`,
         phone: cleanPhone,
-        email: regEmail.trim() || `${cleanPhone}@vfood.com`,
+        email: regEmail.trim() || `${cleanPhone}@vbuy.com`,
         role: role,
         is_superadmin: isSuper,
         outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
@@ -5645,8 +5895,8 @@ function AuthScreen({ onLoginUser }) {
     <div className="login-container">
       <div className="login-art">
         <div className="login-art-top">
-          <img src="/vit-chennai-logo.png" alt="V-FOOD Logo" className="vit-logo-img" />
-          <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-FOOD</span>
+          <img src="/vit-chennai-logo.png" alt="V-BUY Logo" className="vit-logo-img" />
+          <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-BUY</span>
         </div>
         <div>
           <h1>Unified Food<br />Ordering & Smart<br /><span>Dining Platform</span></h1>
@@ -5655,18 +5905,18 @@ function AuthScreen({ onLoginUser }) {
             <br />Seamless food ordering and kitchen dispatch for everyone.
           </p>
         </div>
-        <small style={{ color: '#64748B' }}>© 2026 V-FOOD · Smart Food Ordering System</small>
+        <small style={{ color: '#64748B' }}>© 2026 V-BUY · Smart Food Ordering System</small>
       </div>
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
-              V-FOOD Access
+              V-BUY Access
             </span>
           </div>
 
-          <h2>{isSignUp ? 'Create New Account' : 'Sign In to V-FOOD'}</h2>
+          <h2>{isSignUp ? 'Create New Account' : 'Sign In to V-BUY'}</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
             {authMethod === 'phone'
               ? (isSignUp ? 'Enter your details & verify with Mobile OTP' : 'Instant 1-tap login via Mobile OTP')
@@ -5793,7 +6043,7 @@ function AuthScreen({ onLoginUser }) {
                   <div className="sms-preview-banner">
                     <div>
                       <strong>SMS Gateway:</strong><br />
-                      <span>Your V-FOOD verification code is <strong>4826</strong> (Valid for 5 mins).</span>
+                      <span>Your V-BUY verification code is <strong>4826</strong> (Valid for 5 mins).</span>
                     </div>
                     <button
                       type="button"
@@ -5892,7 +6142,7 @@ function AuthScreen({ onLoginUser }) {
           )}
 
           <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
-            {isSignUp ? 'Already registered?' : "First time on V-FOOD?"}{' '}
+            {isSignUp ? 'Already registered?' : "First time on V-BUY?"}{' '}
             <a href="#" style={{ color: 'var(--blue-primary)', fontWeight: '700' }}
               onClick={e => { e.preventDefault(); setIsSignUp(s => !s); setPhoneStep('input'); setError('') }}>
               {isSignUp ? 'Sign In to Account' : 'Register New Account'}
