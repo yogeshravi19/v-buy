@@ -2096,9 +2096,6 @@ function CartDock({
 }) {
   const [expanded, setExpanded] = useState(false)
   const [couponInput, setCouponInput] = useState('')
-  const [deliveryMode, setDeliveryMode] = useState('pickup') // 'pickup' | 'room'
-  const [roomDetails, setRoomDetails] = useState('')
-  const [contactPhone, setContactPhone] = useState('')
 
   const subtotal = cart.items.reduce((s, i) => s + i.price * i.qty, 0)
   const qty = cart.items.reduce((s, i) => s + i.qty, 0)
@@ -2147,53 +2144,15 @@ function CartDock({
       {expanded && (
         <div className="cart-expanded-body">
           <div className="cart-expanded-header">
-            <span><strong>{cart.outlet?.name}</strong></span>
+            <div>
+              <strong>{cart.outlet?.name}</strong>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                <Store size={13} color="var(--blue-primary)" /> Campus Counter Pre-Order
+              </div>
+            </div>
             <button className="cart-clear-btn" onClick={() => { setCart({ outlet: null, items: [] }); setExpanded(false) }}>
               Clear Cart
             </button>
-          </div>
-
-          {/* ── Delivery Mode Toggle (Pickup vs Room / Hostel Delivery) ── */}
-          <div className="delivery-mode-container">
-            <div className="delivery-mode-segmented">
-              <button
-                type="button"
-                className={`delivery-mode-btn ${deliveryMode === 'pickup' ? 'active' : ''}`}
-                onClick={() => setDeliveryMode('pickup')}
-              >
-                <Store size={14} /> Campus Pickup
-              </button>
-              <button
-                type="button"
-                className={`delivery-mode-btn ${deliveryMode === 'room' ? 'active' : ''}`}
-                onClick={() => setDeliveryMode('room')}
-              >
-                <MapPin size={14} /> Hostel Room Delivery
-              </button>
-            </div>
-            {deliveryMode === 'room' && (
-              <div className="room-delivery-fields">
-                <div className="room-delivery-input-group">
-                  <label>Hostel Block & Room Number</label>
-                  <input
-                    placeholder="e.g. Block D - Room 304 (Mens / Ladies Hostel)"
-                    value={roomDetails}
-                    onChange={e => setRoomDetails(e.target.value)}
-                  />
-                </div>
-                <div className="room-delivery-input-group">
-                  <label>Student Contact Phone</label>
-                  <input
-                    placeholder="e.g. 9876543210 (for delivery executive call)"
-                    value={contactPhone}
-                    onChange={e => setContactPhone(e.target.value)}
-                  />
-                </div>
-                <div className="delivery-eta-hint">
-                  <Clock size={12} /> Room delivery usually arrives 15-20 mins after preparation
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ── Feature 5: Group Ordering Banner ── */}
@@ -2405,7 +2364,7 @@ function CartDock({
                 <span>{money(subtotal)}</span>
               </div>
               <div className="bill-summary-row">
-                <span>Campus Fulfillment ({deliveryMode === 'room' ? 'Room Delivery' : 'Self Pickup'})</span>
+                <span>Campus Counter Pickup (Skip Queue)</span>
                 <span style={{ color: '#059669', fontWeight: 700 }}>FREE</span>
               </div>
               {discount > 0 && (
@@ -2453,7 +2412,7 @@ function CartDock({
       <div className="cart-dock-bar">
         <button className="cart-expand-btn" onClick={() => setExpanded(e => !e)}>
           <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>Has Unavailable</span>}</strong>
-          <small>{cart.outlet?.name}{deliveryMode === 'room' ? ' · Room Delivery' : isScheduled ? ' · Scheduled' : ' · Pickup'}</small>
+          <small>{cart.outlet?.name}{isScheduled ? ' · Scheduled Counter Pickup' : ' · Counter Pre-Order'}</small>
         </button>
         <div className="cart-dock-total">
           {discount > 0 && <small style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.6)', marginRight: 6, fontSize: '12px' }}>{money(subtotal)}</small>}
@@ -2473,11 +2432,11 @@ function CartDock({
         ) : (
           <button
             className="btn-primary"
-            onClick={() => placeOrder({ deliveryMode, roomDetails, contactPhone })}
+            onClick={() => placeOrder()}
             disabled={busy || isInsufficient || hasUnavailable || (isScheduled && !selectedSlotId)}
             style={{ background: hasUnavailable ? '#DC2626' : undefined }}
           >
-            {busy ? 'Placing...' : hasUnavailable ? 'Remove Unavailable' : isScheduled ? 'Schedule Order' : 'Place Order'} <ArrowRight size={18} />
+            {busy ? 'Placing Pre-Order...' : hasUnavailable ? 'Remove Unavailable' : isScheduled ? 'Schedule Pre-Order' : 'Place Pre-Order'} <ArrowRight size={18} />
           </button>
         )}
       </div>
@@ -3064,11 +3023,6 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
             <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
             {new Date(order.created_at).toLocaleString('en-IN')} ({minsAgo} min ago)
           </small>
-          {order.delivery_mode === 'room' && (
-            <div className="delivery-badge">
-              <MapPin size={11} /> Room: {order.room_details || 'Hostel Room'} {order.contact_phone ? `· 📞 ${order.contact_phone}` : ''}
-            </div>
-          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <span className={`status-badge ${order.status}`}>{order.status}</span>
@@ -3322,10 +3276,6 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
 // PROFILE VIEW (USER DASHBOARD)
 // ─────────────────────────────────────────────────────────────────────────────
 function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNotice }) {
-  const [hostelBlock, setHostelBlock] = useState(() => localStorage.getItem('vbuy_hostel_block') || "Block D (Men's)")
-  const [roomNum, setRoomNum] = useState(() => localStorage.getItem('vbuy_hostel_room') || '412')
-  const [isEditingAddress, setIsEditingAddress] = useState(false)
-
   const activeOrdersCount = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
   const totalOrdersCount = orders.length
 
@@ -3336,14 +3286,6 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
     .join('')
     .substring(0, 2)
     .toUpperCase() || 'US'
-
-  function saveHostelDetails(e) {
-    e.preventDefault()
-    localStorage.setItem('vbuy_hostel_block', hostelBlock)
-    localStorage.setItem('vbuy_hostel_room', roomNum)
-    setIsEditingAddress(false)
-    if (setNotice) setNotice('Hostel delivery address updated successfully.')
-  }
 
   return (
     <section className="profile-container tab-content-enter">
@@ -3387,7 +3329,7 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
 
         <div className="profile-stat-box">
           <div className="profile-stat-label">
-            <Clock size={14} color="var(--emerald)" /> Active Orders
+            <Clock size={14} color="var(--emerald)" /> Active Pre-Orders
           </div>
           <div className="profile-stat-value" style={{ color: activeOrdersCount > 0 ? 'var(--emerald)' : 'var(--text-main)' }}>
             {activeOrdersCount} {activeOrdersCount === 1 ? 'order' : 'orders'}
@@ -3399,7 +3341,7 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
 
         <div className="profile-stat-box">
           <div className="profile-stat-label">
-            <Package size={14} color="#6366F1" /> Total Orders
+            <Package size={14} color="#6366F1" /> Total Pre-Orders
           </div>
           <div className="profile-stat-value">
             {totalOrdersCount}
@@ -3410,68 +3352,41 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
         </div>
       </div>
 
-      {/* Campus Delivery Address Section */}
+      {/* Campus Dining & Counter Pre-Order Details */}
       <div className="profile-section-card">
         <div className="profile-section-header">
-          <MapPin size={16} /> Campus Delivery Destination
+          <MapPin size={16} /> Campus Dining & Pickup Counter Details
         </div>
 
-        {isEditingAddress ? (
-          <form onSubmit={saveHostelDetails} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 10 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Hostel Block</label>
-                <select
-                  value={hostelBlock}
-                  onChange={e => setHostelBlock(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#F8FAFC', color: 'var(--text-main)', fontSize: 13, outline: 'none' }}
-                >
-                  <option value="Block A (Men's)">Block A (Men's)</option>
-                  <option value="Block B (Men's)">Block B (Men's)</option>
-                  <option value="Block C (Men's)">Block C (Men's)</option>
-                  <option value="Block D (Men's)">Block D (Men's)</option>
-                  <option value="Block E (Ladies')">Block E (Ladies')</option>
-                  <option value="Block F (Ladies')">Block F (Ladies')</option>
-                  <option value="Architecture Block (AB3)">Architecture Block (AB3)</option>
-                  <option value="Academic Block 1 (AB1)">Academic Block 1 (AB1)</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Room Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 412"
-                  value={roomNum}
-                  onChange={e => setRoomNum(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#F8FAFC', color: 'var(--text-main)', fontSize: 13, outline: 'none' }}
-                />
-              </div>
+        <div className="profile-info-row">
+          <div className="profile-info-left">
+            <div className="profile-icon-pill">
+              <Store size={18} />
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-              <button type="button" className="btn-secondary" onClick={() => setIsEditingAddress(false)} style={{ padding: '8px 16px', fontSize: 13 }}>
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary" style={{ padding: '8px 18px', fontSize: 13 }}>
-                Save Destination
-              </button>
+            <div>
+              <div className="profile-info-title">Primary Pickup Hubs</div>
+              <div className="profile-info-desc">Gazebo Main Canteen, North Square & AB3 Kitchen</div>
             </div>
-          </form>
-        ) : (
-          <div className="profile-info-row">
-            <div className="profile-info-left">
-              <div className="profile-icon-pill">
-                <Home size={18} />
-              </div>
-              <div>
-                <div className="profile-info-title">{hostelBlock} · Room {roomNum}</div>
-                <div className="profile-info-desc">Default hostel room drop-off point for evening delivery orders</div>
-              </div>
-            </div>
-            <button className="filter-pill" onClick={() => setIsEditingAddress(true)} style={{ padding: '5px 12px', fontSize: 12 }}>
-              Edit
-            </button>
           </div>
-        )}
+          <span className="profile-info-badge">
+            13 Counters Open
+          </span>
+        </div>
+
+        <div className="profile-info-row">
+          <div className="profile-info-left">
+            <div className="profile-icon-pill">
+              <Zap size={18} />
+            </div>
+            <div>
+              <div className="profile-info-title">Queue Skipping (Token Pickup)</div>
+              <div className="profile-info-desc">Pre-order online, track preparation live, show token code at counter</div>
+            </div>
+          </div>
+          <span className="profile-info-badge" style={{ color: 'var(--emerald)', background: '#ECFDF5', borderColor: '#A7F3D0' }}>
+            Instant Token
+          </span>
+        </div>
       </div>
 
       {/* Account Settings & App Information */}

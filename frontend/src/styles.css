@@ -4533,16 +4533,16 @@ body::before {
   line-height: 1.5;
 }
 
-/* Delivery badge on Order Card */
-.delivery-badge {
+/* Counter Pickup badge on Order Card */
+.counter-pickup-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 11.5px;
   font-weight: 700;
-  background: #E0F2FE;
-  color: #0369A1;
-  border: 1px solid #BAE6FD;
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #DBEAFE;
   padding: 2px 8px;
   border-radius: 6px;
   margin-top: 4px;
