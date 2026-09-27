@@ -3173,7 +3173,7 @@ body::before {
 ══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. Live Order Progress Stepper ── */
-.swiggy-progress-card {
+.food-flow-progress-card {
   background: #FFFFFF;
   border: 1.5px solid #E2E8F0;
   border-radius: var(--r-xl);
@@ -3184,7 +3184,7 @@ body::before {
   overflow: hidden;
 }
 
-.swiggy-live-header {
+.food-flow-live-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3193,7 +3193,7 @@ body::before {
   flex-wrap: wrap;
 }
 
-.swiggy-live-status-badge {
+.food-flow-live-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -3206,22 +3206,22 @@ body::before {
   color: var(--blue-primary);
 }
 
-.swiggy-pulse-dot {
+.food-flow-pulse-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--blue-primary);
   box-shadow: 0 0 0 0 rgba(30,64,175,0.7);
-  animation: swiggy-pulse 1.8s infinite;
+  animation: food-flow-pulse 1.8s infinite;
 }
 
-@keyframes swiggy-pulse {
+@keyframes food-flow-pulse {
   0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30,64,175,0.7); }
   70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(30,64,175,0); }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30,64,175,0); }
 }
 
-.swiggy-eta-pill {
+.food-flow-eta-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -3234,20 +3234,20 @@ body::before {
   font-weight: 800;
 }
 
-.swiggy-progress-headline {
+.food-flow-progress-headline {
   font-size: 15px;
   font-weight: 800;
   color: #0F172A;
   margin-bottom: 4px;
 }
 
-.swiggy-progress-subline {
+.food-flow-progress-subline {
   font-size: 12.5px;
   color: #64748B;
   margin-bottom: 18px;
 }
 
-.swiggy-stepper-track-wrap {
+.food-flow-stepper-track-wrap {
   position: relative;
   display: flex;
   justify-content: space-between;
@@ -3255,7 +3255,7 @@ body::before {
   margin: 14px 0 6px;
 }
 
-.swiggy-stepper-line {
+.food-flow-stepper-line {
   position: absolute;
   top: 16px;
   left: 36px;
@@ -3266,14 +3266,14 @@ body::before {
   z-index: 1;
 }
 
-.swiggy-stepper-fill {
+.food-flow-stepper-fill {
   height: 100%;
   background: linear-gradient(90deg, #1E40AF 0%, #2563EB 50%, #3B82F6 100%);
   border-radius: 2px;
   transition: width 0.6s var(--ease-spring);
 }
 
-.swiggy-step-item {
+.food-flow-step-item {
   position: relative;
   z-index: 2;
   display: flex;
@@ -3284,7 +3284,7 @@ body::before {
   text-align: center;
 }
 
-.swiggy-step-circle {
+.food-flow-step-circle {
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -3298,47 +3298,47 @@ body::before {
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
-.swiggy-step-item.done .swiggy-step-circle {
+.food-flow-step-item.done .food-flow-step-circle {
   background: #1E40AF;
   border-color: #1E40AF;
   color: #FFFFFF;
   box-shadow: 0 3px 10px rgba(30,64,175,0.3);
 }
 
-.swiggy-step-item.current .swiggy-step-circle {
+.food-flow-step-item.current .food-flow-step-circle {
   background: #FFFFFF;
   border-color: #1E40AF;
   color: #1E40AF;
   box-shadow: 0 0 0 5px rgba(30,64,175,0.2), 0 4px 12px rgba(30,64,175,0.25);
-  animation: swiggy-node-bounce 2s infinite ease-in-out;
+  animation: food-flow-bounce 2s infinite ease-in-out;
 }
 
-@keyframes swiggy-node-bounce {
+@keyframes food-flow-bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
 }
 
-.swiggy-step-title {
+.food-flow-step-title {
   font-size: 12px;
   font-weight: 800;
   color: #64748B;
   letter-spacing: -0.2px;
 }
 
-.swiggy-step-item.done .swiggy-step-title,
-.swiggy-step-item.current .swiggy-step-title {
+.food-flow-step-item.done .food-flow-step-title,
+.food-flow-step-item.current .food-flow-step-title {
   color: #0F172A;
 }
 
-.swiggy-step-desc {
+.food-flow-step-desc {
   font-size: 10px;
   color: #94A3B8;
   font-weight: 600;
   max-width: 80px;
 }
 
-/* ── 2. Swiggy Dish Card with Overlapping + ADD button ── */
-.swiggy-dish-card {
+/* ── 2. Campus Dining Dish Card with Overlapping + ADD button ── */
+.food-flow-dish-card {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -3348,16 +3348,16 @@ body::before {
   transition: background 0.15s ease;
 }
 
-.swiggy-dish-card:last-child {
+.food-flow-dish-card:last-child {
   border-bottom: 0;
 }
 
-.swiggy-dish-left {
+.food-flow-dish-left {
   flex: 1;
   min-width: 0;
 }
 
-.swiggy-dish-name {
+.food-flow-dish-name {
   font-family: var(--font-heading);
   font-size: 15px;
   font-weight: 800;
@@ -3366,7 +3366,7 @@ body::before {
   line-height: 1.3;
 }
 
-.swiggy-dish-price {
+.food-flow-dish-price {
   font-family: var(--font-body);
   font-size: 14.5px;
   font-weight: 800;
@@ -3376,7 +3376,7 @@ body::before {
   gap: 8px;
 }
 
-.swiggy-rating-pill {
+.food-flow-rating-pill {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -3389,7 +3389,7 @@ body::before {
   font-weight: 800;
 }
 
-.swiggy-dish-meta {
+.food-flow-dish-meta {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -3397,7 +3397,7 @@ body::before {
   flex-wrap: wrap;
 }
 
-.swiggy-dish-right {
+.food-flow-dish-right {
   position: relative;
   width: 114px;
   min-height: 102px;
@@ -3407,7 +3407,7 @@ body::before {
   align-items: center;
 }
 
-.swiggy-dish-img-box {
+.food-flow-dish-img-box {
   width: 114px;
   height: 88px;
   border-radius: 14px;
@@ -3418,18 +3418,18 @@ body::before {
   position: relative;
 }
 
-.swiggy-dish-img {
+.food-flow-dish-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s var(--ease-spring);
 }
 
-.swiggy-dish-card:hover .swiggy-dish-img {
+.food-flow-dish-card:hover .food-flow-dish-img {
   transform: scale(1.05);
 }
 
-.swiggy-add-btn-wrap {
+.food-flow-add-btn-wrap {
   position: absolute;
   bottom: 0px;
   left: 50%;
@@ -3437,7 +3437,7 @@ body::before {
   z-index: 3;
 }
 
-.swiggy-add-btn {
+.food-flow-add-btn {
   background: #FFFFFF;
   color: #1E40AF;
   border: 1.5px solid #1E40AF;
@@ -3455,13 +3455,13 @@ body::before {
   white-space: nowrap;
 }
 
-.swiggy-add-btn:hover {
+.food-flow-add-btn:hover {
   background: #EFF6FF;
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(30,64,175,0.26);
 }
 
-.swiggy-stepper-btn {
+.food-flow-stepper-btn {
   background: #1E40AF;
   color: #FFFFFF;
   border: 1.5px solid #1E40AF;
@@ -3472,7 +3472,7 @@ body::before {
   overflow: hidden;
 }
 
-.swiggy-stepper-btn button {
+.food-flow-stepper-btn button {
   background: transparent;
   border: 0;
   color: #FFFFFF;
@@ -3483,11 +3483,11 @@ body::before {
   transition: background 0.15s ease;
 }
 
-.swiggy-stepper-btn button:hover {
+.food-flow-stepper-btn button:hover {
   background: #1D4ED8;
 }
 
-.swiggy-stepper-btn span {
+.food-flow-stepper-btn span {
   font-size: 12.5px;
   font-weight: 800;
   padding: 0 4px;
@@ -3496,11 +3496,11 @@ body::before {
 }
 
 /* ── 3. Food Category Carousel ── */
-.swiggy-category-section {
+.food-flow-category-section {
   margin: 12px 0 24px;
 }
 
-.swiggy-cat-scroll {
+.food-flow-cat-scroll {
   display: flex;
   gap: 12px;
   overflow-x: auto;
@@ -3509,11 +3509,11 @@ body::before {
   -webkit-overflow-scrolling: touch;
 }
 
-.swiggy-cat-scroll::-webkit-scrollbar {
+.food-flow-cat-scroll::-webkit-scrollbar {
   display: none;
 }
 
-.swiggy-cat-card {
+.food-flow-cat-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3530,38 +3530,38 @@ body::before {
   user-select: none;
 }
 
-.swiggy-cat-card:hover {
+.food-flow-cat-card:hover {
   border-color: #BFDBFE;
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
 }
 
-.swiggy-cat-card.active {
+.food-flow-cat-card.active {
   background: #EFF6FF;
   border-color: #1E40AF;
   box-shadow: 0 4px 14px rgba(30,64,175,0.18);
   transform: translateY(-2px);
 }
 
-.swiggy-cat-icon {
+.food-flow-cat-icon {
   font-size: 24px;
   line-height: 1;
 }
 
-.swiggy-cat-label {
+.food-flow-cat-label {
   font-size: 11.5px;
   font-weight: 700;
   color: #334155;
   white-space: nowrap;
 }
 
-.swiggy-cat-card.active .swiggy-cat-label {
+.food-flow-cat-card.active .food-flow-cat-label {
   color: #1E40AF;
   font-weight: 800;
 }
 
 /* ── 4. Floating "View Cart" Pill ── */
-.swiggy-floating-cart-pill {
+.food-flow-floating-cart-pill {
   position: fixed;
   bottom: 24px;
   left: 50%;
@@ -3578,16 +3578,182 @@ body::before {
   box-shadow: 0 10px 30px rgba(30,64,175,0.4);
   z-index: 150;
   cursor: pointer;
-  animation: swiggy-pill-up 0.35s var(--ease-spring);
+  animation: food-flow-pill-up 0.35s var(--ease-spring);
   border: 1px solid rgba(255,255,255,0.2);
 }
 
-@keyframes swiggy-pill-up {
+@keyframes food-flow-pill-up {
   from { opacity: 0; transform: translate(-50%, 20px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
-.swiggy-floating-cart-pill:hover {
+.food-flow-floating-cart-pill:hover {
   transform: translate(-50%, -2px);
   box-shadow: 0 14px 36px rgba(30,64,175,0.48);
+}
+
+/* ── In-Canteen Menu Search & Sticky Category Pills (Figma 01-03 1) ── */
+.outlet-menu-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #F8FAFC;
+  border-bottom: 1.5px solid #E2E8F0;
+  border-radius: 12px 12px 0 0;
+}
+
+.outlet-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.outlet-search-input-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: #64748B;
+  pointer-events: none;
+}
+
+.outlet-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #0F172A;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.outlet-search-input:focus {
+  border-color: #1E40AF;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+}
+
+.outlet-menu-cat-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.outlet-menu-cat-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.outlet-cat-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #475569;
+  transition: all 0.18s ease;
+}
+
+.outlet-cat-chip:hover {
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.outlet-cat-chip.active {
+  background: #1E40AF;
+  color: #FFFFFF;
+  border-color: #1E40AF;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
+}
+
+/* Category Section Header in Menu */
+.menu-category-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 4px 6px;
+  margin-top: 8px;
+  border-bottom: 2px solid #F1F5F9;
+}
+
+.menu-category-section-title h5 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.menu-category-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748B;
+  background: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+/* Enhanced Bill Breakdown (Figma 01-05 1) */
+.bill-summary-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.bill-summary-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bill-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748B;
+  margin-bottom: 6px;
+}
+
+.bill-summary-row.savings {
+  color: #059669;
+  font-weight: 700;
+}
+
+.bill-summary-row.total {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0F172A;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1.5px dashed #CBD5E1;
+}
+
+.bill-savings-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #047857;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 12px;
 }

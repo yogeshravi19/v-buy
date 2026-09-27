@@ -7,7 +7,7 @@ import {
   CheckCircle2, RefreshCw, AlertCircle, Award, Coffee, UtensilsCrossed, Repeat,
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
   Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
-  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2
+  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt
 } from 'lucide-react'
 import './styles.css'
 import { getFoodImage } from './lib/foodImages'
@@ -1216,8 +1216,8 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
           ))}
         </div>
 
-        {/* ── Swiggy "What's on your mind?" Category Quick Bar ── */}
-        <div className="swiggy-category-section">
+        {/* ── Campus "What's on your mind?" Category Quick Bar ── */}
+        <div className="food-flow-category-section">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
               🍽️ What's on your mind?
@@ -1231,7 +1231,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
               </button>
             )}
           </div>
-          <div className="swiggy-cat-scroll">
+          <div className="food-flow-cat-scroll">
             {[
               { label: 'All Items', icon: '✨', query: '' },
               { label: 'Snacks & Rolls', icon: '🥪', query: 'roll' },
@@ -1245,11 +1245,11 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
               return (
                 <div
                   key={cat.label}
-                  className={`swiggy-cat-card ${isActive ? 'active' : ''}`}
+                  className={`food-flow-cat-card ${isActive ? 'active' : ''}`}
                   onClick={() => setQuery(cat.query)}
                 >
-                  <span className="swiggy-cat-icon">{cat.icon}</span>
-                  <span className="swiggy-cat-label">{cat.label}</span>
+                  <span className="food-flow-cat-icon">{cat.icon}</span>
+                  <span className="food-flow-cat-label">{cat.label}</span>
                 </div>
               )
             })}
@@ -1505,12 +1505,38 @@ function getCanteenMeta(outlet) {
 // ─────────────────────────────────────────────────────────────────────────────
 function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStats }) {
   const [expanded, setExpanded] = useState(true)
+  const [menuSearch, setMenuSearch] = useState('')
+  const [selectedCat, setSelectedCat] = useState('all')
+  const [vegOnly, setVegOnly] = useState(false)
   const meta = useMemo(() => getCanteenMeta(outlet), [outlet])
 
   // Items from this outlet in customer's cart
   const outletCartItems = (cart?.outlet?.id === outlet.id ? cart.items : [])
   const itemsInCartCount = outletCartItems.reduce((s, i) => s + i.qty, 0)
   const itemsInCartTotal = outletCartItems.reduce((s, i) => s + (i.price * i.qty), 0)
+
+  // Categories present in this outlet
+  const rawItems = outlet.menu_items || []
+  const categories = useMemo(() => {
+    const cats = new Set()
+    rawItems.forEach(i => { if (i.category) cats.add(i.category) })
+    return Array.from(cats)
+  }, [rawItems])
+
+  // Filtered items based on search and filters
+  const filteredItems = useMemo(() => {
+    return rawItems.filter(item => {
+      if (vegOnly && item.is_veg === false) return false
+      if (selectedCat !== 'all' && item.category !== selectedCat) return false
+      if (menuSearch.trim()) {
+        const q = menuSearch.toLowerCase().trim()
+        const matchesName = item.name.toLowerCase().includes(q)
+        const matchesCat = (item.category || '').toLowerCase().includes(q)
+        if (!matchesName && !matchesCat) return false
+      }
+      return true
+    })
+  }, [rawItems, vegOnly, selectedCat, menuSearch])
 
   return (
     <article className="outlet-card" style={{ '--canteen-accent': meta.accentColor }}>
@@ -1554,7 +1580,7 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
           <div className="canteen-stat-divider" />
           <div className="canteen-stat-item">
             <UtensilsCrossed size={12} />
-            <span>{(outlet.menu_items || []).length} items</span>
+            <span>{rawItems.length} items</span>
           </div>
         </div>
       </div>
@@ -1580,7 +1606,7 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
       <div className="outlet-toggle-row" onClick={() => setExpanded(e => !e)}>
         <span className="outlet-toggle-label">
           <UtensilsCrossed size={13} />
-          {expanded ? 'Hide Menu' : `View Menu (${(outlet.menu_items || []).length} items)`}
+          {expanded ? 'Hide Menu' : `View Menu (${rawItems.length} items)`}
         </span>
         <div className={`collapse-chevron ${expanded ? 'open' : ''}`}>
           <ChevronDown size={17} />
@@ -1589,105 +1615,164 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
 
       {/* ── Animated Menu Transition Box ── */}
       {expanded && (
-        <div className="menu-list">
-          {(outlet.menu_items || []).map(item => {
-            const inCart = outletCartItems.find(i => i.id === item.id)
-            const foodImg = getFoodImage(item.name, item.category)
-            const rStats = getItemRatingStats ? getItemRatingStats(item.id) : null
-            const isSoldOut = item.available === false || item.stock_qty === 0 || !outlet.is_open
+        <div className="menu-list" style={{ padding: '0 16px 16px' }}>
+          {/* In-Canteen Search & Sticky Category Pills */}
+          <div className="outlet-menu-filter-bar">
+            <div className="outlet-search-input-wrap">
+              <Search size={14} />
+              <input
+                type="text"
+                className="outlet-search-input"
+                placeholder={`Search dishes in ${outlet.name}...`}
+                value={menuSearch}
+                onChange={e => setMenuSearch(e.target.value)}
+              />
+              {menuSearch && (
+                <button
+                  onClick={() => setMenuSearch('')}
+                  style={{ position: 'absolute', right: 10, background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer', padding: 2 }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
-            return (
-              <div className="swiggy-dish-card" key={item.id}>
-                {/* Left: Swiggy Details Column */}
-                <div className="swiggy-dish-left">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span
-                      className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'}
-                      title={item.is_veg !== false ? 'Vegetarian' : 'Non-Vegetarian'}
-                    />
-                    {item.is_bestseller !== false && (
-                      <span className="swiggy-rating-pill" style={{ color: '#D97706', background: '#FEF3C7', borderColor: '#FDE68A' }}>
-                        ★ Bestseller
-                      </span>
-                    )}
-                  </div>
+            <div className="outlet-menu-cat-chips">
+              <button
+                type="button"
+                className={`outlet-cat-chip ${selectedCat === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedCat('all')}
+              >
+                All ({rawItems.length})
+              </button>
+              {categories.map(cat => {
+                const count = rawItems.filter(i => i.category === cat).length
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    className={`outlet-cat-chip ${selectedCat === cat ? 'active' : ''}`}
+                    onClick={() => setSelectedCat(cat)}
+                  >
+                    {cat} ({count})
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                className={`outlet-cat-chip ${vegOnly ? 'active' : ''}`}
+                style={vegOnly ? { background: '#059669', borderColor: '#059669', color: '#FFFFFF' } : {}}
+                onClick={() => setVegOnly(v => !v)}
+              >
+                🟢 Pure Veg
+              </button>
+            </div>
+          </div>
 
-                  <h4 className="swiggy-dish-name">{item.name}</h4>
+          {filteredItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px 12px', color: '#64748B', fontSize: '13px' }}>
+              No dishes found matching your search.
+            </div>
+          ) : (
+            filteredItems.map(item => {
+              const inCart = outletCartItems.find(i => i.id === item.id)
+              const foodImg = getFoodImage(item.name, item.category)
+              const rStats = getItemRatingStats ? getItemRatingStats(item.id) : null
+              const isSoldOut = item.available === false || item.stock_qty === 0 || !outlet.is_open
 
-                  <div className="swiggy-dish-price">
-                    <span>{money(item.price)}</span>
-                    {rStats && (
-                      <span className="swiggy-rating-pill">
-                        <Star size={10} fill="#F59E0B" color="#F59E0B" />
-                        <strong>{rStats.avg}</strong>
-                        <span style={{ opacity: 0.75, fontSize: '9.5px' }}>({rStats.count})</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="swiggy-dish-meta">
-                    <span className="item-cat-pill">{item.category}</span>
-                    {isSoldOut ? (
-                      <span className="sold-out-pill">{!outlet.is_open ? 'Closed' : 'Sold Out'}</span>
-                    ) : (
-                      item.stock_qty !== undefined && item.stock_qty <= 10 && item.stock_qty > 0 && (
-                        <span style={{ fontSize: '10px', color: '#B45309', fontWeight: 800, background: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>
-                          Only {item.stock_qty} left!
+              return (
+                <div className="food-flow-dish-card" key={item.id}>
+                  {/* Left: Details Column */}
+                  <div className="food-flow-dish-left">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'}
+                        title={item.is_veg !== false ? 'Vegetarian' : 'Non-Vegetarian'}
+                      />
+                      {item.is_bestseller !== false && (
+                        <span className="food-flow-rating-pill" style={{ color: '#D97706', background: '#FEF3C7', borderColor: '#FDE68A' }}>
+                          ★ Bestseller
                         </span>
-                      )
-                    )}
-                  </div>
-                </div>
+                      )}
+                    </div>
 
-                {/* Right: Swiggy Photo with Overlapping + ADD button */}
-                <div className="swiggy-dish-right">
-                  <div className="swiggy-dish-img-box">
-                    <img
-                      src={foodImg.url}
-                      alt={item.name}
-                      className="swiggy-dish-img"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        if (e.currentTarget.nextElementSibling) {
-                          e.currentTarget.nextElementSibling.style.display = 'flex';
-                        }
-                      }}
-                    />
-                    <div className="food-thumb-fallback" style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                      {foodImg.emoji}
+                    <h4 className="food-flow-dish-name">{item.name}</h4>
+
+                    <div className="food-flow-dish-price">
+                      <span>{money(item.price)}</span>
+                      {rStats && (
+                        <span className="food-flow-rating-pill">
+                          <Star size={10} fill="#F59E0B" color="#F59E0B" />
+                          <strong>{rStats.avg}</strong>
+                          <span style={{ opacity: 0.75, fontSize: '9.5px' }}>({rStats.count})</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="food-flow-dish-meta">
+                      <span className="item-cat-pill">{item.category}</span>
+                      {isSoldOut ? (
+                        <span className="sold-out-pill">{!outlet.is_open ? 'Closed' : 'Sold Out'}</span>
+                      ) : (
+                        item.stock_qty !== undefined && item.stock_qty <= 10 && item.stock_qty > 0 && (
+                          <span style={{ fontSize: '10px', color: '#B45309', fontWeight: 800, background: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>
+                            Only {item.stock_qty} left!
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
 
-                  <div className="swiggy-add-btn-wrap">
-                    {isSoldOut ? (
-                      <span className="unavailable-btn" style={{ fontSize: '10px', padding: '3px 8px' }}>
-                        {!outlet.is_open ? 'Closed' : 'Sold Out'}
-                      </span>
-                    ) : inCart ? (
-                      <div className="swiggy-stepper-btn">
-                        <button onClick={() => removeFromCart(item.id)} title="Decrease quantity">
-                          <Minus size={13} />
-                        </button>
-                        <span>{inCart.qty}</span>
-                        <button onClick={() => addToCart(outlet, item)} title="Increase quantity">
-                          <Plus size={13} />
-                        </button>
+                  {/* Right: Food Image with Overlapping + ADD Button */}
+                  <div className="food-flow-dish-right">
+                    <div className="food-flow-dish-img-box">
+                      <img
+                        src={foodImg.url}
+                        alt={item.name}
+                        className="food-flow-dish-img"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                      <div className="food-thumb-fallback" style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                        {foodImg.emoji}
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="swiggy-add-btn"
-                        onClick={() => addToCart(outlet, item)}
-                      >
-                        ADD <Plus size={13} strokeWidth={2.5} />
-                      </button>
-                    )}
+                    </div>
+
+                    <div className="food-flow-add-btn-wrap">
+                      {isSoldOut ? (
+                        <span className="unavailable-btn" style={{ fontSize: '10px', padding: '3px 8px' }}>
+                          {!outlet.is_open ? 'Closed' : 'Sold Out'}
+                        </span>
+                      ) : inCart ? (
+                        <div className="food-flow-stepper-btn">
+                          <button onClick={() => removeFromCart(item.id)} title="Decrease quantity">
+                            <Minus size={13} />
+                          </button>
+                          <span>{inCart.qty}</span>
+                          <button onClick={() => addToCart(outlet, item)} title="Increase quantity">
+                            <Plus size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="food-flow-add-btn"
+                          onClick={() => addToCart(outlet, item)}
+                        >
+                          ADD <Plus size={13} strokeWidth={2.5} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       )}
     </article>
@@ -1955,20 +2040,27 @@ function CartDock({
               </>
             )}
 
-            {/* Price breakdown */}
-            <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #E2E8F0', fontSize: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                <span>Dishes Subtotal:</span>
+            {/* Enhanced Bill Details (Figma Cart 01-05 1 Pattern) */}
+            <div className="bill-summary-card">
+              <div className="bill-summary-title">
+                <Receipt size={14} /> Bill Summary
+              </div>
+              <div className="bill-summary-row">
+                <span>Item Total</span>
                 <span>{money(subtotal)}</span>
               </div>
+              <div className="bill-summary-row">
+                <span>Campus Pickup Fee</span>
+                <span style={{ color: '#059669', fontWeight: 700 }}>FREE</span>
+              </div>
               {discount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16A34A', fontWeight: 700, marginTop: 2 }}>
-                  <span>Promo Discount:</span>
+                <div className="bill-summary-row savings">
+                  <span>Coupon Discount ({appliedCoupon?.code})</span>
                   <span>-{money(discount)}</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>
-                <span>Wallet Debit:</span>
+              <div className="bill-summary-row total">
+                <span>To Pay</span>
                 <span>{money(finalDebit)}</span>
               </div>
             </div>
@@ -2259,26 +2351,26 @@ function OrderStepper({ status, order }) {
     : 'Enjoy your delicious campus meal!'
 
   return (
-    <div className="swiggy-progress-card">
-      <div className="swiggy-live-header">
-        <div className="swiggy-live-status-badge">
-          <span className="swiggy-pulse-dot" />
+    <div className="food-flow-progress-card">
+      <div className="food-flow-live-header">
+        <div className="food-flow-live-status-badge">
+          <span className="food-flow-pulse-dot" />
           <span>LIVE ORDER PROGRESS · {status.toUpperCase()}</span>
         </div>
         {!isCollected && (
-          <div className="swiggy-eta-pill">
+          <div className="food-flow-eta-pill">
             <Clock size={12} />
             <span>{isReady ? 'READY NOW' : isPrep ? 'ETA: ~5 mins' : 'ETA: ~8 mins'}</span>
           </div>
         )}
       </div>
 
-      <div className="swiggy-progress-headline">{statusHeadline}</div>
-      <div className="swiggy-progress-subline">{statusSubline}</div>
+      <div className="food-flow-progress-headline">{statusHeadline}</div>
+      <div className="food-flow-progress-subline">{statusSubline}</div>
 
-      <div className="swiggy-stepper-track-wrap">
-        <div className="swiggy-stepper-line">
-          <div className="swiggy-stepper-fill" style={{ width: `${progressPercent}%` }} />
+      <div className="food-flow-stepper-track-wrap">
+        <div className="food-flow-stepper-line">
+          <div className="food-flow-stepper-fill" style={{ width: `${progressPercent}%` }} />
         </div>
         {steps.map((step, idx) => {
           const IconComponent = step.icon
@@ -2288,13 +2380,13 @@ function OrderStepper({ status, order }) {
           return (
             <div
               key={step.key}
-              className={`swiggy-step-item ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}`}
+              className={`food-flow-step-item ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}`}
             >
-              <div className="swiggy-step-circle">
+              <div className="food-flow-step-circle">
                 {isDone ? <Check size={16} strokeWidth={3} /> : <IconComponent size={15} />}
               </div>
-              <span className="swiggy-step-title">{step.label}</span>
-              <span className="swiggy-step-desc">{step.desc}</span>
+              <span className="food-flow-step-title">{step.label}</span>
+              <span className="food-flow-step-desc">{step.desc}</span>
             </div>
           )
         })}
