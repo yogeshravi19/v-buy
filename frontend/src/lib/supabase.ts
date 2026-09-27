@@ -97,18 +97,6 @@ export type Database = {
           review: string | null; created_at: string
         }
       }
-      loyalty_progress: {
-        Row: {
-          user_id: string; orders_completed: number; streak_days: number
-          last_order_date: string | null; vouchers_earned: number
-        }
-      }
-      referrals: {
-        Row: {
-          id: string; referrer_id: string; referred_id: string; referral_code: string
-          status: string; reward_given: boolean
-        }
-      }
       settings: {
         Row: { id: number; event_mode: boolean; updated_at?: string }
       }

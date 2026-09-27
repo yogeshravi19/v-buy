@@ -228,10 +228,10 @@ const DEMO_OUTLETS = [
 ]
 
 const TEST_USERS = [
-  { id: 'usr-customer', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'rahul.sharma@gmail.com', password: 'password123', role: 'user', balance: 550 },
-  { id: 'usr-staff', full_name: 'Ramesh (Shop Staff)', phone: '9876543220', email: 'staff.gazebo@vfood.com', password: 'password123', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 250 },
-  { id: 'usr-owner', full_name: 'Suresh Kumar (Shop Owner)', phone: '9876543230', email: 'owner.gazebo@vfood.com', password: 'password123', role: 'owner', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 18450 },
-  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'superadmin@vfood.com', password: 'password123', role: 'admin', is_superadmin: true, balance: 50000 },
+  { id: 'usr-student', full_name: 'Rahul Sharma (Student)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'student', balance: 500 },
+  { id: 'usr-staff', full_name: 'Ramesh (Main Canteen Staff)', phone: '9876543220', email: 'staff.maincanteen@vfood.vit.ac.in', password: 'Password@123', role: 'staff', outlet_id: 'main-canteen', outlet_name: 'Main Canteen', balance: 250 },
+  { id: 'usr-owner', full_name: 'Suresh Kumar (Shop Admin)', phone: '9876543230', email: 'owner.maincanteen@vfood.vit.ac.in', password: 'Password@123', role: 'shop_admin', outlet_id: 'main-canteen', outlet_name: 'Main Canteen', balance: 18450 },
+  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 50000 },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -362,13 +362,6 @@ function App() {
   const [isOnline, setIsOnline]       = useState(navigator.onLine)
   const [ab3Slot, setAb3Slot]         = useState(getAB3TimeSlot())
   const prevOrderCountRef             = useRef(0)
-
-  // ── Feature 4: Referral Program ──
-  const [referralCode, setReferralCode] = useState('VIT-VFOOD26')
-  const [referrals, setReferrals] = useState([
-    { id: 'ref-1', friend_name: 'Priya Patel', status: 'completed', reward_credited: true, date: '2026-09-24' },
-    { id: 'ref-2', friend_name: 'Aditya Verma', status: 'pending', reward_credited: false, date: '2026-09-26' }
-  ])
 
   // ── Feature 5: Group Ordering ──
   const [activeGroup, setActiveGroup] = useState(null)
@@ -826,19 +819,6 @@ function App() {
         addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'ORDER', 'KDS_STATUS_CHANGE', `Order #${orderId} moved to "${nextStatus}" (Token #${o.token})`)
       }
 
-      // Feature 4: Reward referral bonus on first collected order
-      if (nextStatus === 'collected' && o.status !== 'collected') {
-
-        // On first collected order, credit referral bonus
-        setReferrals(prevRefs => prevRefs.map(r => {
-          if (r.status === 'pending') {
-            creditWalletBalance(30)
-            return { ...r, status: 'completed', reward_credited: true }
-          }
-          return r
-        }))
-      }
-
       return { ...o, status: nextStatus }
     }))
   }
@@ -1069,8 +1049,6 @@ function App() {
               topUp={topUp}
               busy={busy}
               currentUser={currentUser}
-              referralCode={referralCode}
-              referrals={referrals}
               setNotice={setNotice}
               creditWalletBalance={creditWalletBalance}
             />
@@ -2511,72 +2489,6 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REFERRAL PROGRAM SECTION (Phase 2 Step 4: Friend Invites)
-// ─────────────────────────────────────────────────────────────────────────────
-function ReferralSection({ referralCode, referrals, setNotice, creditWalletBalance }) {
-  const [claimedCode, setClaimedCode] = useState('')
-  const completedReferrals = (referrals || []).filter(r => r.status === 'completed')
-  const totalEarned = completedReferrals.length * 30
-
-  function handleCopy() {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(referralCode)
-      setNotice(`📋 Referral code ${referralCode} copied to clipboard!`)
-    }
-  }
-
-  function handleApplyReferral(e) {
-    e.preventDefault()
-    if (!claimedCode.trim()) return
-    if (claimedCode.trim().toUpperCase() === referralCode.toUpperCase()) {
-      return setNotice('⚠️ You cannot use your own referral code!')
-    }
-    // Simulate welcome credit for referred friend
-    if (creditWalletBalance) {
-      creditWalletBalance(30)
-      setNotice(`🎉 Referral code applied! ₹30 welcome bonus credited to your wallet.`)
-      setClaimedCode('')
-    }
-  }
-
-  return (
-    <div className="referral-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#DCFCE7', color: '#16A34A', display: 'grid', placeItems: 'center' }}>
-            <Sparkles size={16} />
-          </div>
-          <div>
-            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text-main)' }}>Refer Friends & Earn ₹30</h4>
-            <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>Both of you get ₹30 when your friend completes their first meal</p>
-          </div>
-        </div>
-        <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D' }}>{money(totalEarned)} earned</span>
-      </div>
-
-      <div className="referral-code-wrap">
-        <span className="referral-code-text">{referralCode}</span>
-        <button className="btn-secondary btn-spring" style={{ padding: '6px 14px', fontSize: 12 }} onClick={handleCopy}>
-          Copy Code
-        </button>
-      </div>
-
-      <form onSubmit={handleApplyReferral} style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-        <input
-          placeholder="Have a friend's referral code?"
-          value={claimedCode}
-          onChange={e => setClaimedCode(e.target.value.toUpperCase())}
-          style={{ flex: 1, padding: '7px 12px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)' }}
-        />
-        <button type="submit" className="btn-secondary btn-spring" disabled={!claimedCode.trim()} style={{ fontSize: 12 }}>
-          Claim ₹30
-        </button>
-      </form>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ORDERS VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
@@ -2796,7 +2708,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
 // ─────────────────────────────────────────────────────────────────────────────
 // WALLET VIEW
 // ─────────────────────────────────────────────────────────────────────────────
-function WalletView({ wallet, topUp, busy, currentUser, referralCode, referrals, setNotice, creditWalletBalance }) {
+function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletBalance }) {
   const [filter, setFilter] = useState('all') // 'all' | 'credit' | 'debit'
   const [customAmt, setCustomAmt] = useState('')
 
