@@ -227,11 +227,49 @@ const DEMO_OUTLETS = [
 
 ]
 
+export const CANTEEN_STAFF_OWNER_MAP = [
+  { id: 'g1',  name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)', staffPhone: '9876541001', ownerPhone: '9876542001', staffEmail: 'staff.g1@vfood.vit.ac.in', ownerEmail: 'owner.g1@vfood.vit.ac.in' },
+  { id: 'g2',  name: 'Gazebo C2 — Desserts & Sweets', location: 'Gazebo (Main Canteen)', staffPhone: '9876541002', ownerPhone: '9876542002', staffEmail: 'staff.g2@vfood.vit.ac.in', ownerEmail: 'owner.g2@vfood.vit.ac.in' },
+  { id: 'g3',  name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541003', ownerPhone: '9876542003', staffEmail: 'staff.g3@vfood.vit.ac.in', ownerEmail: 'owner.g3@vfood.vit.ac.in' },
+  { id: 'g4',  name: 'Lassi House (Gazebo C4)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541004', ownerPhone: '9876542004', staffEmail: 'staff.g4@vfood.vit.ac.in', ownerEmail: 'owner.g4@vfood.vit.ac.in' },
+  { id: 'n1',  name: 'Georgia (North Square C1)', location: 'North Square', staffPhone: '9876541005', ownerPhone: '9876542005', staffEmail: 'staff.n1@vfood.vit.ac.in', ownerEmail: 'owner.n1@vfood.vit.ac.in' },
+  { id: 'n2',  name: 'Alpha Non-Veg (North Square C2)', location: 'North Square', staffPhone: '9876541006', ownerPhone: '9876542006', staffEmail: 'staff.n2@vfood.vit.ac.in', ownerEmail: 'owner.n2@vfood.vit.ac.in' },
+  { id: 'n3',  name: "Sri's (North Square C3)", location: 'North Square', staffPhone: '9876541007', ownerPhone: '9876542007', staffEmail: 'staff.n3@vfood.vit.ac.in', ownerEmail: 'owner.n3@vfood.vit.ac.in' },
+  { id: 'n4',  name: 'Juice & Rice Corner (North Square C4)', location: 'North Square', staffPhone: '9876541008', ownerPhone: '9876542008', staffEmail: 'staff.n4@vfood.vit.ac.in', ownerEmail: 'owner.n4@vfood.vit.ac.in' },
+  { id: 'ab3', name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre', staffPhone: '9876541009', ownerPhone: '9876542009', staffEmail: 'staff.ab3@vfood.vit.ac.in', ownerEmail: 'owner.ab3@vfood.vit.ac.in' },
+  { id: 'ab1', name: 'AB1 Canteen', location: 'Academic Blocks', staffPhone: '9876541010', ownerPhone: '9876542010', staffEmail: 'staff.ab1@vfood.vit.ac.in', ownerEmail: 'owner.ab1@vfood.vit.ac.in' },
+  { id: 'ab2', name: 'AB2 Georgia Canteen', location: 'Academic Blocks', staffPhone: '9876541011', ownerPhone: '9876542011', staffEmail: 'staff.ab2@vfood.vit.ac.in', ownerEmail: 'owner.ab2@vfood.vit.ac.in' },
+  { id: 'av',  name: 'Aavin Centre', location: 'Campus Outlets & Stores', staffPhone: '9876541012', ownerPhone: '9876542012', staffEmail: 'staff.av@vfood.vit.ac.in', ownerEmail: 'owner.av@vfood.vit.ac.in' },
+  { id: 'vm',  name: 'V Mart Provisional Store', location: 'Campus Outlets & Stores', staffPhone: '9876541013', ownerPhone: '9876542013', staffEmail: 'staff.vm@vfood.vit.ac.in', ownerEmail: 'owner.vm@vfood.vit.ac.in' },
+]
+
 const TEST_USERS = [
-  { id: 'usr-student', full_name: 'Rahul Sharma (Student)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'student', balance: 500 },
-  { id: 'usr-staff', full_name: 'Ramesh (Main Canteen Staff)', phone: '9876543220', email: 'staff.maincanteen@vfood.vit.ac.in', password: 'Password@123', role: 'staff', outlet_id: 'main-canteen', outlet_name: 'Main Canteen', balance: 250 },
-  { id: 'usr-owner', full_name: 'Suresh Kumar (Shop Admin)', phone: '9876543230', email: 'owner.maincanteen@vfood.vit.ac.in', password: 'Password@123', role: 'shop_admin', outlet_id: 'main-canteen', outlet_name: 'Main Canteen', balance: 18450 },
+  { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 500 },
   { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 50000 },
+  ...CANTEEN_STAFF_OWNER_MAP.flatMap(c => [
+    {
+      id: `usr-staff-${c.id}`,
+      full_name: `Staff — ${c.name}`,
+      phone: c.staffPhone,
+      email: c.staffEmail,
+      password: 'Password@123',
+      role: 'staff',
+      outlet_id: c.id,
+      outlet_name: c.name,
+      balance: 250
+    },
+    {
+      id: `usr-owner-${c.id}`,
+      full_name: `Owner — ${c.name}`,
+      phone: c.ownerPhone,
+      email: c.ownerEmail,
+      password: 'Password@123',
+      role: 'shop_admin',
+      outlet_id: c.id,
+      outlet_name: c.name,
+      balance: 18450
+    }
+  ])
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,6 +289,45 @@ function App() {
       order_items: [
         { item_id: 301, name: 'Veg Fried Rice', price: 80, qty: 1, notes: '' },
         { item_id: 302, name: 'Chicken Fried Rice', price: 110, qty: 1, notes: 'extra spicy' },
+      ]
+    },
+    {
+      id: 2042, user_id: 'usr-student', outlet_id: 'g1',
+      outlets: { name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)' },
+      token: '108', status: 'placed', total: 40,
+      created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      order_items: [
+        { item_id: 101, name: 'Veg Puff', price: 20, qty: 1, notes: 'crispy' },
+        { item_id: 102, name: 'Samosa (2 pcs)', price: 20, qty: 1, notes: 'with mint chutney' }
+      ]
+    },
+    {
+      id: 2043, user_id: 'usr-2', outlet_id: 'n1',
+      outlets: { name: 'Georgia (North Square C1)', location: 'North Square' },
+      token: '312', status: 'preparing', total: 65,
+      created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+      order_items: [
+        { item_id: 501, name: 'Masala Tea', price: 15, qty: 1, notes: 'less sugar' },
+        { item_id: 504, name: 'Cheese Maggi', price: 50, qty: 1, notes: 'extra cheesy' }
+      ]
+    },
+    {
+      id: 2044, user_id: 'usr-3', outlet_id: 'ab3',
+      outlets: { name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre' },
+      token: '405', status: 'ready', total: 145,
+      created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      order_items: [
+        { item_id: 902, name: 'Masala Dosa', price: 55, qty: 1, notes: '' },
+        { item_id: 903, name: 'Full South Indian Veg Meal', price: 90, qty: 1, notes: '' }
+      ]
+    },
+    {
+      id: 2045, user_id: 'usr-4', outlet_id: 'n2',
+      outlets: { name: 'Alpha Non-Veg (North Square C2)', location: 'North Square' },
+      token: '519', status: 'placed', total: 130,
+      created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+      order_items: [
+        { item_id: 603, name: 'Chicken Biryani', price: 130, qty: 1, notes: 'extra raitha' }
       ]
     }
   ])
@@ -456,8 +533,12 @@ function App() {
     try {
       const { data: p } = await supabase.from('profiles').select('*').eq('id', userId).single()
       if (p) {
+        if (p.outlet_id) {
+          const match = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === p.outlet_id) || DEMO_OUTLETS.find(o => o.id === p.outlet_id)
+          if (match) p.outlet_name = match.name
+        }
         setCurrentUser(p)
-        if (p.role === 'staff' || p.role === 'admin') setTab('ops')
+        if (p.role === 'staff' || p.role === 'admin' || p.role === 'shop_admin') setTab('ops')
       }
     } catch (e) { console.warn('Profile fetch fallback:', e) }
   }
@@ -830,6 +911,18 @@ function App() {
     setTab('browse')
   }
 
+  function handleSwitchCanteen(outletId) {
+    const chosen = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === outletId) || outlets.find(o => o.id === outletId) || DEMO_OUTLETS.find(o => o.id === outletId)
+    if (!chosen) return
+    setCurrentUser(prev => ({
+      ...prev,
+      outlet_id: chosen.id,
+      outlet_name: chosen.name
+    }))
+    setNotice(`🏪 Active Canteen switched to: ${chosen.name}`)
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'OUTLET', 'SWITCH_CANTEEN', `Switched active console to ${chosen.name} (${chosen.id})`)
+  }
+
   // ── MAIN APP DIRECT AUTHENTICATION ──
   if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
 
@@ -976,6 +1069,31 @@ function App() {
             )}
           </div>
         </section>
+
+        {/* Active Canteen Switcher for Staff & Shop Owner */}
+        {(isStaff || isOwner) && (
+          <div className="canteen-switcher-bar">
+            <div className="canteen-switcher-label">
+              <Store size={16} /> Active Canteen:
+            </div>
+            <select
+              className="canteen-switcher-select"
+              value={currentUser.outlet_id || 'g1'}
+              onChange={e => handleSwitchCanteen(e.target.value)}
+              id="active-canteen-switcher"
+              aria-label="Switch active canteen"
+            >
+              {CANTEEN_STAFF_OWNER_MAP.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.location})
+                </option>
+              ))}
+            </select>
+            <span className="canteen-switcher-hint">
+              ⚡ Switch on the fly to inspect & test any of the 13 canteens
+            </span>
+          </div>
+        )}
 
         {/* Nav tabs (customer) */}
         {isCustomer && (
@@ -4511,6 +4629,8 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 function AuthScreen({ onLoginUser }) {
   const [authMethod, setAuthMethod]   = useState('phone') // 'phone' (primary) | 'email' (staff/admin)
   const [isSignUp, setIsSignUp]       = useState(false)
+  const [selectedCanteenId, setSelectedCanteenId] = useState('g1')
+  const [showAllCanteens, setShowAllCanteens] = useState(false)
   
   // Phone OTP State
   const [phoneStep, setPhoneStep]     = useState('input') // 'input' | 'otp'
@@ -4559,15 +4679,15 @@ function AuthScreen({ onLoginUser }) {
       return setError('Please enter the 4-digit OTP sent to your phone')
     }
 
-    // Match phone against test users
+    // Match phone against test users (including all 26 canteen staff and owner accounts)
     const cleanPhone = phone.replace(/\D/g, '').slice(-10)
     const matched = TEST_USERS.find(u => u.phone?.replace(/\D/g, '').slice(-10) === cleanPhone)
 
     if (matched && !isSignUp) {
       onLoginUser(matched)
     } else {
-      // Create new profile for common user / staff / owner / admin
       const isSuper = role === 'admin'
+      const chosenCanteen = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
       const newProfile = {
         id: `usr-${Date.now()}`,
         full_name: fullName.trim() || `User (+91 ${cleanPhone})`,
@@ -4575,8 +4695,8 @@ function AuthScreen({ onLoginUser }) {
         email: regEmail.trim() || `${cleanPhone}@vfood.com`,
         role: role,
         is_superadmin: isSuper,
-        outlet_id: role === 'owner' || role === 'staff' ? 'g1' : undefined,
-        outlet_name: role === 'owner' || role === 'staff' ? 'Gazebo C1 — Snacks & Fast Food' : undefined,
+        outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
+        outlet_name: role === 'owner' || role === 'staff' ? chosenCanteen.name : undefined,
         balance: role === 'owner' ? 12000 : (role === 'admin' ? 50000 : 500)
       }
       onLoginUser(newProfile)
@@ -4586,26 +4706,49 @@ function AuthScreen({ onLoginUser }) {
   async function handleEmailSubmit(e) {
     e.preventDefault()
     setError('')
+    const matchedTest = TEST_USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password))
     if (supabase) {
       if (isSignUp) {
+        const chosenCanteen = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
         const { data, error: authErr } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: fullName, role } }
+          options: {
+            data: {
+              full_name: fullName,
+              role,
+              outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined
+            }
+          }
         })
         if (authErr) return setError(authErr.message)
-        onLoginUser({ id: data.user.id, full_name: fullName, email, role, balance: 500 })
+        onLoginUser({
+          id: data.user.id,
+          full_name: fullName,
+          email,
+          role,
+          outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
+          outlet_name: role === 'owner' || role === 'staff' ? chosenCanteen.name : undefined,
+          balance: 500
+        })
       } else {
         const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
         if (authErr) {
-          const matched = TEST_USERS.find(u => u.email === email && u.password === password)
-          if (matched) return onLoginUser(matched)
+          if (matchedTest) return onLoginUser(matchedTest)
           return setError(authErr.message)
         }
+        try {
+          const { data: p } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
+          if (p) {
+            const match = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === p.outlet_id) || DEMO_OUTLETS.find(o => o.id === p.outlet_id)
+            if (match) p.outlet_name = match.name
+            return onLoginUser(p)
+          }
+        } catch (_) {}
+        if (matchedTest) return onLoginUser(matchedTest)
         onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'user', balance: 500 })
       }
     } else {
-      const matched = TEST_USERS.find(u => u.email === email)
-      if (matched) onLoginUser(matched)
+      if (matchedTest) onLoginUser(matchedTest)
       else onLoginUser({ id: 'usr-new', full_name: fullName || email.split('@')[0], email, role, balance: 500 })
     }
   }
@@ -4700,6 +4843,17 @@ function AuthScreen({ onLoginUser }) {
                           <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
                         </select>
                       </div>
+
+                      {(role === 'staff' || role === 'owner') && (
+                        <div className="form-group">
+                          <label>Assign to Canteen *</label>
+                          <select value={selectedCanteenId} onChange={e => setSelectedCanteenId(e.target.value)}>
+                            {CANTEEN_STAFF_OWNER_MAP.map(c => (
+                              <option key={c.id} value={c.id}>{c.name} ({c.location})</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -4820,15 +4974,27 @@ function AuthScreen({ onLoginUser }) {
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
               </div>
               {isSignUp && (
-                <div className="form-group">
-                  <label>Account Role</label>
-                  <select value={role} onChange={e => setRole(e.target.value)}>
-                    <option value="user">👤 User (Customer — Browse, Order & Wallet)</option>
-                    <option value="staff">👨‍🍳 Shop Staff (Kitchen Orders & Dispatch)</option>
-                    <option value="owner">🏪 Shop Owner (Sales & Store Management)</option>
-                    <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
-                  </select>
-                </div>
+                <>
+                  <div className="form-group">
+                    <label>Account Role</label>
+                    <select value={role} onChange={e => setRole(e.target.value)}>
+                      <option value="user">👤 User (Customer — Browse, Order & Wallet)</option>
+                      <option value="staff">👨‍🍳 Shop Staff (Kitchen Orders & Dispatch)</option>
+                      <option value="owner">🏪 Shop Owner (Sales & Store Management)</option>
+                      <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
+                    </select>
+                  </div>
+                  {(role === 'staff' || role === 'owner') && (
+                    <div className="form-group">
+                      <label>Assign to Canteen *</label>
+                      <select value={selectedCanteenId} onChange={e => setSelectedCanteenId(e.target.value)}>
+                        {CANTEEN_STAFF_OWNER_MAP.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.location})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </>
               )}
               {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
               <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
@@ -4845,30 +5011,142 @@ function AuthScreen({ onLoginUser }) {
             </a>
           </p>
 
-          {/* Quick Login - 4 Explicit Dashboards */}
+          {/* Quick Login - 4 Explicit Dashboards + 13 Canteens Staff & Owner Mapping */}
           <div className="quick-test-box">
-            <p>Direct Test Login — Choose Dashboard:</p>
-            <div className="quick-chip-grid">
-              {TEST_USERS.map((u, i) => {
-                const isCust = u.role === 'user' || u.role === 'student' || u.role === 'customer'
-                const isStf  = u.role === 'staff'
-                const isOwn  = u.role === 'owner' || u.role === 'shop_admin'
-                
-                const emoji = isCust ? '👤' : isStf ? '👨‍🍳' : isOwn ? '🏪' : '🛡️'
-                const label = isCust ? 'User' : isStf ? 'Shop Staff' : isOwn ? 'Shop Owner' : 'Super Admin (Me)'
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+              <p style={{ margin: 0 }}>Direct Test Login — Choose Dashboard:</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label htmlFor="quick-canteen-select" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase' }}>
+                  Target Canteen:
+                </label>
+                <select
+                  id="quick-canteen-select"
+                  value={selectedCanteenId}
+                  onChange={e => setSelectedCanteenId(e.target.value)}
+                  style={{ fontSize: '12px', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)', background: '#FFFFFF', color: 'var(--text-main)', cursor: 'pointer' }}
+                >
+                  {CANTEEN_STAFF_OWNER_MAP.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.id.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-                return (
-                  <button
-                    key={i}
-                    className="quick-chip"
-                    onClick={() => onLoginUser(u)}
-                    title={`Login as ${u.full_name}`}
-                  >
-                    <span style={{ fontSize: '13px' }}>{emoji}</span>
-                    <span style={{ fontWeight: 700 }}>{label}</span>
-                  </button>
-                )
-              })}
+            <div className="quick-chip-grid">
+              {/* Customer User */}
+              <button
+                type="button"
+                className="quick-chip"
+                onClick={() => onLoginUser(TEST_USERS.find(u => u.role === 'user' || u.role === 'student'))}
+                title="Login as Rahul Sharma (User)"
+              >
+                <span style={{ fontSize: '13px' }}>👤</span>
+                <span style={{ fontWeight: 700 }}>User</span>
+              </button>
+
+              {/* Shop Staff for selected canteen */}
+              <button
+                type="button"
+                className="quick-chip"
+                onClick={() => {
+                  const staffUser = TEST_USERS.find(u => u.role === 'staff' && u.outlet_id === selectedCanteenId)
+                  if (staffUser) onLoginUser(staffUser)
+                }}
+                title={`Login as Shop Staff for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
+                style={{ background: '#1E40AF' }}
+              >
+                <span style={{ fontSize: '13px' }}>👨‍🍳</span>
+                <span style={{ fontWeight: 700 }}>Shop Staff ({selectedCanteenId.toUpperCase()})</span>
+              </button>
+
+              {/* Shop Owner for selected canteen */}
+              <button
+                type="button"
+                className="quick-chip"
+                onClick={() => {
+                  const ownerUser = TEST_USERS.find(u => (u.role === 'owner' || u.role === 'shop_admin') && u.outlet_id === selectedCanteenId)
+                  if (ownerUser) onLoginUser(ownerUser)
+                }}
+                title={`Login as Shop Owner for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
+                style={{ background: '#0B192C' }}
+              >
+                <span style={{ fontSize: '13px' }}>🏪</span>
+                <span style={{ fontWeight: 700 }}>Shop Owner ({selectedCanteenId.toUpperCase()})</span>
+              </button>
+
+              {/* Super Admin */}
+              <button
+                type="button"
+                className="quick-chip"
+                onClick={() => onLoginUser(TEST_USERS.find(u => u.is_superadmin))}
+                title="Login as Platform Super Admin"
+              >
+                <span style={{ fontSize: '13px' }}>🛡️</span>
+                <span style={{ fontWeight: 700 }}>Super Admin (Me)</span>
+              </button>
+            </div>
+
+            {/* Expandable toggle for All 13 Canteen Staff & Owner Matrix */}
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
+              <button
+                type="button"
+                onClick={() => setShowAllCanteens(!showAllCanteens)}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  color: 'var(--blue-primary)',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>{showAllCanteens ? '▼ Hide' : '▶ Show'} All 13 Canteen Logins ({CANTEEN_STAFF_OWNER_MAP.length * 2} Dedicated Test Accounts)</span>
+              </button>
+
+              {showAllCanteens && (
+                <div className="canteen-matrix-grid">
+                  {CANTEEN_STAFF_OWNER_MAP.map(c => {
+                    const staffU = TEST_USERS.find(u => u.role === 'staff' && u.outlet_id === c.id)
+                    const ownerU = TEST_USERS.find(u => (u.role === 'owner' || u.role === 'shop_admin') && u.outlet_id === c.id)
+                    return (
+                      <div key={c.id} className="canteen-matrix-card">
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {c.name}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {c.location} · <code>{c.id}</code>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            className="canteen-matrix-btn staff"
+                            title={`Staff Login: ${c.staffEmail} | Phone: ${c.staffPhone} | Password: Password@123`}
+                            onClick={() => onLoginUser(staffU)}
+                          >
+                            👨‍🍳 Staff
+                          </button>
+                          <button
+                            type="button"
+                            className="canteen-matrix-btn owner"
+                            title={`Owner Login: ${c.ownerEmail} | Phone: ${c.ownerPhone} | Password: Password@123`}
+                            onClick={() => onLoginUser(ownerU)}
+                          >
+                            🏪 Owner
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
