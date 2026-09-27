@@ -1832,58 +1832,70 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
       {/* ── Animated Menu Transition Box ── */}
       {expanded && (
         <div className="menu-list" style={{ padding: '0 16px 16px' }}>
-          {/* In-Canteen Search & Sticky Category Pills */}
-          <div className="outlet-menu-filter-bar">
-            <div className="outlet-search-input-wrap">
-              <Search size={14} />
-              <input
-                type="text"
-                className="outlet-search-input"
-                placeholder={`Search dishes in ${outlet.name}...`}
-                value={menuSearch}
-                onChange={e => setMenuSearch(e.target.value)}
-              />
-              {menuSearch && (
-                <button
-                  onClick={() => setMenuSearch('')}
-                  style={{ position: 'absolute', right: 10, background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer', padding: 2 }}
-                >
-                  <X size={14} />
-                </button>
+          {/* In-Canteen Search & Sticky Category Pills (only when menu has more than 3 items or multiple categories) */}
+          {(rawItems.length > 3 || categories.length > 1) && (
+            <div className="outlet-menu-filter-bar">
+              {rawItems.length > 3 && (
+                <div className="outlet-search-input-wrap">
+                  <Search size={14} />
+                  <input
+                    type="text"
+                    className="outlet-search-input"
+                    placeholder={`Search dishes in ${outlet.name}...`}
+                    value={menuSearch}
+                    onChange={e => setMenuSearch(e.target.value)}
+                  />
+                  {menuSearch && (
+                    <button
+                      onClick={() => setMenuSearch('')}
+                      style={{ position: 'absolute', right: 10, background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer', padding: 2 }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {(categories.length > 1 || (rawItems.some(i => i.is_veg === false) && rawItems.some(i => i.is_veg !== false))) && (
+                <div className="outlet-menu-cat-chips">
+                  {categories.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className={`outlet-cat-chip ${selectedCat === 'all' ? 'active' : ''}`}
+                        onClick={() => setSelectedCat('all')}
+                      >
+                        All ({rawItems.length})
+                      </button>
+                      {categories.map(cat => {
+                        const count = rawItems.filter(i => i.category === cat).length
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            className={`outlet-cat-chip ${selectedCat === cat ? 'active' : ''}`}
+                            onClick={() => setSelectedCat(cat)}
+                          >
+                            {cat} ({count})
+                          </button>
+                        )
+                      })}
+                    </>
+                  )}
+                  {rawItems.some(i => i.is_veg === false) && rawItems.some(i => i.is_veg !== false) && (
+                    <button
+                      type="button"
+                      className={`outlet-cat-chip ${vegOnly ? 'active' : ''}`}
+                      style={vegOnly ? { background: '#059669', borderColor: '#059669', color: '#FFFFFF' } : {}}
+                      onClick={() => setVegOnly(v => !v)}
+                    >
+                      Pure Veg
+                    </button>
+                  )}
+                </div>
               )}
             </div>
-
-            <div className="outlet-menu-cat-chips">
-              <button
-                type="button"
-                className={`outlet-cat-chip ${selectedCat === 'all' ? 'active' : ''}`}
-                onClick={() => setSelectedCat('all')}
-              >
-                All ({rawItems.length})
-              </button>
-              {categories.map(cat => {
-                const count = rawItems.filter(i => i.category === cat).length
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    className={`outlet-cat-chip ${selectedCat === cat ? 'active' : ''}`}
-                    onClick={() => setSelectedCat(cat)}
-                  >
-                    {cat} ({count})
-                  </button>
-                )
-              })}
-              <button
-                type="button"
-                className={`outlet-cat-chip ${vegOnly ? 'active' : ''}`}
-                style={vegOnly ? { background: '#059669', borderColor: '#059669', color: '#FFFFFF' } : {}}
-                onClick={() => setVegOnly(v => !v)}
-              >
-                Pure Veg
-              </button>
-            </div>
-          </div>
+          )}
 
           {filteredItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 12px', color: '#64748B', fontSize: '13px' }}>
