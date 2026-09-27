@@ -224,27 +224,7 @@ const DEMO_OUTLETS = [
       { id: 1304, name: '1L Mineral Water', price: 20, is_veg: true, category: 'store', available: true },
     ]
   },
-  // 20 Riviera Event Stalls
-  { id: 'e1', location: 'Riviera Event Stalls', name: 'Momo Point (Stall 01)', is_event: true, is_open: true, menu_items: [{ id: 1401, name: 'Steamed Veg Momos', price: 60, is_veg: true, category: 'event', available: true }, { id: 1402, name: 'Fried Chicken Momos', price: 80, is_veg: false, category: 'event', available: true }] },
-  { id: 'e2', location: 'Riviera Event Stalls', name: 'Pizza Craze (Stall 02)', is_event: true, is_open: true, menu_items: [{ id: 1501, name: 'Margherita Slice', price: 50, is_veg: true, category: 'event', available: true }, { id: 1502, name: 'Loaded Chicken Pizza Slice', price: 75, is_veg: false, category: 'event', available: true }] },
-  { id: 'e3', location: 'Riviera Event Stalls', name: 'Chill & Freeze Mocktails (Stall 03)', is_event: true, is_open: true, menu_items: [{ id: 1601, name: 'Watermelon Refresher', price: 30, is_veg: true, category: 'event', available: true }, { id: 1602, name: 'Virgin Mint Mojito', price: 45, is_veg: true, category: 'event', available: true }] },
-  { id: 'e4', location: 'Riviera Event Stalls', name: 'Shawarma Hub (Stall 04)', is_event: true, is_open: true, menu_items: [{ id: 1701, name: 'Classic Chicken Shawarma', price: 90, is_veg: false, category: 'event', available: true }, { id: 1702, name: 'Jumbo Cheese Shawarma', price: 110, is_veg: false, category: 'event', available: true }] },
-  { id: 'e5', location: 'Riviera Event Stalls', name: 'Waffle World (Stall 05)', is_event: true, is_open: true, menu_items: [{ id: 1801, name: 'Belgian Chocolate Waffle', price: 90, is_veg: true, category: 'event', available: true }] },
-  { id: 'e6', location: 'Riviera Event Stalls', name: 'Taco Fiesta (Stall 06)', is_event: true, is_open: true, menu_items: [{ id: 1901, name: 'Crispy Veg Tacos (2)', price: 75, is_veg: true, category: 'event', available: true }] },
-  { id: 'e7', location: 'Riviera Event Stalls', name: 'Churros & Ice Cream (Stall 07)', is_event: true, is_open: true, menu_items: [{ id: 2001, name: 'Cinnamon Churros + Dip', price: 70, is_veg: true, category: 'event', available: true }] },
-  { id: 'e8', location: 'Riviera Event Stalls', name: 'Biryani Express (Stall 08)', is_event: true, is_open: true, menu_items: [{ id: 2101, name: 'Mini Chicken Biryani', price: 99, is_veg: false, category: 'event', available: true }] },
-  { id: 'e9', location: 'Riviera Event Stalls', name: 'Kebab Corner (Stall 09)', is_event: true, is_open: true, menu_items: [{ id: 2201, name: 'Chicken Seekh Kebab', price: 110, is_veg: false, category: 'event', available: true }] },
-  { id: 'e10', location: 'Riviera Event Stalls', name: 'Bubble Tea Haven (Stall 10)', is_event: true, is_open: true, menu_items: [{ id: 2301, name: 'Taro Milk Bubble Tea', price: 95, is_veg: true, category: 'event', available: true }] },
-  { id: 'e11', location: 'Riviera Event Stalls', name: 'Twister Potato & Spirals (Stall 11)', is_event: true, is_open: true, menu_items: [{ id: 2401, name: 'Peri Peri Potato Spiral', price: 50, is_veg: true, category: 'event', available: true }] },
-  { id: 'e12', location: 'Riviera Event Stalls', name: 'Bombay Frankie Station (Stall 12)', is_event: true, is_open: true, menu_items: [{ id: 2501, name: 'Aloo Cheese Frankie', price: 45, is_veg: true, category: 'event', available: true }] },
-  { id: 'e13', location: 'Riviera Event Stalls', name: 'Gourmet Burger Joint (Stall 13)', is_event: true, is_open: true, menu_items: [{ id: 2601, name: 'Crispy Chicken Burger', price: 90, is_veg: false, category: 'event', available: true }] },
-  { id: 'e14', location: 'Riviera Event Stalls', name: 'Artisan Pasta Point (Stall 14)', is_event: true, is_open: true, menu_items: [{ id: 2701, name: 'Creamy Alfredo Penne', price: 85, is_veg: true, category: 'event', available: true }] },
-  { id: 'e15', location: 'Riviera Event Stalls', name: 'Spot Dosa Express (Stall 15)', is_event: true, is_open: true, menu_items: [{ id: 2801, name: 'Cheese Burst Dosa', price: 65, is_veg: true, category: 'event', available: true }] },
-  { id: 'e16', location: 'Riviera Event Stalls', name: 'Delhi Chaat Bazaar (Stall 16)', is_event: true, is_open: true, menu_items: [{ id: 2901, name: 'Pani Puri (8 pcs)', price: 35, is_veg: true, category: 'event', available: true }] },
-  { id: 'e17', location: 'Riviera Event Stalls', name: 'Dessert Studio (Stall 17)', is_event: true, is_open: true, menu_items: [{ id: 3001, name: 'Sizzling Brownie + Ice Cream', price: 120, is_veg: true, category: 'event', available: true }] },
-  { id: 'e18', location: 'Riviera Event Stalls', name: 'Grilled Sandwich Craft (Stall 18)', is_event: true, is_open: true, menu_items: [{ id: 3101, name: 'Paneer Corn Cheese Sandwich', price: 60, is_veg: true, category: 'event', available: true }] },
-  { id: 'e19', location: 'Riviera Event Stalls', name: 'Loaded Fries Factory (Stall 19)', is_event: true, is_open: true, menu_items: [{ id: 3201, name: 'Cheesy Loaded Fries', price: 65, is_veg: true, category: 'event', available: true }] },
-  { id: 'e20', location: 'Riviera Event Stalls', name: 'Tropical Juice Land (Stall 20)', is_event: true, is_open: true, menu_items: [{ id: 3301, name: 'Fresh Mango Shake', price: 50, is_veg: true, category: 'event', available: true }] },
+
 ]
 
 const TEST_USERS = [
@@ -411,7 +391,7 @@ function App() {
   const [availableCoupons, setAvailableCoupons] = useState([
     { code: 'CAMPUS50', discount_type: 'flat', discount_value: 50, min_order_value: 120, max_uses: 500, used_count: 142, description: '₹50 Flat OFF on orders above ₹120' },
     { code: 'VBIT15', discount_type: 'percent', discount_value: 15, min_order_value: 80, max_uses: 1000, used_count: 310, description: '15% OFF on orders above ₹80' },
-    { code: 'RIVIERA26', discount_type: 'flat', discount_value: 30, min_order_value: 60, max_uses: 300, used_count: 88, description: 'Riviera Special: ₹30 Flat OFF' }
+    { code: 'VFOOD30', discount_type: 'flat', discount_value: 30, min_order_value: 60, max_uses: 300, used_count: 88, description: 'Campus Special: ₹30 Flat OFF' }
   ])
   const [appliedCoupon, setAppliedCoupon] = useState(null)
 
@@ -943,13 +923,7 @@ function App() {
         </div>
       </header>
 
-      {/* Event Mode Banner */}
-      {eventMode && (
-        <div className="event-banner">
-          <span className="event-banner-tag">RIVIERA EVENT MODE</span>
-          <span>Event Stalls are LIVE! 20+ stalls accepting orders now.</span>
-        </div>
-      )}
+
 
       <main className="content">
         {/* Hero */}
@@ -968,7 +942,7 @@ function App() {
               <>
                 <div className="stat-pill">
                   <strong>{visibleOutlets.filter(o => o.is_open).length}</strong>
-                  <small>{eventMode ? 'Stalls Open' : 'Outlets Open'}</small>
+                  <small>Outlets Open</small>
                 </div>
                 <div className="stat-pill">
                   <strong>{money(wallet.balance)}</strong>
@@ -1354,7 +1328,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
 
       <div className="section-heading">
         <div>
-          <h2>{eventMode ? 'Riviera Event Stalls' : 'Campus Canteens & Outlets'}</h2>
+          <h2>Campus Canteens & Outlets</h2>
           {!eventMode && outlets.find(o => o.id === 'ab3') && (
             <p className="ab3-slot-tag">
               <Clock size={13} /> AB3 showing: <strong>{ab3Slot}</strong> menu
@@ -1512,19 +1486,7 @@ function getCanteenMeta(outlet) {
       badge: 'Rotating Menu'
     }
   }
-  if (outlet.is_event) {
-    return {
-      gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #BE123C 100%)',
-      accentColor: '#FB7185',
-      emoji: '✨',
-      tagline: 'Riviera Fest 2026 Special Stall',
-      rating: 4.9,
-      reviews: 95,
-      tags: ['Riviera Fest', 'Street Food', 'Special'],
-      wait: '4-7 min',
-      badge: 'Fest Exclusive'
-    }
-  }
+  
   return {
     gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 55%, #1E40AF 100%)',
     accentColor: '#60A5FA',
@@ -2301,7 +2263,7 @@ function OrderStepper({ status, order }) {
       <div className="swiggy-live-header">
         <div className="swiggy-live-status-badge">
           <span className="swiggy-pulse-dot" />
-          <span>SWIGGY LIVE PROGRESS · {status.toUpperCase()}</span>
+          <span>LIVE ORDER PROGRESS · {status.toUpperCase()}</span>
         </div>
         {!isCollected && (
           <div className="swiggy-eta-pill">
@@ -3634,7 +3596,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
             { key: 'canteens', label: '🏪 Canteen Management', count: outlets.filter(o => !o.is_event).length },
             { key: 'orders', label: '📦 Live Campus Stream', count: orders.length },
             { key: 'audit', label: '🛡️ Audit Log & System Telemetry', count: (auditLogs || []).length },
-            { key: 'event', label: '🎪 Riviera Fest Mode', count: eventMode ? 'LIVE' : null },
+            
             { key: 'scanner', label: '🔍 Token & QR Scanner', count: null },
           ].map(tab => (
             <button
@@ -4237,7 +4199,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   <div style={{ flex: '1 1 240px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <strong style={{ fontSize: '15px' }}>{outlet.name}</strong>
-                      {outlet.is_event && <span style={{ fontSize: '10px', background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '10px', fontWeight: 800 }}>RIVIERA</span>}
+                      
                     </div>
                     <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>{outlet.location}</small>
                     <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -4649,7 +4611,7 @@ function AuthScreen({ onLoginUser }) {
           <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-FOOD</span>
         </div>
         <div>
-          <h1>Unified Food<br />Ordering, Prepaid<br /><span>Wallet & Riviera</span></h1>
+          <h1>Unified Food<br />Ordering & Prepaid<br /><span>Campus Wallet</span></h1>
           <p style={{ marginTop: '16px', color: '#94A3B8', fontSize: '15px', lineHeight: 1.6 }}>
             Skip the queue. Order ahead. Pay smart.
             <br />VIT Chennai Campus — CampusBite System.
@@ -4759,7 +4721,7 @@ function AuthScreen({ onLoginUser }) {
                             <option value="student">Hosteller / Day Scholar</option>
                             <option value="faculty">Faculty Member</option>
                             <option value="outsider">Campus Guest / Visitor</option>
-                            <option value="event_team">Riviera Fest Committee</option>
+                            
                           </select>
                         </div>
                       )}
@@ -4880,7 +4842,7 @@ function AuthScreen({ onLoginUser }) {
                       <option value="student">Student</option>
                       <option value="faculty">Faculty</option>
                       <option value="outsider">Outsider / Guest</option>
-                      <option value="event_team">Riviera Event Team</option>
+                      
                     </select>
                   </div>
                 </>

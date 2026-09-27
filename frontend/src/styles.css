@@ -3165,14 +3165,14 @@ body::before {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   SWIGGY UI/UX DESIGN SYSTEM (Blue & White Theme Integration)
+   CAMPUS LIVE PROGRESS & DISPATCH DESIGN SYSTEM (Blue & White Theme Integration)
    - Live Order Progress Tracker with animated status
-   - Signature Swiggy Dish Card with Overlapping + ADD button
+   - Signature Campus Dining Card with Overlapping + ADD button
    - "What's on your mind?" Category Carousel
    - Floating "View Cart" Pill
 ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Swiggy Live Order Progress Stepper ── */
+/* ── 1. Live Order Progress Stepper ── */
 .swiggy-progress-card {
   background: #FFFFFF;
   border: 1.5px solid #E2E8F0;
@@ -3495,7 +3495,7 @@ body::before {
   text-align: center;
 }
 
-/* ── 3. Swiggy "What's on your mind?" Category Carousel ── */
+/* ── 3. Food Category Carousel ── */
 .swiggy-category-section {
   margin: 12px 0 24px;
 }
@@ -3560,7 +3560,7 @@ body::before {
   font-weight: 800;
 }
 
-/* ── 4. Swiggy Floating "View Cart" Pill ── */
+/* ── 4. Floating "View Cart" Pill ── */
 .swiggy-floating-cart-pill {
   position: fixed;
   bottom: 24px;
