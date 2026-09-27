@@ -1,96 +1,80 @@
 # Role Hierarchy & Access Control
 
-V-BUY enforces a strict four-tier role hierarchy governed by PostgreSQL Row-Level Security (RLS) policies and frontend route guards.
+A plain-English guide to who uses V-BUY and what each role is permitted to see and do.
 
 ---
 
-## 1. Super Admin (System Head)
-- **Scope**: Platform-wide across all campus canteens and event stalls.
-- **Account Creation**: Pre-seeded in the database or elevated directly by existing Super Admins.
-- **What They Can See**:
-  - Global dashboard across all 13+ canteens and Riviera stalls.
-  - Platform-wide GMV, total transaction volume, platform commission revenue (5%), and net shop payouts.
-  - Complete immutable audit logs, wallet ledger entries, and system-wide order history.
-  - User and shop management tables.
-- **What They Can Do**:
-  - Provision and onboard new campus canteens and temporary event stalls.
-  - Invite, promote, suspend, or revoke Shop Admin accounts.
-  - Override system-level settings, adjust platform fee parameters, and trigger manual wallet adjustments if required.
-  - Export system-wide compliance and financial audit reports.
+## 1. Super Admin (Campus Administrator)
+
+- **Who they are**: Campus authorities or system managers in charge of overall campus food operations.
+- **How accounts are created**: Pre-configured in the database or promoted directly by existing administrators.
+- **What they can see**:
+  - A master overview across all campus canteens, food courts, and festival stalls.
+  - Overall campus sales figures, total orders placed, platform fees collected (5%), and net shop payouts.
+  - Complete history of user wallets, payments, and system activity logs.
+- **What they can do**:
+  - Add new food stalls and canteens to the system.
+  - Send invite codes to onboard new canteen owners and administrators.
+  - Toggle campus festival mode on or off to highlight special event stalls.
+  - Export financial and audit reports for university accounting.
 
 ---
 
-## 2. Shop Admin (Outlet Owner)
-- **Scope**: Restricted strictly to their assigned outlet (`outlet_id`).
-- **Account Creation**: Invite-based; invited and assigned to an outlet by the Super Admin.
-- **What They Can See**:
-  - Financial dashboard for their specific outlet (daily, weekly, monthly revenue, order counts, average ticket size).
-  - Outlet-specific order history and customer ratings breakdown.
-  - Menu catalog, pricing, item descriptions, and category organization.
-  - Active staff members assigned to their shop.
-- **What They Can Do**:
-  - Add, edit, or archive menu items and update prices for their outlet.
-  - Invite and manage Shop Staff members for their counter.
-  - Toggle outlet operating hours (Open/Closed status).
-  - Configure pickup slot capacities and view net payout settlements.
+## 2. Shop Admin (Canteen Owner)
+
+- **Who they are**: The franchisee or owner running one specific canteen on campus (such as Gazebo C1 or Dakshin Chitra).
+- **How accounts are created**: Invited through a private invite link created by the Super Admin.
+- **What they can see**:
+  - Daily, weekly, and monthly sales and earnings for their own shop only.
+  - Customer ratings and feedback left for their dishes.
+  - Full menu catalog with prices, categories, and inventory stock counts.
+  - The team of kitchen cooks and counter staff assigned to their stall.
+- **What they can do**:
+  - Add new dishes, change food prices, or edit descriptions for their own stall.
+  - Invite and manage kitchen staff members for their counter.
+  - Turn their stall Open or Closed at any time.
+  - Set limits on scheduled pickup slots so the kitchen is not overwhelmed.
 
 ---
 
-## 3. Shop Staff (Kitchen & Counter Operations)
-- **Scope**: Operational workflow for their assigned outlet (`outlet_id`).
-- **Account Creation**: Invite-based; invited and provisioned by the Shop Admin or Super Admin.
-- **What They Can See**:
-  - Real-time Kitchen Display System (KDS) order queue (`Placed`, `Preparing`, `Ready`).
-  - Active order details: token numbers, items, quantities, scheduled pickup times, and customer notes.
-  - Current stock inventory levels and 86-status (out-of-stock flags) for their outlet's menu items.
-  - Counter walk-in POS interface.
-- **What They Can Do**:
-  - Advance order statuses (`Placed` → `Preparing` → `Ready` → `Collected`).
-  - Scan customer QR passes or verify token numbers to hand over orders.
-  - Update stock quantities using live steppers (+1/-1, +5/-5), presets, or trigger the 1-click "86" button to take items off the menu instantly.
-  - Enter counter walk-in cash/UPI orders into the POS system (automatically decrementing stock).
+## 3. Shop Staff (Kitchen Cooks & Counter Cashiers)
+
+- **Who they are**: The workers who cook food, assemble plates, and hand orders to students at the counter.
+- **How accounts are created**: Invited by the Shop Admin or Super Admin to work at a specific counter.
+- **What they can see**:
+  - The live digital Kitchen Display System (KDS) showing new orders as they arrive.
+  - Order details: 4-digit pickup token, dish names, quantities, and cooking notes.
+  - Current stock inventory levels for their stall's dishes.
+- **What they can do**:
+  - Move orders through each cooking step: tap to start **Preparing**, tap when **Ready for Pickup**.
+  - Scan the student's digital QR pass or check their 4-digit token to tap **Mark Collected**.
+  - Adjust portion counts up or down if ingredients change.
+  - Tap the red **86** button to mark any dish sold out immediately if an ingredient runs out.
 
 ---
 
 ## 4. Student (Customer)
-- **Scope**: Personal account and order data.
-- **Account Creation**: Self-registration using mobile number OTP verification (VIT email as secondary recovery contact).
-- **What They Can See**:
-  - All open campus canteens, Riviera stalls, active menus, prices, dietary tags, stock levels, and ratings.
-  - Personal wallet balance, transaction ledger, and top-up options.
-  - Personal order history, active token passes, live visual order progress, and QR collection codes.
-  - Loyalty streak progress, earned meal vouchers, and personal referral code.
-- **What They Can Do**:
-  - Top up prepaid wallet via PhonePe UPI.
-  - Assemble cart, apply coupon promo codes, select pickup time slots, or create/join group carts.
-  - Place orders with instant wallet debit.
-  - Submit ratings and reviews for collected food items.
-  - Share referral codes to earn wallet credits on peers' first orders.
+
+- **Who they are**: Students, faculty, and campus staff who order food on campus.
+- **How accounts are created**: Self-registration on the login page using mobile phone verification.
+- **What they can see**:
+  - All open campus canteens and festival stalls with live wait times and menus.
+  - Dish photos, prices, vegetarian/non-vegetarian indicators, and customer review scores.
+  - Their personal prepaid wallet balance and recent spending history.
+  - Active order status tracking with live updates and a digital QR collection pass.
+- **What they can do**:
+  - Top up their prepaid campus wallet using PhonePe (supporting any UPI app or bank card).
+  - Add items to cart, enter promo discount codes, or choose a scheduled pickup time.
+  - Create or join group ordering sessions with friends.
+  - Pay for food orders instantly from their wallet balance.
+  - Submit 1-to-5 star ratings and reviews for dishes they have picked up.
 
 ---
 
-## Schema RLS Policy Mapping Reference
-PostgreSQL RLS policies in `supabase/migrations/008_four_tier_roles_invites_and_stock.sql` enforce these boundaries directly in the database:
-- `orders`:
-  - Students: `SELECT` own orders (`auth.uid() = user_id`); `INSERT` via `place_order_wallet()`.
-  - Staff / Shop Admin: `SELECT` and `UPDATE` status where `outlet_id = public.get_my_outlet()`.
-  - Super Admin: Unrestricted `ALL` access across all rows.
-- `menu_items`:
-  - Public/Student: `SELECT` all active menu items.
-  - Staff: `UPDATE` `stock_qty` and `available` where `outlet_id = public.get_my_outlet()`.
-  - Shop Admin: Full `ALL` CRUD operations where `outlet_id = public.get_my_outlet()`.
-  - Super Admin: Unrestricted `ALL` access across all outlets.
-- `stock_adjustments`:
-  - Staff & Shop Admin: `SELECT` adjustment history where `outlet_id = public.get_my_outlet()`.
-  - Super Admin: `ALL` access for auditing.
-- `invites`:
-  - Shop Admin: `ALL` invites scoped strictly to their `outlet_id` (staff only).
-  - Super Admin: `ALL` invites across all roles and outlets.
-- `profiles`:
-  - Users: `SELECT` and `UPDATE` own profile (`id = auth.uid()`).
-  - Shop Admin: `SELECT` and manage team members where `outlet_id = public.get_my_outlet()` and `role = 'staff'`.
-  - Super Admin: Full `ALL` management across all roles.
-- `wallets` & `wallet_txns`:
-  - Students: `SELECT` only rows where `wallet_id` belongs to `auth.uid()`.
-  - Stored Procedures (`SECURITY DEFINER`): System-managed debit and credit execution.
-  - Super Admin: Read-only access for financial auditing and platform profit tracking.
+## How Database Security Protects Each Role
+
+V-BUY uses **Row-Level Security (RLS)** built directly into the database:
+- **No data mixing**: The database itself enforces boundaries. An app screen cannot accidentally display a North Square order on a Gazebo kitchen screen.
+- **Private student wallets**: Students can only access their own balance and transaction records.
+- **Private shop earnings**: Canteen owners can only access financial numbers for their own specific shop ID.
+- **Tamper-proof safety**: Even if an unauthorized person attempts to modify network requests in their browser, the database rejects any command outside the user's role.

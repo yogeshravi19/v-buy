@@ -1,9 +1,9 @@
 """
 CampusBite FastAPI Backend
 - Auth: Supabase JWT verification
-- Wallet: topup via PhonePe, credit_wallet stored proc
-- Orders: place_order_wallet, create_pending_gateway_order, finalize_gateway_order
-- PhonePe webhook: single handler for topup + order_payment
+- Wallet: topup via PhonePe (/v3/pay or /pg/v1/pay, Base64 + SHA256 X-VERIFY), credit_wallet stored proc
+- Orders: place_order_wallet (atomic wallet deduction, zero PhonePe involvement)
+- PhonePe webhook: idempotent handler at /webhooks/phonepe for wallet topup
 - Staff: advance/cancel order, scan QR / token
 - Admin: credit wallet, event mode utils
 - MSG91: WhatsApp notifications at every trigger point
@@ -271,12 +271,12 @@ async def wallet_topup(req: TopupRequest, user=Depends(get_current_user)):
 
     merchant_txn_id = f"WU-{user['id'][:8]}-{int(time.time())}"
 
-    # Record payment intent
+    # Record payment intent (stores clean requested amount to credit to wallet on success)
     sb.from_("payments").insert({
         "phonepe_txn_id": merchant_txn_id,
         "user_id": user["id"],
         "order_id": None,
-        "amount": charge_paise // 100,
+        "amount": req.amount,
         "purpose": "topup",
         "status": "created",
     }).execute()
@@ -291,7 +291,7 @@ async def wallet_topup(req: TopupRequest, user=Depends(get_current_user)):
     return {"checkout_url": checkout_url, "txn_id": merchant_txn_id}
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Order checkout (wallet OR gateway)
+# Order checkout (wallet only — PhonePe is never called at checkout)
 # ──────────────────────────────────────────────────────────────────────────────
 class OrderItem(BaseModel):
     item_id: int
@@ -300,66 +300,29 @@ class OrderItem(BaseModel):
 class CheckoutRequest(BaseModel):
     outlet_id: str
     items: list[OrderItem]
-    payment_method: str  # 'wallet' | 'gateway'
+    payment_method: str = "wallet"  # Orders are paid strictly via wallet
 
 @app.post("/order/checkout")
 async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends(get_current_user)):
     items_jsonb = json.dumps([i.dict() for i in req.items])
 
-    if req.payment_method == "wallet":
-        # ── Wallet path ──────────────────────────────────────────────────────
-        result = sb.rpc("place_order_wallet", {
-            "p_user_id": user["id"],
-            "p_outlet_id": req.outlet_id,
-            "p_items": items_jsonb,
-        }).execute()
+    # Orders are placed strictly via atomic wallet deduction; zero PhonePe involvement
+    result = sb.rpc("place_order_wallet", {
+        "p_user_id": user["id"],
+        "p_outlet_id": req.outlet_id,
+        "p_items": items_jsonb,
+    }).execute()
 
-        if not result.data:
-            raise HTTPException(400, "Order placement failed")
+    if not result.data:
+        raise HTTPException(400, "Order placement failed")
 
-        order_id = result.data
-        # Fetch token
-        order = sb.from_("orders").select("token,total").eq("id", order_id).single().execute().data
+    order_id = result.data
+    # Fetch token
+    order = sb.from_("orders").select("token,total").eq("id", order_id).single().execute().data
 
-        # WhatsApp notification (fire-and-forget)
-        bg.add_task(_notify_order_placed, user["id"], order_id, order["token"])
-        return {"order_id": order_id, "token": order["token"], "status": "placed"}
-
-    else:
-        # ── Gateway path ─────────────────────────────────────────────────────
-        result = sb.rpc("create_pending_gateway_order", {
-            "p_user_id": user["id"],
-            "p_outlet_id": req.outlet_id,
-            "p_items": items_jsonb,
-        }).execute()
-
-        if not result.data:
-            raise HTTPException(400, "Could not create pending order")
-
-        row = result.data[0]
-        order_id = row["order_id"]
-        total    = row["total"]
-
-        merchant_txn_id = f"OP-{order_id}-{int(time.time())}"
-
-        # Record payment intent
-        sb.from_("payments").insert({
-            "phonepe_txn_id": merchant_txn_id,
-            "user_id": user["id"],
-            "order_id": order_id,
-            "amount": total,
-            "purpose": "order_payment",
-            "status": "created",
-        }).execute()
-
-        checkout_url = await _create_phonepe_order(
-            merchant_txn_id=merchant_txn_id,
-            amount_paise=total * 100,
-            user_id=user["id"],
-            callback_url=f"{WEBHOOK_BASE_URL}/webhooks/phonepe",
-            redirect_url=f"{FRONTEND_URL}/?order_id={order_id}",
-        )
-        return {"order_id": order_id, "checkout_url": checkout_url, "status": "payment_pending"}
+    # WhatsApp notification (fire-and-forget)
+    bg.add_task(_notify_order_placed, user["id"], order_id, order["token"])
+    return {"order_id": order_id, "token": order["token"], "status": "placed"}
 
 # ──────────────────────────────────────────────────────────────────────────────
 # PhonePe Webhook (single endpoint for both topup + order_payment)

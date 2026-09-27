@@ -1,66 +1,79 @@
-# V-BUY — VIT Chennai Smart Food & Wallet Platform
+# V-BUY — VIT Chennai Campus Dining & Prepaid Wallet Platform
 
-V-BUY is a campus food pre-ordering, prepaid wallet, and kitchen management system built for VIT Chennai's 13+ canteens and Riviera Fest stalls. It eliminates physical counter queues by enabling students to browse live menus, pay instantly from their campus wallet, receive real-time kitchen updates, and collect orders via QR token verification.
+V-BUY is a campus food pre-ordering, prepaid wallet, and kitchen management system built for VIT Chennai canteens, food courts, and campus festival stalls. It eliminates physical counter lines by letting students load a digital campus wallet, browse live menus, pre-order meals, track kitchen progress in real time, and pick up food using digital token passes and QR codes.
 
 ---
 
-## Documentation
+## Documentation Directory
 
-Comprehensive project documentation is organized in the `/docs` directory:
+Explore the complete guides in the `/docs` folder for detailed breakdowns:
 
-- [Tooling & Architecture](docs/TOOLS.md): Stack breakdown and technical justifications for React, Vite, Capacitor, FastAPI, Supabase, PhonePe, MSG91, and Render.
-- [Order Workflow](docs/WORKFLOW.md): Step-by-step lifecycle from wallet top-up and transactional debit to real-time KDS dispatch, dual-path stock tracking, and collection.
-- [Role Hierarchy](docs/ROLES.md): Access permissions, visibility rules, and creation flows across Super Admin, Shop Admin, Shop Staff, and Student accounts.
-- [Feature Catalog](docs/FEATURES.md): Running catalog of all engagement and queue-reduction additions beyond the core loop, noting schema and procedure impacts.
+- [Tools & Stack (TOOLS.md)](docs/TOOLS.md): Plain-English overview of React, Vite, TypeScript, Tailwind CSS, Capacitor, FastAPI, Supabase, PhonePe, MSG91, GitHub, Render, and development MCP tools.
+- [Database Deep Dive (DATABASE.md)](docs/DATABASE.md): Explanation of all live Supabase tables, how `outlet_id` connects food stalls, Row-Level Security, the step-by-step order journey, and financial margin rules.
+- [Order Lifecycle (WORKFLOW.md)](docs/WORKFLOW.md): Step-by-step walk-through of the complete order workflow from PhonePe wallet top-up and instant wallet debit to live kitchen KDS dispatch and collection.
+- [Role Hierarchy (ROLES.md)](docs/ROLES.md): Plain guide to the four user roles (Super Admin, Shop Admin, Shop Staff, Student) and how database rules protect each role's data.
+- [Feature Catalog (FEATURES.md)](docs/FEATURES.md): Running catalog of active features (1-tap reorder, dish ratings, group ordering, scheduled pickup slots, coupons) and retired features.
 
 ---
 
 ## Local Development Setup
 
 ### 1. Prerequisites
-- Node.js (v18+) and npm
-- Python (3.10+) with `venv`
-- Supabase project credentials
+
+- **Node.js**: Version 18 or newer (with npm)
+- **Python**: Version 3.10 or newer (with `venv`)
+- **Supabase Account**: A Supabase project with database credentials
+- **PhonePe Merchant Credentials**: Sandbox or production credentials for wallet top-up testing
+
+---
 
 ### 2. Environment Variables
 
-Create `.env` in `frontend/`:
-- `VITE_SUPABASE_URL`: Your Supabase project URL
-- `VITE_SUPABASE_ANON_KEY`: Supabase anonymous client API key
-- `VITE_API_URL`: Backend URL (e.g. `http://localhost:8000`)
+#### Frontend Configuration (`frontend/.env` or `frontend/.env.local`)
+- `VITE_SUPABASE_URL`: Your public Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous client API key
+- `VITE_API_URL`: URL of the running FastAPI backend (for example: `http://localhost:8000`)
 
-Create `.env` in `backend/`:
+#### Backend Configuration (`backend/.env`)
 - `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role secret
-- `PHONEPE_MERCHANT_ID`: PhonePe merchant identifier
-- `PHONEPE_SALT_KEY`: PhonePe salt key for SHA-256 payload signing
-- `PHONEPE_SALT_INDEX`: Key index (typically `1`)
-- `PHONEPE_ENV`: `SANDBOX` or `PRODUCTION`
-- `MSG91_AUTH_KEY`: MSG91 SMS gateway API authorization key
-- `QR_SECRET`: Random HMAC secret string for validating pickup QR tokens
-- `FRONTEND_URL`: Allowed CORS origin (e.g. `http://localhost:5173`)
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role secret key
+- `PHONEPE_MERCHANT_ID`: Your PhonePe merchant identifier
+- `PHONEPE_SALT_KEY`: PhonePe secret salt key used for SHA-256 signature verification
+- `PHONEPE_SALT_INDEX`: PhonePe salt index (typically `1`)
+- `PHONEPE_BASE_URL`: PhonePe API base endpoint (sandbox: `https://api-preprod.phonepe.com/apis/pg-sandbox`)
+- `WEBHOOK_BASE_URL`: Public base URL where PhonePe sends callback webhooks (for example: `https://your-api.onrender.com`)
+- `FRONTEND_URL`: Public web address of the frontend app (for example: `https://campusbite-web.onrender.com`)
+- `MSG91_AUTH_KEY`: MSG91 API key for WhatsApp and SMS notification delivery
+- `MSG91_WHATSAPP_NUM`: Registered integrated WhatsApp number for order alerts
+- `QR_SECRET`: Secret key used to sign and verify order collection QR codes
 
-### 3. Running Locally
+---
+
+### 3. Running the Project Locally
 
 #### Frontend (React + Vite)
-- Navigate to frontend directory:
-  ```bash
-  cd frontend
-  npm install
-  npm run dev
-  ```
-- Application opens at `http://localhost:5173`.
+1. Open a terminal in the `frontend` folder:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+2. The application will start at `http://localhost:5173`.
 
 #### Backend (FastAPI)
-- Navigate to backend directory:
-  ```bash
-  cd backend
-  python -m venv venv
-  source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-  pip install -r requirements.txt
-  uvicorn main:app --reload --port 8000
-  ```
-- API server runs at `http://localhost:8000` with Swagger docs at `http://localhost:8000/docs`.
+1. Open a terminal in the `backend` folder:
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+   pip install -r requirements.txt
+   uvicorn main:app --reload --port 8000
+   ```
+2. The API server will run at `http://localhost:8000` with interactive API documentation at `http://localhost:8000/docs`.
 
-### 4. Database Migrations
-- Apply the SQL migrations located in `supabase/migrations/` in sequential numerical order using the Supabase SQL Editor or Supabase CLI.
+---
+
+### 4. Database Setup & Migrations
+
+- All database tables, Row-Level Security policies, and stored procedures are located in the `supabase/migrations/` directory.
+- Apply migrations in sequential numerical order using the Supabase SQL Editor or Supabase CLI.
