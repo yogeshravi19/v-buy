@@ -1242,6 +1242,46 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
           ))}
         </div>
 
+        {/* ── Swiggy "What's on your mind?" Category Quick Bar ── */}
+        <div className="swiggy-category-section">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
+              🍽️ What's on your mind?
+            </span>
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                style={{ border: 0, background: 'none', color: 'var(--blue-primary)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+          <div className="swiggy-cat-scroll">
+            {[
+              { label: 'All Items', icon: '✨', query: '' },
+              { label: 'Snacks & Rolls', icon: '🥪', query: 'roll' },
+              { label: 'Noodles & Rice', icon: '🍜', query: 'rice' },
+              { label: 'Fresh Juices', icon: '🥤', query: 'juice' },
+              { label: 'Chai & Coffee', icon: '☕', query: 'tea' },
+              { label: 'Sweets & Desserts', icon: '🍦', query: 'dessert' },
+              { label: 'Meals & Combos', icon: '🍱', query: 'combo' }
+            ].map(cat => {
+              const isActive = (cat.query === '' && !query) || (cat.query !== '' && query.toLowerCase().includes(cat.query))
+              return (
+                <div
+                  key={cat.label}
+                  className={`swiggy-cat-card ${isActive ? 'active' : ''}`}
+                  onClick={() => setQuery(cat.query)}
+                >
+                  <span className="swiggy-cat-icon">{cat.icon}</span>
+                  <span className="swiggy-cat-label">{cat.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Advanced filter row */}
         <div className="filter-row-advanced" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           {/* Veg Only toggle */}
@@ -1591,14 +1631,59 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
           {(outlet.menu_items || []).map(item => {
             const inCart = outletCartItems.find(i => i.id === item.id)
             const foodImg = getFoodImage(item.name, item.category)
+            const rStats = getItemRatingStats ? getItemRatingStats(item.id) : null
+            const isSoldOut = item.available === false || item.stock_qty === 0 || !outlet.is_open
+
             return (
-              <div className="menu-row" key={item.id}>
-                <div className="item-info">
-                  <div className="food-thumb-box">
+              <div className="swiggy-dish-card" key={item.id}>
+                {/* Left: Swiggy Details Column */}
+                <div className="swiggy-dish-left">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'}
+                      title={item.is_veg !== false ? 'Vegetarian' : 'Non-Vegetarian'}
+                    />
+                    {item.is_bestseller !== false && (
+                      <span className="swiggy-rating-pill" style={{ color: '#D97706', background: '#FEF3C7', borderColor: '#FDE68A' }}>
+                        ★ Bestseller
+                      </span>
+                    )}
+                  </div>
+
+                  <h4 className="swiggy-dish-name">{item.name}</h4>
+
+                  <div className="swiggy-dish-price">
+                    <span>{money(item.price)}</span>
+                    {rStats && (
+                      <span className="swiggy-rating-pill">
+                        <Star size={10} fill="#F59E0B" color="#F59E0B" />
+                        <strong>{rStats.avg}</strong>
+                        <span style={{ opacity: 0.75, fontSize: '9.5px' }}>({rStats.count})</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="swiggy-dish-meta">
+                    <span className="item-cat-pill">{item.category}</span>
+                    {isSoldOut ? (
+                      <span className="sold-out-pill">{!outlet.is_open ? 'Closed' : 'Sold Out'}</span>
+                    ) : (
+                      item.stock_qty !== undefined && item.stock_qty <= 10 && item.stock_qty > 0 && (
+                        <span style={{ fontSize: '10px', color: '#B45309', fontWeight: 800, background: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>
+                          Only {item.stock_qty} left!
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Swiggy Photo with Overlapping + ADD button */}
+                <div className="swiggy-dish-right">
+                  <div className="swiggy-dish-img-box">
                     <img
                       src={foodImg.url}
                       alt={item.name}
-                      className="food-thumb-img"
+                      className="swiggy-dish-img"
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -1607,64 +1692,36 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
                         }
                       }}
                     />
-                    <div className="food-thumb-fallback" style={{ display: 'none' }}>
+                    <div className="food-thumb-fallback" style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
                       {foodImg.emoji}
                     </div>
                   </div>
-                  <div className="item-details">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span
-                        className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'}
-                        title={item.is_veg !== false ? 'Vegetarian' : 'Non-Vegetarian'}
-                      />
-                      <strong>{item.name}</strong>
-                      {getItemRatingStats && (() => {
-                        const rStats = getItemRatingStats(item.id)
-                        return rStats ? (
-                          <span className="item-rating-chip" title={`${rStats.avg} ⭐ out of 5 (${rStats.count} verified reviews)`}>
-                            <Star size={10} fill="#F59E0B" color="#F59E0B" />
-                            <strong>{rStats.avg}</strong>
-                            <small style={{ opacity: 0.8 }}>({rStats.count})</small>
-                          </span>
-                        ) : null
-                      })()}
-                    </div>
-                    <div className="item-sub-meta">
-                      <span className="item-cat-pill">{item.category}</span>
-                      {(item.available === false || item.stock_qty === 0) && (
-                        <span className="sold-out-pill">Sold Out</span>
-                      )}
-                      {item.available !== false && (item.stock_qty !== undefined && item.stock_qty <= 10 && item.stock_qty > 0) && (
-                        <span style={{ fontSize: '10px', color: '#B45309', fontWeight: 800, background: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>
-                          Only {item.stock_qty} left!
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
-                <div className="menu-action">
-                  <span className="item-price">{money(item.price)}</span>
-                  {item.available === false || item.stock_qty === 0 || !outlet.is_open ? (
-                    <span className="unavailable-btn">{!outlet.is_open ? 'Closed' : 'Sold Out'}</span>
-                  ) : inCart ? (
-                    <div className="item-stepper">
-                      <button onClick={() => removeFromCart(item.id)} title="Decrease quantity">
-                        <Minus size={13} />
+                  <div className="swiggy-add-btn-wrap">
+                    {isSoldOut ? (
+                      <span className="unavailable-btn" style={{ fontSize: '10px', padding: '3px 8px' }}>
+                        {!outlet.is_open ? 'Closed' : 'Sold Out'}
+                      </span>
+                    ) : inCart ? (
+                      <div className="swiggy-stepper-btn">
+                        <button onClick={() => removeFromCart(item.id)} title="Decrease quantity">
+                          <Minus size={13} />
+                        </button>
+                        <span>{inCart.qty}</span>
+                        <button onClick={() => addToCart(outlet, item)} title="Increase quantity">
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="swiggy-add-btn"
+                        onClick={() => addToCart(outlet, item)}
+                      >
+                        ADD <Plus size={13} strokeWidth={2.5} />
                       </button>
-                      <span>{inCart.qty}</span>
-                      <button onClick={() => addToCart(outlet, item)} title="Increase quantity">
-                        <Plus size={13} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="add-btn-pill"
-                      onClick={() => addToCart(outlet, item)}
-                    >
-                      <Plus size={14} /> Add
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )
@@ -2208,41 +2265,78 @@ function RatingModal({ order, onClose, submitItemRating, itemRatings = [] }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // VISUAL ORDER STEPPER (Phase 2 Step 6)
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderStepper({ status }) {
+function OrderStepper({ status, order }) {
   const steps = [
-    { key: 'placed', label: 'Placed', icon: Clock3 },
-    { key: 'preparing', label: 'Preparing', icon: UtensilsCrossed },
-    { key: 'ready', label: 'Ready', icon: Bell },
-    { key: 'collected', label: 'Collected', icon: CheckCircle2 }
+    { key: 'placed', label: 'Order Placed', desc: 'Confirmed', icon: Clock3 },
+    { key: 'preparing', label: 'In Kitchen', desc: 'Cooking 🔥', icon: UtensilsCrossed },
+    { key: 'ready', label: 'Counter Ready', desc: 'Pickup Now 🎉', icon: Bell },
+    { key: 'collected', label: 'Completed', desc: 'Collected ✓', icon: CheckCircle2 }
   ]
   const currentIndex = steps.findIndex(s => s.key === status)
+  const isReady = status === 'ready'
+  const isPrep = status === 'preparing'
+  const isPlaced = status === 'placed'
+  const isCollected = status === 'collected'
+
+  const progressPercent = currentIndex <= 0 ? 8 : (currentIndex / (steps.length - 1)) * 100
+
+  const statusHeadline = isReady
+    ? '🎉 Your Food is Ready for Pickup!'
+    : isPrep
+    ? '🔥 Kitchen is Preparing Your Food with Care'
+    : isPlaced
+    ? '📋 Order Confirmed & Queued with Kitchen'
+    : '✓ Order Completed & Picked Up'
+
+  const statusSubline = isReady
+    ? `Show Token #${order?.token || '---'} at the counter for pickup`
+    : isPrep
+    ? 'Estimated preparation time: 4-7 minutes'
+    : isPlaced
+    ? 'Canteen staff will begin preparation momentarily'
+    : 'Enjoy your delicious campus meal!'
 
   return (
-    <div className="order-stepper-container">
-      <div className="order-stepper-line">
-        <div
-          className="order-stepper-fill"
-          style={{ width: currentIndex >= 0 ? `${(currentIndex / (steps.length - 1)) * 100}%` : '0%' }}
-        />
-      </div>
-      {steps.map((step, idx) => {
-        const IconComponent = step.icon
-        const isDone = idx < currentIndex
-        const isCurrent = idx === currentIndex
-        const isPending = idx > currentIndex
-
-        return (
-          <div
-            key={step.key}
-            className={`stepper-node ${isDone ? 'active' : ''} ${isCurrent ? 'current' : ''} ${isPending ? 'pending' : ''}`}
-          >
-            <div className="stepper-circle">
-              {isDone ? <Check size={15} /> : <IconComponent size={14} />}
-            </div>
-            <span className="stepper-label">{step.label}</span>
+    <div className="swiggy-progress-card">
+      <div className="swiggy-live-header">
+        <div className="swiggy-live-status-badge">
+          <span className="swiggy-pulse-dot" />
+          <span>SWIGGY LIVE PROGRESS · {status.toUpperCase()}</span>
+        </div>
+        {!isCollected && (
+          <div className="swiggy-eta-pill">
+            <Clock size={12} />
+            <span>{isReady ? 'READY NOW' : isPrep ? 'ETA: ~5 mins' : 'ETA: ~8 mins'}</span>
           </div>
-        )
-      })}
+        )}
+      </div>
+
+      <div className="swiggy-progress-headline">{statusHeadline}</div>
+      <div className="swiggy-progress-subline">{statusSubline}</div>
+
+      <div className="swiggy-stepper-track-wrap">
+        <div className="swiggy-stepper-line">
+          <div className="swiggy-stepper-fill" style={{ width: `${progressPercent}%` }} />
+        </div>
+        {steps.map((step, idx) => {
+          const IconComponent = step.icon
+          const isDone = idx < currentIndex
+          const isCurrent = idx === currentIndex
+
+          return (
+            <div
+              key={step.key}
+              className={`swiggy-step-item ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}`}
+            >
+              <div className="swiggy-step-circle">
+                {isDone ? <Check size={16} strokeWidth={3} /> : <IconComponent size={15} />}
+              </div>
+              <span className="swiggy-step-title">{step.label}</span>
+              <span className="swiggy-step-desc">{step.desc}</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -2576,7 +2670,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
       </div>
 
       {/* ── Feature 6: Visual Order Stepper ── */}
-      {!isCancelled && <OrderStepper status={order.status} />}
+      {!isCancelled && <OrderStepper status={order.status} order={order} />}
 
       {/* ── Badges for Scheduled Slots & Group Orders ── */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
