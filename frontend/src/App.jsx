@@ -243,6 +243,45 @@ export const CANTEEN_STAFF_OWNER_MAP = [
   { id: 'vm',  name: 'V Mart Provisional Store', location: 'Campus Outlets & Stores', staffPhone: '9876541013', ownerPhone: '9876542013', staffEmail: 'staff.vm@vfood.vit.ac.in', ownerEmail: 'owner.vm@vfood.vit.ac.in' },
 ]
 
+export const MIND_CATEGORIES = [
+  { id: 'all',       label: 'All Items',             icon: '✨' },
+  { id: 'snacks',    label: 'Snacks & Rolls',        icon: '🥪' },
+  { id: 'biryani',   label: 'Biryani & Meals',       icon: '🍱' },
+  { id: 'noodles',   label: 'Noodles & Pasta',       icon: '🍜' },
+  { id: 'juices',    label: 'Fresh Juices & Lassi',  icon: '🥤' },
+  { id: 'beverages', label: 'Chai & Coffee',         icon: '☕' },
+  { id: 'desserts',  label: 'Sweets & Desserts',     icon: '🍦' },
+  { id: 'breakfast', label: 'South Indian & Dosa',   icon: '🥞' },
+  { id: 'starters',  label: 'Crispy Starters',       icon: '🍗' },
+]
+
+export function matchesMindCategory(item, catId) {
+  if (!catId || catId === 'all') return true
+  const name = (item.name || '').toLowerCase()
+  const cat = (item.category || '').toLowerCase()
+
+  switch (catId) {
+    case 'snacks':
+      return cat === 'snacks' || /(roll|puff|samosa|cutlet|sandwich|maggi|muffin|chips|cookies|snack)/i.test(name)
+    case 'biryani':
+      return ['meals', 'lunch', 'dinner'].includes(cat) || /(biryani|meal|thali|rice|combo|paneer butter|chole|naan)/i.test(name)
+    case 'noodles':
+      return /(noodle|pasta|schezwan|fried rice|manchurian)/i.test(name)
+    case 'juices':
+      return /(juice|lassi|shake|milkshake|lime|orange|watermelon|pineapple|mosambi)/i.test(name)
+    case 'beverages':
+      return cat === 'beverages' || /(tea|chai|coffee|milk)/i.test(name)
+    case 'desserts':
+      return cat === 'desserts' || /(ice cream|sundae|jamun|rasgulla|kulfi|dessert)/i.test(name)
+    case 'breakfast':
+      return cat === 'breakfast' || /(dosa|idli|vada)/i.test(name)
+    case 'starters':
+      return cat === 'starters' || /(65|chilli|chicken 65|starter|manchurian)/i.test(name)
+    default:
+      return true
+  }
+}
+
 const TEST_USERS = [
   { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 0 },
   { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
@@ -558,7 +597,7 @@ function App() {
         const q = query.toLowerCase()
         const nameMatch = o.name.toLowerCase().includes(q)
         const locMatch = o.location.toLowerCase().includes(q)
-        const itemMatch = (o.menu_items || []).some(i => i.name.toLowerCase().includes(q))
+        const itemMatch = (o.menu_items || []).some(i => i.name.toLowerCase().includes(q) || (i.category || '').toLowerCase().includes(q))
         if (!nameMatch && !locMatch && !itemMatch) return false
       }
       return true
@@ -1207,6 +1246,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
   const LOCATIONS = ['All', 'Gazebo', 'North Square', 'AB3 Amphitheatre', 'Academic Blocks', 'Campus Outlets & Stores']
   const PRICE_OPTS = [{ label: 'All Prices', val: 'All' }, { label: 'Under ₹50', val: 'u50' }, { label: 'Under ₹100', val: 'u100' }, { label: 'Under ₹200', val: 'u200' }]
   const [sortBy, setSortBy] = useState('popular') // 'popular' | 'rating' | 'price_asc' | 'price_desc'
+  const [activeMindCat, setActiveMindCat] = useState('all')
 
   const myUsualOrder = useMemo(() => {
     return (orders || []).find(o => o.status === 'collected' && (o.order_items || []).length > 0)
@@ -1215,10 +1255,22 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
   // Apply local item-level filters to each outlet
   const filteredOutlets = useMemo(() => visibleOutlets.map(o => {
     let items = o.menu_items || []
-    // AB3 time-of-day filter
-    if (o.id === 'ab3') {
+    // AB3 time-of-day filter (only active when browsing all items without an explicit category filter)
+    if (o.id === 'ab3' && activeMindCat === 'all') {
       const timeItems = items.filter(i => i.category === ab3Slot)
       if (timeItems.length > 0) items = timeItems
+    }
+    // "What's on your mind?" Category Context Filter
+    if (activeMindCat !== 'all') {
+      items = items.filter(i => matchesMindCategory(i, activeMindCat))
+    }
+    // Search query item filter (if typed query)
+    if (query.trim()) {
+      const q = query.toLowerCase().trim()
+      const matchesOutlet = o.name.toLowerCase().includes(q) || o.location.toLowerCase().includes(q)
+      if (!matchesOutlet) {
+        items = items.filter(i => i.name.toLowerCase().includes(q) || (i.category || '').toLowerCase().includes(q))
+      }
     }
     if (vegOnly) items = items.filter(i => i.is_veg !== false)
     if (priceFilter === 'u50')  items = items.filter(i => i.price < 50)
@@ -1235,7 +1287,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
     }
 
     return { ...o, menu_items: items }
-  }).filter(o => o.menu_items.length > 0), [visibleOutlets, vegOnly, priceFilter, ab3Slot, sortBy, getItemRatingStats])
+  }).filter(o => o.menu_items.length > 0), [visibleOutlets, activeMindCat, query, vegOnly, priceFilter, ab3Slot, sortBy, getItemRatingStats])
 
   return (
     <>
@@ -1258,34 +1310,27 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
         {/* ── Campus "What's on your mind?" Category Quick Bar ── */}
         <div className="food-flow-category-section">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
               🍽️ What's on your mind?
             </span>
-            {query && (
+            {activeMindCat !== 'all' && (
               <button
-                onClick={() => setQuery('')}
+                onClick={() => setActiveMindCat('all')}
                 style={{ border: 0, background: 'none', color: 'var(--blue-primary)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               >
-                Clear filter
+                Clear filter ({MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label}) ✕
               </button>
             )}
           </div>
           <div className="food-flow-cat-scroll">
-            {[
-              { label: 'All Items', icon: '✨', query: '' },
-              { label: 'Snacks & Rolls', icon: '🥪', query: 'roll' },
-              { label: 'Noodles & Rice', icon: '🍜', query: 'rice' },
-              { label: 'Fresh Juices', icon: '🥤', query: 'juice' },
-              { label: 'Chai & Coffee', icon: '☕', query: 'tea' },
-              { label: 'Sweets & Desserts', icon: '🍦', query: 'dessert' },
-              { label: 'Meals & Combos', icon: '🍱', query: 'combo' }
-            ].map(cat => {
-              const isActive = (cat.query === '' && !query) || (cat.query !== '' && query.toLowerCase().includes(cat.query))
+            {MIND_CATEGORIES.map(cat => {
+              const isActive = activeMindCat === cat.id
               return (
                 <div
-                  key={cat.label}
+                  key={cat.id}
                   className={`food-flow-cat-card ${isActive ? 'active' : ''}`}
-                  onClick={() => setQuery(cat.query)}
+                  onClick={() => setActiveMindCat(curr => curr === cat.id ? 'all' : cat.id)}
+                  title={`Filter by ${cat.label}`}
                 >
                   <span className="food-flow-cat-icon">{cat.icon}</span>
                   <span className="food-flow-cat-label">{cat.label}</span>
@@ -1293,6 +1338,40 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
               )
             })}
           </div>
+          {activeMindCat !== 'all' && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#EFF6FF',
+              border: '1.5px solid #BFDBFE',
+              padding: '8px 12px',
+              borderRadius: '10px',
+              marginTop: '10px',
+              fontSize: '12px',
+              color: 'var(--blue-primary)',
+              fontWeight: 700
+            }}>
+              <span>
+                🎯 Filtered by: <strong>{MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label}</strong> ({filteredOutlets.length} {filteredOutlets.length === 1 ? 'outlet' : 'outlets'} serving this)
+              </span>
+              <button
+                onClick={() => setActiveMindCat('all')}
+                style={{
+                  border: '1px solid #BFDBFE',
+                  background: '#FFFFFF',
+                  color: 'var(--blue-primary)',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Reset to All
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Advanced filter row */}
@@ -1393,6 +1472,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
               removeFromCart={removeFromCart}
               cart={cart}
               getItemRatingStats={getItemRatingStats}
+              activeMindCat={activeMindCat}
             />
           ))}
         </div>
@@ -1542,7 +1622,7 @@ function getCanteenMeta(outlet) {
 // ─────────────────────────────────────────────────────────────────────────────
 // OUTLET CARD — REDESIGNED WITH DYNAMIC CANTEEN SYSTEM VISUALIZATION
 // ─────────────────────────────────────────────────────────────────────────────
-function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStats }) {
+function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStats, activeMindCat }) {
   const [expanded, setExpanded] = useState(true)
   const [menuSearch, setMenuSearch] = useState('')
   const [selectedCat, setSelectedCat] = useState('all')
@@ -1646,6 +1726,11 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
         <span className="outlet-toggle-label">
           <UtensilsCrossed size={13} />
           {expanded ? 'Hide Menu' : `View Menu (${rawItems.length} items)`}
+          {activeMindCat && activeMindCat !== 'all' && (
+            <span style={{ fontSize: '11px', background: '#EFF6FF', color: 'var(--blue-primary)', padding: '2px 8px', borderRadius: '12px', fontWeight: 800, marginLeft: '6px' }}>
+              🎯 {MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label} ({rawItems.length})
+            </span>
+          )}
         </span>
         <div className={`collapse-chevron ${expanded ? 'open' : ''}`}>
           <ChevronDown size={17} />
