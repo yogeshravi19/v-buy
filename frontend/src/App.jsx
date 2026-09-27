@@ -875,46 +875,6 @@ function App() {
 
   const role      = currentUser.role || 'student'
 
-  // ── DEDICATED ROLE DASHBOARD ROUTING ──
-  // 1. Staff Dashboard: High-frequency operational kitchen/counter cockpit
-  if (role === 'staff') {
-    return (
-      <StaffDashboard
-        forcedOutletId={currentUser.outlet_id || 'g1'}
-        outletName={currentUser.outlet_name || 'Gazebo C1 — Snacks & Fast Food'}
-        onSignOut={handleSignOut}
-      />
-    )
-  }
-
-  // 2. Student Dashboard: Dedicated consumer buying, wallet, menu, loyalty, referral shell
-  if (role === 'student' || role === 'customer') {
-    return (
-      <StudentDashboard
-        onSignOut={handleSignOut}
-      />
-    )
-  }
-
-  // 3. Shop Admin Dashboard: Outlet management, team invite, menu CRUD, analytics & KDS
-  if (role === 'shop_admin' || role === 'owner') {
-    return (
-      <ShopDashboard
-        forcedOutletId={currentUser.outlet_id || 'g1'}
-        outletName={currentUser.outlet_name || 'Gazebo C1 — Snacks & Fast Food'}
-        onSignOut={handleSignOut}
-      />
-    )
-  }
-
-  // 4. Super Admin Dashboard: Platform-wide oversight, cross-outlet feed, hierarchy tree, coupons, audit log
-  if (role === 'super_admin' || role === 'admin' || role === 'superadmin') {
-    return (
-      <SuperAdminDashboard
-        onSignOut={handleSignOut}
-      />
-    )
-  }
 
   const isCustomer = role === 'student' || role === 'customer'
   const isStaff   = role === 'staff'
@@ -928,7 +888,7 @@ function App() {
         <div className="ios-modal-overlay" onClick={() => setShowIosPrompt(false)}>
           <div className="ios-modal-card" onClick={e => e.stopPropagation()}>
             <div className="ios-modal-header">
-              <h3>📱 Install CampusBite on iOS</h3>
+              <h3>📱 Install V-FOOD on iOS</h3>
               <button className="close-btn" onClick={() => setShowIosPrompt(false)}><X size={18} /></button>
             </div>
             <div className="ios-modal-steps">
@@ -942,7 +902,7 @@ function App() {
               </div>
               <div className="ios-step">
                 <span className="ios-step-num">3</span>
-                <p>Tap <strong>"Add"</strong> in the top right. CampusBite will launch full-screen as a native app!</p>
+                <p>Tap <strong>"Add"</strong> in the top right. V-FOOD will launch full-screen as a native app!</p>
               </div>
             </div>
             <button className="btn-primary" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }} onClick={() => setShowIosPrompt(false)}>
@@ -956,13 +916,13 @@ function App() {
       <header className="topbar">
         <a href="#" className="brand-wrapper" onClick={e => { e.preventDefault(); if (isCustomer) setTab('browse') }}>
           <img src="/vit-chennai-logo.png" alt="VIT Chennai" className="vit-logo-img" />
-          <span className="brand-title">Campus<span>Bite</span></span>
+          <span className="brand-title">V-<span>FOOD</span></span>
         </a>
         <div className="top-actions">
           {!isOnline && (
             <span className="offline-badge"><WifiOff size={13} /> Offline</span>
           )}
-          <button className="install-app-btn" onClick={handleInstallClick} title="Install CampusBite as Mobile or Desktop App">
+          <button className="install-app-btn" onClick={handleInstallClick} title="Install V-FOOD as Mobile or Desktop App">
             <Download size={13} />
             <span>Install App</span>
           </button>
