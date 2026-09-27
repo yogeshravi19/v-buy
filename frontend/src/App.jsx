@@ -947,7 +947,7 @@ function App() {
           <div>
             <p className="eyebrow">CAMPUS DINING · {currentUser.full_name}</p>
             <h1>
-              {isCustomer && <><span style={{color:'#60A5FA'}}>What's your next order,</span><br /><em>{currentUser.full_name?.split(' ')[0] || 'User'}?</em></>}
+              {isCustomer && <>What's your next order,<br /><em>{currentUser.full_name?.split(' ')[0] || 'User'}?</em></>}
               {isStaff    && <>Kitchen Operations Console<br /><em>Outlet: {currentUser.outlet_name || 'Gazebo Counter'}</em></>}
               {isOwner    && <>Canteen Franchisee Portal<br /><em>Outlet: {currentUser.outlet_name || 'Gazebo C1'}</em></>}
               {isAdmin    && <>Campus Super Admin &<br /><em>Operations Telemetry</em></>}
@@ -2919,7 +2919,7 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
               <span style={{ fontSize: '12px', opacity: 0.8 }}>{myOutlet.location}</span>
             </div>
             <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '6px 0 2px', color: '#FFFFFF' }}>{myOutlet.name}</h2>
-            <p style={{ fontSize: '13px', opacity: 0.85, margin: 0 }}>Owner: {profile.full_name} · Contact: {profile.phone || '+91 9876543230'}</p>
+            <p style={{ fontSize: '13px', opacity: 0.85, margin: 0 }}>{profile.full_name?.startsWith('Owner — ') ? profile.full_name : `Owner: ${profile.full_name}`} · Contact: {profile.phone || '+91 9876543230'}</p>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button
@@ -3216,7 +3216,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   const [activeMenuCat, setActiveMenuCat]         = useState('all')
 
   const isStaff = profile.role === 'staff'
-  const isAdmin = profile.role === 'admin'
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'superadmin' || profile.is_superadmin
   const myOutlet = outlets.find(o => o.id === profile.outlet_id) || outlets[0]
 
   // Staff: only their outlet's active orders, sorted oldest-first

@@ -264,12 +264,12 @@ body::before {
 @keyframes dot-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.5)} }
 
 .hero-card h1 {
-  font-family: var(--font-heading); font-size: clamp(22px,3vw,38px);
-  font-weight: 900; line-height: 1.15; letter-spacing: -0.8px; color: #FFFFFF;
+  font-family: var(--font-heading); font-size: clamp(20px, 3.5vw, 36px);
+  font-weight: 900; line-height: 1.3; letter-spacing: -0.6px; color: #FFFFFF;
   position: relative; z-index:1;
 }
-.hero-card h1 em  { color: #93C5FD; font-style: normal; }
-.hero-card h1 span{ color: #BFDBFE; }
+.hero-card h1 em  { color: #93C5FD; font-style: normal; display: block; font-size: 0.82em; font-weight: 700; margin-top: 5px; word-break: break-word; }
+.hero-card h1 span{ color: #BFDBFE; display: inline-block; }
 
 .hero-stats { display: flex; gap: 12px; flex-shrink:0; position: relative; z-index:1; }
 .stat-pill {
@@ -1520,7 +1520,7 @@ body::before {
   }
 
   .content {
-    padding: 14px 12px 100px;
+    padding: 12px 10px 100px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -1530,14 +1530,27 @@ body::before {
   .hero-card {
     padding: 16px 14px;
     border-radius: 16px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
   .hero-card h1 {
-    font-size: 19px;
-    line-height: 1.25;
+    font-size: 18px;
+    line-height: 1.35;
+    letter-spacing: -0.4px;
+  }
+  .hero-card h1 span {
+    font-size: 13.5px;
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 700;
+  }
+  .hero-card h1 em {
+    font-size: 13px;
+    display: block;
+    margin-top: 4px;
+    font-weight: 700;
   }
   .hero-stats {
     display: grid;
@@ -1551,43 +1564,54 @@ body::before {
     border-radius: 10px;
   }
   .stat-pill strong {
-    font-size: 16px;
+    font-size: 15px;
   }
   .stat-pill small {
-    font-size: 8.5px;
+    font-size: 8px;
     letter-spacing: 0.3px;
+  }
+
+  .canteen-switcher-bar {
+    padding: 8px 12px;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .canteen-switcher-select {
+    min-width: 100%;
+    font-size: 13px;
   }
 
   .nav-tabs {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     width: 100%;
     flex-wrap: nowrap;
+    padding: 4px;
   }
   .nav-tabs::-webkit-scrollbar { display: none; }
   .nav-tabs button {
     flex: 1 0 auto;
-    min-width: 80px;
+    min-width: 75px;
     padding: 8px 10px;
-    font-size: 12.5px;
+    font-size: 12px;
     justify-content: center;
   }
 
   .controls-bar {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 8px;
+    margin-bottom: 12px;
     width: 100%;
   }
   .search-box {
-    height: 44px;
+    height: 42px;
     padding: 0 12px;
-    font-size: 13.5px;
+    font-size: 13px;
     width: 100%;
   }
   .filter-pills {
@@ -1599,15 +1623,33 @@ body::before {
     width: 100%;
   }
   .filter-pill {
-    padding: 5px 12px;
-    font-size: 12px;
+    padding: 5px 11px;
+    font-size: 11.5px;
     white-space: nowrap;
+  }
+
+  .filter-row-advanced {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+    padding-bottom: 3px;
+  }
+  .filter-row-advanced::-webkit-scrollbar { display: none; }
+  .filter-toggle-btn {
+    padding: 5px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .outlet-grid {
     display: grid;
     grid-template-columns: 1fr !important;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
   }
   .outlet-card {
@@ -1617,28 +1659,60 @@ body::before {
     box-sizing: border-box;
   }
   .outlet-card-banner {
-    min-height: 108px;
-    padding: 12px 14px 10px;
+    min-height: 100px;
+    padding: 10px 12px 8px;
+  }
+  .canteen-avatar-circle {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 18px;
+  }
+  .canteen-name-row h3 {
+    font-size: 15px;
+    line-height: 1.2;
+  }
+  .canteen-badge-pill {
+    font-size: 8.5px;
+    padding: 2px 6px;
+  }
+  .canteen-tagline {
+    font-size: 11px;
+  }
+  .canteen-stats-ribbon {
+    padding: 4px 8px;
+    font-size: 10.5px;
   }
   .outlet-title {
-    font-size: 17px;
+    font-size: 16px;
   }
   .canteen-menu-item {
-    padding: 10px 12px;
+    padding: 10px 10px;
     gap: 8px;
   }
   .canteen-item-stepper button {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
   }
 
   .wallet-card {
-    padding: 20px 16px;
-    border-radius: 18px;
+    padding: 18px 14px;
+    border-radius: 16px;
   }
   .wallet-card h2 {
-    font-size: 34px;
+    font-size: 32px;
+  }
+  .topup-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+  .topup-btn {
+    padding: 8px 6px;
+    font-size: 12.5px;
+    justify-content: center;
   }
 
   .cart-dock {
@@ -1651,33 +1725,50 @@ body::before {
     box-sizing: border-box;
   }
   .cart-dock-bar {
-    padding: 10px 14px;
+    padding: 10px 12px;
     padding-bottom: max(10px, env(safe-area-inset-bottom));
     gap: 8px;
   }
   .cart-dock-total {
-    font-size: 17px;
+    font-size: 16px;
   }
   .cart-dock-expanded {
     max-height: 75vh;
   }
 
+  .admin-subnav {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .admin-subnav-btn {
+    padding: 7px 11px;
+    font-size: 11.5px;
+  }
+
   .admin-card {
-    padding: 16px 14px;
-    border-radius: 16px;
+    padding: 14px 12px;
+    border-radius: 14px;
   }
   .sales-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
   }
   .sales-stat-box {
-    padding: 12px 10px;
+    padding: 10px 8px;
   }
   .sales-stat-box h4 {
-    font-size: 11px;
+    font-size: 10.5px;
   }
   .sales-stat-box p {
-    font-size: 18px;
+    font-size: 16px;
+  }
+
+  .canteen-matrix-grid {
+    grid-template-columns: 1fr;
+    max-height: 320px;
+  }
+  .canteen-matrix-card {
+    padding: 7px 9px;
   }
 
   .tv-screen {
