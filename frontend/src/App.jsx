@@ -228,10 +228,10 @@ const DEMO_OUTLETS = [
 ]
 
 const TEST_USERS = [
-  { id: 'usr-student', full_name: 'Rahul Sharma (Student)', phone: '9876543210', email: 'rahul.s@vitstudent.ac.in', password: 'password123', role: 'student', cust_type: 'student', reg_no: '22BCE1042', balance: 550 },
-  { id: 'usr-staff', full_name: 'Ramesh (Gazebo Staff)', phone: '9876543220', email: 'staff.gazebo@vit.ac.in', password: 'password123', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 250 },
-  { id: 'usr-owner', full_name: 'Suresh Kumar (Gazebo Owner)', phone: '9876543230', email: 'owner.gazebo@vit.ac.in', password: 'password123', role: 'owner', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 18450 },
-  { id: 'usr-admin', full_name: 'Overall Super Admin', phone: '9876543200', email: 'superadmin.campus@vit.ac.in', password: 'password123', role: 'admin', is_superadmin: true, balance: 50000 },
+  { id: 'usr-customer', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'rahul.sharma@gmail.com', password: 'password123', role: 'user', balance: 550 },
+  { id: 'usr-staff', full_name: 'Ramesh (Shop Staff)', phone: '9876543220', email: 'staff.gazebo@vfood.com', password: 'password123', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 250 },
+  { id: 'usr-owner', full_name: 'Suresh Kumar (Shop Owner)', phone: '9876543230', email: 'owner.gazebo@vfood.com', password: 'password123', role: 'owner', outlet_id: 'g1', outlet_name: 'Gazebo C1 — Snacks & Fast Food', balance: 18450 },
+  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'superadmin@vfood.com', password: 'password123', role: 'admin', is_superadmin: true, balance: 50000 },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -853,10 +853,10 @@ function App() {
   // ── MAIN APP DIRECT AUTHENTICATION ──
   if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
 
-  const role      = currentUser.role || 'student'
+  const role      = currentUser.role || 'user'
 
 
-  const isCustomer = role === 'student' || role === 'customer'
+  const isCustomer = role === 'user' || role === 'student' || role === 'customer'
   const isStaff   = role === 'staff'
   const isOwner   = role === 'owner' || role === 'shop_admin'
   const isAdmin   = role === 'admin' || role === 'superadmin' || role === 'super_admin'
@@ -907,9 +907,9 @@ function App() {
             <span>Install App</span>
           </button>
           <span className="role-tag-badge">
-            {role === 'owner' ? '🏪 Canteen Owner' :
-             role === 'staff' ? '👨‍🍳 Kitchen Staff' :
-             role === 'admin' || role === 'superadmin' ? '🛡️ Super Admin' : '🎓 Student'}
+            {role === 'owner' ? '🏪 Shop Owner' :
+             role === 'staff' ? '👨‍🍳 Shop Staff' :
+             role === 'admin' || role === 'superadmin' ? '🛡️ Super Admin (Me)' : '👤 User'}
           </span>
           {isCustomer && (
             <div className="wallet-badge-top" onClick={() => setTab('wallet')}>
@@ -929,9 +929,9 @@ function App() {
         {/* Hero */}
         <section className="hero-card">
           <div>
-            <p className="eyebrow">VIT CHENNAI CAMPUS · {currentUser.full_name}</p>
+            <p className="eyebrow">CAMPUS DINING · {currentUser.full_name}</p>
             <h1>
-              {isCustomer && <><span style={{color:'#60A5FA'}}>What's your next order,</span><br /><em>{currentUser.full_name?.split(' ')[0] || 'Student'}?</em></>}
+              {isCustomer && <><span style={{color:'#60A5FA'}}>What's your next order,</span><br /><em>{currentUser.full_name?.split(' ')[0] || 'User'}?</em></>}
               {isStaff    && <>Kitchen Operations Console<br /><em>Outlet: {currentUser.outlet_name || 'Gazebo Counter'}</em></>}
               {isOwner    && <>Canteen Franchisee Portal<br /><em>Outlet: {currentUser.outlet_name || 'Gazebo C1'}</em></>}
               {isAdmin    && <>Campus Super Admin &<br /><em>Operations Telemetry</em></>}
@@ -4594,7 +4594,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AUTH SCREEN (Mobile Number + OTP Primary, Email + Password for Staff/Admin)
+// AUTH SCREEN (Universal Dining Platform — User, Shop Staff, Shop Owner, Super Admin)
 // ─────────────────────────────────────────────────────────────────────────────
 function AuthScreen({ onLoginUser }) {
   const [authMethod, setAuthMethod]   = useState('phone') // 'phone' (primary) | 'email' (staff/admin)
@@ -4606,12 +4606,10 @@ function AuthScreen({ onLoginUser }) {
   const [otp, setOtp]                 = useState('')
   const [resendTimer, setResendTimer] = useState(30)
   
-  // Registration & Profile Info
+  // Registration & Profile Info (Common to all users)
   const [fullName, setFullName]       = useState('')
-  const [regNo, setRegNo]             = useState('')
   const [regEmail, setRegEmail]       = useState('')
-  const [role, setRole]               = useState('student') // 'student' | 'staff' | 'owner' | 'admin'
-  const [custType, setCustType]       = useState('student')
+  const [role, setRole]               = useState('user') // 'user' | 'staff' | 'owner' | 'admin'
   const [password, setPassword]       = useState('')
   const [email, setEmail]             = useState('')
   const [error, setError]             = useState('')
@@ -4634,8 +4632,8 @@ function AuthScreen({ onLoginUser }) {
     }
     if (isSignUp) {
       if (!fullName.trim()) return setError('Please enter your full name')
-      if (!regEmail.trim()) return setError('Please enter your institutional email ID')
-      if (!regEmail.includes('@')) return setError('Please enter a valid email ID (e.g. name@vitstudent.ac.in)')
+      if (!regEmail.trim()) return setError('Please enter your email address')
+      if (!regEmail.includes('@')) return setError('Please enter a valid email address')
     }
     setPhoneStep('otp')
     setResendTimer(30)
@@ -4656,16 +4654,14 @@ function AuthScreen({ onLoginUser }) {
     if (matched && !isSignUp) {
       onLoginUser(matched)
     } else {
-      // Create new verified profile with Name, Reg No, Institutional Email & Phone
+      // Create new profile for common user / staff / owner / admin
       const isSuper = role === 'admin'
       const newProfile = {
         id: `usr-${Date.now()}`,
-        full_name: fullName.trim() || `VIT User (+91 ${cleanPhone})`,
-        reg_no: regNo.trim() || undefined,
+        full_name: fullName.trim() || `User (+91 ${cleanPhone})`,
         phone: cleanPhone,
-        email: regEmail.trim() || `${cleanPhone}@vfood.vit.ac.in`,
+        email: regEmail.trim() || `${cleanPhone}@vfood.com`,
         role: role,
-        cust_type: role === 'student' ? custType : (role === 'owner' ? 'vendor' : 'staff'),
         is_superadmin: isSuper,
         outlet_id: role === 'owner' || role === 'staff' ? 'g1' : undefined,
         outlet_name: role === 'owner' || role === 'staff' ? 'Gazebo C1 — Snacks & Fast Food' : undefined,
@@ -4682,10 +4678,10 @@ function AuthScreen({ onLoginUser }) {
       if (isSignUp) {
         const { data, error: authErr } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: fullName, role, cust_type: custType, reg_no: regNo } }
+          options: { data: { full_name: fullName, role } }
         })
         if (authErr) return setError(authErr.message)
-        onLoginUser({ id: data.user.id, full_name: fullName, reg_no: regNo, email, role, cust_type: custType, balance: 500 })
+        onLoginUser({ id: data.user.id, full_name: fullName, email, role, balance: 500 })
       } else {
         const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
         if (authErr) {
@@ -4693,12 +4689,12 @@ function AuthScreen({ onLoginUser }) {
           if (matched) return onLoginUser(matched)
           return setError(authErr.message)
         }
-        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'student', cust_type: 'student', balance: 500 })
+        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'user', balance: 500 })
       }
     } else {
       const matched = TEST_USERS.find(u => u.email === email)
       if (matched) onLoginUser(matched)
-      else onLoginUser({ id: 'usr-new', full_name: fullName || email.split('@')[0], reg_no: regNo, email, role, cust_type: custType, balance: 500 })
+      else onLoginUser({ id: 'usr-new', full_name: fullName || email.split('@')[0], email, role, balance: 500 })
     }
   }
 
@@ -4706,32 +4702,32 @@ function AuthScreen({ onLoginUser }) {
     <div className="login-container">
       <div className="login-art">
         <div className="login-art-top">
-          <img src="/vit-chennai-logo.png" alt="VIT Chennai" className="vit-logo-img" />
+          <img src="/vit-chennai-logo.png" alt="V-FOOD Logo" className="vit-logo-img" />
           <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-FOOD</span>
         </div>
         <div>
-          <h1>Unified Food<br />Ordering & Prepaid<br /><span>Campus Wallet</span></h1>
+          <h1>Unified Food<br />Ordering & Smart<br /><span>Dining Platform</span></h1>
           <p style={{ marginTop: '16px', color: '#94A3B8', fontSize: '15px', lineHeight: 1.6 }}>
             Skip the queue. Order ahead. Pay smart.
-            <br />VIT Chennai Campus — Fast & Queue-Free Dining.
+            <br />Seamless food ordering and kitchen dispatch for everyone.
           </p>
         </div>
-        <small style={{ color: '#64748B' }}>© 2026 VIT Chennai · V-FOOD Campus Dining System</small>
+        <small style={{ color: '#64748B' }}>© 2026 V-FOOD · Smart Food Ordering System</small>
       </div>
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
-              VIT Chennai Auth
+              V-FOOD Access
             </span>
           </div>
 
-          <h2>{isSignUp ? 'Register Campus Account' : 'Sign In to V-FOOD'}</h2>
+          <h2>{isSignUp ? 'Create New Account' : 'Sign In to V-FOOD'}</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
             {authMethod === 'phone'
               ? (isSignUp ? 'Enter your details & verify with Mobile OTP' : 'Instant 1-tap login via Mobile OTP')
-              : 'Sign in using your institutional email & password'}
+              : 'Sign in using your email & password'}
           </p>
 
           {/* Primary / Secondary Method Toggle Tabs */}
@@ -4770,49 +4766,28 @@ function AuthScreen({ onLoginUser }) {
                       </div>
 
                       <div className="form-group">
-                        <label>Institutional Email ID *</label>
+                        <label>Email Address *</label>
                         <input
                           type="email"
                           value={regEmail}
                           onChange={e => setRegEmail(e.target.value)}
-                          placeholder="student@vitstudent.ac.in"
+                          placeholder="e.g. rahul.sharma@gmail.com"
                           required
                         />
                         <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                          Official VIT email used for electronic order receipts and campus wallet verification.
+                          Used for order receipts, payment invoices, and account recovery.
                         </small>
                       </div>
 
                       <div className="form-group">
-                        <label>Student Reg No / Staff ID <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '11.5px' }}>(Optional)</span></label>
-                        <input
-                          type="text"
-                          value={regNo}
-                          onChange={e => setRegNo(e.target.value.toUpperCase())}
-                          placeholder="e.g. 22BCE1045 or EMP-8821"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Campus Role</label>
+                        <label>Account Role</label>
                         <select value={role} onChange={e => setRole(e.target.value)}>
-                          <option value="student">🎓 Student (Browse, Order & Wallet)</option>
-                          <option value="staff">👨‍🍳 Kitchen Staff (KDS & Live Orders)</option>
-                          <option value="owner">🏪 Canteen Owner (Revenue & Settlement)</option>
-                          <option value="admin">🛡️ Super Admin (Full Campus Telemetry)</option>
+                          <option value="user">👤 User (Customer — Browse, Order & Wallet)</option>
+                          <option value="staff">👨‍🍳 Shop Staff (Kitchen Orders & Dispatch)</option>
+                          <option value="owner">🏪 Shop Owner (Sales & Store Management)</option>
+                          <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
                         </select>
                       </div>
-
-                      {role === 'student' && (
-                        <div className="form-group">
-                          <label>Category</label>
-                          <select value={custType} onChange={e => setCustType(e.target.value)}>
-                            <option value="student">Hosteller / Day Scholar</option>
-                            <option value="faculty">Faculty Member</option>
-                            <option value="outsider">Campus Guest / Visitor</option>
-                          </select>
-                        </div>
-                      )}
                     </>
                   )}
 
@@ -4860,10 +4835,10 @@ function AuthScreen({ onLoginUser }) {
                     </div>
                   </div>
 
-                  {/* Simulated Campus SMS Gateway Banner */}
+                  {/* SMS Gateway Banner */}
                   <div className="sms-preview-banner">
                     <div>
-                      <strong>💬 VIT SMS Gateway:</strong><br />
+                      <strong>💬 SMS Gateway:</strong><br />
                       <span>Your V-FOOD verification code is <strong>4826</strong> (Valid for 5 mins).</span>
                     </div>
                     <button
@@ -4915,45 +4890,37 @@ function AuthScreen({ onLoginUser }) {
             </div>
           )}
 
-          {/* ════ SECONDARY FLOW: COLLEGE EMAIL & PASSWORD ════ */}
+          {/* ════ SECONDARY FLOW: EMAIL & PASSWORD ════ */}
           {authMethod === 'email' && (
             <form onSubmit={handleEmailSubmit}>
               {isSignUp && (
-                <>
-                  <div className="form-group">
-                    <label>Full Name *</label>
-                    <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" required />
-                  </div>
-                  <div className="form-group">
-                    <label>Student Reg No / Staff ID <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '11.5px' }}>(Optional)</span></label>
-                    <input value={regNo} onChange={e => setRegNo(e.target.value.toUpperCase())} placeholder="e.g. 22BCE1045 or EMP-8821" />
-                  </div>
-                </>
+                <div className="form-group">
+                  <label>Full Name *</label>
+                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" required />
+                </div>
               )}
               <div className="form-group">
-                <label>Institutional Email ID *</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="staff@vit.ac.in or student@vitstudent.ac.in" required />
+                <label>Email Address *</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" required />
               </div>
               <div className="form-group">
                 <label>Password *</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
               </div>
               {isSignUp && (
-                <>
-                  <div className="form-group">
-                    <label>Account Role</label>
-                    <select value={role} onChange={e => setRole(e.target.value)}>
-                      <option value="student">🎓 Student (Browse, Order & Wallet)</option>
-                      <option value="staff">👨‍🍳 Kitchen Staff (KDS & Live Orders)</option>
-                      <option value="owner">🏪 Canteen Owner (Revenue & Settlement)</option>
-                      <option value="admin">🛡️ Super Admin (Full Campus Telemetry)</option>
-                    </select>
-                  </div>
-                </>
+                <div className="form-group">
+                  <label>Account Role</label>
+                  <select value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="user">👤 User (Customer — Browse, Order & Wallet)</option>
+                    <option value="staff">👨‍🍳 Shop Staff (Kitchen Orders & Dispatch)</option>
+                    <option value="owner">🏪 Shop Owner (Sales & Store Management)</option>
+                    <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
+                  </select>
+                </div>
               )}
               {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
               <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
-                {isSignUp ? 'Create Campus Account' : 'Sign In with Email & Password'} <ArrowRight size={16} />
+                {isSignUp ? 'Create Account' : 'Sign In with Email & Password'} <ArrowRight size={16} />
               </button>
             </form>
           )}
@@ -4975,13 +4942,13 @@ function AuthScreen({ onLoginUser }) {
                   key={i}
                   className="quick-chip"
                   onClick={() => onLoginUser(u)}
-                  title={`Login as ${u.role}`}
+                  title={`Login as ${u.full_name}`}
                 >
                   <span style={{ fontSize: '13px' }}>
-                    {u.role === 'student' ? '🎓' : u.role === 'staff' ? '👨‍🍳' : u.role === 'owner' ? '🏪' : '🛡️'}
+                    {u.role === 'user' ? '👤' : u.role === 'staff' ? '👨‍🍳' : u.role === 'owner' ? '🏪' : '🛡️'}
                   </span>
                   <span style={{ fontWeight: 700 }}>
-                    {u.role === 'student' ? 'Student' : u.role === 'staff' ? 'Staff' : u.role === 'owner' ? 'Shop Owner' : 'Super Admin'}
+                    {u.role === 'user' ? 'User' : u.role === 'staff' ? 'Shop Staff' : u.role === 'owner' ? 'Shop Owner' : 'Super Admin (Me)'}
                   </span>
                 </button>
               ))}
