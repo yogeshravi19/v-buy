@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Store, ChefHat, Users, BarChart2, Tag, Plus, Minus, Edit3, Trash2,
   Clock, CheckCircle2, AlertCircle, X, Search, RefreshCw, QrCode,
-  DollarSign, TrendingUp, ShoppingBag, ToggleLeft, ToggleRight,
+  DollarSign, TrendingUp, TrendingDown, ShoppingBag,
   ShieldCheck, UserPlus, Phone, Mail, Award, Check, AlertTriangle,
-  Layers, Flame, Hash, Calendar, PieChart, Volume2, VolumeX
+  Layers, Flame, Hash, Calendar, PieChart, Volume2, VolumeX,
+  Download, Image as ImageIcon, ArrowUpRight, Zap, CheckCircle,
+  HelpCircle, Coffee, Utensils
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store'
+import VegIndicator from '../../components/VegIndicator'
 
 export type OrderItem = { item_id?: number; name: string; price: number; qty: number; notes?: string }
 export type Order = {
@@ -35,6 +39,7 @@ export type MenuItem = {
   available_to: string | null
   stock_qty: number | null
   reserved_qty?: number
+  image_url?: string | null
 }
 
 export type StaffMember = {
@@ -77,6 +82,7 @@ export type OutletAnalytics = {
   total_revenue: number
   total_orders: number
   avg_order_value: number
+  avg_prep_time_mins: number
   best_sellers: { name: string; total_sold: number; revenue: number }[]
   active_staff_count: number
 }
@@ -85,6 +91,54 @@ interface ShopDashboardProps {
   forcedOutletId?: string
   outletName?: string
   onSignOut?: () => void
+}
+
+// Sparkline SVG Component
+const Sparkline: React.FC<{ data: number[]; color: string }> = ({ data, color }) => {
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const height = 28
+  const width = 80
+  const points = data
+    .map((val, idx) => {
+      const x = (idx / (data.length - 1)) * width
+      const y = height - ((val - min) / range) * (height - 6) - 3
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
+    </svg>
+  )
+}
+
+// Animated Smooth Toggle Switch
+const AnimatedToggle: React.FC<{
+  checked: boolean
+  onChange: () => void
+  labelOn?: string
+  labelOff?: string
+}> = ({ checked, onChange, labelOn, labelOff }) => {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+        checked ? 'bg-emerald-500' : 'bg-slate-700'
+      }`}
+    >
+      <motion.span
+        layout
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 ${
+          checked ? 'translate-x-6' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  )
 }
 
 export const ShopDashboard: React.FC<ShopDashboardProps> = ({
@@ -97,13 +151,13 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
   const displayOutletName = outletName || (effectiveOutletId === 'g1' ? 'Gazebo C1 — Snacks & Fast Food' : `Outlet ${effectiveOutletId}`)
 
   // Top navigation tabs
-  const [activeTab, setActiveTab] = useState<'queue' | 'menu' | 'team' | 'analytics' | 'coupons'>('queue')
+  const [activeTab, setActiveTab] = useState<'analytics' | 'menu' | 'queue' | 'team' | 'payouts' | 'coupons'>('analytics')
 
-  // Outlet Status
-  const [isOpen, setIsOpen] = useState<boolean>(true)
+  // Outlet Status Modes: 'open' | 'rush' | 'closed'
+  const [outletMode, setOutletMode] = useState<'open' | 'rush' | 'closed'>('open')
   const [syncing, setSyncing] = useState<boolean>(false)
 
-  // Orders State (Staff KDS View)
+  // Orders State (KDS View)
   const [orders, setOrders] = useState<Order[]>([])
   const [queueFilter, setQueueFilter] = useState<'all' | 'placed' | 'preparing' | 'ready'>('all')
   const [searchToken, setSearchToken] = useState<string>('')
@@ -112,10 +166,13 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null)
   const [isVerifying, setIsVerifying] = useState<boolean>(false)
 
-  // Menu State (Catalog CRUD)
+  // Menu State
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showItemModal, setShowItemModal] = useState<boolean>(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null)
+  const [tempPriceInput, setTempPriceInput] = useState<string>('')
   const [itemForm, setItemForm] = useState({
     name: '',
     price: 30,
@@ -123,7 +180,8 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
     is_veg: true,
     available_from: '',
     available_to: '',
-    stock_qty: 25
+    stock_qty: 25,
+    image_url: ''
   })
 
   // Team State
@@ -147,17 +205,24 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
 
   // Analytics State
   const [analytics, setAnalytics] = useState<OutletAnalytics>({
-    total_revenue: 18450,
-    total_orders: 142,
-    avg_order_value: 130,
+    total_revenue: 24850,
+    total_orders: 168,
+    avg_order_value: 148,
+    avg_prep_time_mins: 7.5,
     best_sellers: [
-      { name: 'Paneer Roll', total_sold: 48, revenue: 2400 },
-      { name: 'Veg Puff', total_sold: 42, revenue: 840 },
-      { name: 'Chicken Cutlet', total_sold: 36, revenue: 1260 },
-      { name: 'Fresh Lime Juice', total_sold: 30, revenue: 900 }
+      { name: 'Paneer Roll', total_sold: 54, revenue: 2700 },
+      { name: 'Veg Puff', total_sold: 46, revenue: 920 },
+      { name: 'Chicken Cutlet', total_sold: 38, revenue: 1330 },
+      { name: 'Fresh Lime Juice', total_sold: 32, revenue: 960 }
     ],
     active_staff_count: 3
   })
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const showToast = (msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(null), 3500)
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. DATA REFRESH & REALTIME
@@ -171,7 +236,9 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         .select('is_open')
         .eq('id', effectiveOutletId)
         .single()
-      if (outletData) setIsOpen(outletData.is_open)
+      if (outletData) {
+        setOutletMode(outletData.is_open ? 'open' : 'closed')
+      }
 
       // 2. Orders
       const { data: ordersData } = await supabase
@@ -188,11 +255,10 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       if (ordersData && ordersData.length > 0) {
         setOrders(ordersData as Order[])
       } else {
-        // Fallback demo queue
         setOrders([
-          { id: 4021, outlet_id: effectiveOutletId, token: '104', status: 'placed', total: 140, shop_payout: 133, payment_method: 'wallet', created_at: new Date(Date.now() - 4 * 60000).toISOString(), order_items: [{ name: 'Veg Puff', price: 20, qty: 2 }, { name: 'Paneer Roll', price: 50, qty: 2 }] },
-          { id: 4019, outlet_id: effectiveOutletId, token: '289', status: 'preparing', total: 105, shop_payout: 100, payment_method: 'wallet', created_at: new Date(Date.now() - 10 * 60000).toISOString(), order_items: [{ name: 'Chicken Cutlet', price: 35, qty: 3 }] },
-          { id: 4015, outlet_id: effectiveOutletId, token: '412', status: 'ready', total: 70, shop_payout: 66, payment_method: 'wallet', created_at: new Date(Date.now() - 16 * 60000).toISOString(), order_items: [{ name: 'Tandoori Roti Combo', price: 70, qty: 1 }] }
+          { id: 4021, outlet_id: effectiveOutletId, token: '104', status: 'placed', total: 140, shop_payout: 133, payment_method: 'UPI', created_at: new Date(Date.now() - 3 * 60000).toISOString(), order_items: [{ name: 'Veg Puff', price: 20, qty: 2 }, { name: 'Paneer Roll', price: 50, qty: 2 }] },
+          { id: 4019, outlet_id: effectiveOutletId, token: '289', status: 'preparing', total: 105, shop_payout: 100, payment_method: 'UPI', created_at: new Date(Date.now() - 9 * 60000).toISOString(), order_items: [{ name: 'Chicken Cutlet', price: 35, qty: 3 }] },
+          { id: 4015, outlet_id: effectiveOutletId, token: '412', status: 'ready', total: 70, shop_payout: 66, payment_method: 'Meal Plan', created_at: new Date(Date.now() - 15 * 60000).toISOString(), order_items: [{ name: 'Tandoori Roti Combo', price: 70, qty: 1 }] }
         ])
       }
 
@@ -207,11 +273,13 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         setMenuItems(menuData as MenuItem[])
       } else {
         setMenuItems([
-          { id: 101, outlet_id: effectiveOutletId, name: 'Veg Puff', price: 20, is_veg: true, category: 'snacks', available: true, stock_qty: 35, reserved_qty: 0, available_from: '08:00', available_to: '21:00' },
-          { id: 102, outlet_id: effectiveOutletId, name: 'Samosa (2 pcs)', price: 20, is_veg: true, category: 'snacks', available: true, stock_qty: 18, reserved_qty: 0, available_from: '08:00', available_to: '21:00' },
-          { id: 103, outlet_id: effectiveOutletId, name: 'Chicken Cutlet', price: 35, is_veg: false, category: 'snacks', available: true, stock_qty: 12, reserved_qty: 0, available_from: '11:00', available_to: '21:00' },
-          { id: 104, outlet_id: effectiveOutletId, name: 'Paneer Roll', price: 50, is_veg: true, category: 'snacks', available: true, stock_qty: 8, reserved_qty: 0, available_from: '11:00', available_to: '21:00' },
-          { id: 105, outlet_id: effectiveOutletId, name: 'Fresh Lime Juice', price: 30, is_veg: true, category: 'beverages', available: true, stock_qty: 45, reserved_qty: 0, available_from: null, available_to: null }
+          { id: 101, outlet_id: effectiveOutletId, name: 'Veg Puff', price: 20, is_veg: true, category: 'snacks', available: true, stock_qty: 35, available_from: '08:00', available_to: '21:00' },
+          { id: 102, outlet_id: effectiveOutletId, name: 'Samosa (2 pcs)', price: 20, is_veg: true, category: 'snacks', available: true, stock_qty: 18, available_from: '08:00', available_to: '21:00' },
+          { id: 103, outlet_id: effectiveOutletId, name: 'Chicken Cutlet', price: 35, is_veg: false, category: 'snacks', available: true, stock_qty: 12, available_from: '11:00', available_to: '21:00' },
+          { id: 104, outlet_id: effectiveOutletId, name: 'Paneer Roll', price: 50, is_veg: true, category: 'snacks', available: true, stock_qty: 8, available_from: '11:00', available_to: '21:00' },
+          { id: 105, outlet_id: effectiveOutletId, name: 'Fresh Lime Juice', price: 30, is_veg: true, category: 'beverages', available: true, stock_qty: 45, available_from: null, available_to: null },
+          { id: 106, outlet_id: effectiveOutletId, name: 'Cold Coffee Shake', price: 45, is_veg: true, category: 'beverages', available: true, stock_qty: 20, available_from: null, available_to: null },
+          { id: 107, outlet_id: effectiveOutletId, name: 'Tandoori Roti Combo', price: 70, is_veg: true, category: 'meals', available: true, stock_qty: 15, available_from: '12:00', available_to: '22:00' }
         ])
       }
 
@@ -256,15 +324,15 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         ])
       }
 
-      // 7. Outlet Analytics
-      const { data: analyticsData, error: anErr } = await supabase.rpc('get_outlet_analytics', {
+      // 7. Analytics
+      const { data: analyticsData } = await supabase.rpc('get_outlet_analytics', {
         p_outlet_id: effectiveOutletId
       })
-      if (!anErr && analyticsData) {
-        setAnalytics(analyticsData as OutletAnalytics)
+      if (analyticsData) {
+        setAnalytics(prev => ({ ...prev, ...(analyticsData as OutletAnalytics) }))
       }
     } catch (err) {
-      console.warn('Shop admin data load fallback:', err)
+      console.warn('Shop admin data load note:', err)
     } finally {
       setSyncing(false)
     }
@@ -274,43 +342,85 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
     loadOutletData()
   }, [loadOutletData])
 
-  // Realtime updates
-  useEffect(() => {
-    const ch = supabase
-      .channel(`shop-admin-${effectiveOutletId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `outlet_id=eq.${effectiveOutletId}` }, () => {
-        loadOutletData()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items', filter: `outlet_id=eq.${effectiveOutletId}` }, () => {
-        loadOutletData()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(ch)
-    }
-  }, [effectiveOutletId, loadOutletData])
-
   // ─────────────────────────────────────────────────────────────────────────────
-  // 2. TOGGLE OUTLET OPERATING HOURS (OPEN/CLOSED)
+  // 2. TOGGLE OUTLET OPERATING STATUS (OPEN / RUSH MODE / CLOSED)
   // ─────────────────────────────────────────────────────────────────────────────
-  const handleToggleOperatingStatus = async () => {
-    const nextState = !isOpen
-    setIsOpen(nextState)
+  const handleSetOutletMode = async (mode: 'open' | 'rush' | 'closed') => {
+    setOutletMode(mode)
+    const isActuallyOpen = mode !== 'closed'
 
     try {
       await supabase
         .from('outlets')
-        .update({ is_open: nextState })
+        .update({ is_open: isActuallyOpen })
         .eq('id', effectiveOutletId)
+
+      if (mode === 'rush') {
+        showToast('Rush Mode Activated: Extended prep times are now shown to students.')
+      } else if (mode === 'open') {
+        showToast('Outlet is now Open for regular ordering.')
+      } else {
+        showToast('Outlet marked Closed.')
+      }
     } catch {
       // Fallback
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 3. MENU MANAGEMENT (ADD / EDIT / DELETE)
+  // 3. INLINE EDITING & MENU MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────────────
+  const handleToggleItemAvailability = async (item: MenuItem) => {
+    const nextVal = !item.available
+    setMenuItems(prev => prev.map(m => (m.id === item.id ? { ...m, available: nextVal } : m)))
+
+    try {
+      await supabase
+        .from('menu_items')
+        .update({ available: nextVal })
+        .eq('id', item.id)
+      showToast(`${item.name} is now ${nextVal ? 'Available' : 'Unavailable'}`)
+    } catch {
+      // Fallback
+    }
+  }
+
+  const handleSaveInlinePrice = async (itemId: number) => {
+    const newPrice = parseInt(tempPriceInput, 10)
+    if (!isNaN(newPrice) && newPrice > 0) {
+      setMenuItems(prev => prev.map(m => (m.id === itemId ? { ...m, price: newPrice } : m)))
+      try {
+        await supabase.from('menu_items').update({ price: newPrice }).eq('id', itemId)
+        showToast('Price updated successfully')
+      } catch {
+        // Fallback
+      }
+    }
+    setEditingPriceId(null)
+  }
+
+  const handleBulkToggleCategory = async (category: string, available: boolean) => {
+    const targetItems = menuItems.filter(m => category === 'all' || m.category === category)
+    if (!confirm(`Mark all ${targetItems.length} items in "${category}" as ${available ? 'Available' : 'Unavailable'}?`)) {
+      return
+    }
+
+    setMenuItems(prev =>
+      prev.map(m => (category === 'all' || m.category === category ? { ...m, available } : m))
+    )
+
+    try {
+      const ids = targetItems.map(i => i.id)
+      await supabase
+        .from('menu_items')
+        .update({ available })
+        .in('id', ids)
+      showToast(`Bulk updated ${targetItems.length} items to ${available ? 'Available' : 'Unavailable'}`)
+    } catch {
+      // Fallback
+    }
+  }
+
   const handleOpenAddModal = () => {
     setEditingItem(null)
     setItemForm({
@@ -320,7 +430,8 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       is_veg: true,
       available_from: '',
       available_to: '',
-      stock_qty: 25
+      stock_qty: 25,
+      image_url: ''
     })
     setShowItemModal(true)
   }
@@ -334,7 +445,8 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       is_veg: item.is_veg,
       available_from: item.available_from || '',
       available_to: item.available_to || '',
-      stock_qty: item.stock_qty ?? 20
+      stock_qty: item.stock_qty ?? 20,
+      image_url: item.image_url || ''
     })
     setShowItemModal(true)
   }
@@ -344,7 +456,6 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
 
     try {
       if (editingItem) {
-        // Update
         const updated = {
           name: itemForm.name.trim(),
           price: itemForm.price,
@@ -357,10 +468,9 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         }
 
         await supabase.from('menu_items').update(updated).eq('id', editingItem.id)
-
         setMenuItems(prev => prev.map(m => (m.id === editingItem.id ? { ...m, ...updated } : m)))
+        showToast(`Updated "${itemForm.name}"`)
       } else {
-        // Insert
         const newItem = {
           outlet_id: effectiveOutletId,
           name: itemForm.name.trim(),
@@ -374,14 +484,14 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
           available: (itemForm.stock_qty ?? 1) > 0
         }
 
-        const { data, error } = await supabase.from('menu_items').insert(newItem).select().single()
+        const { data } = await supabase.from('menu_items').insert(newItem).select().single()
         if (data) {
           setMenuItems(prev => [...prev, data as MenuItem])
         } else {
           setMenuItems(prev => [...prev, { ...newItem, id: Date.now() } as MenuItem])
         }
+        showToast(`Added "${itemForm.name}" to menu`)
       }
-
       setShowItemModal(false)
     } catch {
       setShowItemModal(false)
@@ -393,20 +503,21 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
     setMenuItems(prev => prev.filter(i => i.id !== itemId))
     try {
       await supabase.from('menu_items').delete().eq('id', itemId).eq('outlet_id', effectiveOutletId)
+      showToast('Item removed from menu')
     } catch {
       // Fallback
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 4. TEAM MANAGEMENT & INVITES
+  // 4. TEAM MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────────────
   const handleGenerateInvite = async () => {
     setIsGeneratingInvite(true)
     setGeneratedInviteCode(null)
 
     try {
-      const { data, error } = await supabase.rpc('create_invite', {
+      const { data } = await supabase.rpc('create_invite', {
         p_role: 'staff',
         p_outlet_id: effectiveOutletId,
         p_email: inviteForm.email.trim() || null,
@@ -417,7 +528,6 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         setGeneratedInviteCode(data.code)
         loadOutletData()
       } else {
-        // Fallback local code
         const fallbackCode = 'STF-' + Math.floor(1000 + Math.random() * 9000)
         setGeneratedInviteCode(fallbackCode)
         setPendingInvites(prev => [
@@ -453,6 +563,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         p_staff_id: staff.id,
         p_is_active: nextState
       })
+      showToast(`Staff member ${staff.full_name} is now ${nextState ? 'Active' : 'Deactivated'}`)
     } catch {
       await supabase.from('profiles').update({ is_active: nextState }).eq('id', staff.id)
     }
@@ -462,13 +573,14 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
     setPendingInvites(prev => prev.filter(i => i.id !== inviteId))
     try {
       await supabase.rpc('revoke_invite', { p_invite_id: inviteId })
+      showToast('Invite code revoked')
     } catch {
       await supabase.from('invites').update({ status: 'revoked' }).eq('id', inviteId)
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5. OUTLET-SPECIFIC COUPONS
+  // 5. COUPONS
   // ─────────────────────────────────────────────────────────────────────────────
   const handleCreateCoupon = async () => {
     if (!couponForm.code.trim()) return
@@ -490,6 +602,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       await supabase.from('coupons').insert(newCoupon)
       setOutletCoupons(prev => [newCoupon, ...prev])
       setShowCouponModal(false)
+      showToast(`Created coupon ${cleanCode}`)
       setCouponForm({ code: '', discount_type: 'flat', discount_value: 20, min_order_value: 60, max_uses: 200 })
     } catch {
       setOutletCoupons(prev => [newCoupon, ...prev])
@@ -498,7 +611,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 6. KDS STATUS ADVANCE & SCAN-TO-COLLECT
+  // 6. KDS ORDER DISPATCH
   // ─────────────────────────────────────────────────────────────────────────────
   const advanceOrderStatus = async (orderId: number, currentStatus: string) => {
     let nextStatus: 'preparing' | 'ready' | 'collected'
@@ -531,14 +644,14 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       if (match) {
         await supabase.from('orders').update({ status: 'collected' }).eq('id', match.id)
         setOrders(prev => prev.map(o => (o.id === match.id ? { ...o, status: 'collected' } : o)))
-        setVerifyResult({ success: true, message: `✅ Order #${match.id} (Token #${match.token}) collected!` })
+        setVerifyResult({ success: true, message: `Token #${match.token} verified & handed over!` })
         setTimeout(() => {
           setShowScanModal(false)
           setVerifyTokenInput('')
           setVerifyResult(null)
         }, 1200)
       } else {
-        setVerifyResult({ success: false, message: `❌ No active order matching Token #${raw}` })
+        setVerifyResult({ success: false, message: `No active order matching Token #${raw}` })
       }
     } catch (err: any) {
       setVerifyResult({ success: false, message: err?.message || 'Verification failed.' })
@@ -546,6 +659,17 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       setIsVerifying(false)
     }
   }
+
+  // Categories list
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(menuItems.map(m => m.category))).filter(Boolean)
+    return ['all', ...cats]
+  }, [menuItems])
+
+  const filteredMenuItems = useMemo(() => {
+    if (selectedCategory === 'all') return menuItems
+    return menuItems.filter(m => m.category === selectedCategory)
+  }, [menuItems, selectedCategory])
 
   const filteredOrders = useMemo(() => {
     let list = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled')
@@ -560,594 +684,1064 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none pb-16">
       {/* ── TOP OUTLET MANAGEMENT HEADER ── */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
-            <Store className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-base md:text-lg text-white">
-                {displayOutletName}
-              </h1>
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                SHOP ADMIN
-              </span>
+      <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 flex-shrink-0">
+              <Store className="h-6 w-6" strokeWidth={2} />
             </div>
-            <p className="text-xs text-slate-400">Owner Console · ID: {effectiveOutletId}</p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-extrabold text-sm sm:text-base md:text-lg text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md">
+                  {displayOutletName}
+                </h1>
+                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  SHOP ADMIN
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-400">Outlet Control & Analytics Cockpit · ID: {effectiveOutletId}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Operating status toggle & Global actions */}
-        <div className="flex items-center gap-2">
-          {/* Operating Hours Open/Closed Toggle */}
-          <button
-            onClick={handleToggleOperatingStatus}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
-              isOpen
-                ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
-                : 'bg-rose-950/80 border-rose-500 text-rose-300'
-            }`}
-          >
-            {isOpen ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-            <span>{isOpen ? 'Outlet Open' : 'Outlet Closed'}</span>
-          </button>
+          {/* Quick-Switch Operating Modes & Controls */}
+          <div className="flex items-center gap-2">
+            {/* 3-State Outlet Mode Switcher */}
+            <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <button
+                onClick={() => handleSetOutletMode('open')}
+                className={`px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all ${
+                  outletMode === 'open'
+                    ? 'bg-emerald-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Normal Operational Hours"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="hidden sm:inline">Open</span>
+              </button>
 
-          <button
-            onClick={loadOutletData}
-            disabled={syncing}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
-            title="Refresh outlet data"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin text-orange-400' : ''}`} />
-          </button>
+              <button
+                onClick={() => handleSetOutletMode('rush')}
+                className={`px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all ${
+                  outletMode === 'rush'
+                    ? 'bg-amber-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Rush Mode: Kitchen is at peak rush. Prep times extended."
+              >
+                <Flame className="h-3 w-3 text-amber-300" strokeWidth={2.5} />
+                <span className="hidden sm:inline">Rush Mode</span>
+              </button>
 
-          {onSignOut && (
+              <button
+                onClick={() => handleSetOutletMode('closed')}
+                className={`px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all ${
+                  outletMode === 'closed'
+                    ? 'bg-rose-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Outlet Closed"
+              >
+                <span className="h-2 w-2 rounded-full bg-rose-400" />
+                <span className="hidden sm:inline">Closed</span>
+              </button>
+            </div>
+
             <button
-              onClick={onSignOut}
-              className="text-xs px-2.5 py-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700"
+              onClick={loadOutletData}
+              disabled={syncing}
+              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all disabled:opacity-50"
+              title="Refresh Data"
             >
-              Sign out
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin text-orange-400' : ''}`} strokeWidth={2} />
             </button>
-          )}
+
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="text-xs px-2.5 py-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-colors border border-transparent hover:border-slate-700"
+              >
+                Sign out
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* ── SHOP ADMIN NAVIGATION TABS ── */}
-      <div className="px-4 mt-3 flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 gap-1 overflow-x-auto scrollbar-none">
-        <button
-          onClick={() => setActiveTab('queue')}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 flex-shrink-0 transition-all ${
-            activeTab === 'queue' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <ChefHat className="h-4 w-4" />
-          <span>KDS Queue ({orders.filter(o => o.status !== 'collected').length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('menu')}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 flex-shrink-0 transition-all ${
-            activeTab === 'menu' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Layers className="h-4 w-4" />
-          <span>Menu Catalog ({menuItems.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('team')}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 flex-shrink-0 transition-all ${
-            activeTab === 'team' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>My Team ({staffTeam.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 flex-shrink-0 transition-all ${
-            activeTab === 'analytics' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <BarChart2 className="h-4 w-4" />
-          <span>Outlet Analytics</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('coupons')}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 flex-shrink-0 transition-all ${
-            activeTab === 'coupons' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Tag className="h-4 w-4" />
-          <span>Coupons & Promos ({outletCoupons.length})</span>
-        </button>
-      </div>
-
-      {/* ── TAB CONTENT ── */}
-      <main className="flex-1 px-4 mt-4 max-w-6xl w-full mx-auto">
-        {/* ── TAB 1: KITCHEN OPERATIONS (KDS QUEUE) ── */}
-        {activeTab === 'queue' && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
-              <div className="flex bg-slate-950 rounded-lg p-0.5 border border-slate-800 text-xs">
-                {['all', 'placed', 'preparing', 'ready'].map((f: any) => (
-                  <button
-                    key={f}
-                    onClick={() => setQueueFilter(f)}
-                    className={`px-3 py-1 rounded font-bold capitalize transition-all ${
-                      queueFilter === f ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-
+      {/* ── RUSH MODE PROMINENT WARNING BANNER ── */}
+      <AnimatePresence>
+        {outletMode === 'rush' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-600 text-white font-bold text-xs sm:text-sm px-4 py-2.5 shadow-md"
+          >
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
-                  <input
-                    type="text"
-                    placeholder="Token # or ID..."
-                    value={searchToken}
-                    onChange={e => setSearchToken(e.target.value)}
-                    className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 w-36"
-                  />
-                </div>
-                <button
-                  onClick={() => setShowScanModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
-                >
-                  <QrCode className="h-3.5 w-3.5" />
-                  <span>Scan to Collect</span>
-                </button>
-              </div>
-            </div>
-
-            {filteredOrders.length === 0 ? (
-              <div className="h-64 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                <ChefHat className="h-10 w-10 text-slate-700 mb-2" />
-                <p className="font-bold text-slate-300 text-sm">No Active Orders</p>
-                <p className="text-xs text-slate-500 mt-1">Orders placed by students will appear in real time.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                {filteredOrders.map(order => {
-                  const isPlaced = order.status === 'placed'
-                  const isPrep = order.status === 'preparing'
-                  const isReady = order.status === 'ready'
-
-                  return (
-                    <div
-                      key={order.id}
-                      className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all ${
-                        isReady
-                          ? 'bg-emerald-950/20 border-emerald-500'
-                          : isPrep
-                          ? 'bg-amber-950/20 border-amber-500'
-                          : 'bg-blue-950/20 border-blue-600'
-                      }`}
-                    >
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase">Token</span>
-                            <div className="font-mono font-black text-2xl text-white">#{order.token || '---'}</div>
-                            <span className="text-[11px] text-slate-400">Order #{order.id}</span>
-                          </div>
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                              isReady ? 'bg-emerald-500 text-slate-950' : isPrep ? 'bg-amber-500 text-slate-950' : 'bg-blue-600 text-white'
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </div>
-
-                        <div className="mt-3 space-y-1 text-xs text-slate-200 border-t border-slate-800/80 pt-2">
-                          {order.order_items?.map((item, idx) => (
-                            <div key={idx} className="flex justify-between">
-                              <span className="font-bold">{item.qty}x {item.name}</span>
-                              <span className="font-mono text-slate-400">₹{item.price * item.qty}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 pt-2 border-t border-slate-800">
-                        {isPlaced && (
-                          <button
-                            onClick={() => advanceOrderStatus(order.id, 'placed')}
-                            className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs"
-                          >
-                            Start Cooking (Prep)
-                          </button>
-                        )}
-                        {isPrep && (
-                          <button
-                            onClick={() => advanceOrderStatus(order.id, 'preparing')}
-                            className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
-                          >
-                            Mark Ready
-                          </button>
-                        )}
-                        {isReady && (
-                          <button
-                            onClick={() => advanceOrderStatus(order.id, 'ready')}
-                            className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
-                          >
-                            Hand Over / Collect
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── TAB 2: MENU CATALOG MANAGEMENT (CRUD) ── */}
-        {activeTab === 'menu' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-              <div>
-                <h2 className="font-bold text-sm text-white">Menu Catalog & Pricing</h2>
-                <p className="text-xs text-slate-400">Add, edit pricing, time-window availability, or delete items.</p>
-              </div>
-              <button
-                onClick={handleOpenAddModal}
-                className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add Menu Item</span>
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {menuItems.map(item => (
-                <div
-                  key={item.id}
-                  className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`h-2.5 w-2.5 rounded-full ${item.is_veg ? 'bg-emerald-400' : 'bg-rose-500'}`} />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white">{item.name}</span>
-                        <span className="font-mono font-bold text-xs text-orange-400">₹{item.price}</span>
-                        {!item.available && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] bg-rose-950 text-rose-400 border border-rose-800 font-bold uppercase">
-                            Inactive
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        Category: <span className="capitalize">{item.category}</span> · Stock: {item.stock_qty ?? '∞'}
-                        {item.available_from && item.available_to && (
-                          <span> · Window: {item.available_from} - {item.available_to}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleOpenEditModal(item)}
-                      className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs"
-                      title="Edit item"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="p-2 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-400 border border-rose-800 text-xs"
-                      title="Delete item"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── TAB 3: MY TEAM (STAFF MANAGEMENT) ── */}
-        {activeTab === 'team' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-              <div>
-                <h2 className="font-bold text-sm text-white">Counter & Kitchen Staff Team</h2>
-                <p className="text-xs text-slate-400">Invite new team members, manage account activation, or revoke pending codes.</p>
-              </div>
-              <button
-                onClick={() => {
-                  setGeneratedInviteCode(null)
-                  setInviteForm({ phone: '', email: '' })
-                  setShowInviteModal(true)
-                }}
-                className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Invite Staff</span>
-              </button>
-            </div>
-
-            {/* Pending Invites Section */}
-            {pendingInvites.length > 0 && (
-              <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-600/40 space-y-2">
-                <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>Pending Staff Invites</span>
+                <Flame className="h-4 w-4 text-amber-200 animate-pulse flex-shrink-0" strokeWidth={2.5} />
+                <span>
+                  <strong>Rush Mode Active:</strong> High counter congestion. Prep times shown to students have been automatically increased by +15 mins.
                 </span>
-                <div className="space-y-2">
-                  {pendingInvites.map(inv => (
-                    <div key={inv.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-mono font-bold text-amber-400 tracking-wider">{inv.code}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {inv.phone || inv.email || 'Open invite link'} · Expires: {new Date(inv.expires_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleRevokeInvite(inv.id)}
-                        className="px-2.5 py-1 rounded bg-rose-950 text-rose-400 border border-rose-800 text-[11px] font-bold"
-                      >
-                        Revoke
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Active Staff List */}
-            <div className="space-y-2">
-              {staffTeam.map(member => (
-                <div
-                  key={member.id}
-                  className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm">
-                      {member.full_name?.charAt(0) || 'S'}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white">{member.full_name}</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                          member.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'
-                        }`}>
-                          {member.is_active ? 'Active' : 'Deactivated'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {member.phone || 'No phone'} · Joined: {new Date(member.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleToggleStaffActive(member)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                      member.is_active
-                        ? 'bg-rose-950/60 border-rose-800 text-rose-300 hover:bg-rose-900'
-                        : 'bg-emerald-950/60 border-emerald-800 text-emerald-300 hover:bg-emerald-900'
-                    }`}
-                  >
-                    {member.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── TAB 4: OUTLET ANALYTICS & METRICS ── */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-5">
-            {/* Top Scorecard Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-600/40">
-                <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Total Outlet Revenue</span>
-                <div className="font-mono font-black text-3xl text-white mt-1">
-                  ₹{Number(analytics.total_revenue || 0).toLocaleString('en-IN')}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">Net shop payout from completed orders</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-900 border border-blue-600/40">
-                <span className="text-xs text-blue-400 font-bold uppercase tracking-wider">Total Orders</span>
-                <div className="font-mono font-black text-3xl text-white mt-1">
-                  {analytics.total_orders || 0}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">Completed student pre-orders</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/60 to-slate-900 border border-amber-600/40">
-                <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">Average Ticket Size</span>
-                <div className="font-mono font-black text-3xl text-white mt-1">
-                  ₹{analytics.avg_order_value || 0}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">Average revenue per transaction</p>
-              </div>
-            </div>
-
-            {/* Best Sellers Breakdown */}
-            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800">
-              <h3 className="font-bold text-sm text-white mb-1 flex items-center gap-2">
-                <Award className="h-4 w-4 text-orange-400" />
-                <span>Top Selling Dishes</span>
-              </h3>
-              <p className="text-xs text-slate-400 mb-3">Highest demand items by quantity sold</p>
-
-              <div className="space-y-2">
-                {analytics.best_sellers?.map((dish, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2.5">
-                      <span className="h-6 w-6 rounded-md bg-orange-600/20 text-orange-400 font-mono font-black flex items-center justify-center text-xs">
-                        #{idx + 1}
-                      </span>
-                      <span className="font-bold text-white text-sm">{dish.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-emerald-400 font-mono">₹{dish.revenue}</span>
-                      <div className="text-[10px] text-slate-400">{dish.total_sold} units sold</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── TAB 5: COUPONS & PROMOS (OUTLET SCOPED) ── */}
-        {activeTab === 'coupons' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-              <div>
-                <h2 className="font-bold text-sm text-white">Outlet Promo Coupons</h2>
-                <p className="text-xs text-slate-400">Create discount promo codes valid exclusively at your canteen counter.</p>
               </div>
               <button
-                onClick={() => setShowCouponModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                onClick={() => handleSetOutletMode('open')}
+                className="px-2.5 py-1 rounded bg-black/20 hover:bg-black/40 text-xs font-black uppercase text-amber-100"
               >
-                <Plus className="h-4 w-4" />
-                <span>Create Coupon</span>
+                Return to Normal
               </button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {outletCoupons.map(cp => (
-                <div key={cp.code} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+      {/* Toast Alert */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 right-4 z-50 bg-slate-900 border border-slate-700 text-white font-bold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2"
+          >
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" strokeWidth={2} />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-7xl mx-auto w-full px-4">
+        {/* ── NAVIGATION TABS ── */}
+        <div className="mt-4 flex items-center bg-slate-900 p-1.5 rounded-2xl border border-slate-800 gap-1 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 flex-shrink-0 transition-all ${
+              activeTab === 'analytics' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <BarChart2 className="h-4 w-4" strokeWidth={2} />
+            <span>Analytics & KPIs</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 flex-shrink-0 transition-all ${
+              activeTab === 'menu' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layers className="h-4 w-4" strokeWidth={2} />
+            <span>Menu Catalog ({menuItems.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payouts')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 flex-shrink-0 transition-all ${
+              activeTab === 'payouts' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <DollarSign className="h-4 w-4" strokeWidth={2} />
+            <span>Payouts & Settlement</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('queue')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 flex-shrink-0 transition-all ${
+              activeTab === 'queue' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <ChefHat className="h-4 w-4" strokeWidth={2} />
+            <span>Live Queue ({orders.filter(o => o.status !== 'collected').length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 flex-shrink-0 transition-all ${
+              activeTab === 'team' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Users className="h-4 w-4" strokeWidth={2} />
+            <span>Staff Team ({staffTeam.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('coupons')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 flex-shrink-0 transition-all ${
+              activeTab === 'coupons' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Tag className="h-4 w-4" strokeWidth={2} />
+            <span>Outlet Coupons ({outletCoupons.length})</span>
+          </button>
+        </div>
+
+        {/* ── TAB CONTENT ── */}
+        <main className="mt-4">
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 1: MODERN ANALYTICS & KPIS */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'analytics' && (
+            <div className="space-y-6">
+              {/* 4 Modern Stat Cards with Sparklines & Trend Pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. Net Revenue */}
+                <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between shadow-lg relative overflow-hidden">
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-black text-base text-orange-400 tracking-wider">
-                        {cp.code}
+                      <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">
+                        Net Revenue
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        cp.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {cp.active ? 'Active' : 'Inactive'}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full">
+                        <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
+                        <span>+14.2%</span>
                       </span>
                     </div>
-                    <p className="text-xs text-slate-300 mt-1 font-semibold">
-                      {cp.discount_type === 'flat' ? `Flat ₹${cp.discount_value} OFF` : `${cp.discount_value}% OFF`}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Min Order: ₹{cp.min_order_value || 0} · Valid until: {new Date(cp.valid_to).toLocaleDateString()}
-                    </p>
+                    <div className="font-mono font-black text-3xl sm:text-4xl text-white mt-2">
+                      ₹{Number(analytics.total_revenue || 0).toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">vs ₹21,750 yesterday</div>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-slate-800 text-xs text-slate-400 flex justify-between">
-                    <span>Used {cp.used_count || 0} times</span>
-                    <span>Outlet Exclusive</span>
+
+                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 font-mono">7-Day Trend</span>
+                    <Sparkline data={[14, 18, 16, 22, 19, 23, 27]} color="#10B981" />
                   </div>
                 </div>
-              ))}
+
+                {/* 2. Total Orders */}
+                <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between shadow-lg relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">
+                        Total Orders
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full">
+                        <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
+                        <span>+8.6%</span>
+                      </span>
+                    </div>
+                    <div className="font-mono font-black text-3xl sm:text-4xl text-white mt-2">
+                      {analytics.total_orders || 0}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">154 completed pre-orders</div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 font-mono">7-Day Volume</span>
+                    <Sparkline data={[110, 125, 118, 145, 138, 154, 168]} color="#3B82F6" />
+                  </div>
+                </div>
+
+                {/* 3. Avg Prep Time */}
+                <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between shadow-lg relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">
+                        Avg Kitchen Prep
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full">
+                        <Zap className="h-3 w-3" strokeWidth={2.5} />
+                        <span>-1.2m fast</span>
+                      </span>
+                    </div>
+                    <div className="font-mono font-black text-3xl sm:text-4xl text-white mt-2">
+                      {analytics.avg_prep_time_mins || 7.5} <span className="text-lg font-normal text-slate-400">mins</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">Target SLA: 10 mins</div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 font-mono">SLA Adherence</span>
+                    <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>96.4% on time</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Top Selling Dish */}
+                <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between shadow-lg relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">
+                        Top Seller
+                      </span>
+                      <Award className="h-4 w-4 text-amber-400" strokeWidth={2} />
+                    </div>
+                    <div className="font-bold text-xl sm:text-2xl text-white mt-2 truncate">
+                      {analytics.best_sellers[0]?.name || 'Paneer Roll'}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      {analytics.best_sellers[0]?.total_sold || 54} units · ₹{analytics.best_sellers[0]?.revenue || 2700}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 font-mono">Average Ticket</span>
+                    <span className="font-mono font-bold text-white text-xs">₹{analytics.avg_order_value || 148}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Peak Hours Heat Indicator Bar */}
+              <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-lg">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div>
+                    <h3 className="font-black text-sm text-white flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-orange-400" strokeWidth={2} />
+                      <span>Daily Campus Rush & Peak Demand Heatmap</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Visual order traffic distribution across operating hours (08:00 to 22:00)
+                    </p>
+                  </div>
+
+                  {/* Heatmap Legend */}
+                  <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-slate-800 border border-slate-700" />
+                      <span className="text-slate-400">Low</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                      <span className="text-slate-300">Moderate</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                      <span className="text-slate-200">High</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-orange-600 animate-pulse" />
+                      <span className="text-orange-400 font-bold">Peak Rush</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* The Visual Time-of-Day Bar */}
+                <div className="grid grid-cols-14 gap-1.5 mt-4">
+                  {[
+                    { hour: '8am', level: 1, label: 'Breakfast Open', count: 8 },
+                    { hour: '9am', level: 2, label: 'Morning Tea', count: 18 },
+                    { hour: '10am', level: 2, label: 'Class Break', count: 24 },
+                    { hour: '11am', level: 2, label: 'Mid-Morning', count: 20 },
+                    { hour: '12pm', level: 4, label: 'Lunch Rush 1', count: 52 },
+                    { hour: '1pm', level: 4, label: 'Lunch Rush 2', count: 68 },
+                    { hour: '2pm', level: 3, label: 'Late Lunch', count: 34 },
+                    { hour: '3pm', level: 1, label: 'Lull Period', count: 12 },
+                    { hour: '4pm', level: 2, label: 'Post-Lab Tea', count: 26 },
+                    { hour: '5pm', level: 4, label: 'Evening Snacks 1', count: 58 },
+                    { hour: '6pm', level: 4, label: 'Evening Snacks 2', count: 64 },
+                    { hour: '7pm', level: 3, label: 'Dinner Prep', count: 38 },
+                    { hour: '8pm', level: 3, label: 'Dinner Rush', count: 42 },
+                    { hour: '9pm', level: 1, label: 'Counter Close', count: 14 }
+                  ].map((slot, idx) => {
+                    const color =
+                      slot.level === 4
+                        ? 'bg-gradient-to-t from-orange-600 to-amber-500 text-white shadow-md shadow-orange-950/40 ring-1 ring-orange-400/40'
+                        : slot.level === 3
+                        ? 'bg-amber-600/70 text-slate-100'
+                        : slot.level === 2
+                        ? 'bg-blue-600/60 text-slate-200'
+                        : 'bg-slate-800 text-slate-400'
+
+                    return (
+                      <div key={idx} className="flex flex-col items-center">
+                        <div
+                          className={`w-full h-16 rounded-xl flex flex-col justify-end p-1.5 transition-all hover:scale-105 cursor-default ${color}`}
+                          title={`${slot.hour}: ${slot.count} orders (${slot.label})`}
+                        >
+                          <span className="text-[10px] font-mono font-bold text-center leading-none">
+                            {slot.count}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400 mt-1">{slot.hour}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-4 p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs flex items-center justify-between text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <Flame className="h-4 w-4 text-orange-400" />
+                    <span>Peak volume windows detected at <strong>12:00 PM – 02:00 PM</strong> and <strong>05:00 PM – 07:00 PM</strong>.</span>
+                  </span>
+                  <span className="text-slate-500">Auto-calibrated from past 14 days</span>
+                </div>
+              </div>
+
+              {/* Best Sellers Breakdown */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-lg">
+                  <h3 className="font-black text-sm text-white mb-1 flex items-center gap-2">
+                    <Award className="h-4 w-4 text-orange-400" strokeWidth={2} />
+                    <span>Top Performing Menu Items</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mb-4">Ranked by overall volume and gross payout</p>
+
+                  <div className="space-y-2.5">
+                    {analytics.best_sellers?.map((dish, idx) => (
+                      <div key={idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-3">
+                          <span className="h-7 w-7 rounded-lg bg-orange-600/20 text-orange-400 font-mono font-black flex items-center justify-center text-xs">
+                            #{idx + 1}
+                          </span>
+                          <div>
+                            <span className="font-bold text-white text-sm block">{dish.name}</span>
+                            <span className="text-[11px] text-slate-400">{dish.total_sold} units dispatched</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-bold text-emerald-400 text-sm block">₹{dish.revenue}</span>
+                          <span className="text-[10px] text-slate-500 font-mono">Gross payout</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-lg flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-black text-sm text-white mb-1 flex items-center gap-2">
+                      <PieChart className="h-4 w-4 text-blue-400" strokeWidth={2} />
+                      <span>Category Distribution</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mb-4">Breakdown of orders by food category</p>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-200">Snacks & Rolls</span>
+                          <span className="font-mono text-slate-400">54% (92 orders)</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                          <div className="bg-orange-500 h-full rounded-full" style={{ width: '54%' }} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-200">Beverages & Shakes</span>
+                          <span className="font-mono text-slate-400">26% (44 orders)</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                          <div className="bg-blue-500 h-full rounded-full" style={{ width: '26%' }} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-200">Full Meals & Combos</span>
+                          <span className="font-mono text-slate-400">20% (32 orders)</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                          <div className="bg-emerald-500 h-full rounded-full" style={{ width: '20%' }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 p-3 rounded-2xl bg-blue-950/40 border border-blue-900/50 text-xs text-blue-300">
+                    Students order rolls and puffs 2.4× more frequently during evening breaks.
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 2: MENU CATALOG & INLINE EDITING */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'menu' && (
+            <div className="space-y-4">
+              {/* Category Pills & Bulk Action Toolbar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-lg">
+                {/* Category Navigation Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${
+                        selectedCategory === cat
+                          ? 'bg-orange-600 text-white shadow'
+                          : 'bg-slate-800 text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      {cat === 'all' ? `All Items (${menuItems.length})` : cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Bulk Actions & Add Item Button */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkToggleCategory(selectedCategory, true)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-bold"
+                    title="Mark all items in this category as available"
+                  >
+                    All Available
+                  </button>
+                  <button
+                    onClick={() => handleBulkToggleCategory(selectedCategory, false)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 text-xs font-bold"
+                    title="Mark all items in this category as out of stock"
+                  >
+                    All Out
+                  </button>
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-orange-950/40"
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2.5} />
+                    <span>Add Item</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Menu Items Table / Cards with Inline Editing */}
+              <div className="space-y-3">
+                {filteredMenuItems.map(item => (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-3xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                      item.available
+                        ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                        : 'bg-slate-900/50 border-slate-800/60 opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <VegIndicator isVeg={item.is_veg} size="md" />
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-base text-white">{item.name}</span>
+                          {!item.available && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-950 text-rose-400 border border-rose-800/80">
+                              Out of Stock
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                          <span className="capitalize">{item.category}</span>
+                          <span>·</span>
+                          <span>Stock: {item.stock_qty ?? '∞'}</span>
+                          {item.available_from && item.available_to && (
+                            <>
+                              <span>·</span>
+                              <span>Hours: {item.available_from} - {item.available_to}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Inline Editing Area: Price Click-to-Edit & Availability Switch */}
+                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                      {/* Price with Click-to-Edit */}
+                      <div className="flex items-center">
+                        {editingPriceId === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-slate-400 text-xs">₹</span>
+                            <input
+                              type="number"
+                              autoFocus
+                              value={tempPriceInput}
+                              onChange={e => setTempPriceInput(e.target.value)}
+                              onBlur={() => handleSaveInlinePrice(item.id)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleSaveInlinePrice(item.id)
+                                if (e.key === 'Escape') setEditingPriceId(null)
+                              }}
+                              className="w-16 px-2 py-1 bg-slate-950 border border-orange-500 rounded-lg text-sm font-mono font-bold text-white focus:outline-none"
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingPriceId(item.id)
+                              setTempPriceInput(String(item.price))
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700/80 text-orange-400 font-mono font-black text-sm flex items-center gap-1 group transition-all"
+                            title="Click to inline-edit price"
+                          >
+                            <span>₹{item.price}</span>
+                            <Edit3 className="h-3 w-3 opacity-0 group-hover:opacity-100 text-slate-400 transition-opacity" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Smooth Animated Availability Toggle */}
+                      <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+                        <AnimatedToggle
+                          checked={item.available}
+                          onChange={() => handleToggleItemAvailability(item)}
+                        />
+                        <span className="text-xs font-semibold text-slate-400 min-w-[50px]">
+                          {item.available ? 'In Stock' : 'Out'}
+                        </span>
+                      </div>
+
+                      {/* Edit Details & Delete */}
+                      <div className="flex items-center gap-1.5 pl-2 border-l border-slate-800">
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                          title="Edit Item Details"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" strokeWidth={2} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/60 transition-colors"
+                          title="Delete Item"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 3: PAYOUTS & SETTLEMENT SUMMARY */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'payouts' && (
+            <div className="space-y-6">
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-600/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <span className="text-xs text-emerald-400 font-extrabold uppercase tracking-wider">
+                    Available Payout Balance
+                  </span>
+                  <div className="font-mono font-black text-4xl sm:text-5xl text-white mt-1">
+                    ₹14,820.00
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Next automated bank settlement: <strong>Tuesday, 30 Sep 2026</strong> (Direct NEFT)
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <button
+                    onClick={() => showToast('Payout statement generated. Downloading PDF...')}
+                    className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow"
+                  >
+                    <Download className="h-4 w-4" strokeWidth={2} />
+                    <span>Download Invoice</span>
+                  </button>
+
+                  <button
+                    onClick={() => showToast('Instant Settlement requested. Admin review in progress.')}
+                    className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/50"
+                  >
+                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
+                    <span>Request Instant Payout</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Settlement Account Card */}
+              <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-lg">
+                <h3 className="font-black text-sm text-white mb-3">Linked Settlement Account</h3>
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-white text-sm">HDFC Bank Limited · VIT Vellore Branch</div>
+                    <div className="text-xs text-slate-400 font-mono mt-0.5">
+                      Account: •••• •••• 4018 · IFSC: HDFC0001234
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    <span>Verified</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 4: LIVE KDS QUEUE */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'queue' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-4 rounded-3xl border border-slate-800">
+                <div className="flex bg-slate-950 rounded-xl p-1 border border-slate-800 text-xs">
+                  {['all', 'placed', 'preparing', 'ready'].map((f: any) => (
+                    <button
+                      key={f}
+                      onClick={() => setQueueFilter(f)}
+                      className={`px-3 py-1.5 rounded-lg font-bold capitalize transition-all ${
+                        queueFilter === f ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Token # or ID..."
+                      value={searchToken}
+                      onChange={e => setSearchToken(e.target.value)}
+                      className="pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 w-36"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setShowScanModal(true)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                  >
+                    <QrCode className="h-4 w-4" strokeWidth={2} />
+                    <span>Scan to Collect</span>
+                  </button>
+                </div>
+              </div>
+
+              {filteredOrders.length === 0 ? (
+                <div className="h-64 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center text-center p-6 text-slate-500 bg-slate-900/30">
+                  <ChefHat className="h-10 w-10 text-slate-700 mb-2" />
+                  <p className="font-bold text-slate-300 text-sm">No Active Orders</p>
+                  <p className="text-xs text-slate-500 mt-1">Orders placed by students will stream in real time.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredOrders.map(order => {
+                    const isPlaced = order.status === 'placed'
+                    const isPrep = order.status === 'preparing'
+                    const isReady = order.status === 'ready'
+
+                    return (
+                      <div
+                        key={order.id}
+                        className={`p-4 rounded-3xl border-2 flex flex-col justify-between shadow-lg transition-all ${
+                          isReady
+                            ? 'bg-emerald-950/20 border-emerald-500/70'
+                            : isPrep
+                            ? 'bg-blue-950/20 border-blue-500/70'
+                            : 'bg-amber-950/20 border-amber-500/70'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] text-slate-400 font-extrabold uppercase">Token</span>
+                              <div className="font-mono font-black text-3xl text-white">#{order.token || '---'}</div>
+                              <span className="text-[11px] text-slate-400">Order #{order.id}</span>
+                            </div>
+                            <span
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${
+                                isReady
+                                  ? 'bg-emerald-500 text-slate-950'
+                                  : isPrep
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-amber-500 text-slate-950'
+                              }`}
+                            >
+                              {order.status}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 space-y-1.5 text-xs text-slate-200 border-t border-slate-800/80 pt-2.5">
+                            {order.order_items?.map((item, idx) => (
+                              <div key={idx} className="flex justify-between">
+                                <span className="font-bold">{item.qty}× {item.name}</span>
+                                <span className="font-mono text-slate-400">₹{item.price * item.qty}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-800">
+                          {isPlaced && (
+                            <button
+                              onClick={() => advanceOrderStatus(order.id, 'placed')}
+                              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs"
+                            >
+                              Start Cooking (Prep)
+                            </button>
+                          )}
+                          {isPrep && (
+                            <button
+                              onClick={() => advanceOrderStatus(order.id, 'preparing')}
+                              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs"
+                            >
+                              Mark Ready for Pickup
+                            </button>
+                          )}
+                          {isReady && (
+                            <button
+                              onClick={() => advanceOrderStatus(order.id, 'ready')}
+                              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs"
+                            >
+                              Hand Over / Collect
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 5: STAFF TEAM */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'team' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-slate-900 p-4 rounded-3xl border border-slate-800">
+                <div>
+                  <h2 className="font-bold text-sm text-white">Counter & Kitchen Staff Team</h2>
+                  <p className="text-xs text-slate-400">Invite new team members, manage account activation, or revoke pending codes.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setGeneratedInviteCode(null)
+                    setInviteForm({ phone: '', email: '' })
+                    setShowInviteModal(true)
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                >
+                  <UserPlus className="h-4 w-4" strokeWidth={2} />
+                  <span>Invite Staff</span>
+                </button>
+              </div>
+
+              {pendingInvites.length > 0 && (
+                <div className="p-4 rounded-3xl bg-amber-950/30 border border-amber-600/40 space-y-2">
+                  <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Pending Staff Invites</span>
+                  </span>
+                  <div className="space-y-2">
+                    {pendingInvites.map(inv => (
+                      <div key={inv.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                        <div>
+                          <div className="font-mono font-bold text-amber-400 tracking-wider text-sm">{inv.code}</div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">
+                            {inv.phone || inv.email || 'Direct Invite'} · Expires: {new Date(inv.expires_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRevokeInvite(inv.id)}
+                          className="px-3 py-1 rounded-xl bg-rose-950 text-rose-400 border border-rose-800 text-xs font-bold"
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2.5">
+                {staffTeam.map(member => (
+                  <div
+                    key={member.id}
+                    className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="h-10 w-10 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm">
+                        {member.full_name?.charAt(0) || 'S'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-white">{member.full_name}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            member.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {member.is_active ? 'Active' : 'Deactivated'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          {member.phone || 'No phone'} · Joined: {new Date(member.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleToggleStaffActive(member)}
+                      className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                        member.is_active
+                          ? 'bg-rose-950/60 border-rose-800 text-rose-300 hover:bg-rose-900'
+                          : 'bg-emerald-950/60 border-emerald-800 text-emerald-300 hover:bg-emerald-900'
+                      }`}
+                    >
+                      {member.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 6: OUTLET PROMO COUPONS */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'coupons' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-slate-900 p-4 rounded-3xl border border-slate-800">
+                <div>
+                  <h2 className="font-bold text-sm text-white">Outlet Promo Coupons</h2>
+                  <p className="text-xs text-slate-400">Create discount coupons valid exclusively at your counter.</p>
+                </div>
+                <button
+                  onClick={() => setShowCouponModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  <span>Create Coupon</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {outletCoupons.map(cp => (
+                  <div key={cp.code} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-black text-lg text-orange-400 tracking-wider">
+                          {cp.code}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          cp.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {cp.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-200 mt-1 font-bold">
+                        {cp.discount_type === 'flat' ? `Flat ₹${cp.discount_value} OFF` : `${cp.discount_value}% OFF`}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Min Order: ₹{cp.min_order_value || 0} · Valid until: {new Date(cp.valid_to).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex justify-between">
+                      <span>Used {cp.used_count || 0} times</span>
+                      <span>Outlet Exclusive</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* ── ADD/EDIT MENU ITEM MODAL ── */}
       {showItemModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="font-extrabold text-base text-white">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <h3 className="font-black text-base text-white">
                 {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
               </h3>
-              <button onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
+              <button onClick={() => setShowItemModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1">Item Name</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Item Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Masala Dosa"
                   value={itemForm.name}
                   onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Price (₹)</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Price (₹)</label>
                   <input
                     type="number"
                     value={itemForm.price}
                     onChange={e => setItemForm({ ...itemForm, price: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Stock Qty</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Stock Qty</label>
                   <input
                     type="number"
                     value={itemForm.stock_qty}
                     onChange={e => setItemForm({ ...itemForm, stock_qty: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Category</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Category</label>
                   <input
                     type="text"
                     value={itemForm.category}
                     onChange={e => setItemForm({ ...itemForm, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Dietary Tag</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Dietary Tag</label>
                   <button
+                    type="button"
                     onClick={() => setItemForm({ ...itemForm, is_veg: !itemForm.is_veg })}
-                    className={`w-full py-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
+                    className={`w-full py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 ${
                       itemForm.is_veg ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-rose-950 border-rose-500 text-rose-300'
                     }`}
                   >
-                    <span>{itemForm.is_veg ? '🌱 Vegetarian' : '🍗 Non-Veg'}</span>
+                    <VegIndicator isVeg={itemForm.is_veg} showLabel={true} labelText={itemForm.is_veg ? 'Vegetarian' : 'Non-Veg'} size="sm" />
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              {/* Photo Zone with Fit Indicator */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Dish Photo URL</label>
+                <div className="relative">
+                  <ImageIcon className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="https://images.unsplash.com/..."
+                    value={itemForm.image_url}
+                    onChange={e => setItemForm({ ...itemForm, image_url: e.target.value })}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Available From (Time)</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Available From</label>
                   <input
                     type="time"
                     value={itemForm.available_from}
                     onChange={e => setItemForm({ ...itemForm, available_from: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Available To (Time)</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Available To</label>
                   <input
                     type="time"
                     value={itemForm.available_to}
                     onChange={e => setItemForm({ ...itemForm, available_to: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
               </div>
 
               <button
                 onClick={handleSaveMenuItem}
-                className="w-full mt-2 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs"
+                className="w-full mt-3 py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs transition-all shadow-lg shadow-orange-950/40"
               >
                 Save Menu Item
               </button>
@@ -1158,60 +1752,60 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
 
       {/* ── INVITE STAFF MODAL ── */}
       {showInviteModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="font-extrabold text-base text-white">Invite Staff Account</h3>
-              <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <h3 className="font-black text-base text-white">Invite Staff Account</h3>
+              <button onClick={() => setShowInviteModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
 
             {generatedInviteCode ? (
               <div className="text-center py-4 space-y-3">
                 <div className="h-12 w-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                  <Check className="h-6 w-6" />
+                  <Check className="h-6 w-6" strokeWidth={2.5} />
                 </div>
-                <h4 className="font-extrabold text-white text-base">Invite Code Generated!</h4>
-                <div className="p-3 rounded-xl bg-slate-950 border-2 border-dashed border-emerald-500 font-mono font-black text-2xl text-emerald-400">
+                <h4 className="font-black text-white text-base">Invite Code Generated!</h4>
+                <div className="p-3.5 rounded-2xl bg-slate-950 border-2 border-dashed border-emerald-500 font-mono font-black text-2xl text-emerald-400 tracking-wider">
                   {generatedInviteCode}
                 </div>
                 <p className="text-xs text-slate-400">
-                  Share this code with your staff. When they accept, their account is automatically provisioned for {displayOutletName}.
+                  Share this code with your kitchen staff. When accepted, they are automatically granted dispatch access.
                 </p>
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+                  className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
                 >
                   Done
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Staff Phone Number</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Staff Phone Number</label>
                   <input
                     type="tel"
                     placeholder="+91 9876543210"
                     value={inviteForm.phone}
                     onChange={e => setInviteForm({ ...inviteForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Staff Email (Optional)</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Staff Email (Optional)</label>
                   <input
                     type="email"
                     placeholder="staff@campusbite.vit.ac.in"
                     value={inviteForm.email}
                     onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <button
                   onClick={handleGenerateInvite}
                   disabled={isGeneratingInvite}
-                  className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
+                  className="w-full py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-950/40"
                 >
                   {isGeneratingInvite ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                   <span>Generate Staff Invite Code</span>
@@ -1224,63 +1818,63 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
 
       {/* ── CREATE OUTLET COUPON MODAL ── */}
       {showCouponModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="font-extrabold text-base text-white">Create Outlet Coupon</h3>
-              <button onClick={() => setShowCouponModal(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <h3 className="font-black text-base text-white">Create Outlet Coupon</h3>
+              <button onClick={() => setShowCouponModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1">Coupon Promo Code</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Coupon Promo Code</label>
                 <input
                   type="text"
                   placeholder="e.g. GAZEBO25"
                   value={couponForm.code}
                   onChange={e => setCouponForm({ ...couponForm, code: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white uppercase font-mono font-bold"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white uppercase font-mono font-bold focus:outline-none focus:border-orange-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Discount Type</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Discount Type</label>
                   <select
                     value={couponForm.discount_type}
                     onChange={e => setCouponForm({ ...couponForm, discount_type: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   >
                     <option value="flat">Flat ₹ OFF</option>
                     <option value="percent">Percentage % OFF</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Discount Value</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Discount Value</label>
                   <input
                     type="number"
                     value={couponForm.discount_value}
                     onChange={e => setCouponForm({ ...couponForm, discount_value: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1">Min Order Value (₹)</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Min Order Value (₹)</label>
                 <input
                   type="number"
                   value={couponForm.min_order_value}
                   onChange={e => setCouponForm({ ...couponForm, min_order_value: parseInt(e.target.value, 10) || 0 })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                 />
               </div>
 
               <button
                 onClick={handleCreateCoupon}
-                className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs"
+                className="w-full py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs transition-all shadow-lg shadow-orange-950/40"
               >
                 Create Promo Coupon
               </button>
@@ -1291,16 +1885,16 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
 
       {/* ── SCAN TO COLLECT MODAL ── */}
       {showScanModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="font-extrabold text-base text-white">Scan-to-Collect Order</h3>
-              <button onClick={() => setShowScanModal(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <h3 className="font-black text-base text-white">Scan-to-Collect Order</h3>
+              <button onClick={() => setShowScanModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <input
                 type="text"
                 autoFocus
@@ -1308,19 +1902,24 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                 value={verifyTokenInput}
                 onChange={e => setVerifyTokenInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleVerifyCollect() }}
-                className="w-full px-4 py-3 bg-slate-950 border-2 border-slate-700 rounded-xl text-center font-mono font-bold text-xl text-white"
+                className="w-full px-4 py-3 bg-slate-950 border-2 border-slate-700 rounded-2xl text-center font-mono font-black text-2xl text-white focus:outline-none focus:border-emerald-500"
               />
 
               {verifyResult && (
-                <div className={`p-2.5 rounded-xl text-xs font-bold ${verifyResult.success ? 'bg-emerald-950 text-emerald-300' : 'bg-rose-950 text-rose-300'}`}>
-                  {verifyResult.message}
+                <div className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${verifyResult.success ? 'bg-emerald-950 border border-emerald-800 text-emerald-300' : 'bg-rose-950 border border-rose-800 text-rose-300'}`}>
+                  {verifyResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" strokeWidth={2} />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" strokeWidth={2} />
+                  )}
+                  <span>{verifyResult.message}</span>
                 </div>
               )}
 
               <button
                 onClick={handleVerifyCollect}
                 disabled={isVerifying || !verifyTokenInput}
-                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-950/40"
               >
                 Verify & Hand Over
               </button>

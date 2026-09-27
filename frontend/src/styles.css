@@ -70,8 +70,30 @@
   --r-2xl: 28px;
 }
 
-/* ── Reset ───────────────────────────────────────────────────────────────── */
+/* ── Reset & Accessibility ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:focus-visible {
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 2px !important;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Touch targets and mobile safe areas */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-pb {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .app-shell {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+}
+
 html {
   scroll-behavior: smooth;
   width: 100%;

@@ -3,7 +3,7 @@ import {
   UtensilsCrossed, ArrowRight, Clock, QrCode, Smartphone, Bell,
   ChevronRight, CheckCircle2, ShieldCheck, DollarSign, Store,
   Users, ChevronDown, Sparkles, RefreshCw, ShoppingBag, Coffee,
-  Flame, Check, Play, MapPin, Star
+  Flame, Check, Play, MapPin, Star, Menu, X
 } from 'lucide-react'
 
 interface LandingPageProps {
@@ -104,9 +104,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg bg-slate-800 text-slate-200"
+            className="md:hidden p-2 rounded-lg bg-slate-800 text-slate-200 flex items-center justify-center"
+            aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? '✕' : '☰'}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-slate-200" strokeWidth={2} /> : <Menu className="w-5 h-5 text-slate-200" strokeWidth={2} />}
           </button>
         </div>
 
@@ -365,8 +366,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
                     <span className="text-emerald-400">Preparing (6m ago)</span>
                   </div>
                   <p className="text-slate-300">3x Chicken Cutlet</p>
-                  <button className="mt-2.5 w-full py-1.5 rounded bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600">
-                    Mark Ready for Pickup ✓
+                  <button className="mt-2.5 w-full py-1.5 rounded bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 inline-flex items-center justify-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
+                    <span>Mark Ready for Pickup</span>
                   </button>
                 </div>
               </div>

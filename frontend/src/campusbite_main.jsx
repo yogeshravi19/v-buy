@@ -355,7 +355,7 @@ function App() {
       setCart({ outlet: null, items: [] })
       setBusy(false)
       setTab('orders')
-      setNotice(`🎉 Order #${newId} placed successfully! Pickup Token #${token}`)
+      setNotice(`Order #${newId} placed successfully! Pickup Token #${token}`)
     }, 600)
   }
 
@@ -979,14 +979,14 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode, 
 
     setOrders(orders.map(o => o.id === match.id ? { ...o, status: 'collected' } : o))
     setScanInput('')
-    setNotice(`✅ Order #${match.id} (Token #${match.token}) verified & marked COLLECTED!`)
+    setNotice(`Order #${match.id} (Token #${match.token}) verified & marked COLLECTED!`)
   }
 
   function handleAdminCredit(e) {
     e.preventDefault()
     const amt = parseInt(creditAmount, 10)
     if (!amt) return
-    setNotice(`✅ Transferred ${money(amt)} event allowance credit to ${creditUserEmail}!`)
+    setNotice(`Transferred ${money(amt)} event allowance credit to ${creditUserEmail}!`)
   }
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0)

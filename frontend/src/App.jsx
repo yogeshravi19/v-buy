@@ -7,8 +7,10 @@ import {
   CheckCircle2, RefreshCw, AlertCircle, Award, Coffee, UtensilsCrossed, Repeat,
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
   Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
-  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt, Trash2
+  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt, Trash2,
+  ChefHat, Tag, Printer, Sandwich, Soup, GlassWater, Cake, Utensils, Flame, Shield
 } from 'lucide-react'
+import { VegIndicator } from './components/VegIndicator'
 import './styles.css'
 import { getFoodImage } from './lib/foodImages'
 import QRCode from 'qrcode'
@@ -244,15 +246,15 @@ export const CANTEEN_STAFF_OWNER_MAP = [
 ]
 
 export const MIND_CATEGORIES = [
-  { id: 'all',       label: 'All Items',             icon: '✨' },
-  { id: 'snacks',    label: 'Snacks & Rolls',        icon: '🥪' },
-  { id: 'biryani',   label: 'Biryani & Meals',       icon: '🍱' },
-  { id: 'noodles',   label: 'Noodles & Pasta',       icon: '🍜' },
-  { id: 'juices',    label: 'Fresh Juices & Lassi',  icon: '🥤' },
-  { id: 'beverages', label: 'Chai & Coffee',         icon: '☕' },
-  { id: 'desserts',  label: 'Sweets & Desserts',     icon: '🍦' },
-  { id: 'breakfast', label: 'South Indian & Dosa',   icon: '🥞' },
-  { id: 'starters',  label: 'Crispy Starters',       icon: '🍗' },
+  { id: 'all',       label: 'All Items',             Icon: Sparkles },
+  { id: 'snacks',    label: 'Snacks & Rolls',        Icon: Sandwich },
+  { id: 'biryani',   label: 'Biryani & Meals',       Icon: UtensilsCrossed },
+  { id: 'noodles',   label: 'Noodles & Pasta',       Icon: Soup },
+  { id: 'juices',    label: 'Fresh Juices & Lassi',  Icon: GlassWater },
+  { id: 'beverages', label: 'Chai & Coffee',         Icon: Coffee },
+  { id: 'desserts',  label: 'Sweets & Desserts',     Icon: Cake },
+  { id: 'breakfast', label: 'South Indian & Dosa',   Icon: Utensils },
+  { id: 'starters',  label: 'Crispy Starters',       Icon: Flame },
 ]
 
 export function matchesMindCategory(item, catId) {
@@ -374,7 +376,7 @@ function App() {
   async function submitItemRating(orderId, itemId, rating, comment) {
     const order = orders.find(o => o.id === orderId)
     if (!order || order.status !== 'collected') {
-      setNotice('⚠️ Ratings can only be submitted for completed/collected orders.')
+      setNotice('Ratings can only be submitted for completed/collected orders.')
       return false
     }
 
@@ -405,8 +407,8 @@ function App() {
       }
     }
 
-    addAuditLog(currentUser?.full_name || 'Student', currentUser?.role || 'student', 'ORDER', 'ITEM_RATED', `Rated item #${itemId} (${cleanRating}⭐) on Order #${orderId}`)
-    setNotice(`⭐ Thank you! Your ${cleanRating}-star rating was recorded.`)
+    addAuditLog(currentUser?.full_name || 'Student', currentUser?.role || 'student', 'ORDER', 'ITEM_RATED', `Rated item #${itemId} (${cleanRating} stars) on Order #${orderId}`)
+    setNotice(`Thank you! Your ${cleanRating}-star rating was recorded.`)
     return true
   }
 
@@ -457,7 +459,7 @@ function App() {
       items: []
     })
     setShowGroupModal(false)
-    setNotice(`👥 Group Cart #${code} created! Share this join code with your friends.`)
+    setNotice(`Group Cart #${code} created! Share this join code with your friends.`)
     addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'GROUP_CREATED', `Created group cart #${code}`)
   }
 
@@ -471,7 +473,7 @@ function App() {
       items: []
     })
     setShowGroupModal(false)
-    setNotice(`👥 Joined Group Cart #${code.trim().toUpperCase()}!`)
+    setNotice(`Joined Group Cart #${code.trim().toUpperCase()}!`)
   }
 
   function leaveGroupCart() {
@@ -531,7 +533,7 @@ function App() {
     const channel = supabase.channel('vfood-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         if (payload.new?.status === 'ready' && Notification.permission === 'granted') {
-          new Notification('V-FOOD — Order Ready! 🎉', {
+          new Notification('V-FOOD — Order Ready!', {
             body: `Order #${payload.new.id} (Token #${payload.new.token}) is ready for pickup!`,
             icon: '/vit-chennai-logo.png'
           })
@@ -576,14 +578,14 @@ function App() {
       const { outcome } = await deferredPrompt.userChoice
       if (outcome === 'accepted') {
         setDeferredPrompt(null)
-        setNotice('🎉 CampusBite App installed successfully!')
+        setNotice('CampusBite App installed successfully!')
       }
     } else {
       const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
       if (isIos) {
         setShowIosPrompt(true)
       } else {
-        setNotice('📱 To install on Desktop or Mobile: look for the Install icon in your browser address bar, or use browser menu > Install App.')
+        setNotice('To install on Desktop or Mobile: look for the Install icon in your browser address bar, or use browser menu > Install App.')
       }
     }
   }
@@ -676,16 +678,16 @@ function App() {
 
     const unavailableList = itemsToLoad.filter(i => !i.available)
     if (unavailableList.length > 0) {
-      setNotice(`⚠️ Reorder ("My Usual") loaded! Note: ${unavailableList.map(i => i.name).join(', ')} is currently unavailable and flagged in your cart.`)
+      setNotice(`Reorder ("My Usual") loaded! Note: ${unavailableList.map(i => i.name).join(', ')} is currently unavailable and flagged in your cart.`)
     } else {
-      setNotice(`♻️ Reorder ("My Usual") loaded! All ${itemsToLoad.length} items from Order #${order.id} added to cart.`)
+      setNotice(`Reorder ("My Usual") loaded! All ${itemsToLoad.length} items from Order #${order.id} added to cart.`)
     }
   }
 
   async function placeOrder() {
     if (!cart.items.length) return
     if (cart.items.some(i => !i.available)) {
-      return setNotice('⚠️ Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
+      return setNotice('Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
     }
 
     const baseTotal = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0)
@@ -694,7 +696,7 @@ function App() {
     // Feature 8: Validate and calculate coupon discount
     if (appliedCoupon) {
       if (appliedCoupon.min_order_value && baseTotal < appliedCoupon.min_order_value) {
-        return setNotice(`⚠️ Coupon ${appliedCoupon.code} requires a minimum order of ${money(appliedCoupon.min_order_value)}.`)
+        return setNotice(`Coupon ${appliedCoupon.code} requires a minimum order of ${money(appliedCoupon.min_order_value)}.`)
       }
       if (appliedCoupon.discount_type === 'flat') {
         discount = Math.min(baseTotal, appliedCoupon.discount_value)
@@ -713,7 +715,7 @@ function App() {
     if (isScheduled && selectedSlotId) {
       const slot = pickupSlots.find(s => s.id === selectedSlotId)
       if (slot && slot.current_orders >= slot.max_orders) {
-        return setNotice('⚠️ This pickup slot is full! Please choose another slot or Order Now.')
+        return setNotice('This pickup slot is full! Please choose another slot or Order Now.')
       }
     }
 
@@ -795,7 +797,7 @@ function App() {
       if (activeGroup) setActiveGroup(null)
       setBusy(false)
       setTab('orders')
-      setNotice(`🎉 Order #${newId} placed! Pickup Token: #${token}${selectedSlot ? ` · Scheduled for ${selectedSlot.time_label}` : ''}`)
+      setNotice(`Order #${newId} placed! Pickup Token: #${token}${selectedSlot ? ` · Scheduled for ${selectedSlot.time_label}` : ''}`)
       addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(studentDebit)}${discount > 0 ? `, saved ₹${discount}` : ''}) via Campus Wallet`)
     }, 700)
   }
@@ -831,7 +833,7 @@ function App() {
       ]
     }))
     setBusy(false)
-    setNotice(`✅ Added ${money(amount)} to wallet! New balance: ${money(wallet.balance + amount)}`)
+    setNotice(`Added ${money(amount)} to wallet! New balance: ${money(wallet.balance + amount)}`)
     addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'WALLET', 'WALLET_TOPUP', `Credited ${money(amount)} via Razorpay UPI (${ref})`)
   }
 
@@ -863,12 +865,12 @@ function App() {
   function addMenuItem(outletId, itemData) {
     const name = (itemData.name || '').trim()
     if (!name) {
-      setNotice('⚠️ Please enter a food item name.')
+      setNotice('Please enter a food item name.')
       return false
     }
     const price = parseFloat(itemData.price)
     if (isNaN(price) || price < 0) {
-      setNotice('⚠️ Please enter a valid price.')
+      setNotice('Please enter a valid price.')
       return false
     }
     const stockQty = Math.max(0, parseInt(itemData.stock_qty, 10) || 0)
@@ -893,7 +895,7 @@ function App() {
     }))
 
     const oName = outlets.find(o => o.id === outletId)?.name || outletId
-    setNotice(`✅ Added "${newItem.name}" (${money(newItem.price)}) to ${oName}!`)
+    setNotice(`Added "${newItem.name}" (${money(newItem.price)}) to ${oName}!`)
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'MENU', 'ADD_ITEM', `Added "${newItem.name}" (${money(newItem.price)}, stock: ${newItem.stock_qty}) in ${oName}`)
     return true
   }
@@ -923,7 +925,7 @@ function App() {
     }))
 
     const oName = outlets.find(o => o.id === outletId)?.name || outletId
-    setNotice(`✅ Updated "${updatedItemName || 'item'}" in ${oName}!`)
+    setNotice(`Updated "${updatedItemName || 'item'}" in ${oName}!`)
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'MENU', 'UPDATE_ITEM', `Updated details for "${updatedItemName || itemId}" in ${oName}`)
     return true
   }
@@ -941,7 +943,7 @@ function App() {
     }))
 
     const oName = outlets.find(o => o.id === outletId)?.name || outletId
-    setNotice(`🗑️ Removed "${deletedName}" from ${oName}.`)
+    setNotice(`Removed "${deletedName}" from ${oName}.`)
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'MENU', 'DELETE_ITEM', `Removed menu item "${deletedName}" (#${itemId}) from ${oName}`)
     return true
   }
@@ -984,7 +986,7 @@ function App() {
       outlet_id: chosen.id,
       outlet_name: chosen.name
     }))
-    setNotice(`🏪 Active Canteen switched to: ${chosen.name}`)
+    setNotice(`Active Canteen switched to: ${chosen.name}`)
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'OUTLET', 'SWITCH_CANTEEN', `Switched active console to ${chosen.name} (${chosen.id})`)
   }
 
@@ -1006,17 +1008,17 @@ function App() {
         <div className="ios-modal-overlay" onClick={() => setShowIosPrompt(false)}>
           <div className="ios-modal-card" onClick={e => e.stopPropagation()}>
             <div className="ios-modal-header">
-              <h3>📱 Install V-FOOD on iOS</h3>
+              <h3>Install V-FOOD on iOS</h3>
               <button className="close-btn" onClick={() => setShowIosPrompt(false)}><X size={18} /></button>
             </div>
             <div className="ios-modal-steps">
               <div className="ios-step">
                 <span className="ios-step-num">1</span>
-                <p>Tap the <strong>Share</strong> button (📤) at the bottom of Safari.</p>
+                <p>Tap the <strong>Share</strong> button at the bottom of Safari.</p>
               </div>
               <div className="ios-step">
                 <span className="ios-step-num">2</span>
-                <p>Scroll down and select <strong>"Add to Home Screen"</strong> (➕).</p>
+                <p>Scroll down and select <strong>"Add to Home Screen"</strong> (+).</p>
               </div>
               <div className="ios-step">
                 <span className="ios-step-num">3</span>
@@ -1044,10 +1046,10 @@ function App() {
             <Download size={13} />
             <span>Install App</span>
           </button>
-          <span className="role-tag-badge">
-            {role === 'owner' || role === 'shop_admin' ? '🏪 Shop Owner' :
-             role === 'staff' ? '👨‍🍳 Shop Staff' :
-             role === 'admin' || role === 'superadmin' || role === 'super_admin' ? '🛡️ Super Admin (Me)' : '👤 User'}
+          <span className="role-tag-badge inline-flex items-center gap-1.5">
+            {role === 'owner' || role === 'shop_admin' ? <><Store size={12} strokeWidth={2} /> Shop Owner</> :
+             role === 'staff' ? <><ChefHat size={12} strokeWidth={2} /> Shop Staff</> :
+             role === 'admin' || role === 'superadmin' || role === 'super_admin' ? <><Shield size={12} strokeWidth={2} /> Super Admin</> : <><User size={12} strokeWidth={2} /> User</>}
           </span>
           {isCustomer && (
             <div className="wallet-badge-top" onClick={() => setTab('wallet')}>
@@ -1155,7 +1157,7 @@ function App() {
               ))}
             </select>
             <span className="canteen-switcher-hint">
-              ⚡ Switch on the fly to inspect & test any of the 13 canteens
+              Switch on the fly to inspect & test any of the 13 canteens
             </span>
           </div>
         )}
@@ -1401,14 +1403,14 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
         <div className="food-flow-category-section">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
-              🍽️ What's on your mind?
+              What's on your mind?
             </span>
             {activeMindCat !== 'all' && (
               <button
                 onClick={() => setActiveMindCat('all')}
                 style={{ border: 0, background: 'none', color: 'var(--blue-primary)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               >
-                Clear filter ({MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label}) ✕
+                Clear filter ({MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label})
               </button>
             )}
           </div>
@@ -1422,7 +1424,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
                   onClick={() => setActiveMindCat(curr => curr === cat.id ? 'all' : cat.id)}
                   title={`Filter by ${cat.label}`}
                 >
-                  <span className="food-flow-cat-icon">{cat.icon}</span>
+                  <span className="food-flow-cat-icon">{cat.Icon && <cat.Icon size={18} strokeWidth={2} className="text-orange-500" />}</span>
                   <span className="food-flow-cat-label">{cat.label}</span>
                 </div>
               )
@@ -1443,7 +1445,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
               fontWeight: 700
             }}>
               <span>
-                🎯 Filtered by: <strong>{MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label}</strong> ({filteredOutlets.length} {filteredOutlets.length === 1 ? 'outlet' : 'outlets'} serving this)
+                Filtered by: <strong>{MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label}</strong> ({filteredOutlets.length} {filteredOutlets.length === 1 ? 'outlet' : 'outlets'} serving this)
               </span>
               <button
                 onClick={() => setActiveMindCat('all')}
@@ -1492,7 +1494,7 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
               style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '12px', background: '#FFFFFF', fontWeight: 600, color: 'var(--text-main)', outline: 0 }}
             >
               <option value="popular">Popular Dishes</option>
-              <option value="rating">⭐ Highest Rated</option>
+              <option value="rating">Highest Rated</option>
               <option value="price_asc">Price: Low to High</option>
               <option value="price_desc">Price: High to Low</option>
             </select>
@@ -1507,9 +1509,9 @@ function BrowseTab({ outlets, visibleOutlets, eventMode, locationFilter, setLoca
             <div style={{
               width: '38px', height: '38px', borderRadius: '10px',
               background: 'linear-gradient(135deg, #10B981, #059669)',
-              display: 'grid', placeItems: 'center', color: '#fff', fontSize: '18px', flexShrink: 0
+              display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0
             }}>
-              ⚡
+              <Zap size={18} strokeWidth={2} className="fill-white" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1582,7 +1584,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #B45309 100%)',
       accentColor: '#F59E0B',
-      emoji: '🍔',
+      Icon: Sandwich,
       tagline: 'Hot Snacks, Rolls & Combos',
       rating: 4.8,
       reviews: 342,
@@ -1595,7 +1597,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #BE185D 100%)',
       accentColor: '#F472B6',
-      emoji: '🍦',
+      Icon: Cake,
       tagline: 'Desserts, Sweets & Juices',
       rating: 4.9,
       reviews: 218,
@@ -1608,7 +1610,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #C2410C 100%)',
       accentColor: '#FB923C',
-      emoji: '🍲',
+      Icon: Soup,
       tagline: 'Fried Rice, Noodles & Starters',
       rating: 4.7,
       reviews: 489,
@@ -1621,7 +1623,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #0369A1 100%)',
       accentColor: '#38BDF8',
-      emoji: '🥤',
+      Icon: GlassWater,
       tagline: 'Cold Shakes, Lassi & Sundaes',
       rating: 4.9,
       reviews: 312,
@@ -1634,7 +1636,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #854D0E 100%)',
       accentColor: '#FBBF24',
-      emoji: '☕',
+      Icon: Coffee,
       tagline: 'Chai, Coffee & Hot Maggi',
       rating: 4.8,
       reviews: 640,
@@ -1647,7 +1649,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #B91C1C 100%)',
       accentColor: '#F87171',
-      emoji: '🍗',
+      Icon: Flame,
       tagline: 'Dum Biryani, Shawarma & 65',
       rating: 4.7,
       reviews: 531,
@@ -1660,7 +1662,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #047857 100%)',
       accentColor: '#34D399',
-      emoji: '🍛',
+      Icon: UtensilsCrossed,
       tagline: 'North Indian Combos & Pastas',
       rating: 4.6,
       reviews: 395,
@@ -1673,7 +1675,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #4D7C0F 100%)',
       accentColor: '#A3E635',
-      emoji: '🍹',
+      Icon: GlassWater,
       tagline: 'Fresh Citrus Juices & Meal Bowls',
       rating: 4.7,
       reviews: 184,
@@ -1686,7 +1688,7 @@ function getCanteenMeta(outlet) {
     return {
       gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #4338CA 100%)',
       accentColor: '#A5B4FC',
-      emoji: '🎪',
+      Icon: Sparkles,
       tagline: 'Amphitheatre All-Day Food Bar',
       rating: 4.8,
       reviews: 420,
@@ -1699,7 +1701,7 @@ function getCanteenMeta(outlet) {
   return {
     gradient: 'linear-gradient(135deg, #0B192C 0%, #1E3E62 55%, #1E40AF 100%)',
     accentColor: '#60A5FA',
-    emoji: '🍽️',
+    Icon: UtensilsCrossed,
     tagline: 'VIT Campus Canteen Counter',
     rating: 4.6,
     reviews: 140,
@@ -1763,7 +1765,7 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
 
         <div className="outlet-banner-main-row">
           <div className="canteen-avatar-circle">
-            <span>{meta.emoji}</span>
+            {meta.Icon ? <meta.Icon size={22} strokeWidth={2} style={{ color: meta.accentColor }} /> : <UtensilsCrossed size={22} strokeWidth={2} />}
           </div>
           <div className="canteen-title-block">
             <div className="canteen-name-row">
@@ -1818,7 +1820,7 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
           {expanded ? 'Hide Menu' : `View Menu (${rawItems.length} items)`}
           {activeMindCat && activeMindCat !== 'all' && (
             <span style={{ fontSize: '11px', background: '#EFF6FF', color: 'var(--blue-primary)', padding: '2px 8px', borderRadius: '12px', fontWeight: 800, marginLeft: '6px' }}>
-              🎯 {MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label} ({rawItems.length})
+              {MIND_CATEGORIES.find(c => c.id === activeMindCat)?.label} ({rawItems.length})
             </span>
           )}
         </span>
@@ -1878,7 +1880,7 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
                 style={vegOnly ? { background: '#059669', borderColor: '#059669', color: '#FFFFFF' } : {}}
                 onClick={() => setVegOnly(v => !v)}
               >
-                🟢 Pure Veg
+                Pure Veg
               </button>
             </div>
           </div>
@@ -1905,7 +1907,7 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
                       />
                       {item.is_bestseller !== false && (
                         <span className="food-flow-rating-pill" style={{ color: '#D97706', background: '#FEF3C7', borderColor: '#FDE68A' }}>
-                          ★ Bestseller
+                          Bestseller
                         </span>
                       )}
                     </div>
@@ -1952,8 +1954,8 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
                           }
                         }}
                       />
-                      <div className="food-thumb-fallback" style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                        {foodImg.emoji}
+                      <div className="food-thumb-fallback" style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                        <UtensilsCrossed size={24} strokeWidth={1.75} className="text-slate-400" />
                       </div>
                     </div>
 
@@ -2027,16 +2029,16 @@ function CartDock({
     if (!code) return
     const found = availableCoupons.find(c => c.code.toUpperCase() === code)
     if (!found) {
-      if (setNotice) setNotice(`⚠️ Coupon code "${code}" is invalid or expired.`)
+      if (setNotice) setNotice(`Coupon code "${code}" is invalid or expired.`)
       return
     }
     if (found.min_order_value && subtotal < found.min_order_value) {
-      if (setNotice) setNotice(`⚠️ Coupon "${code}" requires minimum order value of ${money(found.min_order_value)}.`)
+      if (setNotice) setNotice(`Coupon "${code}" requires minimum order value of ${money(found.min_order_value)}.`)
       return
     }
     setAppliedCoupon(found)
     setCouponInput('')
-    if (setNotice) setNotice(`🎉 Coupon "${found.code}" applied! You save with this offer.`)
+    if (setNotice) setNotice(`Coupon "${found.code}" applied! You save with this offer.`)
   }
 
   function handleRemoveCoupon() {
@@ -2058,7 +2060,7 @@ function CartDock({
           {/* ── Feature 5: Group Ordering Banner ── */}
           {activeGroup ? (
             <div className="group-ticket-banner">
-              <span>👥 Group Cart #{activeGroup.code} (Payer: You)</span>
+              <span>Group Cart #{activeGroup.code} (Payer: You)</span>
               <button
                 className="cart-clear-btn"
                 style={{ color: '#FFFFFF', padding: '2px 8px', fontSize: '11px', background: 'rgba(255,255,255,0.2)' }}
@@ -2122,7 +2124,7 @@ function CartDock({
                       >
                         <div style={{ fontWeight: 800 }}>{slot.time_label}</div>
                         <div style={{ fontSize: '10px', color: isFull ? '#EF4444' : '#059669', marginTop: 2 }}>
-                          {isFull ? '⚠️ FULL (15/15)' : `${remaining} slots left`}
+                          {isFull ? 'FULL (15/15)' : `${remaining} slots left`}
                         </div>
                       </button>
                     )
@@ -2136,7 +2138,7 @@ function CartDock({
           {hasUnavailable && (
             <div className="cart-clear-unavailable-banner">
               <div>
-                <strong>⚠️ {unavailableItems.length} item(s) currently sold out</strong>
+                <strong>{unavailableItems.length} item(s) currently sold out</strong>
                 <div style={{ fontSize: '11.5px', marginTop: 2 }}>Remove flagged items to proceed to checkout.</div>
               </div>
               <button
@@ -2212,7 +2214,7 @@ function CartDock({
           <div className="coupon-box" style={{ marginTop: '12px' }}>
             {appliedCoupon ? (
               <div className="applied-coupon-pill">
-                <span>🏷️ Promo <strong>{appliedCoupon.code}</strong> Applied: -{money(discount)}</span>
+                <span>Promo <strong>{appliedCoupon.code}</strong> Applied: -{money(discount)}</span>
                 <button
                   type="button"
                   style={{ background: 'transparent', border: 0, color: '#15803D', fontWeight: 800, cursor: 'pointer', fontSize: '11.5px' }}
@@ -2295,7 +2297,7 @@ function CartDock({
 
       <div className="cart-dock-bar">
         <button className="cart-expand-btn" onClick={() => setExpanded(e => !e)}>
-          <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>⚠️ Has Unavailable</span>}</strong>
+          <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>Has Unavailable</span>}</strong>
           <small>{cart.outlet?.name}{isScheduled ? ' · Scheduled' : ''}</small>
         </button>
         <div className="cart-dock-total">
@@ -2355,7 +2357,7 @@ function ReceiptModal({ order, onClose }) {
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Pickup Pass & Verification</div>
             <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)' }}>TOKEN #{order.token}</div>
-            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '2px' }}>✓ Verified e-Invoice</div>
+            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12} strokeWidth={2} /> Verified e-Invoice</div>
           </div>
         </div>
 
@@ -2467,7 +2469,7 @@ function RatingModal({ order, onClose, submitItemRating, itemRatings = [] }) {
                   </div>
                   {isDone && (
                     <span style={{ fontSize: '11px', color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6, fontWeight: 800 }}>
-                      ✓ Rated ({currentStars}⭐)
+                      Rated ({currentStars} stars)
                     </span>
                   )}
                 </div>
@@ -2536,9 +2538,9 @@ function RatingModal({ order, onClose, submitItemRating, itemRatings = [] }) {
 function OrderStepper({ status, order }) {
   const steps = [
     { key: 'placed', label: 'Order Placed', desc: 'Confirmed', icon: Clock3 },
-    { key: 'preparing', label: 'In Kitchen', desc: 'Cooking 🔥', icon: UtensilsCrossed },
-    { key: 'ready', label: 'Counter Ready', desc: 'Pickup Now 🎉', icon: Bell },
-    { key: 'collected', label: 'Completed', desc: 'Collected ✓', icon: CheckCircle2 }
+    { key: 'preparing', label: 'In Kitchen', desc: 'Cooking', icon: UtensilsCrossed },
+    { key: 'ready', label: 'Counter Ready', desc: 'Pickup Now', icon: Bell },
+    { key: 'collected', label: 'Completed', desc: 'Collected', icon: CheckCircle2 }
   ]
   const currentIndex = steps.findIndex(s => s.key === status)
   const isReady = status === 'ready'
@@ -2549,12 +2551,12 @@ function OrderStepper({ status, order }) {
   const progressPercent = currentIndex <= 0 ? 8 : (currentIndex / (steps.length - 1)) * 100
 
   const statusHeadline = isReady
-    ? '🎉 Your Food is Ready for Pickup!'
+    ? 'Your Food is Ready for Pickup!'
     : isPrep
-    ? '🔥 Kitchen is Preparing Your Food with Care'
+    ? 'Kitchen is Preparing Your Food with Care'
     : isPlaced
-    ? '📋 Order Confirmed & Queued with Kitchen'
-    : '✓ Order Completed & Picked Up'
+    ? 'Order Confirmed & Queued with Kitchen'
+    : 'Order Completed & Picked Up'
 
   const statusSubline = isReady
     ? `Show Token #${order?.token || '---'} at the counter for pickup`
@@ -2662,7 +2664,7 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                 {activeGroup.members.map((m, idx) => (
                   <span key={idx} style={{ background: '#EDE9FE', color: '#6D28D9', padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
-                    👤 {m}
+                    {m}
                   </span>
                 ))}
               </div>
@@ -2760,9 +2762,9 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating }) {
             <div style={{
               width: '42px', height: '42px', borderRadius: '12px',
               background: 'linear-gradient(135deg, #10B981, #059669)',
-              display: 'grid', placeItems: 'center', color: '#fff', fontSize: '20px', flexShrink: 0
+              display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0
             }}>
-              ⚡
+              <Zap size={20} strokeWidth={2} className="fill-white" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2888,7 +2890,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
         )}
         {order.coupon_code && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 6, fontSize: '11px', fontWeight: 700 }}>
-            🏷️ Promo {order.coupon_code} Applied
+            Promo {order.coupon_code} Applied
           </span>
         )}
       </div>
@@ -2908,7 +2910,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
                 />
                 <span className="item-chip">{item.name} × {item.qty}</span>
               </div>
-              {item.notes && <span className="item-notes-chip">📝 {item.notes}</span>}
+              {item.notes && <span className="item-notes-chip">{item.notes}</span>}
             </div>
           )
         })}
@@ -2920,7 +2922,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
           <div className="order-qr-meta">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div className="token-badge" style={{ margin: 0 }}>TOKEN #{order.token}</div>
-              {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 8px', borderRadius: '6px' }}>🎉 READY FOR PICKUP</span>}
+              {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 8px', borderRadius: '6px' }}>READY FOR PICKUP</span>}
             </div>
             <span className="order-qr-hint">
               {isReady ? 'Ready at counter! Present QR to staff' : 'Order placed! Counter verification QR code generated'}
@@ -3121,7 +3123,7 @@ function FoodItemModal({
 
   const handleDelete = () => {
     if (!item) return
-    if (window.confirm(`⚠️ Permanently delete "${item.name}" from ${outlet.name}'s menu? This cannot be undone.`)) {
+    if (window.confirm(`Permanently delete "${item.name}" from ${outlet.name}'s menu? This cannot be undone.`)) {
       if (onDelete) onDelete(outlet.id, item.id)
       onClose()
     }
@@ -3132,7 +3134,7 @@ function FoodItemModal({
       <div className="food-item-modal-card" onClick={e => e.stopPropagation()}>
         <div className="food-item-modal-header">
           <div>
-            <span className="food-modal-tag">{isEdit ? '✏️ EDIT DISH & INVENTORY' : '✨ NEW FOOD ITEM'}</span>
+            <span className="food-modal-tag">{isEdit ? 'EDIT DISH & INVENTORY' : 'NEW FOOD ITEM'}</span>
             <h3 style={{ margin: '4px 0 2px', fontSize: '18px', fontWeight: 800 }}>{isEdit ? `Edit: ${item.name}` : 'Add New Food Item'}</h3>
             <p className="food-modal-sub" style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.85)' }}>
               Outlet: <strong>{outlet.name}</strong>
@@ -3260,7 +3262,7 @@ function FoodItemModal({
               {standardCategories.map(c => (
                 <option key={c.id} value={c.id}>{c.label} ({c.id})</option>
               ))}
-              <option value="__custom__">➕ Custom Category...</option>
+              <option value="__custom__">Custom Category...</option>
             </select>
             {category === '__custom__' && (
               <input
@@ -3281,7 +3283,7 @@ function FoodItemModal({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: '13px', color: available && stockQty > 0 ? '#059669' : '#DC2626' }}>
-                  {available && stockQty > 0 ? '🟢 Available' : '🔴 Sold Out'}
+                  {available && stockQty > 0 ? 'Available' : 'Sold Out'}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   {available && stockQty > 0 ? `${stockQty} portions in kitchen` : 'Displays as "Sold Out" to students'}
@@ -3408,7 +3410,7 @@ function ShopOwnerConsole({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '11px', background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', padding: '3px 8px', borderRadius: '12px', fontWeight: 800 }}>
-                🏪 CANTEEN OWNER PORTAL
+                CANTEEN OWNER PORTAL
               </span>
               <span style={{ fontSize: '12px', opacity: 0.8 }}>{myOutlet.location}</span>
             </div>
@@ -3422,18 +3424,18 @@ function ShopOwnerConsole({
               onClick={() => {
                 const next = !rushMode
                 setRushMode(next)
-                setNotice(next ? '⚡ Rush Hour mode activated (+15m buffer added to customer estimates)' : 'Rush mode deactivated')
+                setNotice(next ? 'Rush Hour mode activated (+15m buffer added to customer estimates)' : 'Rush mode deactivated')
                 if (addAuditLog) addAuditLog(profile.full_name, 'owner', 'OUTLET', 'RUSH_MODE', `${myOutlet.name} rush mode: ${next ? 'ON' : 'OFF'}`)
               }}
             >
-              {rushMode ? '🟡 Rush Mode ACTIVE (+15m)' : '⏱️ Enable Rush Buffer'}
+              {rushMode ? 'Rush Mode ACTIVE (+15m)' : 'Enable Rush Buffer'}
             </button>
             <button
               className="btn-primary btn-spring"
               style={{ background: myOutlet.is_open ? '#059669' : '#DC2626', padding: '7px 16px', fontSize: '12px' }}
               onClick={() => toggleOutletOpen(myOutlet.id)}
             >
-              {myOutlet.is_open ? '🟢 Canteen Open' : '🔴 Canteen Closed'}
+              {myOutlet.is_open ? 'Canteen Open' : 'Canteen Closed'}
             </button>
           </div>
         </div>
@@ -3442,10 +3444,10 @@ function ShopOwnerConsole({
       {/* Owner Subnavigation */}
       <div className="admin-subnav">
         {[
-          { key: 'overview', label: '📊 Today Overview', icon: <PieChart size={15} /> },
-          { key: 'menu', label: `📋 Menu & Items Manager (${(myOutlet.menu_items || []).length})`, icon: <Edit size={15} /> },
-          { key: 'staff', label: '👨‍🍳 Staff on Duty', icon: <Users size={15} /> },
-          { key: 'settlement', label: '💰 Daily Payout & Settlement', icon: <Banknote size={15} /> },
+          { key: 'overview', label: 'Today Overview', icon: <PieChart size={15} /> },
+          { key: 'menu', label: `Menu & Items Manager (${(myOutlet.menu_items || []).length})`, icon: <Edit size={15} /> },
+          { key: 'staff', label: 'Staff on Duty', icon: <Users size={15} /> },
+          { key: 'settlement', label: 'Daily Payout & Settlement', icon: <Banknote size={15} /> },
         ].map(t => (
           <button
             key={t.key}
@@ -3464,7 +3466,7 @@ function ShopOwnerConsole({
             <div className="owner-stat-card">
               <span className="owner-stat-label">Today Revenue</span>
               <div className="owner-stat-val" style={{ color: 'var(--blue-primary)' }}>{money(todayRevenue)}</div>
-              <div className="owner-stat-sub">🟢 Pre-paid via Campus Wallet</div>
+              <div className="owner-stat-sub">Pre-paid via Campus Wallet</div>
             </div>
             <div className="owner-stat-card">
               <span className="owner-stat-label">Orders Processed</span>
@@ -3474,7 +3476,7 @@ function ShopOwnerConsole({
             <div className="owner-stat-card">
               <span className="owner-stat-label">Average Order Size</span>
               <div className="owner-stat-val">{money(avgOrderVal)}</div>
-              <div className="owner-stat-sub">📈 Healthy student dining spend</div>
+              <div className="owner-stat-sub">Healthy student dining spend</div>
             </div>
             <div className="owner-stat-card">
               <span className="owner-stat-label">Available Menu Items</span>
@@ -3574,7 +3576,7 @@ function ShopOwnerConsole({
                           {getItemRatingStats && (() => {
                             const rStats = getItemRatingStats(item.id)
                             return rStats ? (
-                              <span className="item-rating-chip" title={`${rStats.avg} ⭐ based on ${rStats.count} customer reviews`}>
+                              <span className="item-rating-chip" title={`${rStats.avg} stars based on ${rStats.count} customer reviews`}>
                                 <Star size={10} fill="#F59E0B" color="#F59E0B" />
                                 <span>{rStats.avg} ({rStats.count})</span>
                               </span>
@@ -3647,7 +3649,7 @@ function ShopOwnerConsole({
                         className="btn-danger btn-spring"
                         style={{ padding: '6px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                         onClick={() => {
-                          if (window.confirm(`⚠️ Permanently remove "${item.name}" from ${myOutlet.name}?`)) {
+                          if (window.confirm(`Permanently remove "${item.name}" from ${myOutlet.name}?`)) {
                             deleteMenuItem(myOutlet.id, item.id)
                           }
                         }}
@@ -3698,7 +3700,7 @@ function ShopOwnerConsole({
               <h3>Staff Roster — {myOutlet.name}</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Kitchen and counter operators assigned to this outlet.</p>
             </div>
-            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setNotice('ℹ️ To assign new staff, submit campus staff ID to Super Admin.')}>
+            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setNotice('To assign new staff, submit campus staff ID to Super Admin.')}>
               + Request Staff Addition
             </button>
           </div>
@@ -3763,7 +3765,7 @@ function ShopOwnerConsole({
           </div>
 
           <div style={{ padding: '12px 14px', background: '#F1F5F9', borderRadius: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            ℹ️ Daily campus dining settlements are batch-credited at 23:00 IST every night to the registered vendor bank account (Indian Bank VIT Branch · IFSC: IDIB000V088).
+            Daily campus dining settlements are batch-credited at 23:00 IST every night to the registered vendor bank account (Indian Bank VIT Branch · IFSC: IDIB000V088).
           </div>
         </div>
       )}
@@ -3881,18 +3883,18 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
       scanInput.includes(o.token) ||
       scanInput.includes(o.id.toString())
     )
-    if (!match) return setNotice(`❌ Invalid QR or token "${scanInput}"`)
-    if (match.status === 'collected') return setNotice(`⚠️ Order #${match.id} was ALREADY collected!`)
+    if (!match) return setNotice(`Invalid QR or token "${scanInput}"`)
+    if (match.status === 'collected') return setNotice(`Order #${match.id} was ALREADY collected!`)
     setOrders(ords => ords.map(o => o.id === match.id ? { ...o, status: 'collected' } : o))
     setScanInput('')
-    setNotice(`✅ Order #${match.id} (Token #${match.token}) — marked COLLECTED!`)
+    setNotice(`Order #${match.id} (Token #${match.token}) — marked COLLECTED!`)
   }
 
   function handleAdminCredit(e) {
     e.preventDefault()
     const amt = parseInt(creditAmount, 10)
     if (!amt) return
-    setNotice(`✅ Transferred ${money(amt)} event allowance to ${creditUserEmail}`)
+    setNotice(`Transferred ${money(amt)} event allowance to ${creditUserEmail}`)
   }
 
   // Render a Single KOT Ticket Card (Foodiv Standard)
@@ -3911,13 +3913,13 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ord #{order.id}</span>
               <span className={`kot-source-badge ${order.source === 'counter' ? 'source-counter' : 'source-app'}`}>
-                {order.source === 'counter' ? '🏪 Counter' : '📱 App'}
+                {order.source === 'counter' ? 'Counter' : 'App'}
               </span>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <span className={`kot-time-pill ${timerClass}`}>
-              <Clock size={11} /> {mins}m {mins > 14 ? '⚠️ RUSH' : ''}
+              <Clock size={11} /> {mins}m {mins > 14 ? 'RUSH' : ''}
             </span>
             <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-main)', marginTop: '4px' }}>
               {money(order.total)}
@@ -3960,7 +3962,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               style={{ flex: 1, padding: '7px 10px', fontSize: '12px', background: '#F59E0B' }}
               onClick={() => advanceOrderStatus(order.id)}
             >
-              👨‍🍳 Accept & Cook
+              Accept & Cook
             </button>
           )}
           {isPrep && (
@@ -3972,7 +3974,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                 if (soundEnabled) playNewOrderChime()
               }}
             >
-              🔔 Mark Ready
+              Mark Ready
             </button>
           )}
           {isReady && (
@@ -3981,7 +3983,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               style={{ flex: 1, padding: '7px 10px', fontSize: '12px', background: '#059669' }}
               onClick={() => advanceOrderStatus(order.id)}
             >
-              ✅ Hand Over (Collect)
+              Hand Over (Collect)
             </button>
           )}
           <button
@@ -4014,7 +4016,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                 <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOKEN NUMBER</div>
                 <div style={{ fontSize: '32px', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>#{selectedKotOrder.token}</div>
                 <div style={{ fontSize: '11px', marginTop: 4 }}>
-                  {selectedKotOrder.source === 'counter' ? '🏪 COUNTER SALE' : '📱 ONLINE APP ORDER'}
+                  {selectedKotOrder.source === 'counter' ? 'COUNTER SALE' : 'ONLINE APP ORDER'}
                 </div>
               </div>
 
@@ -4074,14 +4076,14 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   style={{ flex: 1, padding: '8px' }}
                   onClick={() => window.print()}
                 >
-                  🖨️ Print KOT
+                  Print KOT
                 </button>
                 <button
                   className="btn-secondary btn-spring"
                   style={{ padding: '8px 14px' }}
                   onClick={() => setSelectedKotOrder(null)}
                 >
-                  ✕ Close
+                  Close
                 </button>
               </div>
             </div>
@@ -4099,28 +4101,28 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               className={`canteen-mode-btn btn-spring ${canteenMode === 'normal' ? 'active-normal' : ''}`}
               onClick={() => {
                 setCanteenMode('normal')
-                setNotice('🟢 Kitchen flow set to Normal (5-10 min prep)')
+                setNotice('Kitchen flow set to Normal (5-10 min prep)')
               }}
             >
-              🟢 Normal (5-10m)
+              Normal (5-10m)
             </button>
             <button
               className={`canteen-mode-btn btn-spring ${canteenMode === 'rush' ? 'active-rush' : ''}`}
               onClick={() => {
                 setCanteenMode('rush')
-                setNotice('🟡 Rush Hour activated! Prep time alert sent to students (+15m).')
+                setNotice('Rush Hour activated! Prep time alert sent to students (+15m).')
               }}
             >
-              🟡 Rush Hour (+15m)
+              Rush Hour (+15m)
             </button>
             <button
               className={`canteen-mode-btn btn-spring ${canteenMode === 'pause' ? 'active-pause' : ''}`}
               onClick={() => {
                 setCanteenMode('pause')
-                setNotice('🔴 Kitchen Paused — no new online orders accepted.')
+                setNotice('Kitchen Paused — no new online orders accepted.')
               }}
             >
-              🔴 Kitchen Paused
+              Kitchen Paused
             </button>
 
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -4140,14 +4142,14 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                 style={{ padding: '5px 10px', fontSize: '11px' }}
                 onClick={playNewOrderChime}
               >
-                🔔 Test
+                Test
               </button>
               <button
                 className="btn-primary btn-spring"
                 style={{ background: myOutlet.is_open ? '#059669' : '#DC2626', padding: '5px 12px', fontSize: '11px' }}
                 onClick={() => toggleOutletOpen(myOutlet.id)}
               >
-                {myOutlet.is_open ? '🟢 Open' : '🔴 Closed'}
+                {myOutlet.is_open ? 'Open' : 'Closed'}
               </button>
             </div>
           </div>
@@ -4155,7 +4157,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           <nav className="nav-tabs" style={{ marginBottom: '18px' }}>
             {[
               { key: 'queue', label: 'KDS Live Queue', icon: <Clock3 size={16} />, badge: myOrders.length },
-              { key: 'menu', label: '📋 Menu & Food Items', icon: <Edit size={16} />, badge: (myOutlet.menu_items || []).length },
+              { key: 'menu', label: 'Menu & Food Items', icon: <Edit size={16} />, badge: (myOutlet.menu_items || []).length },
               { key: 'summary', label: 'Shift Billing', icon: <BarChart2 size={16} /> },
               { key: 'tv', label: 'TV Display', icon: <Monitor size={16} /> },
             ].map(t => (
@@ -4176,12 +4178,12 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
       {isAdmin && (
         <div className="admin-subnav">
           {[
-            { key: 'kpi', label: '📊 Campus Overview', count: null },
-            { key: 'canteens', label: '🏪 Canteen Management', count: outlets.filter(o => !o.is_event).length },
-            { key: 'menu', label: '📋 Food Items & Menus', count: outlets.reduce((sum, o) => sum + (o.menu_items || []).length, 0) },
-            { key: 'orders', label: '📦 Live Campus Stream', count: orders.length },
-            { key: 'audit', label: '🛡️ Audit Log & System Telemetry', count: (auditLogs || []).length },
-            { key: 'scanner', label: '🔍 Token & QR Scanner', count: null },
+            { key: 'kpi', label: 'Campus Overview', count: null },
+            { key: 'canteens', label: 'Canteen Management', count: outlets.filter(o => !o.is_event).length },
+            { key: 'menu', label: 'Food Items & Menus', count: outlets.reduce((sum, o) => sum + (o.menu_items || []).length, 0) },
+            { key: 'orders', label: 'Live Campus Stream', count: orders.length },
+            { key: 'audit', label: 'Audit Log & System Telemetry', count: (auditLogs || []).length },
+            { key: 'scanner', label: 'Token & QR Scanner', count: null },
           ].map(tab => (
             <button
               key={tab.key}
@@ -4214,13 +4216,13 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   className={`filter-pill btn-spring ${kdsViewMode === 'kanban' ? 'active' : ''}`}
                   onClick={() => setKdsViewMode('kanban')}
                 >
-                  📋 3-Col Kanban
+                  3-Col Kanban
                 </button>
                 <button
                   className={`filter-pill btn-spring ${kdsViewMode === 'list' ? 'active' : ''}`}
                   onClick={() => setKdsViewMode('list')}
                 >
-                  📄 Stream
+                  Stream
                 </button>
               </div>
             </div>
@@ -4241,9 +4243,9 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '8px' }}>
             {[
               { key: 'all', label: `All Active (${myOrders.length})` },
-              { key: 'placed', label: `🟡 New (${placedOrders.length})` },
-              { key: 'preparing', label: `🔵 Cooking (${prepOrders.length})` },
-              { key: 'ready', label: `🟢 Ready (${readyOrders.length})` },
+              { key: 'placed', label: `New (${placedOrders.length})` },
+              { key: 'preparing', label: `Cooking (${prepOrders.length})` },
+              { key: 'ready', label: `Ready (${readyOrders.length})` },
             ].map(col => (
               <button
                 key={col.key}
@@ -4262,7 +4264,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               {(kdsMobileCol === 'all' || kdsMobileCol === 'placed') && (
                 <div className="kds-column">
                   <div className="kds-col-header col-new">
-                    <span>🟡 1. New Orders</span>
+                    <span>1. New Orders</span>
                     <span className="kds-col-count">{placedOrders.length}</span>
                   </div>
                   <div className="kds-col-body">
@@ -4281,7 +4283,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               {(kdsMobileCol === 'all' || kdsMobileCol === 'preparing') && (
                 <div className="kds-column">
                   <div className="kds-col-header col-prep">
-                    <span>🔵 2. In Kitchen (Cooking)</span>
+                    <span>2. In Kitchen (Cooking)</span>
                     <span className="kds-col-count">{prepOrders.length}</span>
                   </div>
                   <div className="kds-col-body">
@@ -4300,7 +4302,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               {(kdsMobileCol === 'all' || kdsMobileCol === 'ready') && (
                 <div className="kds-column">
                   <div className="kds-col-header col-ready">
-                    <span>🟢 3. Ready at Counter</span>
+                    <span>3. Ready at Counter</span>
                     <span className="kds-col-count">{readyOrders.length}</span>
                   </div>
                   <div className="kds-col-body">
@@ -4369,15 +4371,15 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               </div>
               <div className="stock-summary-stat" style={{ color: '#166534' }}>
                 <span>In Stock:</span>
-                <strong>🟢 {inStockCount}</strong>
+                <strong>{inStockCount}</strong>
               </div>
               <div className="stock-summary-stat" style={{ color: '#92400E' }}>
                 <span>Low Stock (&le;10):</span>
-                <strong>🟡 {lowStockCount}</strong>
+                <strong>{lowStockCount}</strong>
               </div>
               <div className="stock-summary-stat" style={{ color: '#991B1B' }}>
                 <span>Sold Out:</span>
-                <strong>🔴 {outStockCount}</strong>
+                <strong>{outStockCount}</strong>
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
@@ -4385,10 +4387,10 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   style={{ padding: '6px 12px', fontSize: '11px' }}
                   onClick={() => {
                     outletMenuItems.forEach(it => updateItemStockQty(myOutlet.id, it.id, 30))
-                    setNotice('✅ All active items restocked to 30 portions!')
+                    setNotice('All active items restocked to 30 portions!')
                   }}
                 >
-                  ⚡ Restock All (30)
+                  Restock All (30)
                 </button>
                 <button
                   className="btn-primary btn-spring"
@@ -4446,7 +4448,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                               {getItemRatingStats && (() => {
                                 const rStats = getItemRatingStats(item.id)
                                 return rStats ? (
-                                  <span className="item-rating-chip" title={`${rStats.avg} ⭐ based on ${rStats.count} reviews`}>
+                                  <span className="item-rating-chip" title={`${rStats.avg} stars based on ${rStats.count} reviews`}>
                                     <Star size={10} fill="#F59E0B" color="#F59E0B" />
                                     <span>{rStats.avg}</span>
                                     <small style={{ opacity: 0.8 }}>({rStats.count})</small>
@@ -4465,7 +4467,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                           </div>
                         </div>
                         <span className={`stock-status-pill ${isZero ? 'stock-pill-out' : isLow ? 'stock-pill-low' : 'stock-pill-ok'}`}>
-                          {isZero ? '🔴 Sold Out (0)' : isLow ? `🟡 Low: ${stockQty} left` : `🟢 ${stockQty} in stock`}
+                          {isZero ? 'Sold Out (0)' : isLow ? `Low: ${stockQty} left` : `${stockQty} in stock`}
                         </span>
                       </div>
 
@@ -4538,7 +4540,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             className="btn-danger btn-spring"
                             style={{ padding: '4px 7px', fontSize: '11px', display: 'flex', alignItems: 'center' }}
                             onClick={() => {
-                              if (window.confirm(`⚠️ Permanently remove "${item.name}" from ${myOutlet.name}?`)) {
+                              if (window.confirm(`Permanently remove "${item.name}" from ${myOutlet.name}?`)) {
                                 deleteMenuItem(myOutlet.id, item.id)
                               }
                             }}
@@ -4606,7 +4608,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               <div style={{ flex: 1, minWidth: '140px', background: '#FFFFFF', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                 <span style={{ fontSize: '11px', color: '#64748B' }}>Payment Model</span>
                 <strong style={{ display: 'block', fontSize: '13px', color: '#059669', marginTop: 4 }}>
-                  ✅ 100% Pre-Paid via Campus Wallet
+                  100% Pre-Paid via Campus Wallet
                 </strong>
               </div>
             </div>
@@ -4725,7 +4727,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                       style={{ background: outlet.is_open ? '#059669' : '#DC2626', padding: '7px 14px', fontSize: '12px' }}
                       onClick={() => toggleOutletOpen(outlet.id)}
                     >
-                      {outlet.is_open ? '🟢 Open' : '🔴 Closed'}
+                      {outlet.is_open ? 'Open' : 'Closed'}
                     </button>
                   </div>
                 </div>
@@ -4792,15 +4794,15 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               </div>
               <div className="stock-summary-stat" style={{ color: '#166534' }}>
                 <span>In Stock:</span>
-                <strong>🟢 {inStockCount}</strong>
+                <strong>{inStockCount}</strong>
               </div>
               <div className="stock-summary-stat" style={{ color: '#92400E' }}>
                 <span>Low Stock:</span>
-                <strong>🟡 {lowStockCount}</strong>
+                <strong>{lowStockCount}</strong>
               </div>
               <div className="stock-summary-stat" style={{ color: '#991B1B' }}>
                 <span>Sold Out:</span>
-                <strong>🔴 {outStockCount}</strong>
+                <strong>{outStockCount}</strong>
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <button
@@ -4808,10 +4810,10 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   style={{ padding: '6px 12px', fontSize: '12px' }}
                   onClick={() => {
                     targetMenuItems.forEach(it => updateItemStockQty(currentTargetOutlet.id, it.id, 30))
-                    setNotice(`✅ Restocked all items in ${currentTargetOutlet.name} to 30!`)
+                    setNotice(`Restocked all items in ${currentTargetOutlet.name} to 30!`)
                   }}
                 >
-                  ⚡ Restock All (30)
+                  Restock All (30)
                 </button>
                 <button
                   className="btn-primary btn-spring"
@@ -4876,7 +4878,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                               {getItemRatingStats && (() => {
                                 const rStats = getItemRatingStats(item.id)
                                 return rStats ? (
-                                  <span className="item-rating-chip" title={`${rStats.avg} ⭐`}>
+                                  <span className="item-rating-chip" title={`${rStats.avg} stars`}>
                                     <Star size={10} fill="#F59E0B" color="#F59E0B" />
                                     <span>{rStats.avg}</span>
                                   </span>
@@ -4894,7 +4896,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                           </div>
                         </div>
                         <span className={`stock-status-pill ${isZero ? 'stock-pill-out' : isLow ? 'stock-pill-low' : 'stock-pill-ok'}`}>
-                          {isZero ? '🔴 Sold Out (0)' : isLow ? `🟡 Low: ${stockQty}` : `🟢 ${stockQty} in stock`}
+                          {isZero ? 'Sold Out (0)' : isLow ? `Low: ${stockQty}` : `${stockQty} in stock`}
                         </span>
                       </div>
 
@@ -4950,7 +4952,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             className="btn-danger btn-spring"
                             style={{ padding: '4px 7px', fontSize: '11px', display: 'flex', alignItems: 'center' }}
                             onClick={() => {
-                              if (window.confirm(`⚠️ Permanently remove "${item.name}" from ${currentTargetOutlet.name}?`)) {
+                              if (window.confirm(`Permanently remove "${item.name}" from ${currentTargetOutlet.name}?`)) {
                                 deleteMenuItem(currentTargetOutlet.id, item.id);
                               }
                             }}
@@ -5038,7 +5040,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             style={{ padding: '4px 8px', fontSize: '11px' }}
                             onClick={() => advanceOrderStatus(o.id)}
                           >
-                            Advance ➔
+                            Advance
                           </button>
                         )}
                       </td>
@@ -5064,10 +5066,10 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               style={{ background: eventMode ? '#DC2626' : '#059669' }}
               onClick={() => {
                 setEventMode(m => !m)
-                setNotice(eventMode ? '📣 Regular canteens OPEN — Event Mode off.' : '🎪 Riviera Event Mode ACTIVE! 20 stalls open.')
+                setNotice(eventMode ? 'Regular canteens OPEN — Event Mode off.' : 'Riviera Event Mode ACTIVE! 20 stalls open.')
               }}
             >
-              {eventMode ? '🔴 Disable Event Mode (Return to Regular Canteens)' : '🟢 Activate Riviera Event Mode'}
+              {eventMode ? 'Disable Event Mode (Return to Regular Canteens)' : 'Activate Riviera Event Mode'}
             </button>
           </div>
 
@@ -5134,7 +5136,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   <strong>Items:</strong>
                   <ul style={{ margin: '6px 0 0 20px', fontSize: '13.5px' }}>
                     {(match.order_items || []).map((it, idx) => (
-                      <li key={idx}>{it.qty}× {it.name} {it.notes ? `(📝 ${it.notes})` : ''}</li>
+                      <li key={idx}>{it.qty}× {it.name} {it.notes ? `(${it.notes})` : ''}</li>
                     ))}
                   </ul>
                 </div>
@@ -5145,7 +5147,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                     onClick={() => {
                       setOrders(ords => ords.map(o => o.id === match.id ? { ...o, status: 'collected' } : o))
                       setScanInput('')
-                      setNotice(`✅ Order #${match.id} (Token #${match.token}) collected!`)
+                      setNotice(`Order #${match.id} (Token #${match.token}) collected!`)
                     }}
                   >
                     Confirm Collection & Hand Over Meal
@@ -5166,16 +5168,16 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               <Sparkles size={12} /> Live Render Cloud Deployment
             </div>
             <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '4px 0 6px', color: '#FFFFFF' }}>
-              🌐 Where to Check Live Server & API Logs on Render.com
+              Where to Check Live Server & API Logs on Render.com
             </h3>
             <p style={{ fontSize: '13px', opacity: 0.9, lineHeight: 1.5, margin: 0 }}>
               CampusBite runs live on Render's global cloud. To inspect production HTTP request streams, API latency, database calls, and server events:
             </p>
             <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', background: 'rgba(255,255,255,0.06)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div>1️⃣ Log into your Render account at <a href="https://dashboard.render.com" target="_blank" rel="noreferrer" style={{ color: '#60A5FA', fontWeight: 700, textDecoration: 'underline' }}>dashboard.render.com</a>.</div>
-              <div>2️⃣ Click on your active service: <strong>campusbite-web</strong> (Frontend CDN) or <strong>campusbite-api</strong> (FastAPI Backend).</div>
-              <div>3️⃣ In the left-hand sidebar menu, click the <strong>"Logs"</strong> tab (📄).</div>
-              <div>4️⃣ All real-time incoming requests, status codes (200/400/500), deploy builds, and console logs stream live in that terminal!</div>
+              <div><strong style={{ color: '#60A5FA', marginRight: '6px' }}>Step 1:</strong> Log into your Render account at <a href="https://dashboard.render.com" target="_blank" rel="noreferrer" style={{ color: '#60A5FA', fontWeight: 700, textDecoration: 'underline' }}>dashboard.render.com</a>.</div>
+              <div><strong style={{ color: '#60A5FA', marginRight: '6px' }}>Step 2:</strong> Click on your active service: <strong>campusbite-web</strong> (Frontend CDN) or <strong>campusbite-api</strong> (FastAPI Backend).</div>
+              <div><strong style={{ color: '#60A5FA', marginRight: '6px' }}>Step 3:</strong> In the left-hand sidebar menu, click the <strong>"Logs"</strong> tab.</div>
+              <div><strong style={{ color: '#60A5FA', marginRight: '6px' }}>Step 4:</strong> All real-time incoming requests, status codes (200/400/500), deploy builds, and console logs stream live in that terminal!</div>
             </div>
           </div>
 
@@ -5433,14 +5435,14 @@ function AuthScreen({ onLoginUser }) {
               className={`auth-tab-btn ${authMethod === 'phone' ? 'active' : ''}`}
               onClick={() => { setAuthMethod('phone'); setError(''); setPhoneStep('input') }}
             >
-              📱 Mobile OTP (Primary)
+              Mobile OTP (Primary)
             </button>
             <button
               type="button"
               className={`auth-tab-btn ${authMethod === 'email' ? 'active' : ''}`}
               onClick={() => { setAuthMethod('email'); setError('') }}
             >
-              ✉️ Email & Password (Staff/Admin)
+              Email & Password (Staff/Admin)
             </button>
           </div>
 
@@ -5478,10 +5480,10 @@ function AuthScreen({ onLoginUser }) {
                       <div className="form-group">
                         <label>Account Role</label>
                         <select value={role} onChange={e => setRole(e.target.value)}>
-                          <option value="user">👤 User (Customer — Browse, Order & Wallet)</option>
-                          <option value="staff">👨‍🍳 Shop Staff (Kitchen Orders & Dispatch)</option>
-                          <option value="owner">🏪 Shop Owner (Sales & Store Management)</option>
-                          <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
+                          <option value="user">User (Customer — Browse, Order & Wallet)</option>
+                          <option value="staff">Shop Staff (Kitchen Orders & Dispatch)</option>
+                          <option value="owner">Shop Owner (Sales & Store Management)</option>
+                          <option value="admin">Super Admin (Platform Telemetry & Controls)</option>
                         </select>
                       </div>
 
@@ -5501,7 +5503,7 @@ function AuthScreen({ onLoginUser }) {
                   <div className="form-group">
                     <label>Mobile Number (Primary Identity) *</label>
                     <div className="phone-input-group">
-                      <span className="phone-prefix">🇮🇳 +91</span>
+                      <span className="phone-prefix">+91</span>
                       <input
                         type="tel"
                         maxLength="10"
@@ -5531,7 +5533,7 @@ function AuthScreen({ onLoginUser }) {
                       Enter 4-digit OTP sent to
                     </p>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#F1F5F9', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>
-                      <span>🇮🇳 +91 {phone}</span>
+                      <span>+91 {phone}</span>
                       <button
                         type="button"
                         onClick={() => setPhoneStep('input')}
@@ -5545,7 +5547,7 @@ function AuthScreen({ onLoginUser }) {
                   {/* SMS Gateway Banner */}
                   <div className="sms-preview-banner">
                     <div>
-                      <strong>💬 SMS Gateway:</strong><br />
+                      <strong>SMS Gateway:</strong><br />
                       <span>Your V-FOOD verification code is <strong>4826</strong> (Valid for 5 mins).</span>
                     </div>
                     <button
@@ -5619,10 +5621,10 @@ function AuthScreen({ onLoginUser }) {
                   <div className="form-group">
                     <label>Account Role</label>
                     <select value={role} onChange={e => setRole(e.target.value)}>
-                      <option value="user">👤 User (Customer — Browse, Order & Wallet)</option>
-                      <option value="staff">👨‍🍳 Shop Staff (Kitchen Orders & Dispatch)</option>
-                      <option value="owner">🏪 Shop Owner (Sales & Store Management)</option>
-                      <option value="admin">🛡️ Super Admin (Platform Telemetry & Controls)</option>
+                      <option value="user">User (Customer — Browse, Order & Wallet)</option>
+                      <option value="staff">Shop Staff (Kitchen Orders & Dispatch)</option>
+                      <option value="owner">Shop Owner (Sales & Store Management)</option>
+                      <option value="admin">Super Admin (Platform Telemetry & Controls)</option>
                     </select>
                   </div>
                   {(role === 'staff' || role === 'owner') && (
@@ -5683,7 +5685,7 @@ function AuthScreen({ onLoginUser }) {
                 onClick={() => onLoginUser(TEST_USERS.find(u => u.role === 'user' || u.role === 'student'))}
                 title="Login as Rahul Sharma (User)"
               >
-                <span style={{ fontSize: '13px' }}>👤</span>
+                <User size={14} strokeWidth={2} />
                 <span style={{ fontWeight: 700 }}>User</span>
               </button>
 
@@ -5698,7 +5700,7 @@ function AuthScreen({ onLoginUser }) {
                 title={`Login as Shop Staff for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
                 style={{ background: '#1E40AF' }}
               >
-                <span style={{ fontSize: '13px' }}>👨‍🍳</span>
+                <ChefHat size={14} strokeWidth={2} />
                 <span style={{ fontWeight: 700 }}>Shop Staff ({selectedCanteenId.toUpperCase()})</span>
               </button>
 
@@ -5713,7 +5715,7 @@ function AuthScreen({ onLoginUser }) {
                 title={`Login as Shop Owner for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
                 style={{ background: '#0B192C' }}
               >
-                <span style={{ fontSize: '13px' }}>🏪</span>
+                <Store size={14} strokeWidth={2} />
                 <span style={{ fontWeight: 700 }}>Shop Owner ({selectedCanteenId.toUpperCase()})</span>
               </button>
 
@@ -5724,7 +5726,7 @@ function AuthScreen({ onLoginUser }) {
                 onClick={() => onLoginUser(TEST_USERS.find(u => u.is_superadmin))}
                 title="Login as Platform Super Admin"
               >
-                <span style={{ fontSize: '13px' }}>🛡️</span>
+                <Shield size={14} strokeWidth={2} />
                 <span style={{ fontWeight: 700 }}>Super Admin (Me)</span>
               </button>
             </div>
@@ -5747,7 +5749,7 @@ function AuthScreen({ onLoginUser }) {
                   gap: '6px'
                 }}
               >
-                <span>{showAllCanteens ? '▼ Hide' : '▶ Show'} All 13 Canteen Logins ({CANTEEN_STAFF_OWNER_MAP.length * 2} Dedicated Test Accounts)</span>
+                <span>{showAllCanteens ? 'Hide' : 'Show'} All 13 Canteen Logins ({CANTEEN_STAFF_OWNER_MAP.length * 2} Dedicated Test Accounts)</span>
               </button>
 
               {showAllCanteens && (
@@ -5772,7 +5774,7 @@ function AuthScreen({ onLoginUser }) {
                             title={`Staff Login: ${c.staffEmail} | Phone: ${c.staffPhone} | Password: Password@123`}
                             onClick={() => onLoginUser(staffU)}
                           >
-                            👨‍🍳 Staff
+                            Staff
                           </button>
                           <button
                             type="button"
@@ -5780,7 +5782,7 @@ function AuthScreen({ onLoginUser }) {
                             title={`Owner Login: ${c.ownerEmail} | Phone: ${c.ownerPhone} | Password: Password@123`}
                             onClick={() => onLoginUser(ownerU)}
                           >
-                            🏪 Owner
+                            Owner
                           </button>
                         </div>
                       </div>
@@ -5900,7 +5902,7 @@ function QrEnlargeModal({ order, onClose }) {
         </div>
 
         <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
-          💡 Present this QR at the counter for automated verification and token collection.
+          Present this QR at the counter for automated verification and token collection.
         </div>
 
         <button className="btn-primary btn-spring" style={{ width: '100%', marginTop: '16px', padding: '10px', justifyContent: 'center' }} onClick={onClose}>

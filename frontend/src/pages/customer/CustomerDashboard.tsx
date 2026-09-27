@@ -5,7 +5,8 @@ import { useAuthStore, useWalletStore, useCartStore } from '../../store'
 import {
   Wallet, ShoppingBag, History, LogOut, Plus, Minus, Search,
   Leaf, X, ChevronRight, ArrowUpRight, ArrowDownLeft, Loader2,
-  Store, CheckCircle2, AlertCircle, Star, Clock, Flame
+  Store, CheckCircle2, AlertCircle, Star, Clock, Flame,
+  ChefHat, Bell, UtensilsCrossed, Sparkles, AlertTriangle, Smartphone, Zap
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
@@ -51,29 +52,40 @@ const formatDate = (iso: string) =>
 const haptic = (ms = 10) => { try { navigator.vibrate?.(ms) } catch { /* noop */ } }
 
 function StatusBadge({ status }: { status: string }) {
-  const labels: Record<string, string> = {
-    payment_pending: 'Awaiting Payment', placed: 'Order Placed',
-    preparing: 'Preparing 🔥', ready: 'Ready for Pickup! 🎉',
-    collected: 'Collected ✓', cancelled: 'Cancelled',
+  const config: Record<string, { label: string; icon: React.ReactNode }> = {
+    payment_pending: { label: 'Awaiting Payment', icon: <Clock className="w-3 h-3 text-amber-400" strokeWidth={2} /> },
+    placed:          { label: 'Order Placed',     icon: <CheckCircle2 className="w-3 h-3 text-cyan-400" strokeWidth={2} /> },
+    preparing:       { label: 'In Kitchen',       icon: <ChefHat className="w-3 h-3 text-orange-400" strokeWidth={2} /> },
+    ready:           { label: 'Ready for Pickup', icon: <Bell className="w-3 h-3 text-emerald-400" strokeWidth={2} /> },
+    collected:       { label: 'Collected',        icon: <CheckCircle2 className="w-3 h-3 text-slate-400" strokeWidth={2} /> },
+    cancelled:       { label: 'Cancelled',        icon: <X className="w-3 h-3 text-rose-400" strokeWidth={2} /> },
   }
-  return <span className={`status-${status}`}>{labels[status] || status}</span>
+  const item = config[status] || { label: status, icon: null }
+  return (
+    <span className={`status-${status} inline-flex items-center gap-1.5`}>
+      {item.icon}
+      <span>{item.label}</span>
+    </span>
+  )
 }
 
 // ─── Food Image Card ──────────────────────────────────────────────────────────
 function FoodImage({ name, category, className = '' }: { name: string; category: string; className?: string }) {
-  const { url, emoji } = getFoodImage(name, category)
+  const { url } = getFoodImage(name, category)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
 
   return (
     <div className={`relative overflow-hidden bg-surface-800 ${className}`}>
       {!loaded && !error && (
-        <div className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">
-          {emoji}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <UtensilsCrossed className="w-6 h-6 text-slate-600 animate-pulse" strokeWidth={1.75} />
         </div>
       )}
       {error ? (
-        <div className="absolute inset-0 flex items-center justify-center text-2xl">{emoji}</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+          <UtensilsCrossed className="w-6 h-6 text-slate-500" strokeWidth={1.75} />
+        </div>
       ) : (
         <img
           src={url}
@@ -298,8 +310,15 @@ function MenuTab() {
   if (!selectedOutlet) {
     return (
       <motion.div {...pageVariants} className="p-4 pb-safe">
-        <h2 className="text-lg font-bold text-white mb-4">
-          {eventMode ? '🎉 Event Stalls' : 'Outlets'}
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          {eventMode ? (
+            <>
+              <Sparkles className="w-5 h-5 text-amber-400" strokeWidth={2} />
+              <span>Event Stalls</span>
+            </>
+          ) : (
+            <span>Outlets</span>
+          )}
         </h2>
         <div className="space-y-3">
           {outlets.filter((o) => eventMode ? o.is_event : !o.is_event).map((outlet, i) => (
@@ -316,8 +335,12 @@ function MenuTab() {
                 !outlet.is_open ? 'opacity-50 cursor-not-allowed' : 'hover:border-brand-500/30 hover:bg-white/5 active:scale-98'
               }`}
             >
-              <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-2xl">
-                {outlet.is_event ? '🎪' : '🍽️'}
+              <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-orange-400">
+                {outlet.is_event ? (
+                  <Sparkles className="w-6 h-6 text-amber-400" strokeWidth={2} />
+                ) : (
+                  <UtensilsCrossed className="w-6 h-6 text-orange-400" strokeWidth={2} />
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -397,8 +420,9 @@ function MenuTab() {
 
       {/* Cart warning */}
       {cartOutlet && cartOutlet !== selectedOutlet.id && cartItems.length > 0 && (
-        <div className="mx-4 mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
-          ⚠️ Adding items from here will clear your cart from another outlet
+        <div className="mx-4 mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" strokeWidth={2} />
+          <span>Adding items from here will clear your cart from another outlet</span>
         </div>
       )}
 
@@ -417,7 +441,6 @@ function MenuTab() {
                 const qty = cartQty(item.id)
                 const effectiveStock = item.stock_qty !== null ? item.stock_qty - item.reserved_qty : null
                 const soldOut = effectiveStock !== null && effectiveStock <= 0
-                const { emoji } = getFoodImage(item.name, item.category)
 
                 return (
                   <motion.div
@@ -552,7 +575,7 @@ function CartSheet({ onClose }: { onClose: () => void }) {
         setPlacedOrder({ id: data.order_id, token: data.token, qrUrl }); clearCart()
       } else {
         window.open(data.checkout_url, '_blank'); setPendingOrderId(data.order_id)
-        toast('Complete payment in PhonePe…', { icon: '⏳' })
+        toast('Complete payment in PhonePe…')
       }
     } catch (err: any) { toast.error(err.message) }
     setLoading(false)
@@ -565,10 +588,10 @@ function CartSheet({ onClose }: { onClose: () => void }) {
         className="fixed inset-0 z-50 bg-surface-950/98 backdrop-blur-xl flex flex-col items-center justify-center p-6"
       >
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ ...spring, delay: 0.1 }}>
-          <CheckCircle2 size={64} className="text-emerald-400 mb-4" />
+          <CheckCircle2 size={64} className="text-emerald-400 mb-4" strokeWidth={1.75} />
         </motion.div>
         <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="text-2xl font-black text-white mb-1">Order Placed! 🎉</motion.h2>
+          className="text-2xl font-black text-white mb-1">Order Placed!</motion.h2>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
           className="text-white/50 text-sm mb-6">Show this QR or token at the counter</motion.p>
 
@@ -640,11 +663,15 @@ function CartSheet({ onClose }: { onClose: () => void }) {
           {/* Cart items with food images */}
           <div className="space-y-3 mb-5">
             {items.map((item) => {
-              const { emoji } = getFoodImage(item.name, '')
+              const { url } = getFoodImage(item.name, '')
               return (
                 <motion.div key={item.item_id} layout className="flex items-center gap-3 p-2 rounded-xl bg-white/3 border border-white/5">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center text-lg">
-                    {emoji}
+                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
+                    {url ? (
+                      <img src={url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    ) : (
+                      <UtensilsCrossed className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+                    )}
                   </div>
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {item.is_veg ? <div className="veg-dot flex-shrink-0" /> : <div className="nonveg-dot flex-shrink-0" />}
@@ -777,24 +804,33 @@ function OrdersTab() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge status={order.status} />
-                <span className="badge-gray">{order.payment_method === 'wallet' ? '💳 Wallet' : '📱 UPI'}</span>
+                <span className="badge-gray inline-flex items-center gap-1.5">
+                  {order.payment_method === 'wallet' ? (
+                    <>
+                      <Wallet className="w-3 h-3 text-cyan-400" strokeWidth={2} />
+                      <span>Wallet</span>
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="w-3 h-3 text-emerald-400" strokeWidth={2} />
+                      <span>UPI</span>
+                    </>
+                  )}
+                </span>
               </div>
               <p className="text-xs text-white/40 mt-1">#{order.id} · {formatDate(order.created_at)} {formatTime(order.created_at)}</p>
             </div>
             <span className="font-bold text-white">₹{order.total}</span>
           </div>
 
-          {/* Items with emojis */}
+          {/* Items */}
           <div className="text-sm text-white/60 space-y-0.5">
-            {order.order_items?.map((oi, idx) => {
-              const { emoji } = getFoodImage(oi.name, '')
-              return (
-                <div key={idx} className="flex items-center gap-1.5">
-                  <span>{emoji}</span>
-                  <span>{oi.name} × {oi.qty}</span>
-                </div>
-              )
-            })}
+            {order.order_items?.map((oi, idx) => (
+              <div key={idx} className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-600 flex-shrink-0" />
+                <span>{oi.name} × {oi.qty}</span>
+              </div>
+            ))}
           </div>
 
           {/* Active order QR */}
@@ -840,7 +876,7 @@ export default function CustomerDashboard() {
       <header className="sticky top-0 z-30 bg-[#07070d]/95 backdrop-blur-2xl border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-500/30 to-amber-500/10 border border-orange-500/30 flex items-center justify-center shadow-lg shadow-orange-500/10">
-            <span className="text-lg">⚡</span>
+            <Zap className="w-5 h-5 text-orange-400 fill-orange-400" strokeWidth={2} />
           </div>
           <div>
             <div className="flex items-center gap-2">
