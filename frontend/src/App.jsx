@@ -7,7 +7,7 @@ import {
   CheckCircle2, RefreshCw, AlertCircle, Award, Coffee, UtensilsCrossed, Repeat,
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
   Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
-  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt
+  MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt, Trash2
 } from 'lucide-react'
 import './styles.css'
 import { getFoodImage } from './lib/foodImages'
@@ -863,6 +863,92 @@ function App() {
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'STOCK_86', 'STOCK_UPDATE', `Updated stock for item #${itemId} to ${qty} units in outlet ${outletId}`)
   }
 
+  function addMenuItem(outletId, itemData) {
+    const name = (itemData.name || '').trim()
+    if (!name) {
+      setNotice('⚠️ Please enter a food item name.')
+      return false
+    }
+    const price = parseFloat(itemData.price)
+    if (isNaN(price) || price < 0) {
+      setNotice('⚠️ Please enter a valid price.')
+      return false
+    }
+    const stockQty = Math.max(0, parseInt(itemData.stock_qty, 10) || 0)
+    const available = itemData.available !== undefined ? Boolean(itemData.available) : stockQty > 0
+    const newItem = {
+      id: Date.now(),
+      name,
+      price,
+      is_veg: itemData.is_veg !== false,
+      category: (itemData.category || 'snacks').toLowerCase().trim(),
+      available,
+      stock_qty: stockQty,
+      description: (itemData.description || '').trim()
+    }
+
+    setOutlets(outs => outs.map(o => {
+      if (o.id !== outletId) return o
+      return {
+        ...o,
+        menu_items: [newItem, ...(o.menu_items || [])]
+      }
+    }))
+
+    const oName = outlets.find(o => o.id === outletId)?.name || outletId
+    setNotice(`✅ Added "${newItem.name}" (${money(newItem.price)}) to ${oName}!`)
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'MENU', 'ADD_ITEM', `Added "${newItem.name}" (${money(newItem.price)}, stock: ${newItem.stock_qty}) in ${oName}`)
+    return true
+  }
+
+  function updateMenuItem(outletId, itemId, updatedFields) {
+    let updatedItemName = ''
+    setOutlets(outs => outs.map(o => {
+      if (o.id !== outletId) return o
+      return {
+        ...o,
+        menu_items: (o.menu_items || []).map(i => {
+          if (i.id !== itemId) return i
+          const nextPrice = updatedFields.price !== undefined ? Math.max(0, parseFloat(updatedFields.price) || 0) : i.price
+          const nextStock = updatedFields.stock_qty !== undefined ? Math.max(0, parseInt(updatedFields.stock_qty, 10) || 0) : (i.stock_qty !== undefined ? i.stock_qty : 30)
+          const nextAvail = updatedFields.available !== undefined ? Boolean(updatedFields.available) : (nextStock > 0)
+          const updated = {
+            ...i,
+            ...updatedFields,
+            price: nextPrice,
+            stock_qty: nextStock,
+            available: nextAvail
+          }
+          updatedItemName = updated.name
+          return updated
+        })
+      }
+    }))
+
+    const oName = outlets.find(o => o.id === outletId)?.name || outletId
+    setNotice(`✅ Updated "${updatedItemName || 'item'}" in ${oName}!`)
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'MENU', 'UPDATE_ITEM', `Updated details for "${updatedItemName || itemId}" in ${oName}`)
+    return true
+  }
+
+  function deleteMenuItem(outletId, itemId) {
+    let deletedName = 'item'
+    setOutlets(outs => outs.map(o => {
+      if (o.id !== outletId) return o
+      const found = (o.menu_items || []).find(i => i.id === itemId)
+      if (found) deletedName = found.name
+      return {
+        ...o,
+        menu_items: (o.menu_items || []).filter(i => i.id !== itemId)
+      }
+    }))
+
+    const oName = outlets.find(o => o.id === outletId)?.name || outletId
+    setNotice(`🗑️ Removed "${deletedName}" from ${oName}.`)
+    addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'MENU', 'DELETE_ITEM', `Removed menu item "${deletedName}" (#${itemId}) from ${oName}`)
+    return true
+  }
+
   function toggleOutletOpen(outletId) {
     let outletName = outletId
     setOutlets(outs => outs.map(o => {
@@ -1163,6 +1249,10 @@ function App() {
             outlets={outlets}
             toggleOutletOpen={toggleOutletOpen}
             updateItemStockQty={updateItemStockQty}
+            toggleItemAvailability={toggleItemAvailability}
+            addMenuItem={addMenuItem}
+            updateMenuItem={updateMenuItem}
+            deleteMenuItem={deleteMenuItem}
             setNotice={setNotice}
             addAuditLog={addAuditLog}
             getItemRatingStats={getItemRatingStats}
@@ -1187,6 +1277,9 @@ function App() {
             setWallet={setWallet}
             setNotice={setNotice}
             updateItemStockQty={updateItemStockQty}
+            addMenuItem={addMenuItem}
+            updateMenuItem={updateMenuItem}
+            deleteMenuItem={deleteMenuItem}
             auditLogs={auditLogs}
             addAuditLog={addAuditLog}
             getItemRatingStats={getItemRatingStats}
@@ -2965,14 +3058,320 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FOOD ITEM CRUD MODAL (ADD / EDIT / DELETE / STOCK / AVAILABILITY)
+// ─────────────────────────────────────────────────────────────────────────────
+function FoodItemModal({
+  isOpen,
+  onClose,
+  outlet,
+  item = null,
+  onSave,
+  onDelete
+}) {
+  if (!isOpen || !outlet) return null
+
+  const isEdit = Boolean(item)
+  const [name, setName] = useState(item?.name || '')
+  const [price, setPrice] = useState(item?.price !== undefined ? item.price.toString() : '')
+  const [category, setCategory] = useState(item?.category ? item.category.toLowerCase() : 'snacks')
+  const [customCat, setCustomCat] = useState('')
+  const [isVeg, setIsVeg] = useState(item?.is_veg !== undefined ? item.is_veg : true)
+  const [stockQty, setStockQty] = useState(item?.stock_qty !== undefined ? item.stock_qty : 30)
+  const [available, setAvailable] = useState(item?.available !== undefined ? item.available : true)
+  const [description, setDescription] = useState(item?.description || '')
+
+  const standardCategories = [
+    { id: 'snacks', label: 'Snacks & Rolls' },
+    { id: 'meals', label: 'Biryani & Meals' },
+    { id: 'beverages', label: 'Juices, Chai & Drinks' },
+    { id: 'desserts', label: 'Sweets & Desserts' },
+    { id: 'breakfast', label: 'South Indian & Breakfast' },
+    { id: 'lunch', label: 'Lunch Combos' },
+    { id: 'dinner', label: 'Dinner & Breads' },
+    { id: 'starters', label: 'Crispy Starters' },
+    { id: 'store', label: 'Packaged & Store' }
+  ]
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      alert('Please enter a food item name.')
+      return
+    }
+    const numPrice = parseFloat(price)
+    if (isNaN(numPrice) || numPrice < 0) {
+      alert('Please enter a valid price (₹).')
+      return
+    }
+
+    const finalCat = category === '__custom__' ? (customCat.trim().toLowerCase() || 'snacks') : category
+    const numStock = Math.max(0, parseInt(stockQty, 10) || 0)
+
+    const payload = {
+      name: trimmedName,
+      price: numPrice,
+      category: finalCat,
+      is_veg: Boolean(isVeg),
+      stock_qty: numStock,
+      available: Boolean(available && numStock > 0),
+      description: description.trim()
+    }
+
+    onSave(outlet.id, payload, item?.id)
+    onClose()
+  }
+
+  const handleDelete = () => {
+    if (!item) return
+    if (window.confirm(`⚠️ Permanently delete "${item.name}" from ${outlet.name}'s menu? This cannot be undone.`)) {
+      if (onDelete) onDelete(outlet.id, item.id)
+      onClose()
+    }
+  }
+
+  return (
+    <div className="food-item-modal-overlay" onClick={onClose}>
+      <div className="food-item-modal-card" onClick={e => e.stopPropagation()}>
+        <div className="food-item-modal-header">
+          <div>
+            <span className="food-modal-tag">{isEdit ? '✏️ EDIT DISH & INVENTORY' : '✨ NEW FOOD ITEM'}</span>
+            <h3 style={{ margin: '4px 0 2px', fontSize: '18px', fontWeight: 800 }}>{isEdit ? `Edit: ${item.name}` : 'Add New Food Item'}</h3>
+            <p className="food-modal-sub" style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.85)' }}>
+              Outlet: <strong>{outlet.name}</strong>
+            </p>
+          </div>
+          <button className="close-btn" onClick={onClose} aria-label="Close modal">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="food-item-modal-body">
+          {/* Item Name */}
+          <div className="food-form-group">
+            <label className="food-form-label">
+              Food Item Name <span style={{ color: '#DC2626' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Masala Dosa, Chicken Roll, Cold Coffee"
+              required
+              className="food-form-input"
+              autoFocus={!isEdit}
+            />
+          </div>
+
+          {/* Price & Portions Grid */}
+          <div className="food-form-grid-2">
+            <div className="food-form-group">
+              <label className="food-form-label">
+                Selling Price (₹) <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+              <div className="price-input-wrapper">
+                <span className="price-currency-symbol">₹</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={price}
+                  onChange={e => setPrice(e.target.value)}
+                  placeholder="e.g. 50"
+                  required
+                  className="food-form-input price-input"
+                />
+              </div>
+            </div>
+
+            <div className="food-form-group">
+              <label className="food-form-label">
+                Portion Stock Count <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+              <div className="stock-modal-stepper">
+                <button
+                  type="button"
+                  className="modal-step-btn"
+                  onClick={() => setStockQty(Math.max(0, (parseInt(stockQty, 10) || 0) - 5))}
+                  title="Decrease 5"
+                >
+                  -5
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={stockQty}
+                  onChange={e => {
+                    const val = Math.max(0, parseInt(e.target.value, 10) || 0)
+                    setStockQty(val)
+                    if (val === 0) setAvailable(false)
+                    else if (!available) setAvailable(true)
+                  }}
+                  className="food-form-input stock-input"
+                />
+                <button
+                  type="button"
+                  className="modal-step-btn"
+                  onClick={() => setStockQty((parseInt(stockQty, 10) || 0) + 5)}
+                  title="Increase 5"
+                >
+                  +5
+                </button>
+                <button
+                  type="button"
+                  className="modal-step-btn reset"
+                  onClick={() => { setStockQty(30); setAvailable(true); }}
+                  title="Reset to 30 portions"
+                >
+                  30
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dietary Type: Veg vs Non-Veg */}
+          <div className="food-form-group">
+            <label className="food-form-label">Dietary Classification</label>
+            <div className="dietary-toggle-group">
+              <button
+                type="button"
+                className={`dietary-btn veg ${isVeg ? 'active' : ''}`}
+                onClick={() => setIsVeg(true)}
+              >
+                <span className="veg-icon" />
+                <span>Vegetarian (Pure Veg)</span>
+              </button>
+              <button
+                type="button"
+                className={`dietary-btn nonveg ${!isVeg ? 'active' : ''}`}
+                onClick={() => setIsVeg(false)}
+              >
+                <span className="nonveg-icon" />
+                <span>Non-Vegetarian</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Category Selection */}
+          <div className="food-form-group">
+            <label className="food-form-label">Item Category</label>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="food-form-input"
+            >
+              {standardCategories.map(c => (
+                <option key={c.id} value={c.id}>{c.label} ({c.id})</option>
+              ))}
+              <option value="__custom__">➕ Custom Category...</option>
+            </select>
+            {category === '__custom__' && (
+              <input
+                type="text"
+                value={customCat}
+                onChange={e => setCustomCat(e.target.value)}
+                placeholder="Enter custom category (e.g., chaat, noodles)"
+                className="food-form-input"
+                style={{ marginTop: '8px' }}
+                autoFocus
+              />
+            )}
+          </div>
+
+          {/* Availability Status */}
+          <div className="food-form-group">
+            <label className="food-form-label">Kitchen Status & Availability</label>
+            <div className="availability-toggle-group">
+              <button
+                type="button"
+                className={`avail-btn in-stock ${available && stockQty > 0 ? 'active' : ''}`}
+                onClick={() => {
+                  setAvailable(true)
+                  if (stockQty === 0) setStockQty(30)
+                }}
+              >
+                🟢 Available / In Stock ({stockQty > 0 ? stockQty : 30} portions)
+              </button>
+              <button
+                type="button"
+                className={`avail-btn out-stock ${!available || stockQty === 0 ? 'active' : ''}`}
+                onClick={() => {
+                  setAvailable(false)
+                  setStockQty(0)
+                }}
+              >
+                🔴 Mark 86 (Sold Out / Unavailable)
+              </button>
+            </div>
+          </div>
+
+          {/* Description & Item Details */}
+          <div className="food-form-group">
+            <label className="food-form-label">
+              Description & Preparation Details <small style={{ color: 'var(--text-muted)' }}>(Optional)</small>
+            </label>
+            <textarea
+              rows={2}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="e.g., Freshly made on tawa with homemade chutney and spiced potato masala."
+              className="food-form-input food-form-textarea"
+            />
+          </div>
+
+          {/* Modal Actions Footer */}
+          <div className="food-item-modal-footer">
+            {isEdit && (
+              <button
+                type="button"
+                className="btn-danger btn-spring"
+                onClick={handleDelete}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Trash2 size={14} />
+                <span>Delete Dish</span>
+              </button>
+            )}
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn-secondary btn-spring"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-primary btn-spring"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Check size={15} />
+                <span>{isEdit ? 'Save Changes' : 'Add Food Item'}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SHOP OWNER CONSOLE (CANTEEN FRANCHISEE / OWNER PORTAL)
 // ─────────────────────────────────────────────────────────────────────────────
-function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateItemStockQty, setNotice, addAuditLog, getItemRatingStats }) {
+function ShopOwnerConsole({
+  profile, orders, outlets, toggleOutletOpen, updateItemStockQty,
+  toggleItemAvailability, addMenuItem, updateMenuItem, deleteMenuItem,
+  setNotice, addAuditLog, getItemRatingStats
+}) {
   const [ownerTab, setOwnerTab] = useState('overview') // 'overview' | 'menu' | 'staff' | 'settlement'
   const [rushMode, setRushMode] = useState(false)
-  const [editingPriceItem, setEditingPriceItem] = useState(null)
-  const [newPriceVal, setNewPriceVal] = useState('')
   const [itemSearch, setItemSearch] = useState('')
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState('all')
+
+  // Food Item CRUD modal state
+  const [foodModalOpen, setFoodModalOpen] = useState(false)
+  const [modalItem, setModalItem] = useState(null)
 
   const myOutlet = outlets.find(o => o.id === profile.outlet_id) || outlets[0]
   const myOrders = orders.filter(o => o.outlet_id === myOutlet.id)
@@ -2981,14 +3380,23 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
   const activeOrdersCount = myOrders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
   const avgOrderVal = todayOrders.length > 0 ? Math.round(todayRevenue / todayOrders.length) : 0
 
-  function handleSavePrice(item) {
-    const p = parseFloat(newPriceVal)
-    if (!p || p <= 0) return setNotice('⚠️ Please enter a valid price amount')
-    item.price = p
-    setEditingPriceItem(null)
-    setNewPriceVal('')
-    setNotice(`✅ Price for "${item.name}" updated to ${money(p)}`)
-    if (addAuditLog) addAuditLog(profile.full_name, 'owner', 'MENU', 'PRICE_CHANGE', `Updated price of "${item.name}" to ${money(p)} (${myOutlet.name})`)
+  // Categories present in myOutlet
+  const ownerCategories = useMemo(() => {
+    const cats = new Set(['all'])
+    ;(myOutlet.menu_items || []).forEach(i => {
+      if (i.category) cats.add(i.category.toLowerCase())
+    })
+    return Array.from(cats)
+  }, [myOutlet])
+
+  const openAddItem = () => {
+    setModalItem(null)
+    setFoodModalOpen(true)
+  }
+
+  const openEditItem = (item) => {
+    setModalItem(item)
+    setFoodModalOpen(true)
   }
 
   return (
@@ -3034,7 +3442,7 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
       <div className="admin-subnav">
         {[
           { key: 'overview', label: '📊 Today Overview', icon: <PieChart size={15} /> },
-          { key: 'menu', label: '📋 Menu & Pricing Manager', icon: <Edit size={15} /> },
+          { key: 'menu', label: `📋 Menu & Items Manager (${(myOutlet.menu_items || []).length})`, icon: <Edit size={15} /> },
           { key: 'staff', label: '👨‍🍳 Staff on Duty', icon: <Users size={15} /> },
           { key: 'settlement', label: '💰 Daily Payout & Settlement', icon: <Banknote size={15} /> },
         ].map(t => (
@@ -3069,9 +3477,9 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
             </div>
             <div className="owner-stat-card">
               <span className="owner-stat-label">Available Menu Items</span>
-              <div className="owner-stat-val">{(myOutlet.menu_items || []).filter(i => i.available !== false).length} / {(myOutlet.menu_items || []).length}</div>
-              <div className="owner-stat-sub" style={{ color: (myOutlet.menu_items || []).filter(i => i.stock_qty === 0).length > 0 ? '#DC2626' : '#059669' }}>
-                {(myOutlet.menu_items || []).filter(i => i.stock_qty === 0).length} Sold Out (86)
+              <div className="owner-stat-val">{(myOutlet.menu_items || []).filter(i => i.available !== false && (i.stock_qty === undefined || i.stock_qty > 0)).length} / {(myOutlet.menu_items || []).length}</div>
+              <div className="owner-stat-sub" style={{ color: (myOutlet.menu_items || []).filter(i => i.stock_qty === 0 || i.available === false).length > 0 ? '#DC2626' : '#059669' }}>
+                {(myOutlet.menu_items || []).filter(i => i.stock_qty === 0 || i.available === false).length} Sold Out (86)
               </div>
             </div>
           </div>
@@ -3103,39 +3511,64 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
         </>
       )}
 
-      {/* ── TAB 2: MENU & PRICING MANAGER ── */}
+      {/* ── TAB 2: MENU & FOOD ITEMS MANAGER (FULL CRUD + STOCK & PRICING) ── */}
       {ownerTab === 'menu' && (
         <div className="admin-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <h3>Menu & Live Pricing Control</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Modify item pricing, portion counts, or mark 86 (Sold out) instantly.</p>
+              <h3><UtensilsCrossed size={18} style={{ marginRight: 8, verticalAlign: 'middle', color: 'var(--blue-primary)' }} />Menu & Food Items Management</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '2px 0 0' }}>
+                Add dishes, update prices & portions, delete items, or toggle live kitchen 86 availability.
+              </p>
             </div>
-            <input
-              value={itemSearch}
-              onChange={e => setItemSearch(e.target.value)}
-              placeholder="Search dishes..."
-              style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
-            />
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                value={itemSearch}
+                onChange={e => setItemSearch(e.target.value)}
+                placeholder="Search dishes..."
+                style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '13px', width: '180px' }}
+              />
+              <button
+                className="btn-primary btn-spring"
+                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', background: '#2563EB' }}
+                onClick={openAddItem}
+              >
+                <Plus size={16} /> Add Food Item
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Category Filter Chips */}
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '14px' }}>
+            {ownerCategories.map(cat => (
+              <button
+                key={cat}
+                className={`filter-pill btn-spring ${activeCategoryFilter === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategoryFilter(cat)}
+              >
+                {cat.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Items List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {(myOutlet.menu_items || [])
+              .filter(i => activeCategoryFilter === 'all' || (i.category && i.category.toLowerCase() === activeCategoryFilter))
               .filter(i => !itemSearch.trim() || i.name.toLowerCase().includes(itemSearch.toLowerCase()))
               .map(item => {
                 const foodImg = getFoodImage(item.name, item.category)
-                const isEditing = editingPriceItem === item.id
                 const stockQty = item.stock_qty !== undefined ? item.stock_qty : 30
-                const isZero = stockQty === 0
+                const isZero = stockQty === 0 || item.available === false
 
                 return (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img src={foodImg.url} alt={item.name} className="order-item-mini-thumb" style={{ width: 44, height: 44, borderRadius: 8 }} />
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: isZero ? '#FFF1F2' : '#FFFFFF', border: isZero ? '1.5px solid #FCA5A5' : '1px solid var(--border-color)', borderRadius: '12px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '240px', flex: '1 1 auto' }}>
+                      <img src={foodImg.url} alt={item.name} className="order-item-mini-thumb" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
-                          <strong style={{ fontSize: '14px' }}>{item.name}</strong>
+                          <strong style={{ fontSize: '15px', color: 'var(--text-main)' }}>{item.name}</strong>
                           <span className="item-cat-pill">{item.category}</span>
                           {getItemRatingStats && (() => {
                             const rStats = getItemRatingStats(item.id)
@@ -3147,50 +3580,113 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
                             ) : null
                           })()}
                         </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
-                          Portions: <strong style={{ color: isZero ? '#DC2626' : '#059669' }}>{stockQty}</strong>
+                        {item.description && (
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            {item.description}
+                          </p>
+                        )}
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span>Price: <strong style={{ color: 'var(--blue-primary)', fontSize: '13px' }}>{money(item.price)}</strong></span>
+                          <span>Portions: <strong style={{ color: isZero ? '#DC2626' : '#059669', fontSize: '13px' }}>{item.available === false ? '0 (Unavailable)' : stockQty}</strong></span>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {isEditing ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <input
-                            type="number"
-                            value={newPriceVal}
-                            onChange={e => setNewPriceVal(e.target.value)}
-                            style={{ width: '70px', padding: '6px', fontSize: '13px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)' }}
-                            autoFocus
-                          />
-                          <button className="btn-primary btn-spring" style={{ padding: '6px 10px', fontSize: '11px' }} onClick={() => handleSavePrice(item)}>
-                            Save
-                          </button>
-                          <button className="btn-secondary btn-spring" style={{ padding: '6px 8px', fontSize: '11px' }} onClick={() => setEditingPriceItem(null)}>
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <strong style={{ fontSize: '15px' }}>{money(item.price)}</strong>
-                          <button className="btn-secondary btn-spring" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => { setEditingPriceItem(item.id); setNewPriceVal(item.price.toString()) }}>
-                            <Edit size={12} /> Edit Price
-                          </button>
-                        </div>
-                      )}
+                    {/* Controls Toolbar: Stepper, 86, Edit, Delete */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {/* Portion Stepper */}
+                      <div className="stock-stepper-wrap" style={{ marginRight: '4px' }}>
+                        <button
+                          className="stock-step-btn btn-spring"
+                          onClick={() => updateItemStockQty(myOutlet.id, item.id, Math.max(0, stockQty - 1))}
+                          disabled={stockQty <= 0}
+                          title="Decrease 1 portion"
+                        >
+                          <Minus size={11} />
+                        </button>
+                        <input
+                          type="number"
+                          min="0"
+                          value={stockQty}
+                          onChange={e => updateItemStockQty(myOutlet.id, item.id, parseInt(e.target.value, 10) || 0)}
+                          className="stock-num-input"
+                          title="Direct numerical portion count"
+                        />
+                        <button
+                          className="stock-step-btn btn-spring"
+                          onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty + 1)}
+                          title="Increase 1 portion"
+                        >
+                          <Plus size={11} />
+                        </button>
+                      </div>
+
+                      {/* Fast 86 Toggle */}
                       <button
                         className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
                         onClick={() => updateItemStockQty(myOutlet.id, item.id, isZero ? 30 : 0)}
+                        title={isZero ? 'Restock to 30 portions' : 'Zero out (86) item'}
                       >
                         {isZero ? '✅ Restock (30)' : '❌ 86 (0)'}
+                      </button>
+
+                      {/* Full Edit Modal Button */}
+                      <button
+                        className="btn-secondary btn-spring"
+                        style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                        onClick={() => openEditItem(item)}
+                        title="Edit price, category, stock, or details"
+                      >
+                        <Edit size={12} /> Edit
+                      </button>
+
+                      {/* Delete Button */}
+                      <button
+                        className="btn-danger btn-spring"
+                        style={{ padding: '6px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        onClick={() => {
+                          if (window.confirm(`⚠️ Permanently remove "${item.name}" from ${myOutlet.name}?`)) {
+                            deleteMenuItem(myOutlet.id, item.id)
+                          }
+                        }}
+                        title="Delete item from menu"
+                      >
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
                 )
               })}
+
+            {(myOutlet.menu_items || []).filter(i => activeCategoryFilter === 'all' || (i.category && i.category.toLowerCase() === activeCategoryFilter)).length === 0 && (
+              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                <p>No food items match the filter or search.</p>
+                <button className="btn-secondary btn-spring" onClick={openAddItem} style={{ marginTop: '8px' }}>
+                  + Add First Dish to this Category
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Global Food Item Modal */}
+      <FoodItemModal
+        isOpen={foodModalOpen}
+        onClose={() => { setFoodModalOpen(false); setModalItem(null); }}
+        outlet={myOutlet}
+        item={modalItem}
+        onSave={(outId, itemData, existingId) => {
+          if (existingId) {
+            updateMenuItem(outId, existingId, itemData)
+          } else {
+            addMenuItem(outId, itemData)
+          }
+        }}
+        onDelete={(outId, itemId) => {
+          deleteMenuItem(outId, itemId)
+        }}
+      />
 
       {/* ── TAB 3: STAFF ON DUTY ── */}
       {ownerTab === 'staff' && (
@@ -3277,19 +3773,24 @@ function ShopOwnerConsole({ profile, orders, outlets, toggleOutletOpen, updateIt
 // STAFF & ADMIN CONSOLES
 // ─────────────────────────────────────────────────────────────────────────────
 function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
-  advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice, updateItemStockQty, auditLogs = [], addAuditLog, getItemRatingStats }) {
+  advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice, updateItemStockQty, addMenuItem, updateMenuItem, deleteMenuItem, auditLogs = [], addAuditLog, getItemRatingStats }) {
 
   const [scanInput, setScanInput]                 = useState('')
   const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitstudent.ac.in')
   const [creditAmount, setCreditAmount]           = useState('500')
   const [tvMode, setTvMode]                       = useState(false)
   const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'pos' | 'menu' | 'summary' | 'tv'
-  const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'orders' | 'audit' | 'event' | 'scanner'
+  const [adminTab, setAdminTab]                   = useState('kpi') // 'kpi' | 'canteens' | 'menu' | 'orders' | 'audit' | 'event' | 'scanner'
   const [auditFilter, setAuditFilter]             = useState('ALL') // 'ALL' | 'ORDER' | 'STOCK_86' | 'OUTLET' | 'SECURITY'
   const [soundEnabled, setSoundEnabled]           = useState(true)
   const [ordersSearch, setOrdersSearch]           = useState('')
   const [ordersFilterStatus, setOrdersFilterStatus] = useState('all')
   const [itemSearchQuery, setItemSearchQuery]     = useState('')
+
+  // Food Item CRUD modal state for Staff & Admin
+  const [foodModalOpen, setFoodModalOpen]         = useState(false)
+  const [modalItem, setModalItem]                 = useState(null)
+  const [targetOutletId, setTargetOutletId]       = useState(profile.outlet_id || outlets[0]?.id || 'g1')
 
   // Foodiv Vendor Formula states
   const [canteenMode, setCanteenMode]             = useState('normal') // 'normal' | 'rush' | 'pause'
@@ -3302,7 +3803,8 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 
   const isStaff = profile.role === 'staff'
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'superadmin' || profile.is_superadmin
-  const myOutlet = outlets.find(o => o.id === profile.outlet_id) || outlets[0]
+  const myOutlet = outlets.find(o => o.id === (isStaff ? profile.outlet_id : targetOutletId)) || outlets[0]
+  const activeManagedOutlet = outlets.find(o => o.id === targetOutletId) || myOutlet || outlets[0]
 
   // Staff: only their outlet's active orders, sorted oldest-first
   const myOrders = (isAdmin ? orders : orders.filter(o => o.outlet_id === myOutlet?.id))
@@ -3721,7 +4223,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
             {[
               { key: 'queue', label: 'KDS Live Queue', icon: <Clock3 size={16} />, badge: myOrders.length },
               { key: 'pos', label: 'POS Counter Punch', icon: <ShoppingBag size={16} /> },
-              { key: 'menu', label: '86-Stock Control', icon: <Edit size={16} /> },
+              { key: 'menu', label: '📋 Menu & Food Items', icon: <Edit size={16} />, badge: (myOutlet.menu_items || []).length },
               { key: 'summary', label: 'Shift Billing', icon: <BarChart2 size={16} /> },
               { key: 'tv', label: 'TV Display', icon: <Monitor size={16} /> },
             ].map(t => (
@@ -3744,9 +4246,9 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           {[
             { key: 'kpi', label: '📊 Campus Overview', count: null },
             { key: 'canteens', label: '🏪 Canteen Management', count: outlets.filter(o => !o.is_event).length },
+            { key: 'menu', label: '📋 Food Items & Menus', count: outlets.reduce((sum, o) => sum + (o.menu_items || []).length, 0) },
             { key: 'orders', label: '📦 Live Campus Stream', count: orders.length },
             { key: 'audit', label: '🛡️ Audit Log & System Telemetry', count: (auditLogs || []).length },
-            
             { key: 'scanner', label: '🔍 Token & QR Scanner', count: null },
           ].map(tab => (
             <button
@@ -4073,16 +4575,29 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                 <span>Sold Out (86):</span>
                 <strong>🔴 {outStockCount}</strong>
               </div>
-              <button
-                className="btn-secondary btn-spring"
-                style={{ marginLeft: 'auto', padding: '5px 12px', fontSize: '11px' }}
-                onClick={() => {
-                  outletMenuItems.forEach(it => updateItemStockQty(myOutlet.id, it.id, 30))
-                  setNotice('✅ All active items restocked to 30 portions!')
-                }}
-              >
-                ⚡ Restock All (30)
-              </button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  className="btn-secondary btn-spring"
+                  style={{ padding: '6px 12px', fontSize: '11px' }}
+                  onClick={() => {
+                    outletMenuItems.forEach(it => updateItemStockQty(myOutlet.id, it.id, 30))
+                    setNotice('✅ All active items restocked to 30 portions!')
+                  }}
+                >
+                  ⚡ Restock All (30)
+                </button>
+                <button
+                  className="btn-primary btn-spring"
+                  style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', background: '#2563EB' }}
+                  onClick={() => {
+                    setModalItem(null);
+                    setTargetOutletId(myOutlet.id);
+                    setFoodModalOpen(true);
+                  }}
+                >
+                  <Plus size={14} /> Add Food Item
+                </button>
+              </div>
             </div>
 
             {/* Category Filter Pills */}
@@ -4105,7 +4620,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                 .filter(i => !itemSearchQuery.trim() || i.name.toLowerCase().includes(itemSearchQuery.toLowerCase()))
                 .map(item => {
                   const stockQty = item.stock_qty !== undefined ? item.stock_qty : (item.available !== false ? 30 : 0)
-                  const isZero = stockQty === 0
+                  const isZero = stockQty === 0 || item.available === false
                   const isLow = stockQty > 0 && stockQty <= 10
                   const foodImg = getFoodImage(item.name, item.category)
 
@@ -4117,7 +4632,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             src={foodImg.url}
                             alt={item.name}
                             className="order-item-mini-thumb"
-                            style={{ width: '40px', height: '40px', borderRadius: '8px' }}
+                            style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }}
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                           <div>
@@ -4138,6 +4653,11 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
                               {money(item.price)} · {item.category || 'general'}
                             </span>
+                            {item.description && (
+                              <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                {item.description}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <span className={`stock-status-pill ${isZero ? 'stock-pill-out' : isLow ? 'stock-pill-low' : 'stock-pill-ok'}`}>
@@ -4145,12 +4665,12 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                         </span>
                       </div>
 
-                      {/* Stepper + Input + Batch Presets */}
+                      {/* Stepper + Input + Batch Presets + Edit + Delete */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px', gap: '8px', flexWrap: 'wrap' }}>
                         <div className="stock-stepper-wrap">
                           <button
                             className="stock-step-btn btn-spring"
-                            onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty - 1)}
+                            onClick={() => updateItemStockQty(myOutlet.id, item.id, Math.max(0, stockQty - 1))}
                             disabled={stockQty <= 0}
                             title="Decrease portions by 1"
                           >
@@ -4175,7 +4695,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                         </div>
 
                         {/* Quick Presets and Fast 86 Toggle */}
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             className="stock-preset-btn btn-spring"
                             onClick={() => updateItemStockQty(myOutlet.id, item.id, stockQty + 10)}
@@ -4196,6 +4716,30 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                             title={isZero ? 'Restock to 30 portions' : 'Zero out / 86 item'}
                           >
                             {isZero ? '✅ Restock (30)' : '❌ 86 (0)'}
+                          </button>
+                          <button
+                            className="btn-secondary btn-spring"
+                            style={{ padding: '4px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => {
+                              setModalItem(item);
+                              setTargetOutletId(myOutlet.id);
+                              setFoodModalOpen(true);
+                            }}
+                            title="Edit food details"
+                          >
+                            <Edit size={11} /> Edit
+                          </button>
+                          <button
+                            className="btn-danger btn-spring"
+                            style={{ padding: '4px 7px', fontSize: '11px', display: 'flex', alignItems: 'center' }}
+                            onClick={() => {
+                              if (window.confirm(`⚠️ Permanently remove "${item.name}" from ${myOutlet.name}?`)) {
+                                deleteMenuItem(myOutlet.id, item.id)
+                              }
+                            }}
+                            title="Delete food item"
+                          >
+                            <Trash2 size={11} />
                           </button>
                         </div>
                       </div>
@@ -4359,19 +4903,264 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{outletOrders.length} orders · {money(rev)}</span>
                     </div>
                   </div>
-                  <button
-                    className="btn-primary btn-spring"
-                    style={{ background: outlet.is_open ? '#059669' : '#DC2626', padding: '7px 14px', fontSize: '12px' }}
-                    onClick={() => toggleOutletOpen(outlet.id)}
-                  >
-                    {outlet.is_open ? '🟢 Open' : '🔴 Closed'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      className="btn-secondary btn-spring"
+                      style={{ padding: '7px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      onClick={() => {
+                        setTargetOutletId(outlet.id);
+                        setAdminTab('menu');
+                      }}
+                      title="Manage menu, prices & inventory for this outlet"
+                    >
+                      <Edit size={12} /> Food Items ({(outlet.menu_items || []).length})
+                    </button>
+                    <button
+                      className="btn-primary btn-spring"
+                      style={{ background: outlet.is_open ? '#059669' : '#DC2626', padding: '7px 14px', fontSize: '12px' }}
+                      onClick={() => toggleOutletOpen(outlet.id)}
+                    >
+                      {outlet.is_open ? '🟢 Open' : '🔴 Closed'}
+                    </button>
+                  </div>
                 </div>
               )
             })}
           </div>
         </div>
       )}
+
+      {/* ── ADMIN: FOOD ITEMS & MENUS MANAGEMENT ACROSS ALL CANTEENS ── */}
+      {isAdmin && adminTab === 'menu' && (() => {
+        const currentTargetOutlet = outlets.find(o => o.id === targetOutletId) || outlets[0]
+        const targetMenuItems = currentTargetOutlet.menu_items || []
+        const inStockCount = targetMenuItems.filter(i => (i.stock_qty !== undefined ? i.stock_qty : (i.available !== false ? 30 : 0)) > 10).length
+        const lowStockCount = targetMenuItems.filter(i => {
+          const s = i.stock_qty !== undefined ? i.stock_qty : (i.available !== false ? 30 : 0)
+          return s > 0 && s <= 10
+        }).length
+        const outStockCount = targetMenuItems.filter(i => (i.stock_qty !== undefined ? i.stock_qty : (i.available !== false ? 30 : 0)) === 0).length
+
+        const targetCats = new Set(['all'])
+        targetMenuItems.forEach(i => {
+          if (i.category) targetCats.add(i.category.toLowerCase())
+        })
+        const targetCategoriesList = Array.from(targetCats)
+
+        return (
+          <div className="admin-card">
+            {/* Header + Canteen Selector */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3><UtensilsCrossed size={18} style={{ marginRight: 8, verticalAlign: 'middle', color: 'var(--blue-primary)' }} />Campus Food Items & Menu Control</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '2px 0 0' }}>
+                  Super Admin centralized control — add, edit, delete, and restock items for any campus canteen.
+                </p>
+              </div>
+
+              {/* Outlet Selector Dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Canteen:</span>
+                <select
+                  value={targetOutletId}
+                  onChange={e => setTargetOutletId(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '10px', border: '1.5px solid var(--blue-primary)', fontSize: '13px', fontWeight: 700, background: '#FFFFFF', color: 'var(--text-main)' }}
+                >
+                  {outlets.map(o => (
+                    <option key={o.id} value={o.id}>
+                      {o.name} ({(o.menu_items || []).length} items)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Inventory Status Overview Banner */}
+            <div className="stock-summary-banner">
+              <div className="stock-summary-stat">
+                <span>Selected Outlet:</span>
+                <strong style={{ color: 'var(--blue-primary)' }}>{currentTargetOutlet.name}</strong>
+              </div>
+              <div className="stock-summary-stat">
+                <span>Total Items:</span>
+                <strong>{targetMenuItems.length}</strong>
+              </div>
+              <div className="stock-summary-stat" style={{ color: '#166534' }}>
+                <span>In Stock:</span>
+                <strong>🟢 {inStockCount}</strong>
+              </div>
+              <div className="stock-summary-stat" style={{ color: '#92400E' }}>
+                <span>Low Stock:</span>
+                <strong>🟡 {lowStockCount}</strong>
+              </div>
+              <div className="stock-summary-stat" style={{ color: '#991B1B' }}>
+                <span>Sold Out:</span>
+                <strong>🔴 {outStockCount}</strong>
+              </div>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  className="btn-secondary btn-spring"
+                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                  onClick={() => {
+                    targetMenuItems.forEach(it => updateItemStockQty(currentTargetOutlet.id, it.id, 30))
+                    setNotice(`✅ Restocked all items in ${currentTargetOutlet.name} to 30!`)
+                  }}
+                >
+                  ⚡ Restock All (30)
+                </button>
+                <button
+                  className="btn-primary btn-spring"
+                  style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', background: '#2563EB' }}
+                  onClick={() => {
+                    setModalItem(null);
+                    setFoodModalOpen(true);
+                  }}
+                >
+                  <Plus size={14} /> Add Food Item
+                </button>
+              </div>
+            </div>
+
+            {/* Search and Category Filter */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 10px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {targetCategoriesList.map(cat => (
+                  <button
+                    key={cat}
+                    className={`filter-pill btn-spring ${activeMenuCat === cat ? 'active' : ''}`}
+                    onClick={() => setActiveMenuCat(cat)}
+                  >
+                    {cat.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={itemSearchQuery}
+                onChange={e => setItemSearchQuery(e.target.value)}
+                placeholder={`Search in ${currentTargetOutlet.name}...`}
+                style={{ padding: '7px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '13px', width: '200px' }}
+              />
+            </div>
+
+            {/* Grid of Items */}
+            <div className="stock-control-grid">
+              {targetMenuItems
+                .filter(i => activeMenuCat === 'all' || (i.category && i.category.toLowerCase() === activeMenuCat))
+                .filter(i => !itemSearchQuery.trim() || i.name.toLowerCase().includes(itemSearchQuery.toLowerCase()))
+                .map(item => {
+                  const stockQty = item.stock_qty !== undefined ? item.stock_qty : (item.available !== false ? 30 : 0)
+                  const isZero = stockQty === 0 || item.available === false
+                  const isLow = stockQty > 0 && stockQty <= 10
+                  const foodImg = getFoodImage(item.name, item.category)
+
+                  return (
+                    <div key={item.id} className={`stock-control-card ${isZero ? 'is-zero' : ''}`}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <img
+                            src={foodImg.url}
+                            alt={item.name}
+                            className="order-item-mini-thumb"
+                            style={{ width: '42px', height: '42px', borderRadius: '8px', objectFit: 'cover' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span className={item.is_veg !== false ? 'veg-icon' : 'nonveg-icon'} />
+                              <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>{item.name}</strong>
+                              {getItemRatingStats && (() => {
+                                const rStats = getItemRatingStats(item.id)
+                                return rStats ? (
+                                  <span className="item-rating-chip" title={`${rStats.avg} ⭐`}>
+                                    <Star size={10} fill="#F59E0B" color="#F59E0B" />
+                                    <span>{rStats.avg}</span>
+                                  </span>
+                                ) : null
+                              })()}
+                            </div>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                              {money(item.price)} · {item.category || 'general'}
+                            </span>
+                            {item.description && (
+                              <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`stock-status-pill ${isZero ? 'stock-pill-out' : isLow ? 'stock-pill-low' : 'stock-pill-ok'}`}>
+                          {isZero ? '🔴 Sold Out (0)' : isLow ? `🟡 Low: ${stockQty}` : `🟢 ${stockQty} in stock`}
+                        </span>
+                      </div>
+
+                      {/* Stepper + Quick Presets + Edit + Delete */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px', gap: '6px', flexWrap: 'wrap' }}>
+                        <div className="stock-stepper-wrap">
+                          <button
+                            className="stock-step-btn btn-spring"
+                            onClick={() => updateItemStockQty(currentTargetOutlet.id, item.id, Math.max(0, stockQty - 1))}
+                            disabled={stockQty <= 0}
+                            title="Decrease 1 portion"
+                          >
+                            <Minus size={11} />
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            value={stockQty}
+                            onChange={e => updateItemStockQty(currentTargetOutlet.id, item.id, parseInt(e.target.value, 10) || 0)}
+                            className="stock-num-input"
+                            title="Direct edit portions"
+                          />
+                          <button
+                            className="stock-step-btn btn-spring"
+                            onClick={() => updateItemStockQty(currentTargetOutlet.id, item.id, stockQty + 1)}
+                            title="Increase 1 portion"
+                          >
+                            <Plus size={11} />
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            className={`stock-86-btn btn-spring ${isZero ? 'btn-action-restock' : 'btn-action-zero'}`}
+                            onClick={() => updateItemStockQty(currentTargetOutlet.id, item.id, isZero ? 30 : 0)}
+                            title={isZero ? 'Restock to 30 portions' : 'Mark 86 (0)'}
+                          >
+                            {isZero ? '✅ Restock' : '❌ 86'}
+                          </button>
+                          <button
+                            className="btn-secondary btn-spring"
+                            style={{ padding: '4px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                            onClick={() => {
+                              setModalItem(item);
+                              setFoodModalOpen(true);
+                            }}
+                            title="Edit food details"
+                          >
+                            <Edit size={11} /> Edit
+                          </button>
+                          <button
+                            className="btn-danger btn-spring"
+                            style={{ padding: '4px 7px', fontSize: '11px', display: 'flex', alignItems: 'center' }}
+                            onClick={() => {
+                              if (window.confirm(`⚠️ Permanently remove "${item.name}" from ${currentTargetOutlet.name}?`)) {
+                                deleteMenuItem(currentTargetOutlet.id, item.id);
+                              }
+                            }}
+                            title="Delete item"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── ADMIN: LIVE ORDERS STREAM ── */}
       {isAdmin && adminTab === 'orders' && (
@@ -4647,6 +5436,24 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
           </div>
         </div>
       )}
+
+      {/* Staff & Admin Food Item Modal */}
+      <FoodItemModal
+        isOpen={foodModalOpen}
+        onClose={() => { setFoodModalOpen(false); setModalItem(null); }}
+        outlet={activeManagedOutlet}
+        item={modalItem}
+        onSave={(outId, itemData, existingId) => {
+          if (existingId) {
+            updateMenuItem(outId, existingId, itemData)
+          } else {
+            addMenuItem(outId, itemData)
+          }
+        }}
+        onDelete={(outId, itemId) => {
+          deleteMenuItem(outId, itemId)
+        }}
+      />
     </section>
   )
 }
