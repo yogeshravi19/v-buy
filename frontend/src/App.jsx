@@ -691,7 +691,7 @@ function App() {
     setNotice(`Deficit auto-filled: ₹${amount} needed to checkout. Click 'Add Money' to top up!`)
   }
 
-  async function placeOrder(deliveryInfo = {}) {
+  async function placeOrder() {
     if (!cart.items.length) return
     if (cart.items.some(i => !i.available)) {
       return setNotice('Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
@@ -745,9 +745,6 @@ function App() {
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
         pickup_slot_id: selectedSlot?.id || null,
         pickup_slot_time: selectedSlot?.time_label || null,
-        delivery_mode: deliveryInfo?.deliveryMode || 'pickup',
-        room_details: deliveryInfo?.roomDetails || null,
-        contact_phone: deliveryInfo?.contactPhone || null,
         group_id: activeGroup ? activeGroup.id : null,
         is_group_payer: activeGroup ? true : false,
         created_at: new Date().toISOString(),
