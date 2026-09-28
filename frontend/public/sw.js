@@ -1,5 +1,5 @@
-// V-BUY Service Worker — Offline-first caching strategy
-const CACHE_NAME = 'vbuy-v1';
+// V FOODS Service Worker — Offline-first caching strategy
+const CACHE_NAME = 'vfoods-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -68,11 +68,11 @@ self.addEventListener('push', event => {
   if (!event.data) return;
   const data = event.data.json();
   event.waitUntil(
-    self.registration.showNotification(data.title || 'V-BUY', {
+    self.registration.showNotification(data.title || 'V FOODS', {
       body: data.body || '',
       icon: '/vit-chennai-logo.png',
       badge: '/vit-chennai-logo.png',
-      tag: data.tag || 'vbuy-notification',
+      tag: data.tag || 'vfoods-notification',
     })
   );
 });

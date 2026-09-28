@@ -1,6 +1,6 @@
-# Running V-BUY Locally
+# Running V FOODS Locally
 
-A practical step-by-step setup guide for running the V-BUY frontend and backend on your local computer for development and testing.
+A practical step-by-step setup guide for running the V FOODS frontend and backend on your local computer for development and testing.
 
 ---
 
@@ -16,7 +16,7 @@ Before starting, make sure you have the following installed on your computer:
 
 ## 2. External Service Dependencies
 
-V-BUY connects to three cloud services. To run the full system with live data, you will need credentials from each:
+V FOODS connects to three cloud services. To run the full system with live data, you will need credentials from each:
 
 1. **Supabase Project**: Provides the PostgreSQL database, authentication, Row-Level Security, and Realtime WebSocket events.
 2. **PhonePe Merchant Sandbox**: Provides test payment gateway credentials (`MERCHANT_ID`, `SALT_KEY`, and `SALT_INDEX`) for testing wallet top-ups without spending real money.

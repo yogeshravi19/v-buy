@@ -1,5 +1,5 @@
 -- =============================================================================
--- CampusBite — Supabase Migration 001: Full Initial Schema
+-- V FOODS — Supabase Migration 001: Full Initial Schema
 -- Run in: Supabase SQL Editor → New Query → Run
 -- =============================================================================
 

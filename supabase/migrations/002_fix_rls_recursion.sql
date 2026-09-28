@@ -1,5 +1,5 @@
 -- =============================================================================
--- CampusBite — Migration 002: Fix RLS Policy Infinite Recursion
+-- V FOODS — Migration 002: Fix RLS Policy Infinite Recursion
 -- Run in Supabase SQL Editor to resolve error 42P17
 -- =============================================================================
 

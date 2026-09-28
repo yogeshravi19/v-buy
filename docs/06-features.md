@@ -1,6 +1,6 @@
 # Feature Catalog: Active & Retired Features
 
-A plain-English overview of the active features built into V-BUY, along with features that have been retired.
+A plain-English overview of the active features built into V FOODS, along with features that have been retired.
 
 ---
 
@@ -16,7 +16,7 @@ A plain-English overview of the active features built into V-BUY, along with fea
 
 ### 3. Group Ordering
 - **What it does**: Allows groups of friends or classmates to pool their food choices into a single order.
-- **How it works**: One student starts a group cart and shares a short 4-digit code (such as `VBUY-42`). Friends join on their own phones, add dishes, and the host pays for the combined cart in one transaction. The kitchen receives one consolidated ticket with all items clearly grouped.
+- **How it works**: One student starts a group cart and shares a short 4-digit code (such as `V FOODS-42`). Friends join on their own phones, add dishes, and the host pays for the combined cart in one transaction. The kitchen receives one consolidated ticket with all items clearly grouped.
 
 ### 4. Scheduled Pickup Time Slots
 - **What it does**: Helps students avoid long lunch lines by scheduling their food pickup for a specific time window.

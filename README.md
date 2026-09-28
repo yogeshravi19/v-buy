@@ -1,6 +1,6 @@
-# V-BUY
+# V FOODS
 
-V-BUY is a campus food pre-ordering, prepaid digital wallet, and kitchen management platform built for college canteens and festival stalls. It eliminates physical counter lines by letting students load a digital campus wallet, order food ahead of time, and pick up hot meals using instant token and QR passes.
+V FOODS is a campus food pre-ordering, prepaid digital wallet, and kitchen management platform built for college canteens and festival stalls. It eliminates physical counter lines by letting students load a digital campus wallet, order food ahead of time, and pick up hot meals using instant token and QR passes.
 
 ---
 
@@ -11,7 +11,7 @@ Full documentation: see **[docs/00-start-here.md](docs/00-start-here.md)**.
 The `/docs` directory is organized as a step-by-step reading path for anyone new to the project:
 
 - **[00-start-here.md](docs/00-start-here.md)**: Entry point and reading guide
-- **[01-what-is-vbuy.md](docs/01-what-is-vbuy.md)**: The campus problem and why V-BUY exists
+- **[01-what-is-vfoods.md](docs/01-what-is-vfoods.md)**: The campus problem and why V FOODS exists
 - **[02-the-four-roles.md](docs/02-the-four-roles.md)**: Super Admin, Shop Owner, Kitchen Staff, and Student roles
 - **[03-how-an-order-works.md](docs/03-how-an-order-works.md)**: The end-to-end order and pickup lifecycle
 - **[04-the-database.md](docs/04-the-database.md)**: Live tables, outlet connections, RLS security, and money rules

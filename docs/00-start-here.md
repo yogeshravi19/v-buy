@@ -1,8 +1,8 @@
-# Start Here: The V-BUY Learning Path
+# Start Here: The V FOODS Learning Path
 
-Welcome to V-BUY! This folder is organized as a step-by-step learning guide for anyone completely new to this project. By reading these short guides in order, you will understand how the entire system works from top to bottom, even if you have zero technical background.
+Welcome to V FOODS! This folder is organized as a step-by-step learning guide for anyone completely new to this project. By reading these short guides in order, you will understand how the entire system works from top to bottom, even if you have zero technical background.
 
-V-BUY is a campus food pre-ordering and digital wallet app built specifically for college canteens and food stalls. It is strictly pickup-only (no food delivery drivers), operates entirely on a prepaid digital campus wallet, and serves four distinct types of users: students ordering meals, kitchen cooks preparing food, canteen owners running stalls, and university administrators overseeing campus dining.
+V FOODS is a campus food pre-ordering and digital wallet app built specifically for college canteens and food stalls. It is strictly pickup-only (no food delivery drivers), operates entirely on a prepaid digital campus wallet, and serves four distinct types of users: students ordering meals, kitchen cooks preparing food, canteen owners running stalls, and university administrators overseeing campus dining.
 
 > **Reading Note**: Read these guides in order from 01 to 08. Each document builds on the previous one. Do not skip ahead if you are new to the project.
 
@@ -10,7 +10,7 @@ V-BUY is a campus food pre-ordering and digital wallet app built specifically fo
 
 ## The Reading Order
 
-1. **[01-what-is-vbuy.md](01-what-is-vbuy.md)**: The core idea of V-BUY, the campus problem it solves, and why it is built differently from commercial delivery apps.
+1. **[01-what-is-vfoods.md](01-what-is-vfoods.md)**: The core idea of V FOODS, the campus problem it solves, and why it is built differently from commercial delivery apps.
 2. **[02-the-four-roles.md](02-the-four-roles.md)**: Who uses the system (Students, Kitchen Staff, Canteen Owners, Super Admins) and what each role can see and do.
 3. **[03-how-an-order-works.md](03-how-an-order-works.md)**: The complete lifecycle of an order from adding items to kitchen preparation and QR-verified counter pickup.
 4. **[04-the-database.md](04-the-database.md)**: What information the database stores, how stalls are connected, and how built-in security rules keep data safe.

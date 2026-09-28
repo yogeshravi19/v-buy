@@ -6,7 +6,7 @@ A plain-English guide to how Supabase stores information, connects campus food s
 
 ## What Supabase Actually Stores
 
-Here are the real tables active inside V-BUY's database, with a simple explanation of what each one holds:
+Here are the real tables active inside V FOODS's database, with a simple explanation of what each one holds:
 
 - **outlets**: Holds the list of campus canteens, food courts, and festival stalls, including their names, campus locations, and whether they are currently open or closed.
 - **menu_items**: Holds all the dishes and drinks available to buy, along with their prices, food category, veg or non-veg badge, time availability, and current stock count.
@@ -36,11 +36,11 @@ Because of this single thread, different shops can operate on the same platform 
 
 ## How the Four Roles See Different Things
 
-V-BUY uses a built-in database security system called **Row-Level Security (RLS)**.
+V FOODS uses a built-in database security system called **Row-Level Security (RLS)**.
 
 In most simple websites, the server sends all information to the phone, and the app just hides buttons the user shouldn't click. If a clever person inspects the network, they can see other people's data.
 
-In V-BUY, security is handled inside the database itself:
+In V FOODS, security is handled inside the database itself:
 - **The Student Rule**: A student's phone can only read rows that have their own user ID. The database physically refuses to return another student's wallet balance or orders, no matter what request is sent.
 - **The Kitchen Staff Rule**: Kitchen staff can only read orders and menu items that have their shop's `outlet_id`. A staff member at Gazebo cannot see orders placed at North Square.
 - **The Shop Owner Rule**: Shop owners can see their own outlet's daily revenue, staff team, and menu prices, but cannot see any other canteen's sales.
@@ -68,7 +68,7 @@ Here is what happens inside the database from the moment a student taps "Place O
 
 ## The Money Rules
 
-V-BUY follows two strict money rules to protect both students and shop owners:
+V FOODS follows two strict money rules to protect both students and shop owners:
 
 ### 1. The Database Always Calculates Prices Itself
 - A student's phone or browser is never allowed to tell the database how much an order costs.

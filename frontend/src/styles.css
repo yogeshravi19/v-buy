@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   V-BUY · Colour palette sourced 1:1 from gautham-here/campusbite
+   V FOODS · Campus Smart Dining & Digital Wallet Platform
    + Premium 2026 transitions & redesigned outlet cards
 ═══════════════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* ── EXACT CampusBite colour tokens ─────────────────────────────────────── */
+/* ── EXACT V FOODS colour tokens ─────────────────────────────────────────── */
 :root {
   --font-body:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-heading: 'Outfit', system-ui, -apple-system, sans-serif;
@@ -39,7 +39,7 @@
   --shadow-lg:    0 10px 25px -5px rgba(11,25,44,0.15);
   --shadow-blue:  0 8px 24px rgba(30,64,175,0.2);
 
-  /* Status badges — exact campusbite values */
+  /* Status badges — exact V FOODS values */
   --badge-placed-bg:    #FEF3C7;
   --badge-placed-text:  #92400E;
   --badge-prep-bg:      #DBEAFE;
@@ -4244,7 +4244,7 @@ body::before {
   }
 }
 
-/* ── STUDENT UX ENHANCEMENTS (V-BUY PALETTE) ────────────────────────────── */
+/* ── STUDENT UX ENHANCEMENTS (V FOODS PALETTE) ────────────────────────────── */
 
 /* 1. Canteen Rapid Switcher Rail */
 .canteen-rail-container {
@@ -4472,7 +4472,7 @@ body::before {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   PROFILE VIEW STYLING (V-BUY ROYAL BLUE & SLATE AESTHETIC)
+   PROFILE VIEW STYLING (V FOODS ROYAL BLUE & SLATE AESTHETIC)
    ───────────────────────────────────────────────────────────────────────────── */
 .profile-container {
   max-width: 740px;
@@ -4743,13 +4743,12 @@ body::before {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SAVEETHA V-BUY INSPIRED UI/UX ARCHITECTURE FOR V-BUY USER DASHBOARD
-   Layout, structure, and information hierarchy adapted from reference app
-   Strictly 100% V-BUY colors, VIT Chennai campus canteens & pure counter preorder
+   V FOODS CAMPUS DINING & PRE-ORDER USER DASHBOARD
+   Strictly 100% V FOODS colors, VIT Chennai campus canteens & pure counter preorder
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. Desktop Framing & Canvas ── */
-.vbuy-desktop-backdrop {
+.vfoods-desktop-backdrop {
   min-height: 100vh;
   width: 100%;
   background: radial-gradient(circle at 50% 15%, #E2E8F0 0%, #94A3B8 100%);
@@ -4761,12 +4760,12 @@ body::before {
 }
 
 @media (min-width: 768px) {
-  .vbuy-desktop-backdrop {
+  .vfoods-desktop-backdrop {
     padding: 16px 0;
   }
 }
 
-.vbuy-app-frame {
+.vfoods-app-frame {
   width: 100%;
   max-width: 440px;
   height: 100vh;
@@ -4779,7 +4778,7 @@ body::before {
 }
 
 @media (min-width: 768px) {
-  .vbuy-app-frame {
+  .vfoods-app-frame {
     height: 94vh;
     max-height: 900px;
     border-radius: 30px;
@@ -4788,7 +4787,7 @@ body::before {
 }
 
 /* ── 2. Top Header Bar ── */
-.vbuy-top-bar {
+.vfoods-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4800,37 +4799,37 @@ body::before {
   border-bottom: 1px solid #F1F5F9;
 }
 
-.vbuy-brand-block {
+.vfoods-brand-block {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.vbuy-brand-row {
+.vfoods-brand-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.vbuy-brand-logo {
+.vfoods-brand-logo {
   width: 28px;
   height: 28px;
   border-radius: 8px;
   object-fit: contain;
 }
 
-.vbuy-brand-name {
+.vfoods-brand-name {
   font-size: 19px;
   font-weight: 900;
   letter-spacing: -0.5px;
   color: #0F172A;
 }
 
-.vbuy-brand-name span {
+.vfoods-brand-name span {
   color: #2563EB;
 }
 
-.vbuy-location-pill {
+.vfoods-location-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -4840,13 +4839,13 @@ body::before {
   cursor: pointer;
 }
 
-.vbuy-top-actions {
+.vfoods-top-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.vbuy-wallet-chip {
+.vfoods-wallet-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -4861,12 +4860,12 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-wallet-chip:hover {
+.vfoods-wallet-chip:hover {
   background: #DBEAFE;
   transform: translateY(-1px);
 }
 
-.vbuy-role-chip {
+.vfoods-role-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -4880,19 +4879,19 @@ body::before {
 }
 
 /* ── 3. Main Content Container ── */
-.vbuy-main-content {
+.vfoods-main-content {
   flex: 1;
   padding: 12px 16px 90px 16px;
   overflow-y: auto;
 }
 
 /* ── 4. Search Bar ── */
-.vbuy-search-wrap {
+.vfoods-search-wrap {
   position: relative;
   margin-bottom: 18px;
 }
 
-.vbuy-search-input {
+.vfoods-search-input {
   width: 100%;
   padding: 12px 40px 12px 38px;
   background: #F1F5F9;
@@ -4906,13 +4905,13 @@ body::before {
   box-sizing: border-box;
 }
 
-.vbuy-search-input:focus {
+.vfoods-search-input:focus {
   background: #FFFFFF;
   border-color: #2563EB;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.vbuy-search-icon {
+.vfoods-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -4921,7 +4920,7 @@ body::before {
   pointer-events: none;
 }
 
-.vbuy-search-clear {
+.vfoods-search-clear {
   position: absolute;
   right: 12px;
   top: 50%;
@@ -4937,14 +4936,14 @@ body::before {
 }
 
 /* ── 5. Popular Near By Section ── */
-.vbuy-section-header {
+.vfoods-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.vbuy-section-title {
+.vfoods-section-title {
   font-size: 15px;
   font-weight: 800;
   color: #0F172A;
@@ -4954,7 +4953,7 @@ body::before {
   letter-spacing: -0.2px;
 }
 
-.vbuy-filter-pill-group {
+.vfoods-filter-pill-group {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -4963,7 +4962,7 @@ body::before {
   border-radius: 20px;
 }
 
-.vbuy-filter-pill-btn {
+.vfoods-filter-pill-btn {
   border: none;
   background: transparent;
   padding: 4px 10px;
@@ -4978,13 +4977,13 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-filter-pill-btn.active {
+.vfoods-filter-pill-btn.active {
   background: #FFFFFF;
   color: #0F172A;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.vbuy-veg-dot {
+.vfoods-veg-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -4992,7 +4991,7 @@ body::before {
   display: inline-block;
 }
 
-.vbuy-nonveg-dot {
+.vfoods-nonveg-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -5001,14 +5000,14 @@ body::before {
 }
 
 /* ── 6. 3-Column / 2-Column Popular Dish Grid ── */
-.vbuy-dish-grid-3 {
+.vfoods-dish-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 24px;
 }
 
-.vbuy-dish-card {
+.vfoods-dish-card {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 14px;
@@ -5018,12 +5017,12 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-dish-card:hover {
+.vfoods-dish-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
-.vbuy-dish-img-wrap {
+.vfoods-dish-img-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -5031,18 +5030,18 @@ body::before {
   overflow: hidden;
 }
 
-.vbuy-dish-img {
+.vfoods-dish-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.25s ease;
 }
 
-.vbuy-dish-card:hover .vbuy-dish-img {
+.vfoods-dish-card:hover .vfoods-dish-img {
   transform: scale(1.04);
 }
 
-.vbuy-dish-veg-badge {
+.vfoods-dish-veg-badge {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -5056,21 +5055,21 @@ body::before {
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
-.vbuy-veg-icon {
+.vfoods-veg-icon {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #10B981;
 }
 
-.vbuy-nonveg-icon {
+.vfoods-nonveg-icon {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #EF4444;
 }
 
-.vbuy-dish-body {
+.vfoods-dish-body {
   padding: 8px 8px 10px 8px;
   display: flex;
   flex-direction: column;
@@ -5078,7 +5077,7 @@ body::before {
   justify-content: space-between;
 }
 
-.vbuy-dish-title {
+.vfoods-dish-title {
   font-size: 11.5px;
   font-weight: 700;
   color: #0F172A;
@@ -5092,7 +5091,7 @@ body::before {
   min-height: 28px;
 }
 
-.vbuy-dish-canteen {
+.vfoods-dish-canteen {
   font-size: 9.5px;
   font-weight: 600;
   color: #64748B;
@@ -5102,20 +5101,20 @@ body::before {
   margin-bottom: 6px;
 }
 
-.vbuy-dish-bottom {
+.vfoods-dish-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
 }
 
-.vbuy-dish-price {
+.vfoods-dish-price {
   font-size: 12px;
   font-weight: 900;
   color: #0F172A;
 }
 
-.vbuy-dish-add-btn {
+.vfoods-dish-add-btn {
   border: none;
   background: #EFF6FF;
   border: 1px solid #BFDBFE;
@@ -5128,12 +5127,12 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-dish-add-btn:hover {
+.vfoods-dish-add-btn:hover {
   background: #2563EB;
   color: #FFFFFF;
 }
 
-.vbuy-dish-qty-stepper {
+.vfoods-dish-qty-stepper {
   display: flex;
   align-items: center;
   background: #2563EB;
@@ -5142,7 +5141,7 @@ body::before {
   padding: 1px;
 }
 
-.vbuy-dish-qty-stepper button {
+.vfoods-dish-qty-stepper button {
   background: none;
   border: none;
   color: #FFFFFF;
@@ -5152,21 +5151,21 @@ body::before {
   cursor: pointer;
 }
 
-.vbuy-dish-qty-stepper span {
+.vfoods-dish-qty-stepper span {
   font-size: 11px;
   font-weight: 800;
   padding: 0 4px;
 }
 
 /* ── 7. Food Courts Section (2-Column Grid) ── */
-.vbuy-food-courts-grid {
+.vfoods-food-courts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }
 
-.vbuy-fc-card {
+.vfoods-fc-card {
   position: relative;
   aspect-ratio: 4 / 3.4;
   border-radius: 18px;
@@ -5176,23 +5175,23 @@ body::before {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
-.vbuy-fc-card:hover {
+.vfoods-fc-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
 }
 
-.vbuy-fc-img {
+.vfoods-fc-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
 
-.vbuy-fc-card:hover .vbuy-fc-img {
+.vfoods-fc-card:hover .vfoods-fc-img {
   transform: scale(1.05);
 }
 
-.vbuy-fc-overlay {
+.vfoods-fc-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(15, 23, 42, 0.85) 100%);
@@ -5202,7 +5201,7 @@ body::before {
   padding: 12px;
 }
 
-.vbuy-fc-title {
+.vfoods-fc-title {
   color: #FFFFFF;
   font-size: 13.5px;
   font-weight: 900;
@@ -5211,7 +5210,7 @@ body::before {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.vbuy-fc-sub {
+.vfoods-fc-sub {
   color: #CBD5E1;
   font-size: 10px;
   font-weight: 600;
@@ -5221,7 +5220,7 @@ body::before {
   text-overflow: ellipsis;
 }
 
-.vbuy-fc-pill {
+.vfoods-fc-pill {
   align-self: flex-start;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
@@ -5236,13 +5235,13 @@ body::before {
 }
 
 /* ── 8. Food Court Explorer View (Split Layout) ── */
-.vbuy-explorer-view {
+.vfoods-explorer-view {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.vbuy-explorer-top-bar {
+.vfoods-explorer-top-bar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -5254,7 +5253,7 @@ body::before {
   z-index: 30;
 }
 
-.vbuy-back-btn {
+.vfoods-back-btn {
   background: #F1F5F9;
   border: 1px solid #E2E8F0;
   border-radius: 10px;
@@ -5268,18 +5267,18 @@ body::before {
   flex-shrink: 0;
 }
 
-.vbuy-explorer-title-box {
+.vfoods-explorer-title-box {
   flex: 1;
 }
 
-.vbuy-explorer-main-title {
+.vfoods-explorer-main-title {
   font-size: 14.5px;
   font-weight: 900;
   color: #0F172A;
   line-height: 1.2;
 }
 
-.vbuy-explorer-sub-title {
+.vfoods-explorer-sub-title {
   font-size: 10.5px;
   font-weight: 700;
   color: #64748B;
@@ -5287,14 +5286,14 @@ body::before {
   letter-spacing: 0.3px;
 }
 
-.vbuy-explorer-split {
+.vfoods-explorer-split {
   display: flex;
   flex: 1;
   min-height: calc(100vh - 120px);
 }
 
 /* Left Vertical Canteen Rail */
-.vbuy-left-rail {
+.vfoods-left-rail {
   width: 78px;
   background: #F8FAFC;
   border-right: 1px solid #E2E8F0;
@@ -5307,7 +5306,7 @@ body::before {
   flex-shrink: 0;
 }
 
-.vbuy-rail-avatar-btn {
+.vfoods-rail-avatar-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5321,7 +5320,7 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-rail-avatar-circle {
+.vfoods-rail-avatar-circle {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -5339,7 +5338,7 @@ body::before {
   transition: all 0.2s ease;
 }
 
-.vbuy-rail-avatar-btn.active .vbuy-rail-avatar-circle {
+.vfoods-rail-avatar-btn.active .vfoods-rail-avatar-circle {
   border-color: #2563EB;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
   transform: scale(1.05);
@@ -5347,7 +5346,7 @@ body::before {
   color: #1D4ED8;
 }
 
-.vbuy-rail-avatar-name {
+.vfoods-rail-avatar-name {
   font-size: 9.5px;
   font-weight: 700;
   color: #64748B;
@@ -5361,12 +5360,12 @@ body::before {
   -webkit-box-orient: vertical;
 }
 
-.vbuy-rail-avatar-btn.active .vbuy-rail-avatar-name {
+.vfoods-rail-avatar-btn.active .vfoods-rail-avatar-name {
   color: #1D4ED8;
   font-weight: 800;
 }
 
-.vbuy-rail-closed-tag {
+.vfoods-rail-closed-tag {
   font-size: 8px;
   font-weight: 800;
   color: #DC2626;
@@ -5377,17 +5376,17 @@ body::before {
 }
 
 /* Right Menu Area */
-.vbuy-right-content {
+.vfoods-right-content {
   flex: 1;
   padding: 12px;
   overflow-y: auto;
 }
 
-.vbuy-right-header {
+.vfoods-right-header {
   margin-bottom: 10px;
 }
 
-.vbuy-right-canteen-name {
+.vfoods-right-canteen-name {
   font-size: 14.5px;
   font-weight: 900;
   color: #0F172A;
@@ -5396,13 +5395,13 @@ body::before {
   gap: 6px;
 }
 
-.vbuy-right-item-count {
+.vfoods-right-item-count {
   font-size: 11px;
   font-weight: 600;
   color: #64748B;
 }
 
-.vbuy-right-search-input {
+.vfoods-right-search-input {
   width: 100%;
   padding: 8px 12px;
   border-radius: 10px;
@@ -5414,12 +5413,12 @@ body::before {
   box-sizing: border-box;
 }
 
-.vbuy-right-search-input:focus {
+.vfoods-right-search-input:focus {
   background: #FFFFFF;
   border-color: #2563EB;
 }
 
-.vbuy-right-filters-scroll {
+.vfoods-right-filters-scroll {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -5429,7 +5428,7 @@ body::before {
   scrollbar-width: none;
 }
 
-.vbuy-right-filter-chip {
+.vfoods-right-filter-chip {
   flex-shrink: 0;
   padding: 4px 10px;
   border-radius: 14px;
@@ -5442,13 +5441,13 @@ body::before {
   white-space: nowrap;
 }
 
-.vbuy-right-filter-chip.active {
+.vfoods-right-filter-chip.active {
   background: #EFF6FF;
   border-color: #2563EB;
   color: #1D4ED8;
 }
 
-.vbuy-explorer-grid-2 {
+.vfoods-explorer-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
@@ -5456,7 +5455,7 @@ body::before {
 }
 
 /* ── 9. Floating Bottom "VIEW CART" Pill ── */
-.vbuy-floating-cart-bar {
+.vfoods-floating-cart-bar {
   position: absolute;
   bottom: 68px;
   left: 14px;
@@ -5471,33 +5470,33 @@ body::before {
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
   z-index: 50;
   cursor: pointer;
-  animation: vbuy-slide-up 0.25s ease-out;
+  animation: vfoods-slide-up 0.25s ease-out;
 }
 
-@keyframes vbuy-slide-up {
+@keyframes vfoods-slide-up {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.vbuy-floating-cart-left {
+.vfoods-floating-cart-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.vbuy-floating-cart-count {
+.vfoods-floating-cart-count {
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.vbuy-floating-cart-price {
+.vfoods-floating-cart-price {
   font-size: 14px;
   font-weight: 900;
 }
 
-.vbuy-floating-cart-right {
+.vfoods-floating-cart-right {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -5507,7 +5506,7 @@ body::before {
 }
 
 /* ── 10. Bottom Navigation Bar ── */
-.vbuy-bottom-nav {
+.vfoods-bottom-nav {
   position: sticky;
   bottom: 0;
   left: 0;
@@ -5523,7 +5522,7 @@ body::before {
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
 }
 
-.vbuy-nav-tab {
+.vfoods-nav-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5538,16 +5537,16 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-nav-tab.active {
+.vfoods-nav-tab.active {
   color: #2563EB;
 }
 
-.vbuy-nav-tab-label {
+.vfoods-nav-tab-label {
   font-size: 10px;
   font-weight: 700;
 }
 
-.vbuy-nav-badge {
+.vfoods-nav-badge {
   position: absolute;
   top: 0px;
   right: 10px;
@@ -5561,7 +5560,7 @@ body::before {
   text-align: center;
 }
 
-.vbuy-nav-pulse-dot {
+.vfoods-nav-pulse-dot {
   position: absolute;
   top: 2px;
   right: 14px;
@@ -5570,10 +5569,10 @@ body::before {
   border-radius: 50%;
   background: #10B981;
   box-shadow: 0 0 0 2px #FFFFFF;
-  animation: vbuy-pulse 1.5s infinite;
+  animation: vfoods-pulse 1.5s infinite;
 }
 
-@keyframes vbuy-pulse {
+@keyframes vfoods-pulse {
   0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
   70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
@@ -5582,7 +5581,7 @@ body::before {
 
 
 /* ── 11. Cart View ── */
-.vbuy-cart-view {
+.vfoods-cart-view {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -5590,7 +5589,7 @@ body::before {
   position: relative;
 }
 
-.vbuy-cart-header {
+.vfoods-cart-header {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -5602,14 +5601,14 @@ body::before {
   z-index: 30;
 }
 
-.vbuy-cart-header h2 {
+.vfoods-cart-header h2 {
   font-size: 15px;
   font-weight: 900;
   color: #0F172A;
   margin: 0;
 }
 
-.vbuy-cart-content {
+.vfoods-cart-content {
   padding: 12px 14px 110px 14px;
   overflow-y: auto;
   display: flex;
@@ -5618,7 +5617,7 @@ body::before {
   flex: 1;
 }
 
-.vbuy-pickup-banner {
+.vfoods-pickup-banner {
   background: #F0FDF4;
   border: 1.5px solid #BBF7D0;
   border-radius: 12px;
@@ -5628,7 +5627,7 @@ body::before {
   gap: 10px;
 }
 
-.vbuy-pickup-banner-icon {
+.vfoods-pickup-banner-icon {
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -5640,18 +5639,18 @@ body::before {
   flex-shrink: 0;
 }
 
-.vbuy-pickup-banner-title {
+.vfoods-pickup-banner-title {
   font-size: 11.5px;
   font-weight: 800;
   color: #166534;
 }
 
-.vbuy-pickup-banner-sub {
+.vfoods-pickup-banner-sub {
   font-size: 10px;
   color: #15803D;
 }
 
-.vbuy-cart-outlet-card {
+.vfoods-cart-outlet-card {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 14px;
@@ -5659,7 +5658,7 @@ body::before {
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.vbuy-cart-outlet-title {
+.vfoods-cart-outlet-title {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -5671,7 +5670,7 @@ body::before {
   border-bottom: 1px dashed #E2E8F0;
 }
 
-.vbuy-cart-item-row {
+.vfoods-cart-item-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -5679,11 +5678,11 @@ body::before {
   border-bottom: 1px solid #F1F5F9;
 }
 
-.vbuy-cart-item-row:last-child {
+.vfoods-cart-item-row:last-child {
   border-bottom: none;
 }
 
-.vbuy-cart-item-thumb {
+.vfoods-cart-item-thumb {
   width: 44px !important;
   height: 44px !important;
   max-width: 44px !important;
@@ -5694,24 +5693,24 @@ body::before {
   flex-shrink: 0;
 }
 
-.vbuy-cart-item-info {
+.vfoods-cart-item-info {
   flex: 1;
 }
 
-.vbuy-cart-item-name {
+.vfoods-cart-item-name {
   font-size: 11.5px;
   font-weight: 700;
   color: #0F172A;
   line-height: 1.25;
 }
 
-.vbuy-cart-item-price {
+.vfoods-cart-item-price {
   font-size: 12px;
   font-weight: 800;
   color: #2563EB;
 }
 
-.vbuy-cart-stepper {
+.vfoods-cart-stepper {
   display: flex;
   align-items: center;
   background: #F1F5F9;
@@ -5719,7 +5718,7 @@ body::before {
   padding: 2px;
 }
 
-.vbuy-cart-stepper button {
+.vfoods-cart-stepper button {
   border: none;
   background: none;
   color: #0F172A;
@@ -5729,13 +5728,13 @@ body::before {
   font-size: 11px;
 }
 
-.vbuy-cart-stepper span {
+.vfoods-cart-stepper span {
   font-size: 11px;
   font-weight: 800;
   padding: 0 4px;
 }
 
-.vbuy-cart-delete-btn {
+.vfoods-cart-delete-btn {
   border: none;
   background: none;
   color: #EF4444;
@@ -5745,14 +5744,14 @@ body::before {
   align-items: center;
 }
 
-.vbuy-cart-bill-card {
+.vfoods-cart-bill-card {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 14px;
   padding: 12px;
 }
 
-.vbuy-cart-bill-row {
+.vfoods-cart-bill-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5761,7 +5760,7 @@ body::before {
   padding: 3px 0;
 }
 
-.vbuy-cart-bill-total {
+.vfoods-cart-bill-total {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5773,7 +5772,7 @@ body::before {
   border-top: 1px dashed #CBD5E1;
 }
 
-.vbuy-cart-bottom-bar {
+.vfoods-cart-bottom-bar {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -5788,14 +5787,14 @@ body::before {
   gap: 6px;
 }
 
-.vbuy-cart-wallet-info {
+.vfoods-cart-wallet-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 11.5px;
 }
 
-.vbuy-pay-btn-primary {
+.vfoods-pay-btn-primary {
   width: 100%;
   padding: 12px;
   border-radius: 12px;
@@ -5813,18 +5812,18 @@ body::before {
   transition: all 0.15s ease;
 }
 
-.vbuy-pay-btn-primary:hover {
+.vfoods-pay-btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
 }
 
-.vbuy-deficit-btn-row {
+.vfoods-deficit-btn-row {
   display: flex;
   gap: 8px;
   width: 100%;
 }
 
-.vbuy-deficit-notice {
+.vfoods-deficit-notice {
   flex: 1;
   background: #FEF2F2;
   border: 1px solid #FEE2E2;
@@ -5839,7 +5838,7 @@ body::before {
   text-align: center;
 }
 
-.vbuy-topup-pay-btn {
+.vfoods-topup-pay-btn {
   flex: 1;
   background: linear-gradient(135deg, #059669 0%, #10B981 100%);
   color: #FFFFFF;

@@ -677,7 +677,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     const isPrep = order.status === 'preparing'
     const isReady = order.status === 'ready'
 
-    // V-BUY Color Palette Theming:
+    // V FOODS Color Palette Theming:
     // Placed: Warm Amber / Gold
     // Preparing: Royal Blue
     // Ready: Emerald Green

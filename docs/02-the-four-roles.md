@@ -1,12 +1,12 @@
 # The Four User Roles
 
-A plain-English guide to who uses V-BUY and what each role is permitted to see and do.
+A plain-English guide to who uses V FOODS and what each role is permitted to see and do.
 
 ---
 
 ## Overview
 
-V-BUY serves four different groups of people on campus. Each group has their own dedicated view and access level:
+V FOODS serves four different groups of people on campus. Each group has their own dedicated view and access level:
 
 1. **Super Admin**: Campus authorities overseeing all food courts and stalls.
 2. **Shop Admin**: Franchisees or canteen owners managing a specific food counter.
@@ -85,7 +85,7 @@ V-BUY serves four different groups of people on campus. Each group has their own
 
 ## How Database Security Protects Each Role
 
-V-BUY uses **Row-Level Security (RLS)** built directly into the database:
+V FOODS uses **Row-Level Security (RLS)** built directly into the database:
 
 - **What RLS means**: Instead of relying on a phone app to hide buttons, the database itself refuses to return unauthorized records.
 - **No data mixing**: An app screen cannot accidentally display a North Square order on a Gazebo kitchen screen because the database checks the user's `outlet_id` before sending any data.

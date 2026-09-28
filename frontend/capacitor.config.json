@@ -1,6 +1,6 @@
 {
-  "appId": "com.campusbite.app",
-  "appName": "CampusBite",
+  "appId": "com.vfoods.app",
+  "appName": "V FOODS",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {

@@ -156,7 +156,7 @@ export default function AuthPage() {
         </div>
 
         <p className="text-center text-white/30 text-xs mt-6">
-          By continuing you agree to CampusBite's Terms of Service
+          By continuing you agree to V FOODS's Terms of Service
         </p>
       </div>
     </div>

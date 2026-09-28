@@ -1,5 +1,5 @@
 """
-CampusBite FastAPI Backend
+V FOODS FastAPI Backend
 - Auth: Supabase JWT verification
 - Wallet: topup via PhonePe (/v3/pay or /pg/v1/pay, Base64 + SHA256 X-VERIFY), credit_wallet stored proc
 - Orders: place_order_wallet (atomic wallet deduction, zero PhonePe involvement)
@@ -33,7 +33,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("campusbite")
+logger = logging.getLogger("vfoods")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Config
@@ -50,9 +50,9 @@ WEBHOOK_BASE_URL    = os.getenv("WEBHOOK_BASE_URL", "http://localhost:8000")
 MSG91_AUTH_KEY       = os.getenv("MSG91_AUTH_KEY", "")
 MSG91_WHATSAPP_NUM   = os.getenv("MSG91_WHATSAPP_INTEGRATED_NUMBER", "")
 MSG91_OTP_TEMPLATE   = os.getenv("MSG91_OTP_TEMPLATE_ID", "")
-MSG91_SENDER         = os.getenv("MSG91_SENDER", "CAMPBT")
+MSG91_SENDER         = os.getenv("MSG91_SENDER", "VFOODS")
 
-QR_SECRET      = os.getenv("QR_SECRET", "campusbite-super-secret-key-vitc").encode()
+QR_SECRET      = os.getenv("QR_SECRET", "vfoods-super-secret-key-vitc").encode()
 FRONTEND_URL   = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 DUMMY_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.signature"
@@ -72,13 +72,13 @@ except Exception as e:
 # ──────────────────────────────────────────────────────────────────────────────
 # App
 # ──────────────────────────────────────────────────────────────────────────────
-app = FastAPI(title="CampusBite API", version="1.0.0")
+app = FastAPI(title="V FOODS API", version="1.0.0")
 
 @app.get("/health")
 async def health():
     return {
         "status": "ok",
-        "service": "campusbite-backend",
+        "service": "vfoods-backend",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "supabase_configured": SUPABASE_SERVICE_ROLE_KEY != DUMMY_KEY,
     }

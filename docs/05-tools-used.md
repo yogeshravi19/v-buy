@@ -1,6 +1,6 @@
-# Tools & Technologies Used in V-BUY
+# Tools & Technologies Used in V FOODS
 
-A simple guide to the tools, libraries, and services that power V-BUY, explained in plain English.
+A simple guide to the tools, libraries, and services that power V FOODS, explained in plain English.
 
 ---
 
@@ -30,7 +30,7 @@ A simple guide to the tools, libraries, and services that power V-BUY, explained
 
 - **What it is**: A lightweight, fast backend engine running on our server.
 - **What it does**:
-  - Handles secure communication between V-BUY, PhonePe, and SMS services.
+  - Handles secure communication between V FOODS, PhonePe, and SMS services.
   - Verifies digital signatures so nobody can fake a payment or top-up.
   - Triggers automated WhatsApp and SMS notifications when food is ready.
 - **Why we chose it**: It is lightweight, fast, and handles thousands of students ordering at the same break time without crashing.
@@ -39,7 +39,7 @@ A simple guide to the tools, libraries, and services that power V-BUY, explained
 
 ## Supabase
 
-- **What it is**: The secure cloud database and backend platform for V-BUY.
+- **What it is**: The secure cloud database and backend platform for V FOODS.
 - **What it does**:
   - Safely holds student wallets, shop menus, and live order queues.
   - Automatically updates kitchen screens instantly the moment an order is placed, with no page refreshing.
@@ -82,7 +82,7 @@ A simple guide to the tools, libraries, and services that power V-BUY, explained
 
 ## Render
 
-- **What it is**: The cloud hosting service that runs V-BUY on the live internet.
+- **What it is**: The cloud hosting service that runs V FOODS on the live internet.
 - **What it does**:
   - Keeps the backend server and website running 24/7 at a public web address.
   - Automatically detects when new code is pushed to GitHub, builds the project, and deploys it live with zero downtime.

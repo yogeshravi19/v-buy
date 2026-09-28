@@ -367,7 +367,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
           { id: 'u-3', full_name: 'Murugan S', email: 'murugan.s@canteen.vit.ac.in', phone: '+91 9876543221', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1', is_active: true, created_at: '2026-09-05' },
           { id: 'u-4', full_name: 'Suresh Kumar', email: 'suresh.owner@canteen.vit.ac.in', phone: '+91 9876543230', role: 'shop_admin', outlet_id: 'g1', outlet_name: 'Gazebo C1', is_active: true, created_at: '2026-08-20' },
           { id: 'u-5', full_name: 'Karthik Raman', email: 'karthik.dakshin@vit.ac.in', phone: '+91 9876543232', role: 'shop_admin', outlet_id: 'g3', outlet_name: 'Dakshin Chitra', is_active: true, created_at: '2026-08-22' },
-          { id: 'u-6', full_name: 'Admin Governance Lead', email: 'superadmin@vbuy.campus.in', phone: '+91 9876543999', role: 'super_admin', is_active: true, created_at: '2026-08-01' }
+          { id: 'u-6', full_name: 'Admin Governance Lead', email: 'superadmin@vfoods.campus.in', phone: '+91 9876543999', role: 'super_admin', is_active: true, created_at: '2026-08-01' }
         ])
       }
 
@@ -532,7 +532,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `VBUY_Platform_Financial_Audit_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', `VFOODS_Platform_Financial_Audit_${new Date().toISOString().split('T')[0]}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -585,7 +585,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-extrabold text-sm sm:text-base md:text-lg text-white">
-                  V-BUY Mission Control
+                  V FOODS Mission Control
                 </h1>
                 <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-500/10 text-purple-400 border border-purple-500/30">
                   SUPER ADMIN

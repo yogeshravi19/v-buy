@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react'
 import {
   Search, X, ArrowLeft, Store, ShoppingBag, Clock, User, CreditCard,
-  ChevronRight, Plus, Minus, Trash2, CheckCircle2, AlertCircle, Sparkles,
-  Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw
+  ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle, Sparkles,
+  Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw,
+  Flame, Building2, MapPin, Star, Leaf
 } from 'lucide-react'
 import { getFoodImage } from '../lib/foodImages'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AUTHENTIC VIT CHENNAI FOOD COURTS (Reference: Saveetha V-Buy structure)
+// AUTHENTIC VIT CHENNAI FOOD COURTS (V FOODS User Dashboard)
 // ─────────────────────────────────────────────────────────────────────────────
 export const CAMPUS_FOOD_COURTS = [
   {
@@ -59,7 +60,7 @@ function getItemImageUrl(item) {
   return img?.url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop&q=80'
 }
 
-export default function SaveethaVBuyUserDashboard({
+export default function VFoodsUserDashboard({
   currentUser,
   setCurrentUser,
   role,
@@ -138,7 +139,7 @@ export default function SaveethaVBuyUserDashboard({
     return list
   }, [outlets])
 
-  // "🔥 Popular Near By" items (12 curated dishes across outlets)
+  // Popular on Campus items (12 curated dishes across outlets)
   const popularDishes = useMemo(() => {
     let items = allDishes
     if (popularFilter === 'veg') items = items.filter(i => i.is_veg === true)
@@ -215,45 +216,45 @@ export default function SaveethaVBuyUserDashboard({
   }
 
   return (
-    <div className="vbuy-desktop-backdrop">
-      <div className="vbuy-app-frame">
+    <div className="vfoods-desktop-backdrop">
+      <div className="vfoods-app-frame">
 
         {/* ── Top Header Bar ── */}
-        <header className="vbuy-top-bar">
-          <div className="vbuy-brand-block">
-            <div className="vbuy-brand-row">
-              <img src="/vit-chennai-logo.png" alt="V-BUY" className="vbuy-brand-logo" />
-              <div className="vbuy-brand-name">V-<span>BUY</span></div>
+        <header className="vfoods-top-bar">
+          <div className="vfoods-brand-block">
+            <div className="vfoods-brand-row">
+              <img src="/vit-chennai-logo.png" alt="V FOODS" className="vfoods-brand-logo" />
+              <div className="vfoods-brand-name">V <span>FOODS</span></div>
             </div>
-            <div className="vbuy-location-pill" onClick={() => { setSelectedFoodCourt(null); setTab('browse') }} title="Campus Location">
-              <span>📍 VIT Chennai Campus</span>
-              <span style={{ fontSize: '10px' }}>⌵</span>
+            <div className="vfoods-location-pill" onClick={() => { setSelectedFoodCourt(null); setTab('browse') }} title="Campus Location">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> VIT Chennai Campus</span>
+              <ChevronDown size={11} />
             </div>
           </div>
 
-          <div className="vbuy-top-actions">
+          <div className="vfoods-top-actions">
             {/* Quick Wallet Chip */}
-            <div className="vbuy-wallet-chip" onClick={() => setTab('wallet')} title="Open Wallet">
+            <div className="vfoods-wallet-chip" onClick={() => setTab('wallet')} title="Open Wallet">
               <CreditCard size={14} />
               <span>{money(wallet?.balance)}</span>
             </div>
 
             {/* Quick Role Switcher Pill (Developer / Tester Friendly) */}
             <button
-              className="vbuy-role-chip"
+              className="vfoods-role-chip"
               onClick={() => setShowRoleSwitcher(s => !s)}
               title="Switch user role for testing"
             >
               <User size={13} />
               <span>User</span>
-              <span style={{ fontSize: '9px' }}>⌵</span>
+              <ChevronDown size={10} />
             </button>
 
             {handleInstallClick && (
               <button
                 onClick={handleInstallClick}
                 style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '4px' }}
-                title="Install V-BUY App"
+                title="Install V FOODS App"
               >
                 <Download size={17} />
               </button>
@@ -324,19 +325,19 @@ export default function SaveethaVBuyUserDashboard({
             SCREEN 1: HOME SCREEN (tab === 'browse' && !selectedFoodCourt)
             ══════════════════════════════════════════════════════════════════════ */}
         {(tab === 'browse' || tab === 'home') && !selectedFoodCourt && (
-          <div className="vbuy-main-content">
+          <div className="vfoods-main-content">
             {/* Search Bar */}
-            <div className="vbuy-search-wrap">
-              <Search size={16} className="vbuy-search-icon" />
+            <div className="vfoods-search-wrap">
+              <Search size={16} className="vfoods-search-icon" />
               <input
                 type="text"
-                className="vbuy-search-input"
+                className="vfoods-search-input"
                 placeholder="Search dishes, canteens, drinks (e.g. Dosa, Biryani, Coffee)..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
-                <button className="vbuy-search-clear" onClick={() => setSearchQuery('')}>
+                <button className="vfoods-search-clear" onClick={() => setSearchQuery('')}>
                   <X size={14} />
                 </button>
               )}
@@ -345,8 +346,8 @@ export default function SaveethaVBuyUserDashboard({
             {/* If search query active: Show search results */}
             {searchQuery.trim() ? (
               <div>
-                <div className="vbuy-section-header">
-                  <span className="vbuy-section-title">
+                <div className="vfoods-section-header">
+                  <span className="vfoods-section-title">
                     <Utensils size={16} color="#2563EB" /> Dishes ({searchResults.length})
                   </span>
                   <button
@@ -364,38 +365,38 @@ export default function SaveethaVBuyUserDashboard({
                     <p style={{ fontSize: '11px' }}>Try searching "Dosa", "Biryani", or "Noodles"</p>
                   </div>
                 ) : (
-                  <div className="vbuy-dish-grid-3">
+                  <div className="vfoods-dish-grid-3">
                     {searchResults.map(item => {
                       const cartItem = (cart.items || []).find(ci => ci.id === item.id)
                       const qty = cartItem ? cartItem.qty : 0
                       return (
-                        <div key={item.id} className="vbuy-dish-card">
-                          <div className="vbuy-dish-img-wrap">
+                        <div key={item.id} className="vfoods-dish-card">
+                          <div className="vfoods-dish-img-wrap">
                             <img
                               src={getItemImageUrl(item)}
                               alt={item.name}
-                              className="vbuy-dish-img"
+                              className="vfoods-dish-img"
                               loading="lazy"
                             />
-                            <div className="vbuy-dish-veg-badge">
-                              <span className={item.is_veg ? 'vbuy-veg-icon' : 'vbuy-nonveg-icon'} />
+                            <div className="vfoods-dish-veg-badge">
+                              <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
                             </div>
                           </div>
-                          <div className="vbuy-dish-body">
+                          <div className="vfoods-dish-body">
                             <div>
-                              <div className="vbuy-dish-title" title={item.name}>{item.name}</div>
-                              <div className="vbuy-dish-canteen">{item.outlet?.name}</div>
+                              <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
+                              <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
                             </div>
-                            <div className="vbuy-dish-bottom">
-                              <span className="vbuy-dish-price">{money(item.price)}</span>
+                            <div className="vfoods-dish-bottom">
+                              <span className="vfoods-dish-price">{money(item.price)}</span>
                               {qty > 0 ? (
-                                <div className="vbuy-dish-qty-stepper">
+                                <div className="vfoods-dish-qty-stepper">
                                   <button onClick={() => removeFromCart(item.id)}>-</button>
                                   <span>{qty}</span>
                                   <button onClick={() => addToCart(item.outlet, item)}>+</button>
                                 </div>
                               ) : (
-                                <button className="vbuy-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
+                                <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
                                   + ADD
                                 </button>
                               )}
@@ -409,65 +410,65 @@ export default function SaveethaVBuyUserDashboard({
               </div>
             ) : (
               <>
-                {/* ── Section 1: "🔥 Popular Near By" ── */}
-                <div className="vbuy-section-header">
-                  <span className="vbuy-section-title">
-                    <span>🔥</span> Popular on Campus
+                {/* ── Section 1: Popular on Campus ── */}
+                <div className="vfoods-section-header">
+                  <span className="vfoods-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Flame size={17} color="#2563EB" /> Popular on Campus
                   </span>
-                  <div className="vbuy-filter-pill-group">
+                  <div className="vfoods-filter-pill-group">
                     <button
-                      className={`vbuy-filter-pill-btn ${popularFilter === 'all' ? 'active' : ''}`}
+                      className={`vfoods-filter-pill-btn ${popularFilter === 'all' ? 'active' : ''}`}
                       onClick={() => setPopularFilter('all')}
                     >
                       All
                     </button>
                     <button
-                      className={`vbuy-filter-pill-btn ${popularFilter === 'veg' ? 'active' : ''}`}
+                      className={`vfoods-filter-pill-btn ${popularFilter === 'veg' ? 'active' : ''}`}
                       onClick={() => setPopularFilter('veg')}
                     >
-                      <span className="vbuy-veg-dot" /> Pure Veg
+                      <span className="vfoods-veg-dot" /> Pure Veg
                     </button>
                     <button
-                      className={`vbuy-filter-pill-btn ${popularFilter === 'non-veg' ? 'active' : ''}`}
+                      className={`vfoods-filter-pill-btn ${popularFilter === 'non-veg' ? 'active' : ''}`}
                       onClick={() => setPopularFilter('non-veg')}
                     >
-                      <span className="vbuy-nonveg-dot" /> Non-Veg
+                      <span className="vfoods-nonveg-dot" /> Non-Veg
                     </button>
                   </div>
                 </div>
 
-                <div className="vbuy-dish-grid-3">
+                <div className="vfoods-dish-grid-3">
                   {popularDishes.map(item => {
                     const cartItem = (cart.items || []).find(ci => ci.id === item.id)
                     const qty = cartItem ? cartItem.qty : 0
                     return (
-                      <div key={item.id} className="vbuy-dish-card">
-                        <div className="vbuy-dish-img-wrap">
+                      <div key={item.id} className="vfoods-dish-card">
+                        <div className="vfoods-dish-img-wrap">
                           <img
                             src={getItemImageUrl(item)}
                             alt={item.name}
-                            className="vbuy-dish-img"
+                            className="vfoods-dish-img"
                             loading="lazy"
                           />
-                          <div className="vbuy-dish-veg-badge">
-                            <span className={item.is_veg ? 'vbuy-veg-icon' : 'vbuy-nonveg-icon'} />
+                          <div className="vfoods-dish-veg-badge">
+                            <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
                           </div>
                         </div>
-                        <div className="vbuy-dish-body">
+                        <div className="vfoods-dish-body">
                           <div>
-                            <div className="vbuy-dish-title" title={item.name}>{item.name}</div>
-                            <div className="vbuy-dish-canteen">{item.outlet?.name}</div>
+                            <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
+                            <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
                           </div>
-                          <div className="vbuy-dish-bottom">
-                            <span className="vbuy-dish-price">{money(item.price)}</span>
+                          <div className="vfoods-dish-bottom">
+                            <span className="vfoods-dish-price">{money(item.price)}</span>
                             {qty > 0 ? (
-                              <div className="vbuy-dish-qty-stepper">
+                              <div className="vfoods-dish-qty-stepper">
                                 <button onClick={() => removeFromCart(item.id)}>-</button>
                                 <span>{qty}</span>
                                 <button onClick={() => addToCart(item.outlet, item)}>+</button>
                               </div>
                             ) : (
-                              <button className="vbuy-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
+                              <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
                                 + ADD
                               </button>
                             )}
@@ -478,17 +479,17 @@ export default function SaveethaVBuyUserDashboard({
                   })}
                 </div>
 
-                {/* ── Section 2: "🏢 Food Courts (5)" ── */}
-                <div className="vbuy-section-header">
-                  <span className="vbuy-section-title">
-                    <span>🏢</span> Campus Food Courts
+                {/* ── Section 2: Campus Food Courts ── */}
+                <div className="vfoods-section-header">
+                  <span className="vfoods-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Building2 size={17} color="#2563EB" /> Campus Food Courts
                   </span>
                   <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
                     Tap any food court to view counters & menus
                   </span>
                 </div>
 
-                <div className="vbuy-food-courts-grid">
+                <div className="vfoods-food-courts-grid">
                   {CAMPUS_FOOD_COURTS.map(fc => {
                     const courtOutlets = outlets.filter(o =>
                       fc.outlets.includes(o.id) || o.location === fc.locationKey
@@ -497,21 +498,21 @@ export default function SaveethaVBuyUserDashboard({
                     return (
                       <div
                         key={fc.id}
-                        className="vbuy-fc-card"
+                        className="vfoods-fc-card"
                         onClick={() => {
                           setSelectedFoodCourt(fc)
                           setExplorerCanteenId('all')
                           setExplorerFilter('all')
                         }}
                       >
-                        <img src={fc.image} alt={fc.name} className="vbuy-fc-img" loading="lazy" />
-                        <div className="vbuy-fc-overlay">
-                          <h3 className="vbuy-fc-title">{fc.name}</h3>
-                          <p className="vbuy-fc-sub">{fc.subtitle}</p>
-                          <div className="vbuy-fc-pill">
-                            <span>🏢 {courtOutlets.length} {courtOutlets.length === 1 ? 'canteen' : 'canteens'}</span>
+                        <img src={fc.image} alt={fc.name} className="vfoods-fc-img" loading="lazy" />
+                        <div className="vfoods-fc-overlay">
+                          <h3 className="vfoods-fc-title">{fc.name}</h3>
+                          <p className="vfoods-fc-sub">{fc.subtitle}</p>
+                          <div className="vfoods-fc-pill">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Store size={11} /> {courtOutlets.length} {courtOutlets.length === 1 ? 'counter' : 'counters'}</span>
                             <span>|</span>
-                            <span>🍽️ {itemCount} items ›</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Utensils size={11} /> {itemCount} items ›</span>
                           </div>
                         </div>
                       </div>
@@ -527,32 +528,32 @@ export default function SaveethaVBuyUserDashboard({
             SCREEN 2: FOOD COURT EXPLORER (selectedFoodCourt !== null)
             ══════════════════════════════════════════════════════════════════════ */}
         {(tab === 'browse' || tab === 'home') && selectedFoodCourt && (
-          <div className="vbuy-explorer-view">
+          <div className="vfoods-explorer-view">
             {/* Explorer Top Header Bar */}
-            <div className="vbuy-explorer-top-bar">
-              <button className="vbuy-back-btn" onClick={() => setSelectedFoodCourt(null)} title="Back to Food Courts">
+            <div className="vfoods-explorer-top-bar">
+              <button className="vfoods-back-btn" onClick={() => setSelectedFoodCourt(null)} title="Back to Food Courts">
                 <ArrowLeft size={16} />
               </button>
-              <div className="vbuy-explorer-title-box">
-                <div className="vbuy-explorer-main-title">Food Court Explorer</div>
-                <div className="vbuy-explorer-sub-title">ALL COUNTERS · {selectedFoodCourt.name}</div>
+              <div className="vfoods-explorer-title-box">
+                <div className="vfoods-explorer-main-title">Food Court Explorer</div>
+                <div className="vfoods-explorer-sub-title">ALL COUNTERS · {selectedFoodCourt.name}</div>
               </div>
             </div>
 
             {/* Split Screen Layout: Left Canteen Rail + Right Menu Content */}
-            <div className="vbuy-explorer-split">
+            <div className="vfoods-explorer-split">
               {/* Left Vertical Canteen Rail */}
-              <div className="vbuy-left-rail">
+              <div className="vfoods-left-rail">
                 {/* "All" button */}
                 <button
-                  className={`vbuy-rail-avatar-btn ${explorerCanteenId === 'all' ? 'active' : ''}`}
+                  className={`vfoods-rail-avatar-btn ${explorerCanteenId === 'all' ? 'active' : ''}`}
                   onClick={() => setExplorerCanteenId('all')}
                   title="All Outlets in this Food Court"
                 >
-                  <div className="vbuy-rail-avatar-circle">
+                  <div className="vfoods-rail-avatar-circle">
                     <Utensils size={18} />
                   </div>
-                  <span className="vbuy-rail-avatar-name">All Counters</span>
+                  <span className="vfoods-rail-avatar-name">All Counters</span>
                 </button>
 
                 {/* Stalls / Canteens in this food court */}
@@ -561,16 +562,16 @@ export default function SaveethaVBuyUserDashboard({
                   return (
                     <button
                       key={outlet.id}
-                      className={`vbuy-rail-avatar-btn ${isActive ? 'active' : ''}`}
+                      className={`vfoods-rail-avatar-btn ${isActive ? 'active' : ''}`}
                       onClick={() => setExplorerCanteenId(outlet.id)}
                       title={outlet.name}
                     >
-                      <div className="vbuy-rail-avatar-circle">
+                      <div className="vfoods-rail-avatar-circle">
                         <span>{outlet.name.charAt(0)}</span>
                       </div>
-                      <span className="vbuy-rail-avatar-name">{outlet.name}</span>
+                      <span className="vfoods-rail-avatar-name">{outlet.name}</span>
                       {!outlet.is_open && (
-                        <span className="vbuy-rail-closed-tag">CLOSED</span>
+                        <span className="vfoods-rail-closed-tag">CLOSED</span>
                       )}
                     </button>
                   )
@@ -578,88 +579,92 @@ export default function SaveethaVBuyUserDashboard({
               </div>
 
               {/* Right Content Area: Menu & Dishes */}
-              <div className="vbuy-right-content">
-                <div className="vbuy-right-header">
-                  <div className="vbuy-right-canteen-name">
+              <div className="vfoods-right-content">
+                <div className="vfoods-right-header">
+                  <div className="vfoods-right-canteen-name">
                     {explorerActiveOutlet ? explorerActiveOutlet.name : `All in ${selectedFoodCourt.name}`}
                     {explorerActiveOutlet && (
-                      <span style={{ fontSize: '11px', color: '#D97706', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                        ⭐ 4.7
+                      <span style={{ fontSize: '11px', color: '#D97706', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <Star size={11} fill="#D97706" color="#D97706" /> 4.7
                       </span>
                     )}
                   </div>
-                  <div className="vbuy-right-item-count">
+                  <div className="vfoods-right-item-count">
                     {explorerDishes.length} items available
                   </div>
                 </div>
 
                 {/* Filter chips row */}
-                <div className="vbuy-right-filters-scroll">
+                <div className="vfoods-right-filters-scroll">
                   <button
-                    className={`vbuy-right-filter-chip ${explorerFilter === 'all' ? 'active' : ''}`}
+                    className={`vfoods-right-filter-chip ${explorerFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setExplorerFilter('all')}
                   >
                     All
                   </button>
                   <button
-                    className={`vbuy-right-filter-chip ${explorerFilter === 'popular' ? 'active' : ''}`}
+                    className={`vfoods-right-filter-chip ${explorerFilter === 'popular' ? 'active' : ''}`}
                     onClick={() => setExplorerFilter('popular')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    🔥 Popular
+                    <Flame size={12} /> Popular
                   </button>
                   <button
-                    className={`vbuy-right-filter-chip ${explorerFilter === 'deals' ? 'active' : ''}`}
+                    className={`vfoods-right-filter-chip ${explorerFilter === 'deals' ? 'active' : ''}`}
                     onClick={() => setExplorerFilter('deals')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    🏷️ Deals
+                    <Tag size={12} /> Deals
                   </button>
                   <button
-                    className={`vbuy-right-filter-chip ${explorerFilter === 'veg' ? 'active' : ''}`}
+                    className={`vfoods-right-filter-chip ${explorerFilter === 'veg' ? 'active' : ''}`}
                     onClick={() => setExplorerFilter('veg')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    🥬 Veg Only
+                    <span className="vfoods-veg-dot" style={{ display: 'inline-block', width: '7px', height: '7px' }} /> Pure Veg
                   </button>
                   <button
-                    className={`vbuy-right-filter-chip ${explorerFilter === 'non-veg' ? 'active' : ''}`}
+                    className={`vfoods-right-filter-chip ${explorerFilter === 'non-veg' ? 'active' : ''}`}
                     onClick={() => setExplorerFilter('non-veg')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    🍗 Non-veg
+                    <span className="vfoods-nonveg-dot" style={{ display: 'inline-block', width: '7px', height: '7px' }} /> Non-Veg
                   </button>
                 </div>
 
                 {/* 2-Column Food Grid */}
-                <div className="vbuy-explorer-grid-2">
+                <div className="vfoods-explorer-grid-2">
                   {explorerDishes.map(item => {
                     const cartItem = (cart.items || []).find(ci => ci.id === item.id)
                     const qty = cartItem ? cartItem.qty : 0
                     return (
-                      <div key={item.id} className="vbuy-dish-card">
-                        <div className="vbuy-dish-img-wrap">
+                      <div key={item.id} className="vfoods-dish-card">
+                        <div className="vfoods-dish-img-wrap">
                           <img
                             src={getItemImageUrl(item)}
                             alt={item.name}
-                            className="vbuy-dish-img"
+                            className="vfoods-dish-img"
                             loading="lazy"
                           />
-                          <div className="vbuy-dish-veg-badge">
-                            <span className={item.is_veg ? 'vbuy-veg-icon' : 'vbuy-nonveg-icon'} />
+                          <div className="vfoods-dish-veg-badge">
+                            <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
                           </div>
                         </div>
-                        <div className="vbuy-dish-body">
+                        <div className="vfoods-dish-body">
                           <div>
-                            <div className="vbuy-dish-title" title={item.name}>{item.name}</div>
-                            <div className="vbuy-dish-canteen">{item.outlet?.name}</div>
+                            <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
+                            <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
                           </div>
-                          <div className="vbuy-dish-bottom">
-                            <span className="vbuy-dish-price">{money(item.price)}</span>
+                          <div className="vfoods-dish-bottom">
+                            <span className="vfoods-dish-price">{money(item.price)}</span>
                             {qty > 0 ? (
-                              <div className="vbuy-dish-qty-stepper">
+                              <div className="vfoods-dish-qty-stepper">
                                 <button onClick={() => removeFromCart(item.id)}>-</button>
                                 <span>{qty}</span>
                                 <button onClick={() => addToCart(item.outlet, item)}>+</button>
                               </div>
                             ) : (
-                              <button className="vbuy-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
+                              <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
                                 + ADD
                               </button>
                             )}
@@ -678,23 +683,23 @@ export default function SaveethaVBuyUserDashboard({
             SCREEN 3: CART SCREEN (tab === 'cart')
             ══════════════════════════════════════════════════════════════════════ */}
         {tab === 'cart' && (
-          <div className="vbuy-cart-view">
-            <div className="vbuy-cart-header">
-              <button className="vbuy-back-btn" onClick={() => setTab('browse')} title="Back to menu">
+          <div className="vfoods-cart-view">
+            <div className="vfoods-cart-header">
+              <button className="vfoods-back-btn" onClick={() => setTab('browse')} title="Back to menu">
                 <ArrowLeft size={16} />
               </button>
               <h2>Your Pre-Order Cart</h2>
             </div>
 
-            <div className="vbuy-cart-content">
+            <div className="vfoods-cart-content">
               {/* Pickup Mode Notice */}
-              <div className="vbuy-pickup-banner">
-                <div className="vbuy-pickup-banner-icon">
+              <div className="vfoods-pickup-banner">
+                <div className="vfoods-pickup-banner-icon">
                   <Store size={18} />
                 </div>
                 <div>
-                  <div className="vbuy-pickup-banner-title">Counter Pre-Order (Fast Pickup)</div>
-                  <div className="vbuy-pickup-banner-sub">
+                  <div className="vfoods-pickup-banner-title">Counter Pre-Order (Fast Pickup)</div>
+                  <div className="vfoods-pickup-banner-sub">
                     Freshly prepared in kitchen. Show your 4-digit token at counter to collect.
                   </div>
                 </div>
@@ -708,7 +713,7 @@ export default function SaveethaVBuyUserDashboard({
                     Browse campus canteens and add items for quick counter pickup!
                   </p>
                   <button
-                    className="vbuy-pay-btn-primary"
+                    className="vfoods-pay-btn-primary"
                     style={{ maxWidth: '240px', margin: '0 auto' }}
                     onClick={() => setTab('browse')}
                   >
@@ -718,31 +723,31 @@ export default function SaveethaVBuyUserDashboard({
               ) : (
                 <>
                   {/* Outlet Group Card */}
-                  <div className="vbuy-cart-outlet-card">
-                    <div className="vbuy-cart-outlet-title">
+                  <div className="vfoods-cart-outlet-card">
+                    <div className="vfoods-cart-outlet-title">
                       <Store size={16} color="#2563EB" />
                       <span>{cart.outlet?.name}</span>
                       <CheckCircle2 size={14} color="#10B981" style={{ marginLeft: 'auto' }} />
                     </div>
 
                     {cart.items.map(item => (
-                      <div key={item.id} className="vbuy-cart-item-row">
+                      <div key={item.id} className="vfoods-cart-item-row">
                         <img
                           src={getItemImageUrl(item)}
                           alt={item.name}
-                          className="vbuy-cart-item-thumb"
+                          className="vfoods-cart-item-thumb"
                         />
-                        <div className="vbuy-cart-item-info">
-                          <div className="vbuy-cart-item-name">{item.name}</div>
-                          <div className="vbuy-cart-item-price">{money(item.price * item.qty)}</div>
+                        <div className="vfoods-cart-item-info">
+                          <div className="vfoods-cart-item-name">{item.name}</div>
+                          <div className="vfoods-cart-item-price">{money(item.price * item.qty)}</div>
                         </div>
-                        <div className="vbuy-cart-stepper">
+                        <div className="vfoods-cart-stepper">
                           <button onClick={() => removeFromCart(item.id)}>-</button>
                           <span>{item.qty}</span>
                           <button onClick={() => addToCart(cart.outlet, item)}>+</button>
                         </div>
                         <button
-                          className="vbuy-cart-delete-btn"
+                          className="vfoods-cart-delete-btn"
                           onClick={() => {
                             for (let i = 0; i < item.qty; i++) removeFromCart(item.id)
                           }}
@@ -768,7 +773,7 @@ export default function SaveethaVBuyUserDashboard({
                           fontWeight: 700, fontSize: '11.5px', cursor: 'pointer', textAlign: 'center'
                         }}
                       >
-                        ⚡ As soon as ready (10-15 mins)
+                        <Zap size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} /> As soon as ready (10-15 mins)
                       </button>
                       <button
                         type="button"
@@ -779,7 +784,7 @@ export default function SaveethaVBuyUserDashboard({
                           fontWeight: 700, fontSize: '11.5px', cursor: 'pointer', textAlign: 'center'
                         }}
                       >
-                        🕒 Pick up later (Slot)
+                        <Clock size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} /> Pick up later (Slot)
                       </button>
                     </div>
 
@@ -802,29 +807,29 @@ export default function SaveethaVBuyUserDashboard({
                   </div>
 
                   {/* Bill Details */}
-                  <div className="vbuy-cart-bill-card">
+                  <div className="vfoods-cart-bill-card">
                     <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>
                       Bill Summary
                     </div>
-                    <div className="vbuy-cart-bill-row">
+                    <div className="vfoods-cart-bill-row">
                       <span>Item Total ({cartQty} items)</span>
                       <span>{money(subtotal)}</span>
                     </div>
                     {discount > 0 && (
-                      <div className="vbuy-cart-bill-row" style={{ color: '#059669', fontWeight: 700 }}>
+                      <div className="vfoods-cart-bill-row" style={{ color: '#059669', fontWeight: 700 }}>
                         <span>Discount Savings</span>
                         <span>-{money(discount)}</span>
                       </div>
                     )}
-                    <div className="vbuy-cart-bill-row">
+                    <div className="vfoods-cart-bill-row">
                       <span>Taxes & Canteen Packaging</span>
                       <span style={{ color: '#10B981', fontWeight: 700 }}>₹0 (FREE)</span>
                     </div>
-                    <div className="vbuy-cart-bill-row">
+                    <div className="vfoods-cart-bill-row">
                       <span>Counter Pickup Service</span>
                       <span style={{ color: '#10B981', fontWeight: 700 }}>FREE</span>
                     </div>
-                    <div className="vbuy-cart-bill-total">
+                    <div className="vfoods-cart-bill-total">
                       <span>To Pay</span>
                       <span>{money(finalDebit)}</span>
                     </div>
@@ -835,8 +840,8 @@ export default function SaveethaVBuyUserDashboard({
 
             {/* Bottom Checkout Sticky Bar */}
             {cart.items && cart.items.length > 0 && (
-              <div className="vbuy-cart-bottom-bar">
-                <div className="vbuy-cart-wallet-info">
+              <div className="vfoods-cart-bottom-bar">
+                <div className="vfoods-cart-wallet-info">
                   <span style={{ color: '#64748B', fontWeight: 600 }}>Wallet Balance:</span>
                   <strong style={{ color: isInsufficient ? '#DC2626' : '#166534' }}>
                     {money(wallet?.balance)}
@@ -845,19 +850,19 @@ export default function SaveethaVBuyUserDashboard({
 
                 {!isInsufficient ? (
                   <button
-                    className="vbuy-pay-btn-primary"
+                    className="vfoods-pay-btn-primary"
                     disabled={busy}
                     onClick={placeOrder}
                   >
                     <Zap size={16} /> Pay {money(finalDebit)} & Place Order
                   </button>
                 ) : (
-                  <div className="vbuy-deficit-btn-row">
-                    <div className="vbuy-deficit-notice">
+                  <div className="vfoods-deficit-btn-row">
+                    <div className="vfoods-deficit-notice">
                       Wallet low by {money(deficit)}
                     </div>
                     <button
-                      className="vbuy-topup-pay-btn"
+                      className="vfoods-topup-pay-btn"
                       onClick={handleDeficitPay}
                     >
                       + Add ₹{deficit} & Pay
@@ -873,7 +878,7 @@ export default function SaveethaVBuyUserDashboard({
             SCREEN 4: ORDERS SCREEN (tab === 'orders')
             ══════════════════════════════════════════════════════════════════════ */}
         {tab === 'orders' && OrdersView && (
-          <div className="vbuy-main-content">
+          <div className="vfoods-main-content">
             <OrdersView
               orders={orders}
               repeatOrder={repeatOrder}
@@ -888,7 +893,7 @@ export default function SaveethaVBuyUserDashboard({
             SCREEN 5: WALLET SCREEN (tab === 'wallet')
             ══════════════════════════════════════════════════════════════════════ */}
         {tab === 'wallet' && WalletView && (
-          <div className="vbuy-main-content">
+          <div className="vfoods-main-content">
             <WalletView
               wallet={wallet}
               topUp={topUp}
@@ -906,7 +911,7 @@ export default function SaveethaVBuyUserDashboard({
             SCREEN 6: PROFILE SCREEN (tab === 'profile')
             ══════════════════════════════════════════════════════════════════════ */}
         {tab === 'profile' && ProfileView && (
-          <div className="vbuy-main-content">
+          <div className="vfoods-main-content">
             <ProfileView
               currentUser={currentUser}
               wallet={wallet}
@@ -920,15 +925,15 @@ export default function SaveethaVBuyUserDashboard({
 
         {/* ── Floating "VIEW CART" Bottom Pill (Home & Explorer) ── */}
         {(tab === 'browse' || tab === 'home') && cartQty > 0 && (
-          <div className="vbuy-floating-cart-bar" onClick={() => setTab('cart')}>
-            <div className="vbuy-floating-cart-left">
+          <div className="vfoods-floating-cart-bar" onClick={() => setTab('cart')}>
+            <div className="vfoods-floating-cart-left">
               <ShoppingCart size={18} />
               <div>
-                <div className="vbuy-floating-cart-count">{cartQty} {cartQty === 1 ? 'ITEM' : 'ITEMS'}</div>
-                <div className="vbuy-floating-cart-price">{money(finalDebit)}</div>
+                <div className="vfoods-floating-cart-count">{cartQty} {cartQty === 1 ? 'ITEM' : 'ITEMS'}</div>
+                <div className="vfoods-floating-cart-price">{money(finalDebit)}</div>
               </div>
             </div>
-            <div className="vbuy-floating-cart-right">
+            <div className="vfoods-floating-cart-right">
               <span>VIEW CART</span>
               <ChevronRight size={16} />
             </div>
@@ -936,43 +941,43 @@ export default function SaveethaVBuyUserDashboard({
         )}
 
         {/* ── Fixed Bottom 4-Tab Navigation Bar ── */}
-        <nav className="vbuy-bottom-nav">
+        <nav className="vfoods-bottom-nav">
           <button
-            className={`vbuy-nav-tab ${(tab === 'browse' || tab === 'home') ? 'active' : ''}`}
+            className={`vfoods-nav-tab ${(tab === 'browse' || tab === 'home') ? 'active' : ''}`}
             onClick={() => { setSelectedFoodCourt(null); setTab('browse') }}
           >
             <Store size={18} />
-            <span className="vbuy-nav-tab-label">Home</span>
+            <span className="vfoods-nav-tab-label">Home</span>
           </button>
 
           <button
-            className={`vbuy-nav-tab ${tab === 'cart' ? 'active' : ''}`}
+            className={`vfoods-nav-tab ${tab === 'cart' ? 'active' : ''}`}
             onClick={() => setTab('cart')}
           >
             <ShoppingBag size={18} />
-            <span className="vbuy-nav-tab-label">Cart</span>
+            <span className="vfoods-nav-tab-label">Cart</span>
             {cartQty > 0 && (
-              <span className="vbuy-nav-badge">{cartQty}</span>
+              <span className="vfoods-nav-badge">{cartQty}</span>
             )}
           </button>
 
           <button
-            className={`vbuy-nav-tab ${tab === 'orders' ? 'active' : ''}`}
+            className={`vfoods-nav-tab ${tab === 'orders' ? 'active' : ''}`}
             onClick={() => setTab('orders')}
           >
             <Clock size={18} />
-            <span className="vbuy-nav-tab-label">Orders</span>
+            <span className="vfoods-nav-tab-label">Orders</span>
             {activeOrdersCount > 0 && (
-              <span className="vbuy-nav-pulse-dot" />
+              <span className="vfoods-nav-pulse-dot" />
             )}
           </button>
 
           <button
-            className={`vbuy-nav-tab ${tab === 'profile' ? 'active' : ''}`}
+            className={`vfoods-nav-tab ${tab === 'profile' ? 'active' : ''}`}
             onClick={() => setTab('profile')}
           >
             <User size={18} />
-            <span className="vbuy-nav-tab-label">Profile</span>
+            <span className="vfoods-nav-tab-label">Profile</span>
           </button>
         </nav>
 

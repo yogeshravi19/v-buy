@@ -1796,7 +1796,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                   <label className="text-xs font-bold text-slate-300 block mb-1">Staff Email (Optional)</label>
                   <input
                     type="email"
-                    placeholder="staff@campusbite.vit.ac.in"
+                    placeholder="staff@vfoods.vit.ac.in"
                     value={inviteForm.email}
                     onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"

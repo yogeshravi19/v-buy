@@ -1,4 +1,4 @@
-# CampusBite — Render deployment config
+# V FOODS — Render deployment config
 # This file is used by render.com to build and run the FastAPI backend
 
 services:

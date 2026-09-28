@@ -1,6 +1,6 @@
 # Payments & PhonePe: The Wallet-First System
 
-A plain-English guide to how payments work in V-BUY, why we use a wallet-first model, and how PhonePe keeps transactions safe.
+A plain-English guide to how payments work in V FOODS, why we use a wallet-first model, and how PhonePe keeps transactions safe.
 
 ---
 
@@ -13,7 +13,7 @@ In a college canteen, that typical model completely fails:
 - Cellular data inside campus basements and dining halls is often weak and spotty.
 - If 500 students wait 45 seconds each for bank OTPs and gateway redirects, payments fail, carts get abandoned, and the canteen lines back up.
 
-V-BUY uses a **wallet-first** system:
+V FOODS uses a **wallet-first** system:
 - **Top Up Once**: Students add money to their digital campus wallet when they have good internet (in their dorm, at home, or before class).
 - **Instant Checkout**: When buying food, payment is deducted directly from the student's prepaid wallet balance in less than one second.
 - **Zero Gateway Delays**: Checkout never contacts PhonePe, banks, or external payment gateways. It happens entirely within the campus database.
@@ -22,7 +22,7 @@ V-BUY uses a **wallet-first** system:
 
 ## The Exact Payment Journey
 
-Here is the exact step-by-step path money takes through V-BUY:
+Here is the exact step-by-step path money takes through V FOODS:
 
 ### Step 1: Student Initiates a Wallet Top-Up
 - The student opens the **Wallet** tab, chooses an amount (such as ₹200), and selects their payment method (UPI or Card).
@@ -31,7 +31,7 @@ Here is the exact step-by-step path money takes through V-BUY:
   - **Bank Cards (Reverse Fee Pass-Through)**: Credit and debit cards carry a standard bank processing fee. The app uses the reverse formula (`Amount / 0.9765`) to charge the small extra fee to the card, so the student's wallet still receives the clean ₹200 requested.
 
 ### Step 2: PhonePe Collects the Payment
-- V-BUY creates a secure transaction payload and passes the student to PhonePe.
+- V FOODS creates a secure transaction payload and passes the student to PhonePe.
 - The student authorizes the payment using their preferred UPI app (PhonePe, Google Pay, BHIM) or bank card.
 
 ### Step 3: PhonePe Sends a Secure Webhook Confirmation
@@ -57,9 +57,9 @@ Here is the exact step-by-step path money takes through V-BUY:
 
 ## Why Checkout Doesn't Wait on PhonePe
 
-Separating wallet top-up from food ordering is the key design choice that makes V-BUY fast:
+Separating wallet top-up from food ordering is the key design choice that makes V FOODS fast:
 
-| Typical Food App (Gateway at Checkout) | V-BUY (Wallet-First Model) |
+| Typical Food App (Gateway at Checkout) | V FOODS (Wallet-First Model) |
 | :--- | :--- |
 | Gateway opens during lunch rush | Gateway used before lunch at leisure |
 | Requires strong cellular signal at counter | Requires zero internet speed at counter |

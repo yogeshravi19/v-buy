@@ -1,6 +1,6 @@
 # How an Order Works: The Complete Lifecycle
 
-A simple, step-by-step walk-through of how orders move through V-BUY from start to finish.
+A simple, step-by-step walk-through of how orders move through V FOODS from start to finish.
 
 ---
 
