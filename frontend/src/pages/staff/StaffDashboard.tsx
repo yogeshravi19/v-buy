@@ -254,7 +254,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         const formatted: Order[] = ordersData.map((o: any) => ({
           id: o.id,
           user_id: o.user_id,
-          customer_name: `Student #${o.id % 900 + 100}`,
+          customer_name: `User #${o.id % 900 + 100}`,
           outlet_id: o.outlet_id,
           token: o.token,
           status: o.status,
@@ -382,7 +382,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         payload => {
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new as Order
-            newOrder.customer_name = `Student #${newOrder.id % 900 + 100}`
+            newOrder.customer_name = `User #${newOrder.id % 900 + 100}`
             setOrders(prev => [newOrder, ...prev])
             if (soundEnabled) playOrderChime()
             setBannerAlert(`New Order! Token #${newOrder.token || '---'}`)
@@ -736,7 +736,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
                 Pickup Token
               </span>
-              {/* Large Legible Token: Students look for this from 10 feet away */}
+              {/* Large Legible Token: Users look for this from 10 feet away */}
               <div className="font-mono font-black text-3xl sm:text-4xl tracking-tight text-white flex items-center gap-1.5">
                 #{order.token || '---'}
               </div>
@@ -1111,7 +1111,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" strokeWidth={2} />
                 <input
                   type="text"
-                  placeholder="Token # or Student..."
+                  placeholder="Token # or Name..."
                   value={searchToken}
                   onChange={e => setSearchToken(e.target.value)}
                   className="pl-9 pr-7 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 w-36 sm:w-48 transition-all"
@@ -1142,7 +1142,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                   </div>
                   <h3 className="font-extrabold text-slate-200 text-base">Kitchen Queue Clear</h3>
                   <p className="text-xs max-w-sm mt-1 text-slate-400">
-                    Incoming student orders will appear automatically with an audible chime and live pulse alert.
+                    Incoming user orders will appear automatically with an audible chime and live pulse alert.
                   </p>
                 </div>
               ) : slotGrouping && slotGroupedOrders ? (
@@ -1256,7 +1256,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 <div className="flex items-center justify-between bg-slate-900 p-3.5 rounded-2xl border border-slate-800">
                   <div>
                     <h2 className="font-bold text-sm text-white">Live Stock Stepper & Availability</h2>
-                    <p className="text-xs text-slate-400">Quick +/- stepper logs directly to audit ledger and syncs student menu.</p>
+                    <p className="text-xs text-slate-400">Quick +/- stepper logs directly to audit ledger and syncs user menu.</p>
                   </div>
                   <span className="text-xs text-slate-400 font-mono">
                     {menuItems.length} catalog items
@@ -1508,7 +1508,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                       Enter 3-Digit Token
                     </label>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Ask student for their screen token or enter manually
+                      Ask user for their screen token or enter manually
                     </p>
                   </div>
 
@@ -1564,7 +1564,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                     </div>
 
                     <div className="mt-2 text-center">
-                      <p className="text-xs text-slate-300 font-semibold">Hold student QR code within frame</p>
+                      <p className="text-xs text-slate-300 font-semibold">Hold user QR code within frame</p>
                       <p className="text-[10px] text-slate-500">Camera scanning active</p>
                     </div>
                   </div>

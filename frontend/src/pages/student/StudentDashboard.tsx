@@ -696,11 +696,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
                 V-FOOD
               </span>
               <span className="text-[10px] font-extrabold bg-orange-950 border border-orange-800 text-orange-300 px-1.5 py-0.2 rounded-full uppercase">
-                STUDENT
+                USER
               </span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {profile?.full_name || 'VIT Chennai Student'}
+              {profile?.full_name || 'VIT Chennai User'}
             </p>
           </div>
         </div>

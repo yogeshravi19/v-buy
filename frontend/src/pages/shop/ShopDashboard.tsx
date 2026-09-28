@@ -356,7 +356,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
         .eq('id', effectiveOutletId)
 
       if (mode === 'rush') {
-        showToast('Rush Mode Activated: Extended prep times are now shown to students.')
+        showToast('Rush Mode Activated: Extended prep times are now shown to users.')
       } else if (mode === 'open') {
         showToast('Outlet is now Open for regular ordering.')
       } else {
@@ -781,7 +781,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
               <div className="flex items-center gap-2">
                 <Flame className="h-4 w-4 text-amber-200 animate-pulse flex-shrink-0" strokeWidth={2.5} />
                 <span>
-                  <strong>Rush Mode Active:</strong> High counter congestion. Prep times shown to students have been automatically increased by +15 mins.
+                  <strong>Rush Mode Active:</strong> High counter congestion. Prep times shown to users have been automatically increased by +15 mins.
                 </span>
               </div>
               <button
@@ -1140,7 +1140,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                   </div>
 
                   <div className="mt-5 p-3 rounded-2xl bg-blue-950/40 border border-blue-900/50 text-xs text-blue-300">
-                    Students order rolls and puffs 2.4× more frequently during evening breaks.
+                    Users order rolls and puffs 2.4× more frequently during evening breaks.
                   </div>
                 </div>
               </div>
@@ -1406,7 +1406,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                 <div className="h-64 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center text-center p-6 text-slate-500 bg-slate-900/30">
                   <ChefHat className="h-10 w-10 text-slate-700 mb-2" />
                   <p className="font-bold text-slate-300 text-sm">No Active Orders</p>
-                  <p className="text-xs text-slate-500 mt-1">Orders placed by students will stream in real time.</p>
+                  <p className="text-xs text-slate-500 mt-1">Orders placed by users will stream in real time.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

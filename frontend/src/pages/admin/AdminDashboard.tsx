@@ -294,7 +294,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
           {
             id: 'fm1',
             name: 'Food Mall Main Concourse',
-            location: 'Student Activity Centre',
+            location: 'Campus Activity Centre',
             is_open: false,
             is_busy: false,
             is_event: false,
@@ -362,7 +362,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
         setUsersList(usersData as PlatformUser[])
       } else {
         setUsersList([
-          { id: 'u-1', full_name: 'Aditya Nair', email: 'aditya.nair@vitstudent.ac.in', phone: '+91 9876543001', role: 'student', is_active: true, created_at: '2026-08-15' },
+          { id: 'u-1', full_name: 'Aditya Nair', email: 'aditya.nair@vitchennai.ac.in', phone: '+91 9876543001', role: 'student', is_active: true, created_at: '2026-08-15' },
           { id: 'u-2', full_name: 'Ramesh Kumar', email: 'ramesh.k@canteen.vit.ac.in', phone: '+91 9876543220', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1', is_active: true, created_at: '2026-09-01' },
           { id: 'u-3', full_name: 'Murugan S', email: 'murugan.s@canteen.vit.ac.in', phone: '+91 9876543221', role: 'staff', outlet_id: 'g1', outlet_name: 'Gazebo C1', is_active: true, created_at: '2026-09-05' },
           { id: 'u-4', full_name: 'Suresh Kumar', email: 'suresh.owner@canteen.vit.ac.in', phone: '+91 9876543230', role: 'shop_admin', outlet_id: 'g1', outlet_name: 'Gazebo C1', is_active: true, created_at: '2026-08-20' },
@@ -385,7 +385,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
       // 7. Live System Events Stream
       setSystemEvents([
         { id: 'ev-1', type: 'order', title: 'Order #4021 Placed', description: 'Token #104 dispatched at Gazebo C1 (₹140)', outlet_name: 'Gazebo C1', timestamp: new Date(Date.now() - 3 * 60000).toISOString() },
-        { id: 'ev-2', type: 'order', title: 'Order #4012 Collected', description: 'Student collected Token #503 via 3-digit verification', outlet_name: 'AB3 Food Court', timestamp: new Date(Date.now() - 12 * 60000).toISOString() },
+        { id: 'ev-2', type: 'order', title: 'Order #4012 Collected', description: 'User collected Token #503 via 3-digit verification', outlet_name: 'AB3 Food Court', timestamp: new Date(Date.now() - 12 * 60000).toISOString() },
         { id: 'ev-3', type: 'menu', title: 'Price Adjustment Logged', description: 'Samosa price verified at ₹20 by Suresh Kumar', outlet_name: 'Gazebo C1', actor: 'Suresh Kumar', timestamp: new Date(Date.now() - 25 * 60000).toISOString() },
         { id: 'ev-4', type: 'auth', title: 'Staff Invite Redeemed', description: 'Murugan S joined counter staff pool', outlet_name: 'Gazebo C1', actor: 'Murugan S', timestamp: new Date(Date.now() - 48 * 60000).toISOString() },
         { id: 'ev-5', type: 'system', title: 'Platform Health Check Clean', description: 'All 13 outlet Supabase channels connected with 0 dropped webhooks', timestamp: new Date(Date.now() - 90 * 60000).toISOString() }
@@ -704,7 +704,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
             <div className="font-mono font-black text-3xl sm:text-4xl text-amber-400 mt-1.5">
               {formatMoney(platformMetrics.total_float)}
             </div>
-            <div className="text-[11px] text-slate-400 mt-1">Held across student meal cards</div>
+            <div className="text-[11px] text-slate-400 mt-1">Held across user meal cards</div>
           </div>
         </div>
 
@@ -1048,7 +1048,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
                         }
                         className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-purple-500"
                       >
-                        <option value="student">Student</option>
+                        <option value="student">User</option>
                         <option value="staff">Staff</option>
                         <option value="shop_admin">Shop Admin</option>
                         <option value="super_admin">Super Admin</option>

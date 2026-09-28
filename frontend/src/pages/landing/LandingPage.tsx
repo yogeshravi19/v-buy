@@ -36,19 +36,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
   const faqs = [
     {
       q: "How does V-FOOD reduce the 30-minute lunch line?",
-      a: "Students order meals from their phone before class ends and pick a scheduled 15-minute pickup slot. The canteen kitchen prepares the food ahead of time. When it is ready, the student shows a quick QR pass at the express pickup counter and collects their hot food in under 2 minutes."
+      a: "Users order meals from their phone before class ends and pick a scheduled 15-minute pickup slot. The canteen kitchen prepares the food ahead of time. When it is ready, the user shows a quick QR pass at the express pickup counter and collects their hot food in under 2 minutes."
     },
     {
       q: "What is the business model?",
-      a: "V-FOOD charges a transparent 5% platform fee per digital order. Canteens keep 95% of their revenue with faster turnaround and zero cash handling errors. Additional revenue comes from temporary stall onboarding during campus fests (Riviera and Gravitas) and student wallet float."
+      a: "V-FOOD charges a transparent 5% platform fee per digital order. Canteens keep 95% of their revenue with faster turnaround and zero cash handling errors. Additional revenue comes from temporary stall onboarding during campus fests (Riviera and Gravitas) and user wallet float."
     },
     {
       q: "How do kitchen workers know what to prepare?",
-      a: "Counter staff have a clean Kitchen Display Screen (KDS) on a tablet or mobile. Every new order rings with a clear sound alert. Staff can tap 'Preparing' or 'Ready', and scan the student's QR code in 2 seconds to confirm pickup."
+      a: "Counter staff have a clean Kitchen Display Screen (KDS) on a tablet or mobile. Every new order rings with a clear sound alert. Staff can tap 'Preparing' or 'Ready', and scan the user's QR code in 2 seconds to confirm pickup."
     },
     {
       q: "What happens if an item runs out of stock?",
-      a: "Kitchen staff have a simple '+ / -' stock stepper and a one-tap 'Sold Out' button. As soon as an item is marked sold out, it immediately greys out on all students' phones so no one can order an unavailable dish."
+      a: "Kitchen staff have a simple '+ / -' stock stepper and a one-tap 'Sold Out' button. As soon as an item is marked sold out, it immediately greys out on all users' phones so no one can order an unavailable dish."
     },
     {
       q: "How do festival stalls join during Riviera or Gravitas?",
@@ -143,7 +143,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8">
-          V-FOOD connects students, busy canteen kitchens, shop owners, and university admins on one simple platform. Zero waiting, fast QR pickup, and transparent payments.
+          V-FOOD connects campus users, busy canteen kitchens, shop owners, and university admins on one simple platform. Zero waiting, fast QR pickup, and transparent payments.
         </p>
 
         {/* Action Buttons */}
@@ -171,7 +171,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {[
-              { role: 'student', label: 'Student', icon: ShoppingBag, color: 'hover:border-blue-500 hover:text-blue-400' },
+              { role: 'student', label: 'User', icon: ShoppingBag, color: 'hover:border-blue-500 hover:text-blue-400' },
               { role: 'staff', label: 'Canteen Staff', icon: UtensilsCrossed, color: 'hover:border-amber-500 hover:text-amber-400' },
               { role: 'shop_admin', label: 'Shop Owner', icon: Store, color: 'hover:border-emerald-500 hover:text-emerald-400' },
               { role: 'super_admin', label: 'Admin', icon: ShieldCheck, color: 'hover:border-purple-500 hover:text-purple-400' },
@@ -228,7 +228,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           {/* Simple Tab Pills */}
           <div className="flex flex-wrap justify-center gap-2 mt-6">
             {[
-              { id: 'student', label: '1. Students', icon: ShoppingBag },
+              { id: 'student', label: '1. Users', icon: ShoppingBag },
               { id: 'staff', label: '2. Kitchen Staff', icon: UtensilsCrossed },
               { id: 'shop', label: '3. Canteen Owners', icon: Store },
               { id: 'admin', label: '4. Campus Admins', icon: ShieldCheck }
@@ -253,7 +253,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
         {activeRoleTab === 'student' && (
           <div className="grid md:grid-cols-2 gap-8 items-center bg-[#101522] border border-slate-800 rounded-2xl p-6 sm:p-8">
             <div>
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block mb-2">For Students</span>
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block mb-2">For Users</span>
               <h3 className="text-2xl font-bold text-white mb-3">
                 Order Ahead &amp; Pick Up in 2 Minutes.
               </h3>
@@ -325,15 +325,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>1-tap status updates:</strong> Tap 'Preparing' or 'Ready' to notify the student's phone instantly.</span>
+                  <span><strong>1-tap status updates:</strong> Tap 'Preparing' or 'Ready' to notify the user's phone instantly.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Fast QR verification:</strong> Point camera at student QR or enter 3-digit backup code to mark collected.</span>
+                  <span><strong>Fast QR verification:</strong> Point camera at user QR or enter 3-digit backup code to mark collected.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>One-tap 'Sold Out':</strong> Ran out of samosas? Tap 'Mark Unavailable' to immediately stop student orders.</span>
+                  <span><strong>One-tap 'Sold Out':</strong> Ran out of samosas? Tap 'Mark Unavailable' to immediately stop new orders.</span>
                 </li>
               </ul>
             </div>
@@ -512,7 +512,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
               See How an Order Moves Across All Screens
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              Click the button below to simulate a real student order. Watch how the student phone, kitchen screen, and admin earnings update simultaneously.
+              Click the button below to simulate a real user order. Watch how the user phone, kitchen screen, and admin earnings update simultaneously.
             </p>
           </div>
 
@@ -547,7 +547,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
                 <div className="flex justify-between items-center pb-2.5 border-b border-slate-800 mb-2.5">
                   <span className="font-bold text-blue-400 flex items-center gap-1.5">
                     <Smartphone className="w-3.5 h-3.5" />
-                    Student View
+                    User View
                   </span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                     simStep === 'idle' ? 'bg-slate-800 text-slate-400' :
@@ -656,10 +656,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           </div>
 
           <div className="p-6 rounded-2xl bg-[#101522] border border-slate-800">
-            <p className="text-sm font-bold text-blue-400 uppercase">Student Preload Wallet</p>
+            <p className="text-sm font-bold text-blue-400 uppercase">User Preload Wallet</p>
             <p className="text-3xl font-black text-white my-2">₹0</p>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Zero fees for students to recharge or order food. Fast UPI top-ups ensure 1-tap checkout without card friction.
+              Zero fees for users to recharge or order food. Fast UPI top-ups ensure 1-tap checkout without card friction.
             </p>
           </div>
         </div>

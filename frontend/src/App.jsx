@@ -408,7 +408,7 @@ function App() {
       }
     }
 
-    addAuditLog(currentUser?.full_name || 'Student', currentUser?.role || 'student', 'ORDER', 'ITEM_RATED', `Rated item #${itemId} (${cleanRating} stars) on Order #${orderId}`)
+    addAuditLog(currentUser?.full_name || 'User', currentUser?.role || 'student', 'ORDER', 'ITEM_RATED', `Rated item #${itemId} (${cleanRating} stars) on Order #${orderId}`)
     setNotice(`Thank you! Your ${cleanRating}-star rating was recorded.`)
     return true
   }
@@ -1773,7 +1773,7 @@ function getCanteenMeta(outlet) {
       reviews: 640,
       tags: ['Filter Coffee', 'Masala Tea', 'Maggi'],
       wait: '3-6 min',
-      badge: 'Student Hangout'
+      badge: 'Campus Favourite'
     }
   }
   if (id === 'n2' || name.includes('Alpha')) {
@@ -2630,7 +2630,7 @@ function RatingModal({ order, onClose, submitItemRating, itemRatings = [] }) {
         </div>
 
         <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: 16 }}>
-          Only collected meals can be reviewed. Your ratings help students discover the best items on campus!
+          Only collected meals can be reviewed. Your ratings help others discover the best items on campus!
         </p>
 
         <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
@@ -3359,7 +3359,7 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
             </span>
           </div>
           <div className="profile-contact-text">
-            <span>{currentUser?.email || 'student@vitchennai.ac.in'}</span>
+            <span>{currentUser?.email || 'user@vitchennai.ac.in'}</span>
             <span>·</span>
             <span>{currentUser?.phone || '+91 98401 23456'}</span>
           </div>
@@ -3749,7 +3749,7 @@ function FoodItemModal({
                   {available && stockQty > 0 ? 'Available' : 'Sold Out'}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  {available && stockQty > 0 ? `${stockQty} portions in kitchen` : 'Displays as "Sold Out" to students'}
+                  {available && stockQty > 0 ? `${stockQty} portions in kitchen` : 'Displays as "Sold Out" on the app'}
                 </div>
               </div>
               <button
@@ -3939,7 +3939,7 @@ function ShopOwnerConsole({
             <div className="owner-stat-card">
               <span className="owner-stat-label">Average Order Size</span>
               <div className="owner-stat-val">{money(avgOrderVal)}</div>
-              <div className="owner-stat-sub">Healthy student dining spend</div>
+              <div className="owner-stat-sub">Healthy campus dining spend</div>
             </div>
             <div className="owner-stat-card">
               <span className="owner-stat-label">Available Menu Items</span>
@@ -4243,7 +4243,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
   advanceOrderStatus, toggleItemAvailability, toggleOutletOpen, setOrders, wallet, setWallet, setNotice, updateItemStockQty, addMenuItem, updateMenuItem, deleteMenuItem, auditLogs = [], addAuditLog, getItemRatingStats }) {
 
   const [scanInput, setScanInput]                 = useState('')
-  const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitstudent.ac.in')
+  const [creditUserEmail, setCreditUserEmail]     = useState('event.priya@vitchennai.ac.in')
   const [creditAmount, setCreditAmount]           = useState('500')
   const [tvMode, setTvMode]                       = useState(false)
   const [staffTab, setStaffTab]                   = useState('queue') // 'queue' | 'menu' | 'summary' | 'tv'
@@ -4526,7 +4526,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
                   <ScannableQrCode value={`CB1.${selectedKotOrder.id}.${selectedKotOrder.token}`} size={110} />
                 </div>
                 <div style={{ fontSize: '10px', color: '#64748B', marginTop: 4, letterSpacing: '0.5px' }}>
-                  SCAN OR MATCH WITH STUDENT APP
+                  SCAN OR MATCH WITH USER APP
                 </div>
                 <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--blue-primary)', marginTop: 2 }}>
                   TOKEN #{selectedKotOrder.token}
@@ -4573,7 +4573,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               className={`canteen-mode-btn btn-spring ${canteenMode === 'rush' ? 'active-rush' : ''}`}
               onClick={() => {
                 setCanteenMode('rush')
-                setNotice('Rush Hour activated! Prep time alert sent to students (+15m).')
+                setNotice('Rush Hour activated! Prep time alert sent to users (+15m).')
               }}
             >
               Rush Hour (+15m)
@@ -4693,7 +4693,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               <input
                 value={scanInput}
                 onChange={e => setScanInput(e.target.value)}
-                placeholder="Scan student QR or type 3-digit token (e.g. 248)..."
+                placeholder="Scan user QR or type 3-digit token (e.g. 248)..."
                 style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 0, fontSize: '13px' }}
               />
               <button type="submit" className="btn-primary btn-spring" style={{ padding: '9px 16px', fontSize: '12px' }}>
@@ -5545,7 +5545,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
               <input
                 type="email" value={creditUserEmail}
                 onChange={e => setCreditUserEmail(e.target.value)}
-                placeholder="Student/Crew Email (e.g. crew@vitstudent.ac.in)"
+                placeholder="User / Crew Email (e.g. crew@vitchennai.ac.in)"
                 style={{ flex: 1, minWidth: '220px', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 0 }}
               />
               <input

@@ -46,7 +46,7 @@ export const CAMPUS_FOOD_COURTS = [
   {
     id: 'fc-pavilion',
     name: 'Campus Pavilion & Stalls',
-    subtitle: 'Lakeview Student Activity Center',
+    subtitle: 'Lakeview Campus Activity Centre',
     locationKey: 'Campus Outlets & Stores',
     image: 'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=600&auto=format&fit=crop&q=80',
     outlets: ['store1', 'store2'],
@@ -371,7 +371,7 @@ export default function VFoodsUserDashboard({
               onClick={() => handleRoleSwitch('user')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: '#EFF6FF', color: '#1D4ED8', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
             >
-              <User size={14} /> Student / User View
+              <User size={14} /> User View
             </button>
             <button
               onClick={() => handleRoleSwitch('staff')}
