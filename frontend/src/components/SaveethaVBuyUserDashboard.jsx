@@ -13,39 +13,39 @@ export const CAMPUS_FOOD_COURTS = [
   {
     id: 'fc-gazebo',
     name: 'Gazebo Food Court',
-    subtitle: 'Central Campus Hub · Ground Floor',
+    subtitle: 'Central Campus Plaza · Ground Floor',
     locationKey: 'Gazebo (Main Canteen)',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
     outlets: ['g1', 'g2', 'g3', 'g4'],
   },
   {
     id: 'fc-northsquare',
     name: 'North Square Food Court',
-    subtitle: 'North Square Complex · 1st Floor',
+    subtitle: 'North Square Building · 1st Floor',
     locationKey: 'North Square',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
     outlets: ['n1', 'n2', 'n3', 'n4'],
   },
   {
     id: 'fc-ab3',
     name: 'AB3 Food Complex',
-    subtitle: 'Academic Block 3 Amphitheatre Area',
+    subtitle: 'Academic Block 3 Courtyard',
     locationKey: 'AB3 Amphitheatre',
-    image: 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=600&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=600&auto=format&fit=crop&q=80',
     outlets: ['ab3'],
   },
   {
     id: 'fc-academic',
     name: 'Academic Blocks Diner',
-    subtitle: 'AB1 & Delta Blocks Courtyard',
+    subtitle: 'Delta & AB1 Walkway Counters',
     locationKey: 'Academic Blocks',
-    image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=600&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=600&auto=format&fit=crop&q=80',
     outlets: ['ab1', 'delta'],
   },
   {
     id: 'fc-pavilion',
-    name: 'Campus Pavilion & Stores',
-    subtitle: 'Central Walkway & Student Hub',
+    name: 'Campus Pavilion & Stalls',
+    subtitle: 'Lakeview Student Activity Center',
     locationKey: 'Campus Outlets & Stores',
     image: 'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=600&auto=format&fit=crop&q=80',
     outlets: ['store1', 'store2'],
@@ -331,7 +331,7 @@ export default function SaveethaVBuyUserDashboard({
               <input
                 type="text"
                 className="vbuy-search-input"
-                placeholder="Search for food, canteens, dishes..."
+                placeholder="Search dishes, canteens, drinks (e.g. Dosa, Biryani, Coffee)..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -412,7 +412,7 @@ export default function SaveethaVBuyUserDashboard({
                 {/* ── Section 1: "🔥 Popular Near By" ── */}
                 <div className="vbuy-section-header">
                   <span className="vbuy-section-title">
-                    <span>🔥</span> Popular Near By
+                    <span>🔥</span> Popular on Campus
                   </span>
                   <div className="vbuy-filter-pill-group">
                     <button
@@ -425,13 +425,13 @@ export default function SaveethaVBuyUserDashboard({
                       className={`vbuy-filter-pill-btn ${popularFilter === 'veg' ? 'active' : ''}`}
                       onClick={() => setPopularFilter('veg')}
                     >
-                      <span className="vbuy-veg-dot" /> Veg
+                      <span className="vbuy-veg-dot" /> Pure Veg
                     </button>
                     <button
                       className={`vbuy-filter-pill-btn ${popularFilter === 'non-veg' ? 'active' : ''}`}
                       onClick={() => setPopularFilter('non-veg')}
                     >
-                      <span className="vbuy-nonveg-dot" /> Non-veg
+                      <span className="vbuy-nonveg-dot" /> Non-Veg
                     </button>
                   </div>
                 </div>
@@ -481,10 +481,10 @@ export default function SaveethaVBuyUserDashboard({
                 {/* ── Section 2: "🏢 Food Courts (5)" ── */}
                 <div className="vbuy-section-header">
                   <span className="vbuy-section-title">
-                    <span>🏢</span> Campus Food Courts ({CAMPUS_FOOD_COURTS.length})
+                    <span>🏢</span> Campus Food Courts
                   </span>
                   <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
-                    Tap to explore counters
+                    Tap any food court to view counters & menus
                   </span>
                 </div>
 
@@ -535,7 +535,7 @@ export default function SaveethaVBuyUserDashboard({
               </button>
               <div className="vbuy-explorer-title-box">
                 <div className="vbuy-explorer-main-title">Food Court Explorer</div>
-                <div className="vbuy-explorer-sub-title">BROWSE ALL CANTEENS · {selectedFoodCourt.name}</div>
+                <div className="vbuy-explorer-sub-title">ALL COUNTERS · {selectedFoodCourt.name}</div>
               </div>
             </div>
 
@@ -552,7 +552,7 @@ export default function SaveethaVBuyUserDashboard({
                   <div className="vbuy-rail-avatar-circle">
                     <Utensils size={18} />
                   </div>
-                  <span className="vbuy-rail-avatar-name">All Canteens</span>
+                  <span className="vbuy-rail-avatar-name">All Counters</span>
                 </button>
 
                 {/* Stalls / Canteens in this food court */}
@@ -695,7 +695,7 @@ export default function SaveethaVBuyUserDashboard({
                 <div>
                   <div className="vbuy-pickup-banner-title">Counter Pre-Order (Fast Pickup)</div>
                   <div className="vbuy-pickup-banner-sub">
-                    Direct counter pickup with 4-digit token. Zero waiting line.
+                    Freshly prepared in kitchen. Show your 4-digit token at counter to collect.
                   </div>
                 </div>
               </div>
@@ -756,7 +756,7 @@ export default function SaveethaVBuyUserDashboard({
                   {/* Timing Option: Immediate vs Scheduled */}
                   <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '14px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={15} color="#2563EB" /> Pickup Preparation Timing
+                      <Clock size={15} color="#2563EB" /> When do you want to pick it up?
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <button
@@ -768,7 +768,7 @@ export default function SaveethaVBuyUserDashboard({
                           fontWeight: 700, fontSize: '11.5px', cursor: 'pointer', textAlign: 'center'
                         }}
                       >
-                        ⚡ Order Now (Immediate)
+                        ⚡ As soon as ready (10-15 mins)
                       </button>
                       <button
                         type="button"
@@ -779,7 +779,7 @@ export default function SaveethaVBuyUserDashboard({
                           fontWeight: 700, fontSize: '11.5px', cursor: 'pointer', textAlign: 'center'
                         }}
                       >
-                        🕒 Schedule Pickup Slot
+                        🕒 Pick up later (Slot)
                       </button>
                     </div>
 
@@ -849,18 +849,18 @@ export default function SaveethaVBuyUserDashboard({
                     disabled={busy}
                     onClick={placeOrder}
                   >
-                    <Zap size={16} /> Pay {money(finalDebit)} & Place Pre-Order
+                    <Zap size={16} /> Pay {money(finalDebit)} & Place Order
                   </button>
                 ) : (
                   <div className="vbuy-deficit-btn-row">
                     <div className="vbuy-deficit-notice">
-                      Insufficient Balance ({money(deficit)} needed)
+                      Wallet low by {money(deficit)}
                     </div>
                     <button
                       className="vbuy-topup-pay-btn"
                       onClick={handleDeficitPay}
                     >
-                      + Top Up {money(deficit)} & Pay
+                      + Add ₹{deficit} & Pay
                     </button>
                   </div>
                 )}

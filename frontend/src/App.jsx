@@ -5857,13 +5857,13 @@ function AuthScreen({ onLoginUser }) {
           <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V-BUY</span>
         </div>
         <div>
-          <h1>Unified Food<br />Ordering & Smart<br /><span>Dining Platform</span></h1>
+          <h1>Pre-order campus meals,<br /><span>pick up in seconds.</span></h1>
           <p style={{ marginTop: '16px', color: '#94A3B8', fontSize: '15px', lineHeight: 1.6 }}>
-            Skip the queue. Order ahead. Pay smart.
-            <br />Seamless food ordering and kitchen dispatch for everyone.
+            Order ahead from your favourite VIT Chennai canteens.
+            <br />Get your digital token, skip the counter line, and grab hot food on your way.
           </p>
         </div>
-        <small style={{ color: '#64748B' }}>© 2026 V-BUY · Smart Food Ordering System</small>
+        <small style={{ color: '#64748B' }}>© 2026 V-BUY · VIT Chennai Campus Dining</small>
       </div>
 
       <div className="login-form-wrapper">
@@ -6110,7 +6110,7 @@ function AuthScreen({ onLoginUser }) {
           {/* Quick Login - 4 Explicit Dashboards + 13 Canteens Staff & Owner Mapping */}
           <div className="quick-test-box">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-              <p style={{ margin: 0 }}>Direct Test Login — Choose Dashboard:</p>
+              <p style={{ margin: 0 }}>Quick Test Access (Select Role):</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <label htmlFor="quick-canteen-select" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase' }}>
                   Target Canteen:

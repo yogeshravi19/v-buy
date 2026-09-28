@@ -34,15 +34,15 @@ const FOOD_IMAGES: { keywords: string[]; url: string; emoji: string }[] = [
   },
   {
     keywords: ['puff', 'veg puff', 'egg puff'],
-    url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=300&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=400&h=400&fit=crop&q=80',
   },
   {
     keywords: ['cutlet', 'chicken cutlet'],
-    url: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=300&h=300&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=400&h=400&fit=crop&q=80',
   },
   {
     keywords: ['roll', 'paneer roll', 'shawarma', 'chicken shawarma'],
-    url: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=300&h=300&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=400&fit=crop&q=80',
   },
   {
     keywords: ['chole bhature', 'bhature', 'chole'],
@@ -160,11 +160,23 @@ const FOOD_IMAGES: { keywords: string[]; url: string; emoji: string }[] = [
     url: 'https://images.unsplash.com/photo-1571934811356-5cc061b6821f?w=300&h=300&fit=crop&q=80',
   },
   {
-    keywords: ['coffee', 'filter coffee', 'cappuccino', 'latte'],
+    keywords: ['fresh lime juice', 'lime juice', 'lemon juice', 'nimbu pani', 'lemon soda'],
+    url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&h=400&fit=crop&q=80',
+  },
+  {
+    keywords: ['filter coffee', 'south indian coffee'],
+    url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=400&fit=crop&q=80',
+  },
+  {
+    keywords: ['cold coffee', 'oreo milkshake', 'chocolate milkshake'],
+    url: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=400&h=400&fit=crop&q=80',
+  },
+  {
+    keywords: ['coffee', 'cappuccino', 'latte'],
     url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300&h=300&fit=crop&q=80',
   },
   {
-    keywords: ['juice', 'fresh juice', 'orange juice', 'mosambi', 'lime juice'],
+    keywords: ['juice', 'fresh juice', 'orange juice', 'mosambi'],
     url: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=300&h=300&fit=crop&q=80',
   },
   {
