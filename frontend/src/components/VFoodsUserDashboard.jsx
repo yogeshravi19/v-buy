@@ -3,7 +3,7 @@ import {
   Search, X, ArrowLeft, Store, ShoppingBag, Clock, User, CreditCard,
   ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle, Sparkles,
   Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw,
-  Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck
+  Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck, Lock
 } from 'lucide-react'
 import { getFoodImage } from '../lib/foodImages'
 
@@ -243,6 +243,60 @@ export default function VFoodsUserDashboard({
     }
   }
 
+  // Reusable Top-App Food Card Renderer (Swiggy / Zomato / Burger King design system)
+  const renderDishCard = (item, isBestseller = false) => {
+    const cartItem = (cart.items || []).find(ci => ci.id === item.id)
+    const qty = cartItem ? cartItem.qty : 0
+    return (
+      <div key={item.id} className="vfoods-dish-card">
+        <div className="vfoods-dish-img-wrap">
+          <img
+            src={getItemImageUrl(item)}
+            alt={item.name}
+            className="vfoods-dish-img"
+            loading="lazy"
+          />
+          <div className={`vfoods-dish-veg-badge ${item.is_veg ? 'veg' : 'nonveg'}`} title={item.is_veg ? 'Pure Veg' : 'Non-Veg'}>
+            <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
+          </div>
+          {isBestseller && (
+            <div className="vfoods-bestseller-ribbon">
+              <Star size={7.5} fill="#D97706" color="#D97706" /> Bestseller
+            </div>
+          )}
+        </div>
+        <div className="vfoods-dish-body">
+          <div>
+            <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
+            <div className="vfoods-dish-meta-row">
+              <span className="vfoods-rating-pill">
+                <Star size={7.5} fill="#FFFFFF" color="#FFFFFF" /> 4.3
+              </span>
+              <span className="vfoods-prep-time">
+                <Clock size={8.5} /> 10-15m
+              </span>
+            </div>
+            <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
+          </div>
+          <div className="vfoods-dish-bottom">
+            <span className="vfoods-dish-price">{money(item.price)}</span>
+            {qty > 0 ? (
+              <div className="vfoods-dish-qty-stepper">
+                <button onClick={() => removeFromCart(item.id)}>-</button>
+                <span>{qty}</span>
+                <button onClick={() => addToCart(item.outlet, item)}>+</button>
+              </div>
+            ) : (
+              <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
+                + ADD
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="vfoods-desktop-backdrop">
       <div className="vfoods-app-frame">
@@ -399,45 +453,7 @@ export default function VFoodsUserDashboard({
                   </div>
                 ) : (
                   <div className="vfoods-dish-grid-3">
-                    {searchResults.map(item => {
-                      const cartItem = (cart.items || []).find(ci => ci.id === item.id)
-                      const qty = cartItem ? cartItem.qty : 0
-                      return (
-                        <div key={item.id} className="vfoods-dish-card">
-                          <div className="vfoods-dish-img-wrap">
-                            <img
-                              src={getItemImageUrl(item)}
-                              alt={item.name}
-                              className="vfoods-dish-img"
-                              loading="lazy"
-                            />
-                            <div className="vfoods-dish-veg-badge">
-                              <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
-                            </div>
-                          </div>
-                          <div className="vfoods-dish-body">
-                            <div>
-                              <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
-                              <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
-                            </div>
-                            <div className="vfoods-dish-bottom">
-                              <span className="vfoods-dish-price">{money(item.price)}</span>
-                              {qty > 0 ? (
-                                <div className="vfoods-dish-qty-stepper">
-                                  <button onClick={() => removeFromCart(item.id)}>-</button>
-                                  <span>{qty}</span>
-                                  <button onClick={() => addToCart(item.outlet, item)}>+</button>
-                                </div>
-                              ) : (
-                                <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
-                                  + ADD
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
+                    {searchResults.map((item, idx) => renderDishCard(item, idx < 3))}
                   </div>
                 )}
               </div>
@@ -471,45 +487,7 @@ export default function VFoodsUserDashboard({
                 </div>
 
                 <div className="vfoods-dish-grid-3">
-                  {popularDishes.map(item => {
-                    const cartItem = (cart.items || []).find(ci => ci.id === item.id)
-                    const qty = cartItem ? cartItem.qty : 0
-                    return (
-                      <div key={item.id} className="vfoods-dish-card">
-                        <div className="vfoods-dish-img-wrap">
-                          <img
-                            src={getItemImageUrl(item)}
-                            alt={item.name}
-                            className="vfoods-dish-img"
-                            loading="lazy"
-                          />
-                          <div className="vfoods-dish-veg-badge">
-                            <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
-                          </div>
-                        </div>
-                        <div className="vfoods-dish-body">
-                          <div>
-                            <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
-                            <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
-                          </div>
-                          <div className="vfoods-dish-bottom">
-                            <span className="vfoods-dish-price">{money(item.price)}</span>
-                            {qty > 0 ? (
-                              <div className="vfoods-dish-qty-stepper">
-                                <button onClick={() => removeFromCart(item.id)}>-</button>
-                                <span>{qty}</span>
-                                <button onClick={() => addToCart(item.outlet, item)}>+</button>
-                              </div>
-                            ) : (
-                              <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
-                                + ADD
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {popularDishes.map((item, idx) => renderDishCard(item, idx < 6))}
                 </div>
 
                 {/* ── Section 2: Campus Food Courts ── */}
@@ -545,7 +523,7 @@ export default function VFoodsUserDashboard({
                           <div className="vfoods-fc-pill">
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Store size={11} /> {courtOutlets.length} {courtOutlets.length === 1 ? 'counter' : 'counters'}</span>
                             <span>|</span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Utensils size={11} /> {itemCount} items ›</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Utensils size={11} /> {itemCount} items <ChevronRight size={11} /></span>
                           </div>
                         </div>
                       </div>
@@ -667,45 +645,7 @@ export default function VFoodsUserDashboard({
 
                 {/* 2-Column Food Grid */}
                 <div className="vfoods-explorer-grid-2">
-                  {explorerDishes.map(item => {
-                    const cartItem = (cart.items || []).find(ci => ci.id === item.id)
-                    const qty = cartItem ? cartItem.qty : 0
-                    return (
-                      <div key={item.id} className="vfoods-dish-card">
-                        <div className="vfoods-dish-img-wrap">
-                          <img
-                            src={getItemImageUrl(item)}
-                            alt={item.name}
-                            className="vfoods-dish-img"
-                            loading="lazy"
-                          />
-                          <div className="vfoods-dish-veg-badge">
-                            <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
-                          </div>
-                        </div>
-                        <div className="vfoods-dish-body">
-                          <div>
-                            <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
-                            <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
-                          </div>
-                          <div className="vfoods-dish-bottom">
-                            <span className="vfoods-dish-price">{money(item.price)}</span>
-                            {qty > 0 ? (
-                              <div className="vfoods-dish-qty-stepper">
-                                <button onClick={() => removeFromCart(item.id)}>-</button>
-                                <span>{qty}</span>
-                                <button onClick={() => addToCart(item.outlet, item)}>+</button>
-                              </div>
-                            ) : (
-                              <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
-                                + ADD
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {explorerDishes.map((item, idx) => renderDishCard(item, idx % 4 === 0))}
                 </div>
               </div>
             </div>
@@ -856,11 +796,15 @@ export default function VFoodsUserDashboard({
                     )}
                     <div className="vfoods-cart-bill-row">
                       <span>Taxes & Canteen Packaging</span>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>₹0 (FREE)</span>
+                      <span style={{ color: '#10B981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <Check size={12} /> ₹0 (FREE)
+                      </span>
                     </div>
                     <div className="vfoods-cart-bill-row">
                       <span>Counter Pickup Service</span>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>FREE</span>
+                      <span style={{ color: '#10B981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <Store size={12} /> FREE PICKUP
+                      </span>
                     </div>
                     <div className="vfoods-cart-bill-total">
                       <span>To Pay</span>
@@ -889,7 +833,10 @@ export default function VFoodsUserDashboard({
                               <Wallet size={16} />
                             </div>
                             <div>
-                              <div style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Campus Prepaid Wallet</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Campus Prepaid Wallet</span>
+                                <span className="vfoods-payment-chip wallet">1-TAP FASTPAY</span>
+                              </div>
                               <div style={{ fontSize: '11px', color: isInsufficient ? '#DC2626' : '#166534', fontWeight: 700 }}>
                                 Balance: {money(wallet?.balance)} {isInsufficient ? `(Low by ${money(deficit)})` : '• Ready'}
                               </div>
@@ -898,7 +845,7 @@ export default function VFoodsUserDashboard({
                           <div className={`vfoods-custom-radio ${paymentMode === 'wallet' ? 'checked' : ''}`} />
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
-                          1-Tap prepaid deduction. No bank redirects or OTP delays.
+                          Direct campus ID prepaid balance. Zero gateway latency.
                         </div>
                       </div>
 
@@ -913,7 +860,10 @@ export default function VFoodsUserDashboard({
                               <Zap size={16} />
                             </div>
                             <div>
-                              <div style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Instant Payment Gateway</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Instant Payment Gateway</span>
+                                <span className="vfoods-payment-chip gateway">256-BIT SSL</span>
+                              </div>
                               <div style={{ fontSize: '11px', color: '#4F46E5', fontWeight: 700 }}>
                                 PhonePe • Paytm • GPay • UPI
                               </div>
@@ -925,6 +875,12 @@ export default function VFoodsUserDashboard({
                           Direct per-order checkout. No wallet balance required.
                         </div>
                       </div>
+                    </div>
+
+                    {/* Top App Trust & Security Banner */}
+                    <div className="vfoods-cart-trust-banner">
+                      <ShieldCheck size={14} color="#16A34A" />
+                      <span>100% Safe & Secure Campus Payments · SSL Encrypted</span>
                     </div>
                   </div>
                 </>
