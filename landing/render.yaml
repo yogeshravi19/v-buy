@@ -1,0 +1,16 @@
+# Render Static Site Deployment Blueprint
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: v-foods-landing
+    runtime: static
+    buildCommand: npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
