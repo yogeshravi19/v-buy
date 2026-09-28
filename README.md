@@ -8,6 +8,12 @@ V FOODS is a campus food pre-ordering, prepaid digital wallet, and kitchen manag
 
 Full documentation: see **[docs/00-start-here.md](docs/00-start-here.md)**.
 
+### Master Whitepaper & Architecture
+- **[Complete System Guide & Architecture (Markdown)](docs/V_FOODS_COMPLETE_SYSTEM_GUIDE.md)**: Plain-English comprehensive whitepaper with 6 Mermaid architecture diagrams covering campus flow, wallet-first mechanics, KDS, and cloud infrastructure.
+- **[Downloadable Printable PDF Guide](docs/V_FOODS_SYSTEM_GUIDE.pdf)**: Formatted, publication-ready vector PDF document ready for offline sharing and print distribution.
+- **[Interactive HTML Guide](docs/V_FOODS_SYSTEM_GUIDE.html)**: Styled browser-ready document with printable styling.
+
+### Step-by-Step Learning Path
 The `/docs` directory is organized as a step-by-step reading path for anyone new to the project:
 
 - **[00-start-here.md](docs/00-start-here.md)**: Entry point and reading guide
