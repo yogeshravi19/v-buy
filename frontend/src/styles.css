@@ -1331,6 +1331,87 @@ body::before {
 .login-card-inner { max-width:420px; width:100%; animation:card-in 0.5s var(--ease-spring) 0.1s both; }
 .login-card-inner h2 { font-family:var(--font-heading); font-size:32px; font-weight:900; color:var(--text-main); margin-bottom:6px; letter-spacing:-0.5px; }
 
+/* ── AUTH COMPONENT CONTROLS (V FOODS) ───────────────────────────────────── */
+.auth-tabs-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.auth-tab-btn {
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748B;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  line-height: 1.25;
+}
+.auth-tab-btn:hover {
+  color: #0F172A;
+}
+.auth-tab-btn.active {
+  background: #FFFFFF;
+  color: #1E40AF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.phone-input-group {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--r-md);
+  background: #F8FAFC;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.phone-input-group:focus-within {
+  border-color: var(--blue-primary);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+.phone-prefix {
+  padding: 12px 14px;
+  background: #F1F5F9;
+  border-right: 1px solid var(--border-color);
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #334155;
+  user-select: none;
+}
+.phone-number-field {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  padding: 12px 14px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--text-main) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.sms-preview-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #EFF6FF;
+  border: 1px dashed #93C5FD;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #1E40AF;
+  line-height: 1.4;
+}
+
+
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
 .form-group input,
@@ -1346,6 +1427,8 @@ body::before {
 
 .quick-test-box { margin-top:24px; padding:18px; background:#F8FAFC; border:1px solid var(--border-color); border-radius:var(--r-lg); }
 .quick-test-box p { font-size:11px; font-weight:800; color:var(--text-subtle); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+.quick-test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.quick-canteen-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .quick-chip-grid { display:flex; gap:8px; flex-wrap:wrap; }
 .quick-chip {
   background:var(--bg-navy-dark); color:#FFFFFF; border:0;
@@ -1459,9 +1542,54 @@ body::before {
 
 /* ── RESPONSIVE & MOBILE PWA RESOLUTION ENFORCEMENT ─────────────────────── */
 @media (max-width: 900px) {
-  .login-container { grid-template-columns: 1fr; }
-  .login-art { padding: 28px 24px 20px; border-right: 0; border-bottom: 2px solid #1E293B; }
-  .login-form-wrapper { padding: 28px 20px; }
+  .login-container {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    height: auto;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    background: #0B192C;
+  }
+  .login-art {
+    padding: 28px 20px 22px;
+    border-right: 0;
+    border-bottom: 0;
+    background: linear-gradient(180deg, #0B192C 0%, #1E3E62 100%);
+    position: relative;
+    z-index: 1;
+  }
+  .login-art h1 {
+    font-size: 26px;
+    letter-spacing: -0.8px;
+    line-height: 1.15;
+  }
+  .login-art p {
+    font-size: 13.5px;
+    color: #94A3B8;
+    margin-top: 8px;
+    display: block;
+    line-height: 1.5;
+  }
+  .login-art small {
+    display: none;
+  }
+  .login-form-wrapper {
+    padding: 26px 20px 48px;
+    background: #FFFFFF;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 2;
+    min-height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .login-card-inner {
+    max-width: 440px;
+    width: 100%;
+  }
   .outlet-grid { grid-template-columns: 1fr; }
   .hero-card  { flex-direction: column; align-items: flex-start; }
   .hero-stats { flex-wrap: wrap; }
@@ -1469,20 +1597,37 @@ body::before {
 
 @media (max-width: 640px) {
   .login-art {
-    padding: 20px 16px 16px;
+    padding: 22px 16px 18px;
+  }
+  .login-art-top {
+    gap: 10px;
   }
   .login-art h1 {
     font-size: 22px;
     letter-spacing: -0.5px;
   }
-  .login-art p, .login-art small {
-    display: none;
+  .login-art p {
+    font-size: 12px;
+    margin-top: 6px;
   }
   .login-form-wrapper {
-    padding: 20px 16px 36px;
+    padding: 22px 16px 40px;
+    border-radius: 24px 24px 0 0;
   }
   .login-card-inner h2 {
     font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+  .auth-tabs-toggle {
+    margin-bottom: 16px;
+  }
+  .auth-tab-btn {
+    font-size: 11px;
+    padding: 8px 6px;
+  }
+  .quick-test-box {
+    margin-top: 18px;
+    padding: 12px;
   }
   .quick-chip-grid {
     display: grid;
@@ -1490,12 +1635,12 @@ body::before {
     gap: 8px;
   }
   .quick-chip {
-    padding: 8px 10px;
+    padding: 8px 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: 11.5px;
   }
   .topbar {
     height: 56px;
@@ -5853,4 +5998,291 @@ body::before {
   justify-content: center;
   gap: 4px;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   V FOODS PREMIUM TRANSITION TOOLS & VISUAL ATTRACTION ENGINE
+   Smooth physics-based springs, interactive elevation, and micro-interactions
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframe Motion Tool Library ── */
+@keyframes vfoods-fade-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes vfoods-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes vfoods-spring-pop {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes vfoods-pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.92; }
+}
+
+@keyframes vfoods-cart-spring {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  70% {
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vfoods-badge-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  65% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+@keyframes vfoods-sheen {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes vfoods-arrow-hint {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+/* ── Viewport Transitions ── */
+.vfoods-main-content {
+  animation: vfoods-fade-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Interactive Dish Cards (Visual Excellence) ── */
+.vfoods-dish-card {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-color 0.2s ease !important;
+  will-change: transform, box-shadow;
+}
+
+.vfoods-dish-card:hover {
+  transform: translateY(-4px) scale(1.015) !important;
+  box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.16), 0 4px 8px -2px rgba(0, 0, 0, 0.04) !important;
+  border-color: #BFDBFE !important;
+}
+
+.vfoods-dish-card:active {
+  transform: scale(0.97) !important;
+}
+
+.vfoods-dish-img {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.vfoods-dish-card:hover .vfoods-dish-img {
+  transform: scale(1.08) !important;
+}
+
+/* ── Tactile Button Transitions ── */
+.vfoods-dish-add-btn {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  user-select: none;
+}
+
+.vfoods-dish-add-btn:hover {
+  background: #2563EB !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
+}
+
+.vfoods-dish-add-btn:active {
+  transform: scale(0.88) !important;
+}
+
+.vfoods-dish-qty-stepper {
+  animation: vfoods-spring-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+}
+
+.vfoods-dish-qty-stepper button {
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.vfoods-dish-qty-stepper button:active {
+  transform: scale(0.75);
+}
+
+/* ── Campus Food Courts Cards Attraction ── */
+.vfoods-fc-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform, box-shadow;
+}
+
+.vfoods-fc-card:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.25) !important;
+}
+
+.vfoods-fc-card:active {
+  transform: scale(0.97) !important;
+}
+
+.vfoods-fc-img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.vfoods-fc-card:hover .vfoods-fc-img {
+  transform: scale(1.09) !important;
+}
+
+.vfoods-fc-pill {
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.vfoods-fc-card:hover .vfoods-fc-pill {
+  transform: translateY(-1px);
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Filter Pills Transitions ── */
+.vfoods-filter-pill-btn {
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.vfoods-filter-pill-btn:hover {
+  transform: translateY(-1px);
+}
+
+.vfoods-filter-pill-btn:active {
+  transform: scale(0.93);
+}
+
+.vfoods-filter-pill-btn.active {
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+}
+
+.vfoods-right-filter-chip {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.vfoods-right-filter-chip:hover {
+  transform: translateY(-1px);
+}
+
+.vfoods-right-filter-chip:active {
+  transform: scale(0.92);
+}
+
+/* ── Vertical Left Rail Transitions (Explorer View) ── */
+.vfoods-explorer-view {
+  animation: vfoods-fade-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vfoods-rail-item {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.vfoods-rail-item:hover {
+  transform: translateX(3px);
+}
+
+.vfoods-rail-item.active .vfoods-rail-avatar-circle {
+  transform: scale(1.12) !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.25), 0 6px 14px rgba(37, 99, 235, 0.3) !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease !important;
+}
+
+/* ── Persistent Floating Bottom Cart Bar (Magnetic Appeal) ── */
+.vfoods-floating-cart-bar {
+  animation: vfoods-cart-spring 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vfoods-floating-cart-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45) !important;
+}
+
+.vfoods-floating-cart-bar:active {
+  transform: scale(0.98);
+}
+
+.vfoods-floating-cart-badge {
+  animation: vfoods-badge-bounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.vfoods-floating-cart-action svg {
+  animation: vfoods-arrow-hint 1.8s ease-in-out infinite;
+}
+
+/* ── Dedicated Cart Sheet & Checkout Micro-interactions ── */
+.vfoods-cart-view {
+  animation: vfoods-fade-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vfoods-place-order-btn {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.vfoods-place-order-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45) !important;
+}
+
+.vfoods-place-order-btn:active {
+  transform: scale(0.97);
+}
+
+.vfoods-topup-pay-btn {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.vfoods-topup-pay-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45) !important;
+}
+
+.vfoods-topup-pay-btn:active {
+  transform: scale(0.97);
+}
+
+.vfoods-wallet-chip {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vfoods-wallet-chip:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.vfoods-wallet-chip:active {
+  transform: scale(0.95);
+}
+
+.vfoods-bottom-nav-item {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vfoods-bottom-nav-item:active {
+  transform: scale(0.88);
 }

@@ -6109,17 +6109,17 @@ function AuthScreen({ onLoginUser }) {
 
           {/* Quick Login - 4 Explicit Dashboards + 13 Canteens Staff & Owner Mapping */}
           <div className="quick-test-box">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-              <p style={{ margin: 0 }}>Quick Test Access (Select Role):</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <label htmlFor="quick-canteen-select" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase' }}>
-                  Target Canteen:
+            <div className="quick-test-header">
+              <p style={{ margin: 0, fontWeight: 800 }}>Quick Test Access (Select Role):</p>
+              <div className="quick-canteen-row">
+                <label htmlFor="quick-canteen-select" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  Canteen:
                 </label>
                 <select
                   id="quick-canteen-select"
                   value={selectedCanteenId}
                   onChange={e => setSelectedCanteenId(e.target.value)}
-                  style={{ fontSize: '12px', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)', background: '#FFFFFF', color: 'var(--text-main)', cursor: 'pointer' }}
+                  style={{ fontSize: '12px', fontWeight: 700, padding: '5px 8px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)', background: '#FFFFFF', color: 'var(--text-main)', cursor: 'pointer', flex: 1, minWidth: '160px' }}
                 >
                   {CANTEEN_STAFF_OWNER_MAP.map(c => (
                     <option key={c.id} value={c.id}>
