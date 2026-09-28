@@ -15,11 +15,16 @@ V FOODS is a campus food pre-ordering and digital wallet app built specifically 
 
 ## The Reading Order
 
-1. **[01-what-is-vfoods.md](01-what-is-vfoods.md)**: The core idea of V FOODS, the campus problem it solves, and why it is built differently from commercial delivery apps.
-2. **[02-the-four-roles.md](02-the-four-roles.md)**: Who uses the system (Students, Kitchen Staff, Canteen Owners, Super Admins) and what each role can see and do.
-3. **[03-how-an-order-works.md](03-how-an-order-works.md)**: The complete lifecycle of an order from adding items to kitchen preparation and QR-verified counter pickup.
-4. **[04-the-database.md](04-the-database.md)**: What information the database stores, how stalls are connected, and how built-in security rules keep data safe.
-5. **[05-tools-used.md](05-tools-used.md)**: The software, services, and tools powering the application, explained in plain English without jargon.
-6. **[06-features.md](06-features.md)**: A catalog of all active features (reordering, ratings, group carts, scheduled slots, coupons) and retired experiments.
-7. **[07-payments-phonepe.md](07-payments-phonepe.md)**: A deep dive into the wallet-first model, how PhonePe handles top-ups safely, and why checkout never waits on a bank gateway.
-8. **[08-running-it-locally.md](08-running-it-locally.md)**: A practical guide for developers wanting to start the frontend and backend on their local machine.
+Every document is available as both Markdown (`.md`) and a standalone printable PDF (`.pdf`) in this folder:
+
+1. **[01-what-is-vfoods.md](01-what-is-vfoods.md)** ([PDF Version](01-what-is-vfoods.pdf)): The core idea of V FOODS, the campus problem it solves, and why it is built differently from commercial delivery apps.
+2. **[02-the-four-roles.md](02-the-four-roles.md)** ([PDF Version](02-the-four-roles.pdf)): Who uses the system (Students, Kitchen Staff, Canteen Owners, Super Admins) and what each role can see and do.
+3. **[03-how-an-order-works.md](03-how-an-order-works.md)** ([PDF Version](03-how-an-order-works.pdf)): The complete lifecycle of an order from adding items to kitchen preparation and QR-verified counter pickup.
+4. **[04-the-database.md](04-the-database.md)** ([PDF Version](04-the-database.pdf)): What information the database stores, how stalls are connected, and how built-in security rules keep data safe.
+5. **[05-tools-used.md](05-tools-used.md)** ([PDF Version](05-tools-used.pdf)): The software, services, and tools powering the application, explained in plain English without jargon.
+6. **[06-features.md](06-features.md)** ([PDF Version](06-features.pdf)): A catalog of all active features (reordering, ratings, group carts, scheduled slots, coupons) and retired experiments.
+7. **[07-payments-phonepe.md](07-payments-phonepe.md)** ([PDF Version](07-payments-phonepe.pdf)): A deep dive into the wallet-first model, how PhonePe handles top-ups safely, and why checkout never waits on a bank gateway.
+8. **[08-running-it-locally.md](08-running-it-locally.md)** ([PDF Version](08-running-it-locally.pdf)): A practical guide for developers wanting to start the frontend and backend on their local machine.
+9. **[PITCH_DECK.md](PITCH_DECK.md)** ([PDF Version](PITCH_DECK.pdf)): Executive investor and administration pitch deck highlighting unit economics, TAM, and rollouts.
+10. **[V_FOODS_COMPLETE_SYSTEM_GUIDE.md](V_FOODS_COMPLETE_SYSTEM_GUIDE.md)** ([PDF Version](V_FOODS_COMPLETE_SYSTEM_GUIDE.pdf)): Comprehensive system guide with full architecture diagrams and operational specs.
+
