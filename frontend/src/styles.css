@@ -4740,3 +4740,1118 @@ body::before {
 
 
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAVEETHA V-BUY INSPIRED UI/UX ARCHITECTURE FOR V-BUY USER DASHBOARD
+   Layout, structure, and information hierarchy adapted from reference app
+   Strictly 100% V-BUY colors, VIT Chennai campus canteens & pure counter preorder
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Desktop Framing & Canvas ── */
+.vbuy-desktop-backdrop {
+  min-height: 100vh;
+  width: 100%;
+  background: radial-gradient(circle at 50% 15%, #E2E8F0 0%, #94A3B8 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .vbuy-desktop-backdrop {
+    padding: 16px 0;
+  }
+}
+
+.vbuy-app-frame {
+  width: 100%;
+  max-width: 440px;
+  height: 100vh;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .vbuy-app-frame {
+    height: 94vh;
+    max-height: 900px;
+    border-radius: 30px;
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ── 2. Top Header Bar ── */
+.vbuy-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px 16px;
+  background: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.vbuy-brand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vbuy-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vbuy-brand-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.vbuy-brand-name {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #0F172A;
+}
+
+.vbuy-brand-name span {
+  color: #2563EB;
+}
+
+.vbuy-location-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #64748B;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vbuy-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vbuy-wallet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1D4ED8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vbuy-wallet-chip:hover {
+  background: #DBEAFE;
+  transform: translateY(-1px);
+}
+
+.vbuy-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* ── 3. Main Content Container ── */
+.vbuy-main-content {
+  flex: 1;
+  padding: 12px 16px 90px 16px;
+  overflow-y: auto;
+}
+
+/* ── 4. Search Bar ── */
+.vbuy-search-wrap {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.vbuy-search-input {
+  width: 100%;
+  padding: 12px 40px 12px 38px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0F172A;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.vbuy-search-input:focus {
+  background: #FFFFFF;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.vbuy-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  pointer-events: none;
+}
+
+.vbuy-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 5. Popular Near By Section ── */
+.vbuy-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.vbuy-section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.2px;
+}
+
+.vbuy-filter-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #F1F5F9;
+  padding: 3px;
+  border-radius: 20px;
+}
+
+.vbuy-filter-pill-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.vbuy-filter-pill-btn.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.vbuy-veg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+}
+
+.vbuy-nonveg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #EF4444;
+  display: inline-block;
+}
+
+/* ── 6. 3-Column / 2-Column Popular Dish Grid ── */
+.vbuy-dish-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.vbuy-dish-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+}
+
+.vbuy-dish-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.vbuy-dish-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #F1F5F9;
+  overflow: hidden;
+}
+
+.vbuy-dish-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.vbuy-dish-card:hover .vbuy-dish-img {
+  transform: scale(1.04);
+}
+
+.vbuy-dish-veg-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.vbuy-veg-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+}
+
+.vbuy-nonveg-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #EF4444;
+}
+
+.vbuy-dish-body {
+  padding: 8px 8px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.vbuy-dish-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.25;
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 28px;
+}
+
+.vbuy-dish-canteen {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #64748B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.vbuy-dish-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.vbuy-dish-price {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.vbuy-dish-add-btn {
+  border: none;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #2563EB;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vbuy-dish-add-btn:hover {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.vbuy-dish-qty-stepper {
+  display: flex;
+  align-items: center;
+  background: #2563EB;
+  color: #FFFFFF;
+  border-radius: 8px;
+  padding: 1px;
+}
+
+.vbuy-dish-qty-stepper button {
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+
+.vbuy-dish-qty-stepper span {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 4px;
+}
+
+/* ── 7. Food Courts Section (2-Column Grid) ── */
+.vbuy-food-courts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.vbuy-fc-card {
+  position: relative;
+  aspect-ratio: 4 / 3.4;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.vbuy-fc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+}
+
+.vbuy-fc-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.vbuy-fc-card:hover .vbuy-fc-img {
+  transform: scale(1.05);
+}
+
+.vbuy-fc-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(15, 23, 42, 0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+}
+
+.vbuy-fc-title {
+  color: #FFFFFF;
+  font-size: 13.5px;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 0 0 2px 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.vbuy-fc-sub {
+  color: #CBD5E1;
+  font-size: 10px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vbuy-fc-pill {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  color: #0F172A;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 9.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── 8. Food Court Explorer View (Split Layout) ── */
+.vbuy-explorer-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.vbuy-explorer-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.vbuy-back-btn {
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0F172A;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.vbuy-explorer-title-box {
+  flex: 1;
+}
+
+.vbuy-explorer-main-title {
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.vbuy-explorer-sub-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.vbuy-explorer-split {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 120px);
+}
+
+/* Left Vertical Canteen Rail */
+.vbuy-left-rail {
+  width: 78px;
+  background: #F8FAFC;
+  border-right: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 4px;
+  gap: 12px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.vbuy-rail-avatar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  padding: 4px 2px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.vbuy-rail-avatar-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  font-weight: 800;
+  font-size: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.vbuy-rail-avatar-btn.active .vbuy-rail-avatar-circle {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  transform: scale(1.05);
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.vbuy-rail-avatar-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748B;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.vbuy-rail-avatar-btn.active .vbuy-rail-avatar-name {
+  color: #1D4ED8;
+  font-weight: 800;
+}
+
+.vbuy-rail-closed-tag {
+  font-size: 8px;
+  font-weight: 800;
+  color: #DC2626;
+  background: #FEE2E2;
+  padding: 1px 4px;
+  border-radius: 6px;
+  margin-top: 1px;
+}
+
+/* Right Menu Area */
+.vbuy-right-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.vbuy-right-header {
+  margin-bottom: 10px;
+}
+
+.vbuy-right-canteen-name {
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vbuy-right-item-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.vbuy-right-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  font-size: 12px;
+  outline: none;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.vbuy-right-search-input:focus {
+  background: #FFFFFF;
+  border-color: #2563EB;
+}
+
+.vbuy-right-filters-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.vbuy-right-filter-chip {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vbuy-right-filter-chip.active {
+  background: #EFF6FF;
+  border-color: #2563EB;
+  color: #1D4ED8;
+}
+
+.vbuy-explorer-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding-bottom: 90px;
+}
+
+/* ── 9. Floating Bottom "VIEW CART" Pill ── */
+.vbuy-floating-cart-bar {
+  position: absolute;
+  bottom: 68px;
+  left: 14px;
+  right: 14px;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  z-index: 50;
+  cursor: pointer;
+  animation: vbuy-slide-up 0.25s ease-out;
+}
+
+@keyframes vbuy-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.vbuy-floating-cart-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vbuy-floating-cart-count {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vbuy-floating-cart-price {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.vbuy-floating-cart-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+
+/* ── 10. Bottom Navigation Bar ── */
+.vbuy-bottom-nav {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: #FFFFFF;
+  border-top: 1px solid #F1F5F9;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 60;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.vbuy-nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  position: relative;
+  padding: 4px 12px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.vbuy-nav-tab.active {
+  color: #2563EB;
+}
+
+.vbuy-nav-tab-label {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vbuy-nav-badge {
+  position: absolute;
+  top: 0px;
+  right: 10px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 900;
+  border-radius: 10px;
+  padding: 1px 5px;
+  min-width: 14px;
+  text-align: center;
+}
+
+.vbuy-nav-pulse-dot {
+  position: absolute;
+  top: 2px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 2px #FFFFFF;
+  animation: vbuy-pulse 1.5s infinite;
+}
+
+@keyframes vbuy-pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+
+
+/* ── 11. Cart View ── */
+.vbuy-cart-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.vbuy-cart-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.vbuy-cart-header h2 {
+  font-size: 15px;
+  font-weight: 900;
+  color: #0F172A;
+  margin: 0;
+}
+
+.vbuy-cart-content {
+  padding: 12px 14px 110px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.vbuy-pickup-banner {
+  background: #F0FDF4;
+  border: 1.5px solid #BBF7D0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vbuy-pickup-banner-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #DCFCE7;
+  color: #16A34A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vbuy-pickup-banner-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #166534;
+}
+
+.vbuy-pickup-banner-sub {
+  font-size: 10px;
+  color: #15803D;
+}
+
+.vbuy-cart-outlet-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.vbuy-cart-outlet-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #0F172A;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #E2E8F0;
+}
+
+.vbuy-cart-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.vbuy-cart-item-row:last-child {
+  border-bottom: none;
+}
+
+.vbuy-cart-item-thumb {
+  width: 44px !important;
+  height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #F1F5F9;
+  flex-shrink: 0;
+}
+
+.vbuy-cart-item-info {
+  flex: 1;
+}
+
+.vbuy-cart-item-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.25;
+}
+
+.vbuy-cart-item-price {
+  font-size: 12px;
+  font-weight: 800;
+  color: #2563EB;
+}
+
+.vbuy-cart-stepper {
+  display: flex;
+  align-items: center;
+  background: #F1F5F9;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.vbuy-cart-stepper button {
+  border: none;
+  background: none;
+  color: #0F172A;
+  font-weight: 800;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.vbuy-cart-stepper span {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 4px;
+}
+
+.vbuy-cart-delete-btn {
+  border: none;
+  background: none;
+  color: #EF4444;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.vbuy-cart-bill-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.vbuy-cart-bill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #64748B;
+  padding: 3px 0;
+}
+
+.vbuy-cart-bill-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #0F172A;
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px dashed #CBD5E1;
+}
+
+.vbuy-cart-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vbuy-cart-wallet-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+}
+
+.vbuy-pay-btn-primary {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 900;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: all 0.15s ease;
+}
+
+.vbuy-pay-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+}
+
+.vbuy-deficit-btn-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.vbuy-deficit-notice {
+  flex: 1;
+  background: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  color: #DC2626;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.vbuy-topup-pay-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  border-radius: 10px;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}

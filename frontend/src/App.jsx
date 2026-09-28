@@ -18,6 +18,7 @@ import StaffDashboard from './pages/staff/StaffDashboard'
 import StudentDashboard from './pages/student/StudentDashboard'
 import ShopDashboard from './pages/shop/ShopDashboard'
 import SuperAdminDashboard from './pages/admin/AdminDashboard'
+import SaveethaVBuyUserDashboard from './components/SaveethaVBuyUserDashboard'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -1007,6 +1008,51 @@ function App() {
   const isStaff   = role === 'staff'
   const isOwner   = role === 'owner' || role === 'shop_admin'
   const isAdmin   = role === 'admin' || role === 'superadmin' || role === 'super_admin'
+
+  if (isCustomer) {
+    return (
+      <SaveethaVBuyUserDashboard
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        role={role}
+        outlets={outlets}
+        visibleOutlets={visibleOutlets}
+        cart={cart}
+        setCart={setCart}
+        addToCart={addToCart}
+        removeFromCart={removeFromCart}
+        wallet={wallet}
+        topUp={topUp}
+        creditWalletBalance={creditWalletBalance}
+        orders={orders}
+        placeOrder={placeOrder}
+        repeatOrder={repeatOrder}
+        tab={tab}
+        setTab={setTab}
+        notice={notice}
+        setNotice={setNotice}
+        busy={busy}
+        walletPrefill={walletPrefill}
+        setWalletPrefill={setWalletPrefill}
+        itemRatings={itemRatings}
+        submitItemRating={submitItemRating}
+        handleSignOut={handleSignOut}
+        handleInstallClick={handleInstallClick}
+        pickupSlots={pickupSlots}
+        isScheduled={isScheduled}
+        setIsScheduled={setIsScheduled}
+        selectedSlotId={selectedSlotId}
+        setSelectedSlotId={setSelectedSlotId}
+        appliedCoupon={appliedCoupon}
+        setAppliedCoupon={setAppliedCoupon}
+        availableCoupons={availableCoupons}
+        OrdersView={OrdersView}
+        WalletView={WalletView}
+        ProfileView={ProfileView}
+        money={money}
+      />
+    )
+  }
 
   return (
     <div className="app-shell">
