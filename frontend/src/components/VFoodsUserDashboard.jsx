@@ -898,7 +898,7 @@ export default function VFoodsUserDashboard({
                           <div className={`vfoods-custom-radio ${paymentMode === 'wallet' ? 'checked' : ''}`} />
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
-                          ⚡ 1-Tap fast prepaid deduction. No bank redirects.
+                          1-Tap prepaid deduction. No bank redirects or OTP delays.
                         </div>
                       </div>
 
@@ -922,7 +922,7 @@ export default function VFoodsUserDashboard({
                           <div className={`vfoods-custom-radio ${paymentMode === 'instant_gateway' ? 'checked' : ''}`} />
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
-                          🚀 Direct checkout per order. No prior wallet top-up needed!
+                          Direct per-order checkout. No wallet balance required.
                         </div>
                       </div>
                     </div>
@@ -964,7 +964,7 @@ export default function VFoodsUserDashboard({
                         className="vfoods-switch-gateway-btn"
                         onClick={() => setPaymentMode('instant_gateway')}
                       >
-                        Use Instant UPI →
+                        Use Instant UPI
                       </button>
                     </div>
                   )
