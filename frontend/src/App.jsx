@@ -692,7 +692,7 @@ function App() {
     setNotice(`Deficit auto-filled: ₹${amount} needed to checkout. Click 'Add Money' to top up!`)
   }
 
-  async function placeOrder() {
+  async function placeOrder(paymentMethod = 'wallet', gatewayDetails = null) {
     if (!cart.items.length) return
     if (cart.items.some(i => !i.available)) {
       return setNotice('Your cart contains unavailable or out-of-stock items. Please remove them before checkout.')
@@ -714,9 +714,10 @@ function App() {
     }
 
     const studentDebit = Math.max(0, baseTotal - discount)
+    const isGateway = paymentMethod === 'instant_gateway' || paymentMethod === 'gateway'
 
-    if (wallet.balance < studentDebit) {
-      return setNotice(`Insufficient balance (${money(wallet.balance)}). Top up ${money(studentDebit - wallet.balance)} to continue.`)
+    if (!isGateway && wallet.balance < studentDebit) {
+      return setNotice(`Insufficient balance (${money(wallet.balance)}). Top up ${money(studentDebit - wallet.balance)} or use Instant Payment Gateway (PhonePe/Paytm).`)
     }
 
     // Feature 7: Validate scheduled pickup slot
@@ -733,6 +734,9 @@ function App() {
 
     setTimeout(() => {
       const selectedSlot = isScheduled ? pickupSlots.find(s => s.id === selectedSlotId) : null
+      const paymentProviderName = isGateway ? (gatewayDetails?.provider || 'PhonePe / Paytm UPI') : 'V FOODS Campus Wallet'
+      const gatewayTxn = isGateway ? (gatewayDetails?.txnId || `UPI-${Date.now().toString().slice(-8)}`) : null
+
       const newOrder = {
         id: newId,
         user_id: currentUser?.id || 'usr-1',
@@ -740,6 +744,9 @@ function App() {
         outlets: { name: cart.outlet.name, location: cart.outlet.location },
         token,
         status: 'placed',
+        payment_method: isGateway ? 'gateway' : 'wallet',
+        payment_provider: paymentProviderName,
+        gateway_txn_id: gatewayTxn,
         total: baseTotal,           // shop_payout & platform 5% margin preserved on unmodified total
         student_paid: studentDebit,
         discount,
@@ -754,20 +761,22 @@ function App() {
 
       setOrders(prev => [newOrder, ...prev])
 
-      // Atomic wallet debit: Only studentDebit is deducted
-      setWallet(w => ({
-        balance: w.balance - studentDebit,
-        transactions: [
-          {
-            id: Date.now(),
-            amount: -studentDebit,
-            kind: `Order #${newId} — ${cart.outlet.name}${appliedCoupon ? ` (Promo ${appliedCoupon.code} -₹${discount})` : ''}${selectedSlot ? ' [Scheduled]' : ''}`,
-            ref: `ord_${newId}`,
-            created_at: new Date().toISOString()
-          },
-          ...w.transactions
-        ]
-      }))
+      // Atomic wallet debit: Only studentDebit is deducted if paid with wallet
+      if (!isGateway) {
+        setWallet(w => ({
+          balance: w.balance - studentDebit,
+          transactions: [
+            {
+              id: Date.now(),
+              amount: -studentDebit,
+              kind: `Order #${newId} — ${cart.outlet.name}${appliedCoupon ? ` (Promo ${appliedCoupon.code} -₹${discount})` : ''}${selectedSlot ? ' [Scheduled]' : ''}`,
+              ref: `ord_${newId}`,
+              created_at: new Date().toISOString()
+            },
+            ...w.transactions
+          ]
+        }))
+      }
 
       // Increment slot usage
       if (selectedSlot) {
@@ -805,8 +814,9 @@ function App() {
       if (activeGroup) setActiveGroup(null)
       setBusy(false)
       setTab('orders')
-      setNotice(`Order #${newId} placed! Pickup Token: #${token}${selectedSlot ? ` · Scheduled for ${selectedSlot.time_label}` : ''}`)
-      addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(studentDebit)}${discount > 0 ? `, saved ₹${discount}` : ''}) via Campus Wallet`)
+      const paymentMsg = isGateway ? `Paid via ${paymentProviderName}` : 'Paid from Campus Wallet'
+      setNotice(`Order #${newId} placed! (${paymentMsg}) Pickup Token: #${token}${selectedSlot ? ` · Scheduled for ${selectedSlot.time_label}` : ''}`)
+      addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(studentDebit)}${discount > 0 ? `, saved ₹${discount}` : ''}) via ${paymentProviderName}`)
     }, 700)
   }
 

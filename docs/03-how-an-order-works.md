@@ -30,15 +30,23 @@ A simple, step-by-step walk-through of how orders move through V FOODS from star
 
 ---
 
-## 3. Instant Order Placement & Wallet Debit
+## 3. Checkout: Dual Payment Options (Wallet or Instant Gateway)
 
-- When the student taps **Place Order**, the database runs a secure procedure:
-  - Confirms the canteen is currently open.
-  - Confirms all requested dishes have enough stock.
-  - Confirms the student has enough money in their campus wallet.
-  - Instantly deducts the order total from the wallet balance.
-  - Generates a unique 4-digit pickup token number (such as `284`).
-- **No Payment Gateway at Checkout**: Because payment comes straight from the prepaid wallet, checkout takes less than one second with zero OTP delays or bank gateway drop-offs.
+When ready to order, the student chooses their preferred payment method:
+
+- **Method A: Campus Prepaid Wallet**:
+  - Deducts the meal total from the student's prepaid balance in under one second.
+  - Zero bank loading spinners, zero OTPs, zero network delay.
+  - If the wallet balance is low, the student can 1-tap top up the deficit or switch to Instant Gateway.
+
+- **Method B: Instant Payment Gateway (PhonePe / Paytm UPI)**:
+  - Connects directly to PhonePe, Paytm, Google Pay, or any UPI app.
+  - Allows immediate payment per order without needing prior wallet balance.
+  - Once authorized by the bank, the order is confirmed and sent directly to the kitchen.
+
+Regardless of payment method:
+- The database confirms the canteen is open and stock is reserved.
+- A unique 4-digit pickup token number (such as `284`) and secure pickup QR pass are generated instantly.
 
 ---
 

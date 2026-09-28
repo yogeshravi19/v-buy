@@ -123,36 +123,37 @@ sequenceDiagram
 
 ---
 
-## 4. Wallet-First Payment Architecture
+## 4. Dual Payment Architecture: Wallet + Instant Gateway
 
-Traditional food delivery apps route customers through a bank payment gateway during checkout. If a bank server lags or student mobile reception drops, the order fails and food is delayed.
-
-**V FOODS operates on a Wallet-First Model**:
+V FOODS provides flexible dual payment channels right at the checkout counter:
 
 ```mermaid
-flowchart LR
-    subgraph Phase1["PHASE 1: LOAD WALLET (Anytime)"]
-        A["Student Wallet Screen"] --> B["Select Amount (e.g. ₹500)"]
-        B --> C["PhonePe UPI Gateway"]
-        C --> D["Instant Atomic Credit in Wallet"]
-    end
+flowchart TD
+    Cart["Student Cart Assembly"] --> Choice{"Select Payment Option"}
 
-    subgraph Phase2["PHASE 2: ZERO-LATENCY PRE-ORDER"]
-        E["Select Canteen Dishes"] --> F["Tap 'Pay & Place Order'"]
-        F --> G["Atomic DB Transaction (< 20ms)"]
-        G --> H["Immediate Kitchen Token (#4826)"]
-    end
+    %% Option 1: Campus Wallet
+    Choice -->|Option 1: Prepaid Wallet| Wallet["V FOODS Campus Wallet"]
+    Wallet -->|If Balance Sufficient| WPay["1-Tap Atomic Wallet Debit (< 20ms)"]
+    Wallet -->|If Low Balance| WTop["1-Tap Top-Up Deficit via PhonePe / UPI"]
+    WTop --> WPay
+    WPay --> OrderSuccess["Order Confirmed + Token (#4826) ➔ Kitchen KDS"]
 
-    D -.-> E
+    %% Option 2: Instant Gateway
+    Choice -->|Option 2: Instant Gateway| Gateway["Instant Payment Gateway"]
+    Gateway --> UPIOptions["PhonePe UPI / Paytm UPI / GPay / Cards"]
+    UPIOptions --> BankAuth["Direct Bank Authorization via Gateway"]
+    BankAuth --> OrderSuccess
 ```
 
-### Why Wallet-First is Superior:
-| Feature | Traditional App (Gateway at Checkout) | V FOODS (Wallet-First) |
+### Payment Option Comparison:
+| Feature | Option A: V FOODS Campus Wallet | Option B: Instant Payment Gateway |
 | :--- | :--- | :--- |
-| **Checkout Speed** | 30–60 seconds per order | **Under 20 milliseconds** |
-| **Failure Rate** | 8–15% during peak campus congestion | **0% payment dropouts** |
-| **Kitchen Throughput** | Blocked while waiting for bank verification | **Immediate order dispatch** |
-| **Deficit Support** | Cart abandoned if money is short | **1-Tap top-up of exact deficit** |
+| **Best For** | Daily meals, regular students, 10-min rush breaks | Visitors, first-time students, direct bank payers |
+| **Speed** | **Under 20 milliseconds (Fastest)** | 5–15 seconds (Standard UPI app authorization) |
+| **Prerequisites** | Pre-loaded wallet balance (rechargeable anytime) | None; works with zero prior balance |
+| **Providers** | Internal wallet float (recharged via PhonePe/UPI) | PhonePe, Paytm, Google Pay, BHIM, Cards |
+| **Network Reliability** | Works seamlessly even with spotty campus signals | Requires active mobile internet to authorize UPI |
+| **Deficit Support** | Auto-calculated deficit top-up (+ ₹X & Pay) | Not needed — charges exact order total directly |
 
 ---
 

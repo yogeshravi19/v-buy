@@ -1,22 +1,22 @@
-# Payments & PhonePe: The Wallet-First System
+# Payments & PhonePe: Dual Payment Architecture (Wallet + Instant Gateway)
 
-A plain-English guide to how payments work in V FOODS, why we use a wallet-first model, and how PhonePe keeps transactions safe.
+A plain-English guide to how payments work in V FOODS, why we support both a **Prepaid Campus Wallet** and an **Instant Payment Gateway (PhonePe / Paytm UPI)**, and how transactions remain fast and secure.
 
 ---
 
-## What "Wallet-First" Means
+## The Dual Payment Choice: Flexibility & Speed
 
-In a typical consumer food app (like Swiggy or Zomato), every single order triggers a payment gateway. You put items in your cart, tap order, and then wait for an external bank screen, enter an OTP, or wait for a UPI app to open.
+V FOODS provides two flexible payment methods directly on the checkout screen:
 
-In a college canteen, that typical model completely fails:
-- During a 10-minute break between classes, 500 students try to order at once.
-- Cellular data inside campus basements and dining halls is often weak and spotty.
-- If 500 students wait 45 seconds each for bank OTPs and gateway redirects, payments fail, carts get abandoned, and the canteen lines back up.
+1. **Option A: V FOODS Campus Wallet (Prepaid 1-Tap Checkout)**
+   - **How it works**: Students add money to their digital campus wallet when convenient (dorm, home, or morning) via PhonePe / UPI.
+   - **Why use it**: When buying food during a busy 10-minute break, deducting from the prepaid balance takes under one second with zero bank redirects or OTP delays.
+   - **Top-Up**: Recharge anytime in ₹100, ₹200, ₹500 increments or top up the exact deficit needed for an order.
 
-V FOODS uses a **wallet-first** system:
-- **Top Up Once**: Students add money to their digital campus wallet when they have good internet (in their dorm, at home, or before class).
-- **Instant Checkout**: When buying food, payment is deducted directly from the student's prepaid wallet balance in less than one second.
-- **Zero Gateway Delays**: Checkout never contacts PhonePe, banks, or external payment gateways. It happens entirely within the campus database.
+2. **Option B: Instant Payment Gateway (PhonePe / Paytm UPI Direct Checkout)**
+   - **How it works**: Students can pay directly per order using PhonePe, Paytm, Google Pay, or any UPI app.
+   - **Why use it**: Perfect for students ordering for the first time, visitors, or anyone who prefers direct bank debit per transaction without maintaining a prepaid wallet float.
+   - **Zero Prior Top-Up**: Places the order immediately upon bank approval without touching the wallet balance.
 
 ---
 

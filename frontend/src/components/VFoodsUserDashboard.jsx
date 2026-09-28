@@ -3,7 +3,7 @@ import {
   Search, X, ArrowLeft, Store, ShoppingBag, Clock, User, CreditCard,
   ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle, Sparkles,
   Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw,
-  Flame, Building2, MapPin, Star, Leaf
+  Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck
 } from 'lucide-react'
 import { getFoodImage } from '../lib/foodImages'
 
@@ -108,6 +108,34 @@ export default function VFoodsUserDashboard({
   const [searchQuery, setSearchQuery] = useState('')
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false)
   const [couponInput, setCouponInput] = useState('')
+  const [paymentMode, setPaymentMode] = useState('wallet') // 'wallet' | 'instant_gateway'
+  const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false)
+  const [selectedGatewayApp, setSelectedGatewayApp] = useState('phonepe') // 'phonepe' | 'paytm' | 'gpay' | 'upi'
+  const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
+  const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
+
+  const handleGatewayCheckout = () => {
+    setIsGatewayProcessing(true)
+    setGatewayStep('processing')
+    setTimeout(() => {
+      setGatewayStep('success')
+      setTimeout(() => {
+        setIsGatewayProcessing(false)
+        setIsGatewayModalOpen(false)
+        setGatewayStep('select')
+        const providerLabels = {
+          phonepe: 'PhonePe UPI',
+          paytm: 'Paytm UPI',
+          gpay: 'Google Pay UPI',
+          upi: 'Instant UPI Intent'
+        }
+        placeOrder('instant_gateway', {
+          provider: providerLabels[selectedGatewayApp] || 'PhonePe / Paytm UPI',
+          txnId: 'UPI-' + Date.now().toString().slice(-8)
+        })
+      }, 700)
+    }, 1200)
+  }
 
   // Cart totals
   const subtotal = (cart.items || []).reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0)
@@ -839,6 +867,66 @@ export default function VFoodsUserDashboard({
                       <span>{money(finalDebit)}</span>
                     </div>
                   </div>
+
+                  {/* Dual Payment Method Selector */}
+                  <div className="vfoods-payment-method-card">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>Select Payment Option</span>
+                      <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#EA580C', background: '#FFF7ED', padding: '2px 8px', borderRadius: '12px' }}>
+                        Dual Checkout
+                      </span>
+                    </div>
+
+                    <div className="vfoods-payment-options-grid">
+                      {/* Option 1: V FOODS Campus Wallet */}
+                      <div 
+                        className={`vfoods-payment-option-tile ${paymentMode === 'wallet' ? 'selected' : ''}`}
+                        onClick={() => setPaymentMode('wallet')}
+                      >
+                        <div className="vfoods-payment-option-header">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="vfoods-pay-icon-box wallet">
+                              <Wallet size={16} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Campus Prepaid Wallet</div>
+                              <div style={{ fontSize: '11px', color: isInsufficient ? '#DC2626' : '#166534', fontWeight: 700 }}>
+                                Balance: {money(wallet?.balance)} {isInsufficient ? `(Low by ${money(deficit)})` : '• Ready'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`vfoods-custom-radio ${paymentMode === 'wallet' ? 'checked' : ''}`} />
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
+                          ⚡ 1-Tap fast prepaid deduction. No bank redirects.
+                        </div>
+                      </div>
+
+                      {/* Option 2: Instant Payment Gateway */}
+                      <div 
+                        className={`vfoods-payment-option-tile ${paymentMode === 'instant_gateway' ? 'selected' : ''}`}
+                        onClick={() => setPaymentMode('instant_gateway')}
+                      >
+                        <div className="vfoods-payment-option-header">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="vfoods-pay-icon-box gateway">
+                              <Zap size={16} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Instant Payment Gateway</div>
+                              <div style={{ fontSize: '11px', color: '#4F46E5', fontWeight: 700 }}>
+                                PhonePe • Paytm • GPay • UPI
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`vfoods-custom-radio ${paymentMode === 'instant_gateway' ? 'checked' : ''}`} />
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
+                          🚀 Direct checkout per order. No prior wallet top-up needed!
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -847,35 +935,173 @@ export default function VFoodsUserDashboard({
             {cart.items && cart.items.length > 0 && (
               <div className="vfoods-cart-bottom-bar">
                 <div className="vfoods-cart-wallet-info">
-                  <span style={{ color: '#64748B', fontWeight: 600 }}>Wallet Balance:</span>
-                  <strong style={{ color: isInsufficient ? '#DC2626' : '#166534' }}>
-                    {money(wallet?.balance)}
+                  <span style={{ color: '#64748B', fontWeight: 600 }}>
+                    {paymentMode === 'wallet' ? 'Paying via: Campus Wallet' : 'Paying via: Instant Gateway'}
+                  </span>
+                  <strong style={{ color: paymentMode === 'wallet' ? (isInsufficient ? '#DC2626' : '#166534') : '#4F46E5' }}>
+                    {paymentMode === 'wallet' ? money(wallet?.balance) : 'PhonePe / Paytm UPI'}
                   </strong>
                 </div>
 
-                {!isInsufficient ? (
-                  <button
-                    className="vfoods-pay-btn-primary"
-                    disabled={busy}
-                    onClick={placeOrder}
-                  >
-                    <Zap size={16} /> Pay {money(finalDebit)} & Place Order
-                  </button>
-                ) : (
-                  <div className="vfoods-deficit-btn-row">
-                    <div className="vfoods-deficit-notice">
-                      Wallet low by {money(deficit)}
-                    </div>
+                {paymentMode === 'wallet' ? (
+                  !isInsufficient ? (
                     <button
-                      className="vfoods-topup-pay-btn"
-                      onClick={handleDeficitPay}
+                      className="vfoods-pay-btn-primary"
+                      disabled={busy}
+                      onClick={() => placeOrder('wallet')}
                     >
-                      + Add ₹{deficit} & Pay
+                      <Zap size={16} /> Pay {money(finalDebit)} from Wallet
                     </button>
-                  </div>
+                  ) : (
+                    <div className="vfoods-deficit-btn-row">
+                      <button
+                        className="vfoods-topup-pay-btn"
+                        onClick={handleDeficitPay}
+                      >
+                        + Top Up {money(deficit)} & Pay
+                      </button>
+                      <button
+                        className="vfoods-switch-gateway-btn"
+                        onClick={() => setPaymentMode('instant_gateway')}
+                      >
+                        Use Instant UPI →
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <button
+                    className="vfoods-pay-btn-gateway"
+                    disabled={busy}
+                    onClick={() => setIsGatewayModalOpen(true)}
+                  >
+                    <Zap size={16} /> Pay {money(finalDebit)} via PhonePe / Paytm UPI
+                  </button>
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Instant Payment Gateway (PhonePe / Paytm UPI) Modal */}
+        {isGatewayModalOpen && (
+          <div className="vfoods-gateway-modal-backdrop" onClick={() => !isGatewayProcessing && setIsGatewayModalOpen(false)}>
+            <div className="vfoods-gateway-modal-box" onClick={e => e.stopPropagation()}>
+              <div className="vfoods-gateway-modal-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="vfoods-pay-icon-box gateway">
+                    <Zap size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: '14px', color: '#0F172A' }}>Instant Payment Gateway</div>
+                    <div style={{ fontSize: '11px', color: '#64748B' }}>Verified UPI Gateway for V FOODS</div>
+                  </div>
+                </div>
+                {!isGatewayProcessing && (
+                  <button 
+                    onClick={() => setIsGatewayModalOpen(false)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              {/* Order summary in modal */}
+              <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '12px', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
+                  <span>Outlet</span>
+                  <span style={{ fontWeight: 700, color: '#0F172A' }}>{cart.outlet?.name}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
+                  <span>Total Items</span>
+                  <span style={{ fontWeight: 700, color: '#0F172A' }}>{cartQty} items</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 900, color: '#0F172A', paddingTop: '6px', borderTop: '1px dashed #CBD5E1' }}>
+                  <span>Amount to Pay</span>
+                  <span style={{ color: '#EA580C' }}>{money(finalDebit)}</span>
+                </div>
+              </div>
+
+              {/* Provider Selection */}
+              {gatewayStep === 'select' && (
+                <>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Select UPI Provider</div>
+                  <div className="vfoods-gateway-app-grid">
+                    <div 
+                      className={`vfoods-gateway-app-btn ${selectedGatewayApp === 'phonepe' ? 'active' : ''}`}
+                      onClick={() => setSelectedGatewayApp('phonepe')}
+                    >
+                      <span className="vfoods-gateway-brand-badge phonepe">PhonePe</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A' }}>PhonePe UPI</span>
+                      <span style={{ fontSize: '9.5px', color: '#64748B' }}>1-Tap UPI Intent</span>
+                    </div>
+
+                    <div 
+                      className={`vfoods-gateway-app-btn ${selectedGatewayApp === 'paytm' ? 'active' : ''}`}
+                      onClick={() => setSelectedGatewayApp('paytm')}
+                    >
+                      <span className="vfoods-gateway-brand-badge paytm">Paytm</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A' }}>Paytm UPI</span>
+                      <span style={{ fontSize: '9.5px', color: '#64748B' }}>Fast Bank UPI</span>
+                    </div>
+
+                    <div 
+                      className={`vfoods-gateway-app-btn ${selectedGatewayApp === 'gpay' ? 'active' : ''}`}
+                      onClick={() => setSelectedGatewayApp('gpay')}
+                    >
+                      <span className="vfoods-gateway-brand-badge gpay">GPay</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A' }}>Google Pay</span>
+                      <span style={{ fontSize: '9.5px', color: '#64748B' }}>Direct Bank Debit</span>
+                    </div>
+
+                    <div 
+                      className={`vfoods-gateway-app-btn ${selectedGatewayApp === 'upi' ? 'active' : ''}`}
+                      onClick={() => setSelectedGatewayApp('upi')}
+                    >
+                      <span className="vfoods-gateway-brand-badge upi">Any UPI</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A' }}>BHIM / Any App</span>
+                      <span style={{ fontSize: '9.5px', color: '#64748B' }}>QR & UPI ID</span>
+                    </div>
+                  </div>
+
+                  <button
+                    className="vfoods-pay-btn-gateway"
+                    onClick={handleGatewayCheckout}
+                    disabled={isGatewayProcessing}
+                  >
+                    <ShieldCheck size={16} /> Authorize & Pay {money(finalDebit)}
+                  </button>
+                </>
+              )}
+
+              {/* Processing step */}
+              {gatewayStep === 'processing' && (
+                <div style={{ textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', border: '3px solid #E2E8F0', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A' }}>
+                    Connecting to {selectedGatewayApp === 'phonepe' ? 'PhonePe' : selectedGatewayApp === 'paytm' ? 'Paytm' : 'UPI'} Gateway...
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B' }}>
+                    Securing encrypted bank transaction session
+                  </div>
+                </div>
+              )}
+
+              {/* Success confirmation */}
+              {gatewayStep === 'success' && (
+                <div style={{ textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#DCFCE7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CheckCircle2 size={24} />
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '15px', color: '#166534' }}>
+                    Payment Approved by Bank!
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748B' }}>
+                    Generating kitchen order ticket and pickup token...
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

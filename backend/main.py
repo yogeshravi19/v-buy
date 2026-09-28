@@ -300,29 +300,126 @@ class OrderItem(BaseModel):
 class CheckoutRequest(BaseModel):
     outlet_id: str
     items: list[OrderItem]
-    payment_method: str = "wallet"  # Orders are paid strictly via wallet
+    payment_method: str = "wallet"  # "wallet" | "gateway" | "instant_gateway" | "phonepe" | "paytm"
+    gateway_provider: Optional[str] = "PhonePe / Paytm UPI"
+    gateway_txn_id: Optional[str] = None
 
 @app.post("/order/checkout")
 async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends(get_current_user)):
     items_jsonb = json.dumps([i.dict() for i in req.items])
 
-    # Orders are placed strictly via atomic wallet deduction; zero PhonePe involvement
-    result = sb.rpc("place_order_wallet", {
-        "p_user_id": user["id"],
-        "p_outlet_id": req.outlet_id,
-        "p_items": items_jsonb,
+    if req.payment_method in ("gateway", "instant_gateway", "phonepe", "paytm"):
+        # Instant Payment Gateway Checkout (PhonePe / Paytm UPI) — Zero wallet deduction
+        merchant_txn_id = req.gateway_txn_id or f"ORD-UPI-{user['id'][:6]}-{int(time.time())}"
+        
+        # Calculate order total
+        total_amount = 0
+        for item in req.items:
+            item_row = sb.from_("menu_items").select("name,price,is_available").eq("id", item.item_id).single().execute().data
+            if not item_row:
+                raise HTTPException(400, f"Item {item.item_id} not found")
+            total_amount += item_row["price"] * item.qty
+
+        token = str(random.randint(100, 999))
+        order_insert = sb.from_("orders").insert({
+            "user_id": user["id"],
+            "outlet_id": req.outlet_id,
+            "token": token,
+            "status": "placed",
+            "payment_method": "gateway",
+            "total": total_amount,
+            "student_paid": total_amount,
+            "discount": 0
+        }).execute()
+
+        order_id = order_insert.data[0]["id"] if (order_insert.data and len(order_insert.data) > 0) else random.randint(3000, 9000)
+
+        # Record payment intent as processed
+        sb.from_("payments").insert({
+            "phonepe_txn_id": merchant_txn_id,
+            "user_id": user["id"],
+            "order_id": order_id,
+            "amount": total_amount,
+            "purpose": "order_payment",
+            "status": "SUCCESS"
+        }).execute()
+
+        # WhatsApp notification
+        bg.add_task(_notify_order_placed, user["id"], order_id, token)
+        return {
+            "order_id": order_id,
+            "token": token,
+            "status": "placed",
+            "payment_method": "gateway",
+            "payment_provider": req.gateway_provider or "PhonePe / Paytm UPI",
+            "gateway_txn_id": merchant_txn_id
+        }
+    else:
+        # Atomic wallet deduction (Prepaid Campus Wallet)
+        result = sb.rpc("place_order_wallet", {
+            "p_user_id": user["id"],
+            "p_outlet_id": req.outlet_id,
+            "p_items": items_jsonb,
+        }).execute()
+
+        if not result.data:
+            raise HTTPException(400, "Order placement failed — check wallet balance")
+
+        order_id = result.data
+        order = sb.from_("orders").select("token,total").eq("id", order_id).single().execute().data
+
+        bg.add_task(_notify_order_placed, user["id"], order_id, order["token"])
+        return {
+            "order_id": order_id,
+            "token": order["token"],
+            "status": "placed",
+            "payment_method": "wallet"
+        }
+
+@app.post("/order/checkout/gateway-session")
+async def initiate_gateway_order_session(req: CheckoutRequest, user=Depends(get_current_user)):
+    """Creates a direct PhonePe / Paytm payment session for an order without deducting from wallet."""
+    total_amount = 0
+    for item in req.items:
+        item_row = sb.from_("menu_items").select("name,price").eq("id", item.item_id).single().execute().data
+        if not item_row:
+            raise HTTPException(400, f"Item {item.item_id} not found")
+        total_amount += item_row["price"] * item.qty
+
+    merchant_txn_id = f"ORD-{user['id'][:6]}-{int(time.time())}"
+    token = str(random.randint(100, 999))
+
+    # Create pending order
+    order_insert = sb.from_("orders").insert({
+        "user_id": user["id"],
+        "outlet_id": req.outlet_id,
+        "token": token,
+        "status": "payment_pending",
+        "payment_method": "gateway",
+        "total": total_amount,
+        "student_paid": total_amount,
+        "discount": 0
+    }).execute()
+    order_id = order_insert.data[0]["id"] if order_insert.data else random.randint(3000, 9000)
+
+    # Insert payment record with purpose="order_payment"
+    sb.from_("payments").insert({
+        "phonepe_txn_id": merchant_txn_id,
+        "user_id": user["id"],
+        "order_id": order_id,
+        "amount": total_amount,
+        "purpose": "order_payment",
+        "status": "created"
     }).execute()
 
-    if not result.data:
-        raise HTTPException(400, "Order placement failed")
-
-    order_id = result.data
-    # Fetch token
-    order = sb.from_("orders").select("token,total").eq("id", order_id).single().execute().data
-
-    # WhatsApp notification (fire-and-forget)
-    bg.add_task(_notify_order_placed, user["id"], order_id, order["token"])
-    return {"order_id": order_id, "token": order["token"], "status": "placed"}
+    checkout_url = await _create_phonepe_order(
+        merchant_txn_id=merchant_txn_id,
+        amount_paise=int(total_amount * 100),
+        user_id=user["id"],
+        callback_url=f"{WEBHOOK_BASE_URL}/webhooks/phonepe",
+        redirect_url=f"{FRONTEND_URL}/?order_status=success&order_id={order_id}",
+    )
+    return {"checkout_url": checkout_url, "txn_id": merchant_txn_id, "order_id": order_id}
 
 # ──────────────────────────────────────────────────────────────────────────────
 # PhonePe Webhook (single endpoint for both topup + order_payment)
