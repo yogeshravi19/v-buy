@@ -107,6 +107,7 @@ export default function VFoodsUserDashboard({
   const [popularFilter, setPopularFilter] = useState('all') // 'all' | 'veg' | 'non-veg'
   const [searchQuery, setSearchQuery] = useState('')
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [couponInput, setCouponInput] = useState('')
   const [paymentMode, setPaymentMode] = useState('wallet') // 'wallet' | 'instant_gateway'
   const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false)
