@@ -5854,7 +5854,12 @@ function AuthScreen({ onLoginUser }) {
       <div className="login-art">
         <div className="login-art-top">
           <img src="/vit-chennai-logo.png" alt="V FOODS Logo" className="vit-logo-img" />
-          <span style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>V FOODS</span>
+          <div className="vfoods-brand-name login-hero-brand" title="V FOODS">
+            <span className="vfoods-logo-v">V</span>
+            <span className="vfoods-logo-space"> </span>
+            <span className="vfoods-logo-f">F</span>
+            <span className="vfoods-logo-oods">OODS</span>
+          </div>
         </div>
         <div>
           <h1>Pre-order campus meals,<br /><span>pick up in seconds.</span></h1>

@@ -224,7 +224,12 @@ export default function VFoodsUserDashboard({
           <div className="vfoods-brand-block">
             <div className="vfoods-brand-row">
               <img src="/vit-chennai-logo.png" alt="V FOODS" className="vfoods-brand-logo" />
-              <div className="vfoods-brand-name">V <span>FOODS</span></div>
+              <div className="vfoods-brand-name" title="V FOODS — Campus Dining">
+                <span className="vfoods-logo-v">V</span>
+                <span className="vfoods-logo-space"> </span>
+                <span className="vfoods-logo-f">F</span>
+                <span className="vfoods-logo-oods">OODS</span>
+              </div>
             </div>
             <div className="vfoods-location-pill" onClick={() => { setSelectedFoodCourt(null); setTab('browse') }} title="Campus Location">
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> VIT Chennai Campus</span>

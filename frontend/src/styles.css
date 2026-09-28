@@ -4964,14 +4964,74 @@ body::before {
 }
 
 .vfoods-brand-name {
-  font-size: 19px;
-  font-weight: 900;
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-heading);
   letter-spacing: -0.5px;
-  color: #0F172A;
+  line-height: 1;
+  user-select: none;
 }
 
-.vfoods-brand-name span {
+/* V: BIGGEST LETTER (Dominant hero letter) */
+.vfoods-logo-v {
+  font-size: 26px;
+  font-weight: 950;
   color: #2563EB;
+  letter-spacing: -1.2px;
+  line-height: 0.9;
+  text-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+  display: inline-block;
+}
+
+.vfoods-logo-space {
+  width: 4px;
+  display: inline-block;
+}
+
+/* F: SLIGHTLY SMALLER THAN V */
+.vfoods-logo-f {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0F172A;
+  letter-spacing: -0.6px;
+  line-height: 0.9;
+  display: inline-block;
+}
+
+/* OODS: SMALLER LETTERS */
+.vfoods-logo-oods {
+  font-size: 14px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  line-height: 0.9;
+  display: inline-block;
+  margin-left: 0.5px;
+}
+
+/* In the dark hero login art banner */
+.login-hero-brand {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.login-hero-brand .vfoods-logo-v {
+  font-size: 38px;
+  color: #60A5FA;
+  letter-spacing: -1.5px;
+  text-shadow: 0 4px 18px rgba(96, 165, 250, 0.5);
+}
+
+.login-hero-brand .vfoods-logo-f {
+  font-size: 28px;
+  color: #FFFFFF;
+}
+
+.login-hero-brand .vfoods-logo-oods {
+  font-size: 19px;
+  color: #93C5FD;
+  letter-spacing: 1px;
 }
 
 .vfoods-location-pill {
@@ -6286,3 +6346,238 @@ body::before {
 .vfoods-bottom-nav-item:active {
   transform: scale(0.88);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIER TRANSITION & SHOWCASE EFFECTS (INSPIRED BY STRIPE / LINEAR / APPLE)
+   Specular highlights, multi-tier diffuse shadows, glossy sheen, & spring physics
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Glass Shimmer & Gloss Reflection Sweep */
+@keyframes vfoods-gloss-sweep {
+  0% { transform: translateX(-140%) skewX(-20deg); }
+  100% { transform: translateX(200%) skewX(-20deg); }
+}
+
+@keyframes vfoods-border-pulse {
+  0%, 100% { border-color: rgba(37, 99, 235, 0.2); }
+  50% { border-color: rgba(37, 99, 235, 0.5); }
+}
+
+@keyframes vfoods-stagger-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── 1. ALL FOOD DISH BOXES (Premier 3-Tier Shadow & Gloss Hover) ── */
+.vfoods-dish-card {
+  position: relative;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-color 0.25s ease !important;
+  will-change: transform, box-shadow;
+  animation: vfoods-stagger-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Gloss reflection on hover */
+.vfoods-dish-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-22deg);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.vfoods-dish-card:hover::after {
+  left: 180%;
+  transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vfoods-dish-card:hover {
+  transform: translateY(-5px) scale(1.02) !important;
+  box-shadow: 0 18px 36px -6px rgba(37, 99, 235, 0.22),
+              0 6px 16px -2px rgba(15, 23, 42, 0.06),
+              0 0 0 1px rgba(37, 99, 235, 0.15) !important;
+  border-color: #93C5FD !important;
+}
+
+.vfoods-dish-card:active {
+  transform: scale(0.96) translateY(1px) !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Internal image zoom */
+.vfoods-dish-img {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.vfoods-dish-card:hover .vfoods-dish-img {
+  transform: scale(1.1) !important;
+}
+
+/* ── 2. CAMPUS FOOD COURTS BOXES (Ambient Glow & Depth) ── */
+.vfoods-fc-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform, box-shadow;
+  animation: vfoods-stagger-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vfoods-fc-card:hover {
+  transform: translateY(-6px) scale(1.025) !important;
+  box-shadow: 0 22px 48px -6px rgba(15, 23, 42, 0.35),
+              0 8px 18px rgba(37, 99, 235, 0.15) !important;
+}
+
+.vfoods-fc-card:active {
+  transform: scale(0.97) translateY(1px) !important;
+}
+
+.vfoods-fc-img {
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.vfoods-fc-card:hover .vfoods-fc-img {
+  transform: scale(1.12) !important;
+}
+
+.vfoods-fc-pill {
+  backdrop-filter: blur(10px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  transition: all 0.25s ease !important;
+}
+
+.vfoods-fc-card:hover .vfoods-fc-pill {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  background: #FFFFFF !important;
+}
+
+/* ── 3. BUTTONS & QUANTITY STEPPERS (Tactile Elastic Physics) ── */
+.vfoods-dish-add-btn {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+}
+
+.vfoods-dish-add-btn:hover {
+  background: #2563EB !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px) scale(1.08) !important;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+.vfoods-dish-add-btn:active {
+  transform: scale(0.88) !important;
+  transition-duration: 0.08s !important;
+}
+
+.vfoods-dish-qty-stepper {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32) !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vfoods-dish-qty-stepper button {
+  transition: transform 0.12s ease;
+}
+
+.vfoods-dish-qty-stepper button:active {
+  transform: scale(0.72);
+}
+
+/* ── 4. VERTICAL LEFT RAIL CANTEENS (Glow Ring & Avatar Pop) ── */
+.vfoods-rail-item {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.vfoods-rail-item:hover {
+  transform: translateX(3px) scale(1.04);
+}
+
+.vfoods-rail-item.active .vfoods-rail-avatar-circle {
+  transform: scale(1.15) !important;
+  box-shadow: 0 0 0 3px #FFFFFF,
+              0 0 0 6px rgba(37, 99, 235, 0.3),
+              0 10px 22px rgba(37, 99, 235, 0.35) !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* ── 5. FLOATING BOTTOM CART BAR (Magnetic Showcase Elevation) ── */
+.vfoods-floating-cart-bar {
+  background: linear-gradient(135deg, #1E40AF 0%, #2563EB 55%, #1D4ED8 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45),
+              0 4px 12px rgba(15, 23, 42, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease !important;
+}
+
+.vfoods-floating-cart-bar:hover {
+  transform: translateY(-3px) scale(1.015) !important;
+  box-shadow: 0 18px 42px rgba(37, 99, 235, 0.55),
+              0 6px 16px rgba(15, 23, 42, 0.25) !important;
+}
+
+.vfoods-floating-cart-bar:active {
+  transform: scale(0.98) !important;
+}
+
+/* ── 6. HERO ACTION BUTTONS (Smooth Gradient Wave & Shimmer) ── */
+.vfoods-place-order-btn,
+.vfoods-topup-pay-btn,
+.btn-primary {
+  background-size: 200% auto !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.vfoods-place-order-btn:hover,
+.vfoods-topup-pay-btn:hover,
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.48) !important;
+}
+
+.vfoods-place-order-btn:active,
+.vfoods-topup-pay-btn:active,
+.btn-primary:active {
+  transform: scale(0.96) !important;
+}
+
+/* ── 7. STAGGER DELAYS FOR SMOOTH CASCADE ENTRANCE ── */
+.vfoods-dish-grid-3 > div:nth-child(1) { animation-delay: 0.03s; }
+.vfoods-dish-grid-3 > div:nth-child(2) { animation-delay: 0.06s; }
+.vfoods-dish-grid-3 > div:nth-child(3) { animation-delay: 0.09s; }
+.vfoods-dish-grid-3 > div:nth-child(4) { animation-delay: 0.12s; }
+.vfoods-dish-grid-3 > div:nth-child(5) { animation-delay: 0.15s; }
+.vfoods-dish-grid-3 > div:nth-child(6) { animation-delay: 0.18s; }
+.vfoods-dish-grid-3 > div:nth-child(7) { animation-delay: 0.21s; }
+.vfoods-dish-grid-3 > div:nth-child(8) { animation-delay: 0.24s; }
+.vfoods-dish-grid-3 > div:nth-child(9) { animation-delay: 0.27s; }
+
+.vfoods-food-courts-grid > div:nth-child(1) { animation-delay: 0.04s; }
+.vfoods-food-courts-grid > div:nth-child(2) { animation-delay: 0.08s; }
+.vfoods-food-courts-grid > div:nth-child(3) { animation-delay: 0.12s; }
+.vfoods-food-courts-grid > div:nth-child(4) { animation-delay: 0.16s; }
+.vfoods-food-courts-grid > div:nth-child(5) { animation-delay: 0.20s; }
