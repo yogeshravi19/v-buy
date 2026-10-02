@@ -8,6 +8,7 @@ import {
 
 // Modular Interactive Components
 import { CampusCanvas3D } from './CampusCanvas3D'
+import { OrderFlow3DVisualization } from './OrderFlow3DVisualization'
 import { DatabaseSchemaArchitecture } from './DatabaseSchemaArchitecture'
 import { DashboardRolesWalkthrough } from './DashboardRolesWalkthrough'
 import { InteractiveMockups } from './InteractiveMockups'
@@ -226,6 +227,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
   const [waitlistOpen, setWaitlistOpen] = useState(false)
 
   const navLinks = [
+    { href: '#order-flow-3d', label: '3D Order Flow' },
     { href: '#how-it-works', label: 'How it works' },
     { href: '#database', label: 'Database & Schemas' },
     { href: '#interactive-demo', label: 'Live Demo' },
@@ -436,6 +438,15 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             </div>
           </div>
         </section>
+
+        <Divider />
+
+        {/* ─── 1.5 INTERACTIVE 3D SYSTEM ARCHITECTURE: WHAT HAPPENS ON ORDER ─── */}
+        <Section id="order-flow-3d" className="pt-10">
+          <FadeIn>
+            <OrderFlow3DVisualization />
+          </FadeIn>
+        </Section>
 
         <Divider />
 
@@ -795,6 +806,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-6 text-slate-600">
+              <a href="#order-flow-3d" className="hover:text-slate-900 transition-colors no-underline">3D Order Flow</a>
               <a href="#how-it-works" className="hover:text-slate-900 transition-colors no-underline">How it works</a>
               <a href="#database" className="hover:text-slate-900 transition-colors no-underline">Database &amp; Schemas</a>
               <a href="#interactive-demo" className="hover:text-slate-900 transition-colors no-underline">Live Demo</a>

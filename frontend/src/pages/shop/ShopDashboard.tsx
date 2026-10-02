@@ -192,6 +192,11 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
   const [generatedInviteCode, setGeneratedInviteCode] = useState<string | null>(null)
   const [isGeneratingInvite, setIsGeneratingInvite] = useState<boolean>(false)
 
+  // Edit Staff State
+  const [showEditStaffModal, setShowEditStaffModal] = useState<boolean>(false)
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
+  const [staffEditForm, setStaffEditForm] = useState({ full_name: '', phone: '' })
+
   // Coupons State
   const [outletCoupons, setOutletCoupons] = useState<Coupon[]>([])
   const [showCouponModal, setShowCouponModal] = useState<boolean>(false)
@@ -576,6 +581,39 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       showToast('Invite code revoked')
     } catch {
       await supabase.from('invites').update({ status: 'revoked' }).eq('id', inviteId)
+    }
+  }
+
+  const handleOpenEditStaff = (staff: StaffMember) => {
+    setEditingStaff(staff)
+    setStaffEditForm({
+      full_name: staff.full_name || '',
+      phone: staff.phone || ''
+    })
+    setShowEditStaffModal(true)
+  }
+
+  const handleSaveEditStaff = async () => {
+    if (!editingStaff || !staffEditForm.full_name.trim()) return
+    const updatedName = staffEditForm.full_name.trim()
+    const updatedPhone = staffEditForm.phone.trim() || null
+
+    setStaffTeam(prev =>
+      prev.map(s => (s.id === editingStaff.id ? { ...s, full_name: updatedName, phone: updatedPhone } : s))
+    )
+
+    try {
+      await supabase
+        .from('profiles')
+        .update({ full_name: updatedName, phone: updatedPhone })
+        .eq('id', editingStaff.id)
+      showToast(`Updated staff details for ${updatedName}`)
+    } catch (err) {
+      console.warn('Error updating staff member:', err)
+      showToast('Error updating staff details')
+    } finally {
+      setShowEditStaffModal(false)
+      setEditingStaff(null)
     }
   }
 
@@ -1197,111 +1235,126 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Menu Items Table / Cards with Inline Editing */}
-              <div className="space-y-3">
-                {filteredMenuItems.map(item => (
-                  <div
-                    key={item.id}
-                    className={`p-4 rounded-3xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                      item.available
-                        ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                        : 'bg-slate-900/50 border-slate-800/60 opacity-75'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <VegIndicator isVeg={item.is_veg} size="md" />
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-base text-white">{item.name}</span>
-                          {!item.available && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-950 text-rose-400 border border-rose-800/80">
-                              Out of Stock
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
-                          <span className="capitalize">{item.category}</span>
-                          <span>·</span>
-                          <span>Stock: {item.stock_qty ?? '∞'}</span>
-                          {item.available_from && item.available_to && (
-                            <>
-                              <span>·</span>
-                              <span>Hours: {item.available_from} - {item.available_to}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Inline Editing Area: Price Click-to-Edit & Availability Switch */}
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                      {/* Price with Click-to-Edit */}
-                      <div className="flex items-center">
-                        {editingPriceId === item.id ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-slate-400 text-xs">₹</span>
-                            <input
-                              type="number"
-                              autoFocus
-                              value={tempPriceInput}
-                              onChange={e => setTempPriceInput(e.target.value)}
-                              onBlur={() => handleSaveInlinePrice(item.id)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleSaveInlinePrice(item.id)
-                                if (e.key === 'Escape') setEditingPriceId(null)
-                              }}
-                              className="w-16 px-2 py-1 bg-slate-950 border border-orange-500 rounded-lg text-sm font-mono font-bold text-white focus:outline-none"
-                            />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setEditingPriceId(item.id)
-                              setTempPriceInput(String(item.price))
-                            }}
-                            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700/80 text-orange-400 font-mono font-black text-sm flex items-center gap-1 group transition-all"
-                            title="Click to inline-edit price"
-                          >
-                            <span>₹{item.price}</span>
-                            <Edit3 className="h-3 w-3 opacity-0 group-hover:opacity-100 text-slate-400 transition-opacity" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Smooth Animated Availability Toggle */}
-                      <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-                        <AnimatedToggle
-                          checked={item.available}
-                          onChange={() => handleToggleItemAvailability(item)}
-                        />
-                        <span className="text-xs font-semibold text-slate-400 min-w-[50px]">
-                          {item.available ? 'In Stock' : 'Out'}
-                        </span>
-                      </div>
-
-                      {/* Edit Details & Delete */}
-                      <div className="flex items-center gap-1.5 pl-2 border-l border-slate-800">
-                        <button
-                          onClick={() => handleOpenEditModal(item)}
-                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-                          title="Edit Item Details"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" strokeWidth={2} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/60 transition-colors"
-                          title="Delete Item"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-                        </button>
-                      </div>
-                    </div>
+              {/* Menu Items Table */}
+              {filteredMenuItems.length === 0 ? (
+                <div className="py-12 text-center rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center p-6 text-slate-400">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mb-3">
+                    <Layers className="h-6 w-6 text-slate-400" strokeWidth={1.5} />
                   </div>
-                ))}
-              </div>
+                  <h4 className="font-bold text-slate-200 text-sm">No menu items found</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                    No items in this category. Use the Add Item button above to add dishes to your menu.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          <th className="py-3 px-4">Item</th>
+                          <th className="py-3 px-4">Category</th>
+                          <th className="py-3 px-4">Price</th>
+                          <th className="py-3 px-4">Stock</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-xs">
+                        {filteredMenuItems.map(item => (
+                          <tr key={item.id} className="hover:bg-slate-850/50 transition-colors">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <VegIndicator isVeg={item.is_veg} size="sm" />
+                                <div>
+                                  <span className="font-bold text-white text-sm block">{item.name}</span>
+                                  {item.available_from && item.available_to && (
+                                    <span className="text-[11px] text-slate-400 font-mono">
+                                      {item.available_from} - {item.available_to}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-400 capitalize">{item.category}</td>
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-200">
+                              {editingPriceId === item.id ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-slate-400 text-xs">₹</span>
+                                  <input
+                                    type="number"
+                                    autoFocus
+                                    value={tempPriceInput}
+                                    onChange={e => setTempPriceInput(e.target.value)}
+                                    onBlur={() => handleSaveInlinePrice(item.id)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') handleSaveInlinePrice(item.id)
+                                      if (e.key === 'Escape') setEditingPriceId(null)
+                                    }}
+                                    className="w-16 px-2 py-1 bg-slate-950 border border-blue-500 rounded-lg text-xs font-mono font-bold text-white focus:outline-none"
+                                  />
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setEditingPriceId(item.id)
+                                    setTempPriceInput(String(item.price))
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-750 text-slate-200 font-mono font-bold flex items-center gap-1 group transition-all"
+                                  title="Click to inline-edit price"
+                                >
+                                  <span>₹{item.price}</span>
+                                  <Edit3 className="h-3 w-3 opacity-0 group-hover:opacity-100 text-slate-400 transition-opacity" />
+                                </button>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-slate-300">
+                              {item.stock_qty ?? '∞'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                item.available
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                  : 'bg-slate-800 text-slate-400'
+                              }`}>
+                                {item.available ? 'In Stock' : 'Out of Stock'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleToggleItemAvailability(item)}
+                                  className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                                    item.available
+                                      ? 'bg-rose-950/50 hover:bg-rose-900 border border-rose-800/60 text-rose-300'
+                                      : 'bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-800/60 text-emerald-300'
+                                  }`}
+                                >
+                                  {item.available ? 'Mark Out' : 'Restock'}
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEditModal(item)}
+                                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                                  title="Edit Item Details"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" strokeWidth={2} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  className="p-1.5 rounded-xl bg-rose-950/30 hover:bg-rose-900/50 text-rose-400 border border-rose-800/50 transition-colors"
+                                  title="Delete Item"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1540,44 +1593,70 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                 </div>
               )}
 
-              <div className="space-y-2.5">
-                {staffTeam.map(member => (
-                  <div
-                    key={member.id}
-                    className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="h-10 w-10 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm">
-                        {member.full_name?.charAt(0) || 'S'}
+              {staffTeam.length === 0 ? (
+                <div className="py-12 text-center rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center p-6 text-slate-400">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mb-3">
+                    <Users className="h-6 w-6 text-slate-400" strokeWidth={1.5} />
+                  </div>
+                  <h4 className="font-bold text-slate-200 text-sm">No staff added yet</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                    Use the invite button above to onboard members to your counter.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {staffTeam.map(member => (
+                    <div
+                      key={member.id}
+                      className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all hover:border-slate-700"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="h-10 w-10 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200 font-bold text-sm">
+                          {member.full_name?.charAt(0) || 'S'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-white">{member.full_name}</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800/80">
+                              Shop Staff
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              member.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {member.is_active ? 'Active' : 'Deactivated'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {member.phone || 'No phone'} · Joined: {new Date(member.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-white">{member.full_name}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            member.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'
-                          }`}>
-                            {member.is_active ? 'Active' : 'Deactivated'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-400 mt-0.5">
-                          {member.phone || 'No phone'} · Joined: {new Date(member.created_at).toLocaleDateString()}
-                        </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <button
+                          onClick={() => handleOpenEditStaff(member)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all"
+                          title="Edit staff name and contact"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" strokeWidth={2} />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleStaffActive(member)}
+                          className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                            member.is_active
+                              ? 'bg-rose-950/60 border-rose-800 text-rose-300 hover:bg-rose-900'
+                              : 'bg-emerald-950/60 border-emerald-800 text-emerald-300 hover:bg-emerald-900'
+                          }`}
+                        >
+                          {member.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => handleToggleStaffActive(member)}
-                      className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                        member.is_active
-                          ? 'bg-rose-950/60 border-rose-800 text-rose-300 hover:bg-rose-900'
-                          : 'bg-emerald-950/60 border-emerald-800 text-emerald-300 hover:bg-emerald-900'
-                      }`}
-                    >
-                      {member.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1923,6 +2002,61 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
               >
                 Verify & Hand Over
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT STAFF MODAL ── */}
+      {showEditStaffModal && editingStaff && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <h3 className="font-bold text-base text-white">Edit Staff Details</h3>
+              <button onClick={() => setShowEditStaffModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                <X className="h-5 w-5" strokeWidth={2} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={staffEditForm.full_name}
+                  onChange={e => setStaffEditForm({ ...staffEditForm, full_name: e.target.value })}
+                  placeholder="e.g. Ramesh Kumar"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={staffEditForm.phone}
+                  onChange={e => setStaffEditForm({ ...staffEditForm, phone: e.target.value })}
+                  placeholder="e.g. +91 98765 43210"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditStaffModal(false)}
+                  className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEditStaff}
+                  className="flex-1 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-950/40"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
           </div>
         </div>

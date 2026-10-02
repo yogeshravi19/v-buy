@@ -17,7 +17,10 @@ import QRCode from 'qrcode'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import StudentDashboard from './pages/student/StudentDashboard'
 import ShopDashboard from './pages/shop/ShopDashboard'
-import SuperAdminDashboard from './pages/admin/AdminDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import ShopStaffDashboard from './pages/staff/ShopStaffDashboard'
+import ShopAdminDashboard from './pages/shop/ShopAdminDashboard'
+import SuperAdminDashboard from './pages/admin/SuperAdminDashboard'
 import VFoodsUserDashboard from './components/VFoodsUserDashboard'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -1064,6 +1067,58 @@ function App() {
     )
   }
 
+  if (isStaff) {
+    return (
+      <ShopStaffDashboard
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        outlets={outlets}
+        orders={orders}
+        setOrders={setOrders}
+        advanceOrderStatus={advanceOrderStatus}
+        addAuditLog={addAuditLog}
+        handleSignOut={handleSignOut}
+        money={money}
+      />
+    )
+  }
+
+  if (isOwner) {
+    return (
+      <ShopAdminDashboard
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        outlets={outlets}
+        setOutlets={setOutlets}
+        orders={orders}
+        setOrders={setOrders}
+        advanceOrderStatus={advanceOrderStatus}
+        addAuditLog={addAuditLog}
+        handleSignOut={handleSignOut}
+        money={money}
+      />
+    )
+  }
+
+  if (isAdmin) {
+    return (
+      <SuperAdminDashboard
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        outlets={outlets}
+        setOutlets={setOutlets}
+        orders={orders}
+        setOrders={setOrders}
+        advanceOrderStatus={advanceOrderStatus}
+        addAuditLog={addAuditLog}
+        handleSignOut={handleSignOut}
+        money={money}
+        eventMode={eventMode}
+        setEventMode={setEventMode}
+      />
+    )
+  }
+
   return (
     <div className="app-shell">
       {/* iOS PWA Install Guide Modal */}
@@ -1099,7 +1154,7 @@ function App() {
       <header className="topbar">
         <a href="#" className="brand-wrapper" onClick={e => { e.preventDefault(); if (isCustomer) setTab('browse') }}>
           <img src="/vit-chennai-logo.png" alt="VIT Chennai" className="vit-logo-img" />
-          <span className="brand-title">V-<span>BUY</span></span>
+          <span className="brand-title">V-<span>FOODS</span></span>
         </a>
         <div className="top-actions">
           {!isOnline && (
@@ -1110,7 +1165,7 @@ function App() {
             <span>Install App</span>
           </button>
           <span className="role-tag-badge inline-flex items-center gap-1.5">
-            {role === 'owner' || role === 'shop_admin' ? <><Store size={12} strokeWidth={2} /> Shop Owner</> :
+            {role === 'owner' || role === 'shop_admin' ? <><Store size={12} strokeWidth={2} /> Shop Admin</> :
              role === 'staff' ? <><ChefHat size={12} strokeWidth={2} /> Shop Staff</> :
              role === 'admin' || role === 'superadmin' || role === 'super_admin' ? <><Shield size={12} strokeWidth={2} /> Super Admin</> : <><User size={12} strokeWidth={2} /> User</>}
           </span>
@@ -3839,6 +3894,55 @@ function ShopOwnerConsole({
   const [foodModalOpen, setFoodModalOpen] = useState(false)
   const [modalItem, setModalItem] = useState(null)
 
+  // Staff Team state for Shop Admin
+  const [staffRoster, setStaffRoster] = useState([
+    { id: 'st-1', name: 'Ramesh K', role: 'Head Cook & KOT Handler', phone: '+91 9876543220', shift: 'Morning & Lunch (07:30 - 15:30)', status: 'ON DUTY' },
+    { id: 'st-2', name: 'Murugan P', role: 'Pickup Verification & QR Scanner', phone: '+91 9876543221', shift: 'Full Day (08:00 - 18:00)', status: 'ON DUTY' },
+    { id: 'st-3', name: 'Selvan T', role: 'Kitchen Helper / Stock Keeper', phone: '+91 9876543222', shift: 'Evening Shift (15:00 - 21:30)', status: 'ON DUTY' },
+  ])
+  const [staffModalOpen, setStaffModalOpen] = useState(false)
+  const [editingStaffId, setEditingStaffId] = useState(null)
+  const [staffForm, setStaffForm] = useState({ name: '', role: '', phone: '', shift: '' })
+
+  const handleOpenAddStaff = () => {
+    setEditingStaffId(null)
+    setStaffForm({ name: '', role: 'Counter Operator', phone: '', shift: 'Morning Shift (08:00 - 16:00)' })
+    setStaffModalOpen(true)
+  }
+
+  const handleOpenEditStaff = (st) => {
+    setEditingStaffId(st.id)
+    setStaffForm({ name: st.name, role: st.role, phone: st.phone, shift: st.shift })
+    setStaffModalOpen(true)
+  }
+
+  const handleSaveStaff = (e) => {
+    e.preventDefault()
+    if (!staffForm.name.trim()) return
+    if (editingStaffId) {
+      setStaffRoster(prev => prev.map(s => s.id === editingStaffId ? { ...s, ...staffForm } : s))
+      if (setNotice) setNotice(`Updated staff details for ${staffForm.name}`)
+    } else {
+      const newSt = {
+        id: `st-${Date.now()}`,
+        ...staffForm,
+        status: 'ON DUTY'
+      }
+      setStaffRoster(prev => [...prev, newSt])
+      if (setNotice) setNotice(`Added ${staffForm.name} to ${myOutlet.name} staff`)
+    }
+    setStaffModalOpen(false)
+  }
+
+  const handleToggleStaffStatus = (stId) => {
+    setStaffRoster(prev => prev.map(s => {
+      if (s.id !== stId) return s
+      const nextStatus = s.status === 'ON DUTY' ? 'DEACTIVATED' : 'ON DUTY'
+      if (setNotice) setNotice(`${s.name} is now ${nextStatus}`)
+      return { ...s, status: nextStatus }
+    }))
+  }
+
   const myOutlet = outlets.find(o => o.id === profile.outlet_id) || outlets[0]
   const myOrders = orders.filter(o => o.outlet_id === myOutlet.id)
   const todayOrders = myOrders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString())
@@ -4158,23 +4262,19 @@ function ShopOwnerConsole({
       {/* ── TAB 3: STAFF ON DUTY ── */}
       {ownerTab === 'staff' && (
         <div className="admin-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <h3>Staff Roster — {myOutlet.name}</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Kitchen and counter operators assigned to this outlet.</p>
             </div>
-            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setNotice('To assign new staff, submit campus staff ID to Super Admin.')}>
-              + Request Staff Addition
+            <button className="btn-primary btn-spring" style={{ padding: '6px 14px', fontSize: '12px', background: 'var(--blue-primary)', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={handleOpenAddStaff}>
+              <Plus size={14} /> Add Staff Member
             </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[
-              { name: 'Ramesh K', role: 'Head Cook & KOT Handler', phone: '+91 9876543220', shift: 'Morning & Lunch (07:30 - 15:30)', status: 'ON DUTY' },
-              { name: 'Murugan P', role: 'Pickup Verification & QR Scanner', phone: '+91 9876543221', shift: 'Full Day (08:00 - 18:00)', status: 'ON DUTY' },
-              { name: 'Selvan T', role: 'Kitchen Helper / Stock Keeper', phone: '+91 9876543222', shift: 'Evening Shift (15:00 - 21:30)', status: 'OFF DUTY' },
-            ].map((st, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+            {staffRoster.map((st) => (
+              <div key={st.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <strong style={{ fontSize: '14px' }}>{st.name}</strong>
@@ -4186,8 +4286,25 @@ function ShopOwnerConsole({
                     {st.role} · {st.phone} · Shift: {st.shift}
                   </div>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--blue-primary)', fontWeight: 700 }}>
-                  Assigned to {myOutlet.id.toUpperCase()}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    className="btn-secondary btn-spring"
+                    style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 600 }}
+                    onClick={() => handleOpenEditStaff(st)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn-secondary btn-spring"
+                    style={{
+                      padding: '5px 12px', fontSize: '12px', fontWeight: 600,
+                      color: st.status === 'ON DUTY' ? '#DC2626' : '#166534',
+                      borderColor: st.status === 'ON DUTY' ? '#FCA5A5' : '#86EFAC'
+                    }}
+                    onClick={() => handleToggleStaffStatus(st.id)}
+                  >
+                    {st.status === 'ON DUTY' ? 'Deactivate' : 'Activate'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -4229,6 +4346,67 @@ function ShopOwnerConsole({
 
           <div style={{ padding: '12px 14px', background: '#F1F5F9', borderRadius: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
             Daily campus dining settlements are batch-credited at 23:00 IST every night to the registered vendor bank account (Indian Bank VIT Branch · IFSC: IDIB000V088).
+          </div>
+        </div>
+      )}
+
+      {/* ── STAFF EDIT / ADD MODAL ── */}
+      {staffModalOpen && (
+        <div className="modal-overlay" onClick={() => setStaffModalOpen(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="modal-header">
+              <h3>{editingStaffId ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
+              <button className="close-btn" onClick={() => setStaffModalOpen(false)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={staffForm.name}
+                  onChange={e => setStaffForm({ ...staffForm, name: e.target.value })}
+                  placeholder="e.g. Ramesh Kumar"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Role / Designation</label>
+                <input
+                  type="text"
+                  value={staffForm.role}
+                  onChange={e => setStaffForm({ ...staffForm, role: e.target.value })}
+                  placeholder="e.g. Counter Operator & QR Scanner"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Phone Number</label>
+                <input
+                  type="text"
+                  value={staffForm.phone}
+                  onChange={e => setStaffForm({ ...staffForm, phone: e.target.value })}
+                  placeholder="e.g. +91 9876543220"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Shift Timing</label>
+                <input
+                  type="text"
+                  value={staffForm.shift}
+                  onChange={e => setStaffForm({ ...staffForm, shift: e.target.value })}
+                  placeholder="e.g. Morning & Lunch (07:30 - 15:30)"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setStaffModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ background: 'var(--blue-primary)' }}>
+                  {editingStaffId ? 'Save Changes' : 'Add to Team'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -6180,11 +6358,11 @@ function AuthScreen({ onLoginUser }) {
                   const ownerUser = TEST_USERS.find(u => (u.role === 'owner' || u.role === 'shop_admin') && u.outlet_id === selectedCanteenId)
                   if (ownerUser) onLoginUser(ownerUser)
                 }}
-                title={`Login as Shop Owner for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
+                title={`Login as Shop Admin for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
                 style={{ background: '#0B192C' }}
               >
                 <Store size={14} strokeWidth={2} />
-                <span style={{ fontWeight: 700 }}>Shop Owner ({selectedCanteenId.toUpperCase()})</span>
+                <span style={{ fontWeight: 700 }}>Shop Admin ({selectedCanteenId.toUpperCase()})</span>
               </button>
 
               {/* Super Admin */}

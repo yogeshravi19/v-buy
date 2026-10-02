@@ -372,25 +372,25 @@ export default function VFoodsUserDashboard({
               onClick={() => handleRoleSwitch('user')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: '#EFF6FF', color: '#1D4ED8', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
             >
-              <User size={14} /> User View
+              <User size={14} /> User / Student
             </button>
             <button
               onClick={() => handleRoleSwitch('staff')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
-              <Store size={14} /> Shop Staff (Kitchen)
+              <Store size={14} /> Shop Staff
             </button>
             <button
               onClick={() => handleRoleSwitch('owner')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
-              <Store size={14} /> Shop Owner (Franchisee)
+              <Store size={14} /> Shop Admin
             </button>
             <button
               onClick={() => handleRoleSwitch('admin')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
-              <Sparkles size={14} /> Campus Super Admin
+              <Sparkles size={14} /> Super Admin
             </button>
           </div>
         )}

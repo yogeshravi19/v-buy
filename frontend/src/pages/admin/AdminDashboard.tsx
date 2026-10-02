@@ -693,7 +693,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
             <div className="text-[11px] text-slate-400 mt-1">Platform fee net profit</div>
           </div>
 
-          {/* Student Wallet Float */}
+          {/* User Wallet Float */}
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">
@@ -923,42 +923,186 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
           {/* ═════════════════════════════════════════════════════════════ */}
           {activeTab === 'metrics' && (
             <div className="space-y-6">
-              {/* Outlet Revenue Comparison Stack */}
-              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl">
-                <div className="flex items-center justify-between mb-4">
+              {/* Outlet Cross-Comparison Table */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                <div className="p-5 border-b border-slate-800 flex items-center justify-between">
                   <div>
-                    <h3 className="font-black text-sm text-white">Campus Revenue & Volume Distribution by Canteen</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Top-earning campus food hubs over the current billing cycle</p>
+                    <h3 className="font-bold text-sm text-white">Campus Revenue & Volume Comparison</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Cross-outlet performance overview across campus food hubs</p>
                   </div>
                   <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-3 py-1 rounded-full">
                     {formatMoney(platformMetrics.total_gmv)} Processed
                   </span>
                 </div>
 
-                <div className="space-y-3.5">
-                  {[
-                    { name: 'AB3 Food Court — Multi-Cuisine', revenue: 78500, share: 32, orders: 480 },
-                    { name: 'Gazebo C1 — Snacks & Fast Food', revenue: 64200, share: 26, orders: 420 },
-                    { name: 'Dakshin Chitra (Gazebo C3)', revenue: 52400, share: 21, orders: 310 },
-                    { name: 'Food Mall Main Concourse', revenue: 34000, share: 14, orders: 180 },
-                    { name: 'Riviera Arena Stall A1', revenue: 19800, share: 8, orders: 110 }
-                  ].map((outlet, idx) => (
-                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80">
-                      <div className="flex justify-between items-center text-xs mb-2">
-                        <span className="font-bold text-white text-sm">{outlet.name}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-slate-400">{outlet.orders} orders</span>
-                          <span className="font-mono font-black text-emerald-400 text-sm">₹{outlet.revenue.toLocaleString('en-IN')}</span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        <th className="py-3 px-4">Canteen / Food Hub</th>
+                        <th className="py-3 px-4">Orders</th>
+                        <th className="py-3 px-4">Gross Revenue</th>
+                        <th className="py-3 px-4">Revenue Share</th>
+                        <th className="py-3 px-4">Avg Ticket</th>
+                        <th className="py-3 px-4 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-xs">
+                      {[
+                        { name: 'AB3 Food Court — Multi-Cuisine', revenue: 78500, share: 32, orders: 480, status: 'Active' },
+                        { name: 'Gazebo C1 — Snacks & Fast Food', revenue: 64200, share: 26, orders: 420, status: 'Active' },
+                        { name: 'Dakshin Chitra (Gazebo C3)', revenue: 52400, share: 21, orders: 310, status: 'Active' },
+                        { name: 'Food Mall Main Concourse', revenue: 34000, share: 14, orders: 180, status: 'Active' },
+                        { name: 'Riviera Arena Stall A1', revenue: 19800, share: 8, orders: 110, status: 'Active' }
+                      ].map((outlet, idx) => (
+                        <tr key={idx} className="hover:bg-slate-850/50 transition-colors">
+                          <td className="py-3.5 px-4 font-bold text-white text-sm">
+                            {outlet.name}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-300">
+                            {outlet.orders.toLocaleString()}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
+                            ₹{outlet.revenue.toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-slate-300 text-xs w-8">{outlet.share}%</span>
+                              <div className="w-24 bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${outlet.share}%` }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-300">
+                            ₹{Math.round(outlet.revenue / outlet.orders)}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                              {outlet.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB: ORGANIZATION HIERARCHY TREE */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'hierarchy' && (
+            <div className="space-y-4">
+              <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow">
+                <h2 className="font-bold text-sm text-white">Campus Organization Hierarchy Tree</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Visual reporting hierarchy from Platform Super Admin down to each Canteen Outlet, its Shop Admin, and operating Shop Staff.
+                </p>
+              </div>
+
+              {/* Root Node: Super Admin Platform */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg">
+                <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                  <div className="h-10 w-10 rounded-2xl bg-purple-950 border border-purple-800 flex items-center justify-center text-purple-300">
+                    <ShieldCheck className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-white">Platform Super Admin</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
+                        Global Control Tower
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-400">Full platform visibility & governance across all {hierarchy.length} campus outlets</span>
+                  </div>
+                </div>
+
+                {/* Tree Branches: Outlets */}
+                <div className="mt-5 space-y-6 pl-4 border-l-2 border-slate-800">
+                  {hierarchy.map(outlet => {
+                    const shopAdmins = usersList.filter(u => u.role === 'shop_admin' && (u.outlet_id === outlet.id || u.outlet_name === outlet.name))
+                    const staffMembers = usersList.filter(u => u.role === 'staff' && (u.outlet_id === outlet.id || u.outlet_name === outlet.name))
+
+                    return (
+                      <div key={outlet.id} className="relative pl-6">
+                        {/* Tree connector horizontal line */}
+                        <div className="absolute -left-4 top-4 w-6 h-[2px] bg-slate-700" />
+
+                        {/* Outlet Node */}
+                        <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="h-8 w-8 rounded-xl bg-blue-950 border border-blue-800 flex items-center justify-center text-blue-300">
+                                <Store className="h-4 w-4" strokeWidth={2} />
+                              </div>
+                              <div>
+                                <span className="font-bold text-sm text-white">{outlet.name}</span>
+                                <span className="text-xs text-slate-400 block">{outlet.location}</span>
+                              </div>
+                            </div>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              outlet.is_open
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {outlet.is_open ? 'Counter Open' : 'Closed'}
+                            </span>
+                          </div>
+
+                          {/* Nested Level 1: Shop Admin */}
+                          <div className="mt-3.5 ml-4 pl-4 border-l-2 border-slate-800 space-y-3">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Shop Admin</div>
+                            {shopAdmins.length === 0 ? (
+                              <div className="text-xs text-slate-400 py-1 flex items-center gap-2">
+                                <span>Manager: {outlet.manager_name || 'Primary Admin Assigned'}</span>
+                                {outlet.manager_phone && <span className="font-mono text-slate-500">({outlet.manager_phone})</span>}
+                              </div>
+                            ) : (
+                              shopAdmins.map(admin => (
+                                <div key={admin.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between text-xs">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-200">{admin.full_name}</span>
+                                    <span className="text-slate-500">·</span>
+                                    <span className="text-slate-400">{admin.email || admin.phone || 'Admin'}</span>
+                                  </div>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                                    Shop Admin
+                                  </span>
+                                </div>
+                              ))
+                            )}
+
+                            {/* Nested Level 2: Shop Staff */}
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 pt-1">
+                              Shop Staff ({staffMembers.length || outlet.active_staff_count || 0})
+                            </div>
+                            {staffMembers.length === 0 ? (
+                              <div className="text-xs text-slate-400 py-1">
+                                {outlet.active_staff_count ?? 3} operational counter staff assigned
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {staffMembers.map(staff => (
+                                  <div key={staff.id} className="p-2 rounded-xl bg-slate-900 border border-slate-800/60 flex items-center justify-between text-xs">
+                                    <span className="font-medium text-slate-300">{staff.full_name}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      staff.is_active
+                                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                        : 'bg-slate-800 text-slate-400'
+                                    }`}>
+                                      {staff.is_active ? 'Active' : 'Deactivated'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500"
-                          style={{ width: `${outlet.share}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -972,19 +1116,22 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
               {/* User Filter Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-4 rounded-3xl border border-slate-800">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {['all', 'student', 'staff', 'shop_admin', 'super_admin'].map(r => (
+                  {['all', 'student', 'staff', 'shop_admin', 'super_admin'].map(r => {
+                    const displayLabel = r === 'student' ? 'User' : r === 'shop_admin' ? 'Shop Admin' : r === 'super_admin' ? 'Super Admin' : r === 'staff' ? 'Shop Staff' : 'All Roles'
+                    return (
                     <button
                       key={r}
                       onClick={() => setUserRoleFilter(r)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         userRoleFilter === r
                           ? 'bg-purple-600 text-white shadow'
                           : 'bg-slate-800 text-slate-300 hover:text-white'
                       }`}
                     >
-                      {r.replace('_', ' ')}
+                      {displayLabel}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <div className="relative">
@@ -1022,7 +1169,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
                               ? 'bg-blue-950 text-blue-300 border border-blue-800'
                               : 'bg-slate-800 text-slate-300'
                           }`}>
-                            {user.role.replace('_', ' ')}
+                            {user.role === 'student' ? 'User' : user.role === 'shop_admin' ? 'Shop Admin' : user.role === 'super_admin' ? 'Super Admin' : user.role === 'staff' ? 'Shop Staff' : user.role}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             user.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'
@@ -1049,7 +1196,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
                         className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-purple-500"
                       >
                         <option value="student">User</option>
-                        <option value="staff">Staff</option>
+                        <option value="staff">Shop Staff</option>
                         <option value="shop_admin">Shop Admin</option>
                         <option value="super_admin">Super Admin</option>
                       </select>

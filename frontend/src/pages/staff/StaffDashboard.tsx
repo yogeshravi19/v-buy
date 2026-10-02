@@ -6,7 +6,7 @@ import {
   ArrowRight, ShieldCheck, Check, Sparkles, Filter, Store,
   Zap, AlertTriangle, Layers, X, Hash, ShoppingBag, Bell,
   Delete, Kanban, LayoutGrid, Camera, User, CreditCard,
-  ArrowUpRight, ChevronRight, SlidersHorizontal
+  ArrowUpRight, ChevronRight, SlidersHorizontal, Edit3, Image as ImageIcon
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store'
@@ -229,6 +229,20 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   const [isVerifying, setIsVerifying] = useState<boolean>(false)
 
   const prevActiveOrderCountRef = useRef<number>(0)
+
+  // Menu Item Add/Edit State
+  const [showItemModal, setShowItemModal] = useState<boolean>(false)
+  const [editingItem, setEditingItem] = useState<StaffMenuItem | null>(null)
+  const [itemForm, setItemForm] = useState({
+    name: '',
+    price: 30,
+    category: 'snacks',
+    is_veg: true,
+    stock_qty: 25,
+    image_url: '',
+    available_from: '08:00',
+    available_to: '22:00'
+  })
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. DATA FETCHING
@@ -608,6 +622,84 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         .from('menu_items')
         .update({ stock_qty: newQty, available: newQty > 0 })
         .eq('id', item.id)
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 6. ADD / EDIT MENU ITEM (Staff can now INSERT via migration 010)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const handleOpenAddModal = () => {
+    setEditingItem(null)
+    setItemForm({
+      name: '',
+      price: 30,
+      category: 'snacks',
+      is_veg: true,
+      stock_qty: 25,
+      image_url: '',
+      available_from: '08:00',
+      available_to: '22:00'
+    })
+    setShowItemModal(true)
+  }
+
+  const handleOpenEditModal = (item: StaffMenuItem) => {
+    setEditingItem(item)
+    setItemForm({
+      name: item.name,
+      price: item.price,
+      category: item.category,
+      is_veg: item.is_veg,
+      stock_qty: item.stock_qty ?? 20,
+      image_url: (item as any).image_url || '',
+      available_from: (item as any).available_from || '08:00',
+      available_to: (item as any).available_to || '22:00'
+    })
+    setShowItemModal(true)
+  }
+
+  const handleSaveMenuItem = async () => {
+    if (!itemForm.name.trim() || itemForm.price <= 0) return
+
+    try {
+      if (editingItem) {
+        const updated = {
+          name: itemForm.name.trim(),
+          price: itemForm.price,
+          category: itemForm.category,
+          is_veg: itemForm.is_veg,
+          stock_qty: itemForm.stock_qty,
+          available: (itemForm.stock_qty ?? 1) > 0,
+          image_url: itemForm.image_url || null,
+          available_from: itemForm.available_from || null,
+          available_to: itemForm.available_to || null
+        }
+        await supabase.from('menu_items').update(updated).eq('id', editingItem.id)
+        setMenuItems(prev => prev.map(m => (m.id === editingItem.id ? { ...m, ...updated } : m)))
+      } else {
+        const newItem = {
+          outlet_id: effectiveOutletId,
+          name: itemForm.name.trim(),
+          price: itemForm.price,
+          category: itemForm.category,
+          is_veg: itemForm.is_veg,
+          stock_qty: itemForm.stock_qty,
+          reserved_qty: 0,
+          available: (itemForm.stock_qty ?? 1) > 0,
+          image_url: itemForm.image_url || null,
+          available_from: itemForm.available_from || null,
+          available_to: itemForm.available_to || null
+        }
+        const { data } = await supabase.from('menu_items').insert(newItem).select().single()
+        if (data) {
+          setMenuItems(prev => [...prev, data as StaffMenuItem])
+        } else {
+          setMenuItems(prev => [...prev, { ...newItem, id: Date.now() } as StaffMenuItem])
+        }
+      }
+      setShowItemModal(false)
+    } catch {
+      setShowItemModal(false)
     }
   }
 
@@ -1129,9 +1221,25 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         {/* ── MAIN CONTENT AREA ── */}
         <main className="mt-4">
           {loading ? (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-3">
-              <RefreshCw className="h-8 w-8 animate-spin text-orange-500" strokeWidth={2} />
-              <p className="text-sm font-medium">Connecting to {displayOutletName} live stream...</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4.5 animate-pulse">
+              {[1, 2, 3].map(col => (
+                <div key={col} className="bg-slate-900/40 rounded-2xl border border-slate-800 p-3.5 space-y-3">
+                  <div className="h-6 bg-slate-800/80 rounded-xl w-1/2" />
+                  <div className="space-y-3">
+                    {[1, 2].map(card => (
+                      <div key={card} className="h-36 rounded-2xl bg-slate-850/60 border border-slate-800/60 p-4 space-y-2.5">
+                        <div className="flex justify-between items-center">
+                          <div className="h-5 bg-slate-800 rounded-lg w-16" />
+                          <div className="h-4 bg-slate-800 rounded-md w-24" />
+                        </div>
+                        <div className="h-4 bg-slate-800/70 rounded w-3/4" />
+                        <div className="h-4 bg-slate-800/50 rounded w-1/2" />
+                        <div className="h-9 bg-slate-800/90 rounded-xl mt-3 w-full" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : activeTab === 'queue' ? (
             <div>
@@ -1255,12 +1363,21 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               <div className="lg:col-span-2 space-y-3">
                 <div className="flex items-center justify-between bg-slate-900 p-3.5 rounded-2xl border border-slate-800">
                   <div>
-                    <h2 className="font-bold text-sm text-white">Live Stock Stepper & Availability</h2>
+                    <h2 className="font-bold text-sm text-white">Live Stock Stepper and Availability</h2>
                     <p className="text-xs text-slate-400">Quick +/- stepper logs directly to audit ledger and syncs user menu.</p>
                   </div>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {menuItems.length} catalog items
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-mono">
+                      {menuItems.length} catalog items
+                    </span>
+                    <button
+                      onClick={handleOpenAddModal}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+                    >
+                      <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      <span>Add Item</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2.5">
@@ -1329,13 +1446,21 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
 
                           <button
                             onClick={() => handleToggleAvailability(item)}
-                            className={`h-9 px-3.5 rounded-xl font-bold text-xs ml-2 transition-all active:scale-95 ${
+                            className={`h-9 px-3.5 rounded-xl font-bold text-xs ml-1 transition-all active:scale-95 ${
                               isSoldOut
                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                                 : 'bg-rose-600/80 hover:bg-rose-600 text-white'
                             }`}
                           >
                             {isSoldOut ? 'Restock' : 'Mark Out'}
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditModal(item)}
+                            className="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center justify-center ml-1 active:scale-95 transition-all"
+                            title="Edit item details"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" strokeWidth={2} />
                           </button>
                         </div>
                       </div>
@@ -1627,6 +1752,126 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 )}
                 <span>Verify Token & Hand Over</span>
               </motion.button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── ADD/EDIT MENU ITEM MODAL ── */}
+      <AnimatePresence>
+        {showItemModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+                <h3 className="font-black text-base text-white">
+                  {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+                </h3>
+                <button onClick={() => setShowItemModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                  <X className="h-5 w-5" strokeWidth={2} />
+                </button>
+              </div>
+
+              <div className="space-y-3.5">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Item Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Masala Dosa"
+                    value={itemForm.name}
+                    onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Price (INR)</label>
+                    <input
+                      type="number"
+                      value={itemForm.price}
+                      onChange={e => setItemForm({ ...itemForm, price: parseInt(e.target.value, 10) || 0 })}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Stock Qty</label>
+                    <input
+                      type="number"
+                      value={itemForm.stock_qty}
+                      onChange={e => setItemForm({ ...itemForm, stock_qty: parseInt(e.target.value, 10) || 0 })}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Category</label>
+                    <input
+                      type="text"
+                      value={itemForm.category}
+                      onChange={e => setItemForm({ ...itemForm, category: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Dietary Tag</label>
+                    <button
+                      type="button"
+                      onClick={() => setItemForm({ ...itemForm, is_veg: !itemForm.is_veg })}
+                      className={`w-full py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 ${
+                        itemForm.is_veg ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-rose-950 border-rose-500 text-rose-300'
+                      }`}
+                    >
+                      <VegIndicator isVeg={itemForm.is_veg} showLabel={true} labelText={itemForm.is_veg ? 'Vegetarian' : 'Non-Veg'} size="sm" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Available From</label>
+                    <input
+                      type="time"
+                      value={itemForm.available_from}
+                      onChange={e => setItemForm({ ...itemForm, available_from: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Available To</label>
+                    <input
+                      type="time"
+                      value={itemForm.available_to}
+                      onChange={e => setItemForm({ ...itemForm, available_to: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Photo URL (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/..."
+                    value={itemForm.image_url}
+                    onChange={e => setItemForm({ ...itemForm, image_url: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSaveMenuItem}
+                  className="w-full mt-3 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-950/40"
+                >
+                  {editingItem ? 'Save Changes' : 'Add to Menu'}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

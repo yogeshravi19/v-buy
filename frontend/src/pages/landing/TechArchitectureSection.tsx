@@ -11,16 +11,30 @@ export const TechArchitectureSection: React.FC = () => {
     {
       id: 'frontend',
       title: 'Frontend PWA & Web App',
-      badge: 'React • TypeScript • Vite • Tailwind',
+      badge: 'React 19 • TypeScript • Vite • Tailwind',
       icon: Code2,
       summary: 'Responsive, lightning-fast progressive web app with seamless mobile navigation and instant interactions.',
       points: [
-        'Vite build engine for instantaneous page loads and updates',
+        'Vite build engine for instantaneous page loads and hot updates',
         'Lucide UI icons with accessible semantic markup',
         'Pure vegetarian filter and live item search with zero lag',
         'Works seamlessly across student smartphones, laptops, and canteen tablets',
       ],
       color: 'border-orange-500/60 text-orange-600 bg-orange-50',
+    },
+    {
+      id: 'backend',
+      title: 'FastAPI Backend Gateway',
+      badge: 'Python 3.11 • Async ASGI • JWT',
+      icon: Server,
+      summary: 'High-performance asynchronous Python API processing orders, PhonePe webhooks, and cryptographic QR signatures.',
+      points: [
+        'FastAPI & Uvicorn ASGI server with non-blocking async endpoint handlers',
+        'Supabase JWT authentication & cryptographic QR pass verification (HMAC-SHA256)',
+        'PhonePe payment gateway webhook handler with SHA256 X-VERIFY checksum',
+        'APScheduler background tasks expiring pending uncollected orders automatically',
+      ],
+      color: 'border-blue-500/60 text-blue-600 bg-blue-50',
     },
     {
       id: 'database',
