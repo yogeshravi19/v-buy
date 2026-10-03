@@ -115,12 +115,56 @@ export default function VFoodsUserDashboard({
   const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
   const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
 
-  // Savvy HRMS-inspired Meal Windows & Time-Slot Availability
-  const MEAL_WINDOWS = useMemo(() => [
-    { id: 'breakfast', name: 'Breakfast', time: '07:30 - 10:30', startHour: 7.5, endHour: 10.5, keywords: ['dosa', 'idli', 'poori', 'vada', 'pongal', 'coffee', 'tea', 'sandwich', 'bread', 'omelette', 'egg'] },
-    { id: 'lunch', name: 'Lunch', time: '11:30 - 15:00', startHour: 11.5, endHour: 15.0, keywords: ['meals', 'thali', 'biryani', 'rice', 'dal', 'paneer', 'chicken', 'curry', 'chapati', 'parotta', 'pulao'] },
-    { id: 'snacks', name: 'Snacks', time: '16:30 - 18:45', startHour: 16.5, endHour: 18.75, keywords: ['samosa', 'puff', 'cutlet', 'roll', 'juice', 'shake', 'maggi', 'nuggets', 'fries', 'tea', 'bhel'] },
-    { id: 'dinner', name: 'Dinner', time: '19:30 - 22:30', startHour: 19.5, endHour: 22.5, keywords: ['parotta', 'roti', 'naan', 'fried rice', 'noodles', 'dosa', 'chicken', 'paneer', 'egg', 'kothu'] }
+  // Campus Service Slots: All-Day Quick Bites + Scheduled Meals (Savvy HRMS)
+  const SERVICE_SLOTS = useMemo(() => [
+    {
+      id: 'all-day',
+      name: 'All-Day Quick Bites',
+      type: 'continuous',
+      time: '08:00 - 22:30',
+      badge: 'Open All Day',
+      keywords: ['puff', 'samosa', 'roll', 'juice', 'shake', 'coffee', 'tea', 'lassi', 'maggi', 'sandwich', 'ice cream', 'cutlet', 'beverage', 'snack', 'cake', 'biscuit', 'chips']
+    },
+    {
+      id: 'breakfast',
+      name: 'Breakfast',
+      type: 'scheduled',
+      time: '07:30 - 10:30',
+      badge: 'Morning Tiffin',
+      startHour: 7.5,
+      endHour: 10.5,
+      keywords: ['dosa', 'idli', 'poori', 'vada', 'pongal', 'coffee', 'tea', 'sandwich', 'bread', 'omelette', 'egg']
+    },
+    {
+      id: 'lunch',
+      name: 'Lunch',
+      type: 'scheduled',
+      time: '11:30 - 15:00',
+      badge: 'Thali & Meals',
+      startHour: 11.5,
+      endHour: 15.0,
+      keywords: ['meals', 'thali', 'biryani', 'rice', 'dal', 'paneer', 'chicken', 'curry', 'chapati', 'parotta', 'pulao']
+    },
+    {
+      id: 'snacks',
+      name: 'Evening Snacks',
+      type: 'scheduled',
+      time: '16:30 - 18:45',
+      badge: 'Tea & Warm Bakes',
+      startHour: 16.5,
+      endHour: 18.75,
+      keywords: ['samosa', 'puff', 'cutlet', 'roll', 'juice', 'shake', 'maggi', 'nuggets', 'fries', 'tea', 'bhel']
+    },
+    {
+      id: 'dinner',
+      name: 'Dinner',
+      type: 'scheduled',
+      time: '19:30 - 22:30',
+      badge: 'Dinner Combos',
+      startHour: 19.5,
+      endHour: 22.5,
+      keywords: ['parotta', 'roti', 'naan', 'fried rice', 'noodles', 'dosa', 'chicken', 'paneer', 'egg', 'kothu']
+    }
   ], [])
 
   const currentHour = useMemo(() => {
@@ -128,12 +172,22 @@ export default function VFoodsUserDashboard({
     return d.getHours() + d.getMinutes() / 60
   }, [])
 
-  const defaultActiveWindow = useMemo(() => {
-    const match = MEAL_WINDOWS.find(w => currentHour >= w.startHour && currentHour <= w.endHour)
+  const defaultActiveScheduledWindow = useMemo(() => {
+    const match = SERVICE_SLOTS.filter(s => s.type === 'scheduled').find(w => currentHour >= w.startHour && currentHour <= w.endHour)
     return match ? match.id : 'lunch'
-  }, [currentHour, MEAL_WINDOWS])
+  }, [currentHour, SERVICE_SLOTS])
 
-  const [selectedMealWindow, setSelectedMealWindow] = useState('all')
+  const [selectedServiceSlot, setSelectedServiceSlot] = useState('all')
+
+  const getOutletServiceType = useCallback((outlet) => {
+    if (!outlet) return { isScheduled: false, label: 'All-Day Quick Bites' }
+    const name = (outlet.name || '').toLowerCase()
+    const loc = (outlet.location || '').toLowerCase()
+    if (name.includes('meals') || name.includes('thali') || name.includes('biryani') || name.includes('diner') || name.includes('mess') || name.includes('dakshin') || name.includes('chitra') || loc.includes('academic blocks')) {
+      return { isScheduled: true, label: 'Scheduled Meal Counter' }
+    }
+    return { isScheduled: false, label: 'All-Day Quick Bites' }
+  }, [])
 
   const handleGatewayCheckout = () => {
     setIsGatewayProcessing(true)
@@ -188,22 +242,30 @@ export default function VFoodsUserDashboard({
     return list
   }, [outlets])
 
-  // Popular on Campus items (12 curated dishes across outlets, optionally filtered by meal window)
+  // Popular on Campus items (12 curated dishes across outlets, optionally filtered by service slot)
   const popularDishes = useMemo(() => {
     let items = allDishes
     if (popularFilter === 'veg') items = items.filter(i => i.is_veg === true)
     if (popularFilter === 'non-veg') items = items.filter(i => i.is_veg === false)
-    if (selectedMealWindow !== 'all') {
-      const activeWin = MEAL_WINDOWS.find(w => w.id === selectedMealWindow)
-      if (activeWin) {
-        const matched = items.filter(i =>
-          activeWin.keywords.some(k => i.name.toLowerCase().includes(k) || (i.category || '').toLowerCase().includes(k))
-        )
-        if (matched.length > 0) items = matched
+    if (selectedServiceSlot !== 'all') {
+      const activeSlot = SERVICE_SLOTS.find(w => w.id === selectedServiceSlot)
+      if (activeSlot) {
+        if (activeSlot.id === 'all-day') {
+          const matched = items.filter(i => {
+            const outletType = getOutletServiceType(i.outlet)
+            return !outletType.isScheduled || activeSlot.keywords.some(k => i.name.toLowerCase().includes(k) || (i.category || '').toLowerCase().includes(k))
+          })
+          if (matched.length > 0) items = matched
+        } else {
+          const matched = items.filter(i =>
+            activeSlot.keywords.some(k => i.name.toLowerCase().includes(k) || (i.category || '').toLowerCase().includes(k))
+          )
+          if (matched.length > 0) items = matched
+        }
       }
     }
     return items.slice(0, 12)
-  }, [allDishes, popularFilter, selectedMealWindow, MEAL_WINDOWS])
+  }, [allDishes, popularFilter, selectedServiceSlot, SERVICE_SLOTS, getOutletServiceType])
 
   // Search results
   const searchResults = useMemo(() => {
@@ -306,7 +368,22 @@ export default function VFoodsUserDashboard({
                 <Clock size={8.5} /> 10-15m
               </span>
             </div>
-            <div className="vfoods-dish-canteen">{item.outlet?.name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginTop: '2px' }}>
+              <span className="vfoods-dish-canteen" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.outlet?.name}
+              </span>
+              <span style={{
+                fontSize: '9px',
+                fontWeight: 700,
+                padding: '1px 5px',
+                borderRadius: '3px',
+                whiteSpace: 'nowrap',
+                background: getOutletServiceType(item.outlet).isScheduled ? '#FEF3C7' : '#E0F2FE',
+                color: getOutletServiceType(item.outlet).isScheduled ? '#B45309' : '#0369A1'
+              }}>
+                {getOutletServiceType(item.outlet).isScheduled ? 'Meal Slot' : 'All-Day'}
+              </span>
+            </div>
           </div>
           <div className="vfoods-dish-bottom">
             <span className="vfoods-dish-price">{money(item.price)}</span>
@@ -489,7 +566,7 @@ export default function VFoodsUserDashboard({
               </div>
             ) : (
               <>
-                {/* Savvy HRMS: Campus Meal Window Schedule Bar */}
+                {/* Savvy HRMS: Campus Dining Windows & All-Day Counters */}
                 <div style={{
                   background: '#FFFFFF',
                   border: '1px solid #E2E8F0',
@@ -502,60 +579,68 @@ export default function VFoodsUserDashboard({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 3px #DCFCE7' }} />
                       <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
-                        Campus Meal Windows
+                        Dining Schedules & Quick Bites
                       </span>
                       <span style={{ fontSize: '11px', color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                        {MEAL_WINDOWS.find(w => w.id === defaultActiveWindow)?.name} Active
+                        {SERVICE_SLOTS.find(w => w.id === defaultActiveScheduledWindow)?.name} Window Active
                       </span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
-                      Live Counters & Pre-Orders Open
+                      Main Canteen Slots + Continuous Snack Stalls
                     </div>
                   </div>
 
-                  {/* Meal Slot Tabs */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '8px' }}>
-                    {MEAL_WINDOWS.map(win => {
-                      const isCurrentLive = win.id === defaultActiveWindow
-                      const isSelected = selectedMealWindow === win.id || (selectedMealWindow === 'all' && isCurrentLive)
+                  {/* Service Slot Tabs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+                    {SERVICE_SLOTS.map(slot => {
+                      const isCurrentLive = slot.id === defaultActiveScheduledWindow
+                      const isSelected = selectedServiceSlot === slot.id || (selectedServiceSlot === 'all' && (slot.id === 'all-day' || isCurrentLive))
+                      const isContinuous = slot.type === 'continuous'
                       return (
                         <button
-                          key={win.id}
+                          key={slot.id}
                           type="button"
-                          onClick={() => setSelectedMealWindow(selectedMealWindow === win.id ? 'all' : win.id)}
+                          onClick={() => setSelectedServiceSlot(selectedServiceSlot === slot.id ? 'all' : slot.id)}
                           style={{
                             padding: '8px 10px',
                             borderRadius: '10px',
-                            border: isSelected ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
-                            background: isSelected ? '#EFF6FF' : '#F8FAFC',
+                            border: isSelected ? (isContinuous ? '1.5px solid #0284C7' : '1.5px solid #2563EB') : '1px solid #E2E8F0',
+                            background: isSelected ? (isContinuous ? '#F0F9FF' : '#EFF6FF') : '#F8FAFC',
                             cursor: 'pointer',
                             textAlign: 'left',
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#1E40AF' : '#1E293B' }}>
-                              {win.name}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                            <span style={{ fontSize: '11.5px', fontWeight: 700, color: isSelected ? (isContinuous ? '#0369A1' : '#1E40AF') : '#1E293B' }}>
+                              {slot.name}
                             </span>
-                            {isCurrentLive && (
+                            {isContinuous ? (
+                              <span style={{ fontSize: '9px', fontWeight: 700, color: '#0284C7', background: '#E0F2FE', padding: '1px 4px', borderRadius: '3px' }}>
+                                All-Day
+                              </span>
+                            ) : isCurrentLive ? (
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16A34A' }} title="Current Live Slot" />
-                            )}
+                            ) : null}
                           </div>
-                          <div style={{ fontSize: '10px', color: isSelected ? '#2563EB' : '#64748B', marginTop: '3px', fontWeight: 500 }}>
-                            {win.time}
+                          <div style={{ fontSize: '10px', color: isSelected ? (isContinuous ? '#0284C7' : '#2563EB') : '#64748B', marginTop: '3px', fontWeight: 500 }}>
+                            {slot.time}
                           </div>
                         </button>
                       )
                     })}
                   </div>
 
-                  {selectedMealWindow !== 'all' && (
+                  {selectedServiceSlot !== 'all' && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0', fontSize: '11px' }}>
                       <span style={{ color: '#475569', fontWeight: 600 }}>
-                        Showing recommended items for {MEAL_WINDOWS.find(w => w.id === selectedMealWindow)?.name}
+                        {selectedServiceSlot === 'all-day' 
+                          ? 'Showing continuous service all-day snacks, bakery items, juices and beverages'
+                          : `Showing scheduled meal items for ${SERVICE_SLOTS.find(w => w.id === selectedServiceSlot)?.name}`
+                        }
                       </span>
                       <button
-                        onClick={() => setSelectedMealWindow('all')}
+                        onClick={() => setSelectedServiceSlot('all')}
                         style={{ background: 'none', border: 'none', color: '#2563EB', fontWeight: 700, cursor: 'pointer', fontSize: '11px' }}
                       >
                         Reset Filter
