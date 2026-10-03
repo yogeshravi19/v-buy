@@ -36,7 +36,7 @@ export const InteractiveMockups: React.FC = () => {
     <div className="space-y-12">
       {/* Section Header */}
       <div className="text-center max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 mb-3">
           <Smartphone className="w-3.5 h-3.5" />
           <span>TRY THE LIVE INTERFACES</span>
         </div>
@@ -53,7 +53,7 @@ export const InteractiveMockups: React.FC = () => {
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 flex flex-col items-center">
           <div className="w-full flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-orange-600" />
+              <Smartphone className="w-4 h-4 text-brand-700" />
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">User Mobile Experience</span>
             </div>
             {/* Step indicators */}
@@ -63,7 +63,7 @@ export const InteractiveMockups: React.FC = () => {
                   key={step}
                   onClick={() => setPhoneStep(step)}
                   className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                    phoneStep === step ? 'bg-orange-600 w-4' : 'bg-slate-300'
+                    phoneStep === step ? 'bg-brand-700 w-4' : 'bg-slate-300'
                   }`}
                   title={`Jump to ${step}`}
                 />
@@ -101,11 +101,11 @@ export const InteractiveMockups: React.FC = () => {
                     <div>
                       <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">VEG</span>
                       <p className="text-xs font-bold text-slate-900 mt-1">Paneer Kathi Roll</p>
-                      <p className="text-[11px] text-orange-600 font-semibold">₹90</p>
+                      <p className="text-[11px] text-brand-700 font-semibold">₹90</p>
                     </div>
                     <button
                       onClick={() => setCartCount(c => c + 1)}
-                      className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs cursor-pointer"
                     >
                       + Add
                     </button>
@@ -116,11 +116,11 @@ export const InteractiveMockups: React.FC = () => {
                       <div>
                         <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded">NON-VEG</span>
                         <p className="text-xs font-bold text-slate-900 mt-1">Chicken Rice Bowl</p>
-                        <p className="text-[11px] text-orange-600 font-semibold">₹140</p>
+                        <p className="text-[11px] text-brand-700 font-semibold">₹140</p>
                       </div>
                       <button
                         onClick={() => setCartCount(c => c + 1)}
-                        className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs cursor-pointer"
                       >
                         + Add
                       </button>
@@ -131,11 +131,11 @@ export const InteractiveMockups: React.FC = () => {
                     <div>
                       <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">VEG</span>
                       <p className="text-xs font-bold text-slate-900 mt-1">Filter Kaapi</p>
-                      <p className="text-[11px] text-orange-600 font-semibold">₹25</p>
+                      <p className="text-[11px] text-brand-700 font-semibold">₹25</p>
                     </div>
                     <button
                       onClick={() => setCartCount(c => c + 1)}
-                      className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs cursor-pointer"
                     >
                       + Add
                     </button>
@@ -144,7 +144,7 @@ export const InteractiveMockups: React.FC = () => {
 
                 <button
                   onClick={() => setPhoneStep('slot')}
-                  className="w-full mt-3 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                  className="w-full mt-3 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <ShoppingBag className="w-3.5 h-3.5" />
                   <span>Cart ({cartCount} items) • Pick Slot</span>
@@ -172,7 +172,7 @@ export const InteractiveMockups: React.FC = () => {
                       onClick={() => setPhoneStep('pay')}
                       className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
                         idx === 1
-                          ? 'bg-orange-50 border-orange-400 shadow-xs'
+                          ? 'bg-brand-50 border-brand-400 shadow-xs'
                           : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
@@ -186,7 +186,7 @@ export const InteractiveMockups: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setPhoneStep('pay')}
-                  className="w-full mt-3 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full mt-3 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span>Confirm Slot: 12:45 PM</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -201,21 +201,21 @@ export const InteractiveMockups: React.FC = () => {
                   <span className="text-xs font-bold text-slate-900">Payment Method</span>
                   <button onClick={() => setPhoneStep('slot')} className="text-[10px] text-slate-500 hover:text-slate-800 cursor-pointer">Back</button>
                 </div>
-                <div className="p-2.5 rounded-xl bg-orange-50 border border-orange-200 text-xs">
+                <div className="p-2.5 rounded-xl bg-brand-50 border border-brand-200 text-xs">
                   <div className="flex justify-between text-slate-700">
                     <span>Order Total:</span>
                     <span className="font-bold text-slate-900">₹115.00</span>
                   </div>
                   <div className="flex justify-between text-[11px] text-slate-500 mt-1">
                     <span>Slot:</span>
-                    <span className="text-orange-700 font-medium">12:45 - 01:00 PM</span>
+                    <span className="text-brand-800 font-medium">12:45 - 01:00 PM</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="p-2.5 rounded-xl bg-white border border-orange-400 flex items-center justify-between shadow-xs">
+                  <div className="p-2.5 rounded-xl bg-white border border-brand-400 flex items-center justify-between shadow-xs">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-orange-500 flex items-center justify-center text-white">
+                      <div className="w-6 h-6 rounded-md bg-brand-700 flex items-center justify-center text-white">
                         <DollarSign className="w-3.5 h-3.5" />
                       </div>
                       <div>
@@ -223,7 +223,7 @@ export const InteractiveMockups: React.FC = () => {
                         <p className="text-[10px] text-slate-500">Balance: ₹450.00 (Instant)</p>
                       </div>
                     </div>
-                    <CheckCircle2 className="w-4 h-4 text-orange-600" />
+                    <CheckCircle2 className="w-4 h-4 text-brand-700" />
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between opacity-60">
@@ -256,7 +256,7 @@ export const InteractiveMockups: React.FC = () => {
                   <QrCode className="w-24 h-24 text-slate-900" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-orange-600 tracking-wider">ORDER TOKEN</span>
+                  <span className="text-[10px] font-bold text-brand-700 tracking-wider">ORDER TOKEN</span>
                   <p className="text-2xl font-black text-slate-900 tracking-widest mt-0.5">#0429</p>
                   <p className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center justify-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -339,7 +339,7 @@ export const InteractiveMockups: React.FC = () => {
                         order.status === 'ready'
                           ? 'bg-emerald-50/70 border-emerald-300'
                           : order.status === 'prep'
-                          ? 'bg-orange-50/70 border-orange-300'
+                          ? 'bg-brand-50/70 border-brand-300'
                           : 'bg-slate-50 border-slate-200'
                       }`}
                     >
@@ -350,7 +350,7 @@ export const InteractiveMockups: React.FC = () => {
                         <div>
                           <p className="text-xs font-bold text-slate-900">{order.item}</p>
                           <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-600">
-                            <span className="text-orange-700 font-semibold">Slot: {order.slot}</span>
+                            <span className="text-brand-800 font-semibold">Slot: {order.slot}</span>
                             <span>•</span>
                             <span className={order.status === 'ready' ? 'text-emerald-700 font-bold' : 'text-amber-700 font-medium'}>
                               {order.time}
@@ -363,7 +363,7 @@ export const InteractiveMockups: React.FC = () => {
                         {order.status !== 'ready' ? (
                           <button
                             onClick={() => markOrderReady(order.id)}
-                            className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+                            className="px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Mark Ready</span>
@@ -423,10 +423,10 @@ export const InteractiveMockups: React.FC = () => {
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                     <div className="flex justify-between items-center text-xs mb-2">
                       <span className="font-bold text-slate-900">12:30 - 12:45 PM Peak Window</span>
-                      <span className="text-orange-700 font-bold">18 / 25 App Slots Used</span>
+                      <span className="text-brand-800 font-bold">18 / 25 App Slots Used</span>
                     </div>
                     <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="w-[72%] h-full bg-orange-500 rounded-full" />
+                      <div className="w-[72%] h-full bg-brand-600 rounded-full" />
                     </div>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
@@ -445,7 +445,7 @@ export const InteractiveMockups: React.FC = () => {
 
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Runs on standard ₹7,999 Android 10" countertop tablets.</span>
-            <span className="text-orange-700 font-semibold">Zero POS rental fees</span>
+            <span className="text-brand-700 font-semibold">Zero POS rental fees</span>
           </div>
         </div>
       </div>

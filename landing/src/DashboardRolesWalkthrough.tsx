@@ -27,7 +27,7 @@ const ROLES: RoleDetail[] = [
     device: 'Mobile Browser / PWA (Phone)',
     deviceIcon: Smartphone,
     colorBadge: 'bg-blue-50 text-blue-700 border-blue-200',
-    screenshot: '/assets/landing/user-order-tracking-placed.webp',
+    screenshot: '/assets/landing/user-menu-veg.webp',
     activeTabs: [
       'Explore Menu & Outlets',
       'Pure Veg & Fast Filters',
@@ -62,7 +62,7 @@ const ROLES: RoleDetail[] = [
     targetUser: 'Canteen cooks, assembly staff, and counter operators',
     device: 'Countertop Tablet / Smartphone (KDS)',
     deviceIcon: Tablet,
-    colorBadge: 'bg-orange-50 text-orange-700 border-orange-200',
+    colorBadge: 'bg-brand-50 text-brand-700 border-brand-200',
     screenshot: '/assets/landing/staff-live-queue.webp',
     activeTabs: [
       'Overview',
