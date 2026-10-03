@@ -20,7 +20,7 @@ export const TechArchitectureSection: React.FC = () => {
         'Pure vegetarian filter and live item search with zero lag',
         'Works seamlessly across student smartphones, laptops, and canteen tablets',
       ],
-      color: 'border-orange-500/60 text-orange-600 bg-orange-50',
+      color: 'border-brand-500/60 text-brand-700 bg-brand-50',
     },
     {
       id: 'backend',
@@ -112,7 +112,7 @@ export const TechArchitectureSection: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 mb-3">
           <Layers className="w-3.5 h-3.5" />
           <span>PRODUCTION-GRADE STACK</span>
         </div>
@@ -135,7 +135,7 @@ export const TechArchitectureSection: React.FC = () => {
               onClick={() => setActiveLayer(idx)}
               className={`p-6 rounded-3xl border transition-all cursor-pointer text-left flex flex-col justify-between ${
                 isSelected
-                  ? 'bg-white border-orange-600 shadow-xl shadow-orange-600/10 ring-2 ring-orange-500/20'
+                  ? 'bg-white border-brand-700 shadow-xl shadow-brand-700/10 ring-2 ring-brand-500/20'
                   : 'bg-white border-slate-200/90 hover:border-slate-300 shadow-xs'
               }`}
             >

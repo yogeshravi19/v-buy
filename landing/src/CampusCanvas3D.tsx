@@ -132,9 +132,9 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
 
     // Interactive Canteen pavilions (Gazebo C1, North Square, Food Street)
     const canteens = [
-      { name: 'Gazebo C1', status: 'Active • 2 min avg wait', wait: '2m', x: -1, z: 0, color: 0xe04d2d, label: 'Gazebo C1' },
-      { name: 'North Square Canteen', status: 'Live KDS • 18 in queue', wait: '4m', x: 2, z: 5, color: 0xe04d2d, label: 'North Square' },
-      { name: 'Food Street / Riviera Stalls', status: 'Pre-order active', wait: '1m', x: 6, z: -3, color: 0xe04d2d, label: 'Riviera Stalls' },
+      { name: 'Gazebo C1', status: 'Active • 2 min avg wait', wait: '2m', x: -1, z: 0, color: 0x1e40af, label: 'Gazebo C1' },
+      { name: 'North Square Canteen', status: 'Live KDS • 18 in queue', wait: '4m', x: 2, z: 5, color: 0x1e40af, label: 'North Square' },
+      { name: 'Food Street / Riviera Stalls', status: 'Pre-order active', wait: '1m', x: 6, z: -3, color: 0x1e40af, label: 'Riviera Stalls' },
     ]
 
     const canteenMeshes: THREE.Mesh[] = []
@@ -149,10 +149,10 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
       baseMesh.receiveShadow = true
       campusGroup.add(baseMesh)
 
-      // Terracotta Coral Roof
+      // Brand Royal Blue Roof
       const roofGeo = new THREE.ConeGeometry(2.1, 1.3, 18)
       const roofMat = new THREE.MeshStandardMaterial({
-        color: 0xea580c,
+        color: 0x1e40af,
         roughness: 0.3,
       })
       const roofMesh = new THREE.Mesh(roofGeo, roofMat)
@@ -162,7 +162,7 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
 
       // Clean ring
       const ringGeo = new THREE.RingGeometry(1.7, 1.9, 24)
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.5 })
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.5 })
       const ringMesh = new THREE.Mesh(ringGeo, ringMat)
       ringMesh.rotation.x = -Math.PI / 2
       ringMesh.position.set(c.x, 0.05, c.z)
@@ -171,7 +171,7 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
       // Interactive beacon pin
       const pinGeo = new THREE.SphereGeometry(0.38, 16, 16)
       const pinMat = new THREE.MeshStandardMaterial({
-        color: 0xea580c,
+        color: 0x2563eb,
         roughness: 0.2,
       })
       const pinMesh = new THREE.Mesh(pinGeo, pinMat)
@@ -192,13 +192,13 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
 
     const curvePoints = curve.getPoints(60)
     const lineGeo = new THREE.BufferGeometry().setFromPoints(curvePoints)
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xf97316, linewidth: 2 })
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x3b82f6, linewidth: 2 })
     const lineMesh = new THREE.Line(lineGeo, lineMat)
     campusGroup.add(lineMesh)
 
     // Animated packet / token moving on curve
     const tokenGeo = new THREE.SphereGeometry(0.24, 16, 16)
-    const tokenMat = new THREE.MeshBasicMaterial({ color: 0xea580c })
+    const tokenMat = new THREE.MeshBasicMaterial({ color: 0x1d4ed8 })
     const tokenMesh = new THREE.Mesh(tokenGeo, tokenMat)
     campusGroup.add(tokenMesh)
 
@@ -326,7 +326,7 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           13 Canteens Live
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md border border-slate-200 text-orange-600 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md border border-slate-200 text-brand-700 shadow-sm">
           2 min Counter Pickup
         </span>
       </div>
@@ -344,11 +344,11 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
             top: `${Math.max(activeNode.y - 45, 10)}px`,
             pointerEvents: 'none',
           }}
-          className="z-20 bg-white/95 backdrop-blur-md border border-orange-300 rounded-xl px-3.5 py-2 shadow-xl text-left min-w-[150px] transition-transform animate-in fade-in zoom-in-95 duration-150"
+          className="z-20 bg-white/95 backdrop-blur-md border border-brand-300 rounded-xl px-3.5 py-2 shadow-xl text-left min-w-[150px] transition-transform animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-bold text-slate-900 tracking-tight">{activeNode.name}</p>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 border border-orange-200">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200">
               {activeNode.wait}
             </span>
           </div>

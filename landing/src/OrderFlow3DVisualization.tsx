@@ -554,8 +554,8 @@ export const OrderFlow3DVisualization: React.FC = () => {
     <div className="space-y-6">
       {/* Header and Value Proposition */}
       <div className="text-center max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
-          <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-brand-50 text-brand-800 border border-brand-200">
+          <Sparkles className="w-3.5 h-3.5 text-brand-700" />
           <span>INTERACTIVE 3D SYSTEM ARCHITECTURE</span>
         </div>
         <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3">
@@ -592,7 +592,7 @@ export const OrderFlow3DVisualization: React.FC = () => {
 
             <button
               onClick={() => setIsPlaying(p => !p)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow-md shadow-brand-700/20 active:scale-95 transition-all cursor-pointer"
               title={isPlaying ? 'Pause Simulation' : 'Play Live Simulation'}
             >
               {isPlaying ? <Pause size={14} /> : <Play size={14} />}
@@ -683,7 +683,7 @@ export const OrderFlow3DVisualization: React.FC = () => {
                 onClick={() => { setCurrentStep(idx); setIsPlaying(false) }}
                 className={`h-2 sm:h-2.5 rounded-full transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-orange-600 ring-2 ring-orange-400/40 shadow-xs'
+                    ? 'bg-brand-700 ring-2 ring-brand-400/40 shadow-xs'
                     : isCompleted
                     ? 'bg-emerald-500'
                     : 'bg-slate-200 hover:bg-slate-300'
@@ -698,7 +698,7 @@ export const OrderFlow3DVisualization: React.FC = () => {
         <div className="grid md:grid-cols-12 gap-6 bg-slate-50 border border-slate-200/90 rounded-2xl p-5 text-left items-center">
           <div className="md:col-span-7 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-orange-600 text-white font-extrabold text-xs flex items-center justify-center">
+              <span className="w-6 h-6 rounded-full bg-brand-700 text-white font-extrabold text-xs flex items-center justify-center">
                 {step.id}
               </span>
               <h4 className="text-base sm:text-lg font-bold text-slate-900">
@@ -713,7 +713,7 @@ export const OrderFlow3DVisualization: React.FC = () => {
           {/* Code & Security Telemetry Snippet */}
           <div className="md:col-span-5 bg-slate-900 text-slate-200 rounded-xl p-3.5 font-mono text-[11px] space-y-1.5 border border-slate-800 shadow-inner">
             <div className="text-[10px] text-slate-400 flex items-center gap-1.5 font-bold uppercase tracking-wider pb-1 border-b border-slate-800">
-              <Terminal size={12} className="text-orange-400" />
+              <Terminal size={12} className="text-brand-400" />
               <span>Telemetry &amp; Code Trigger</span>
             </div>
 
@@ -761,7 +761,7 @@ export const OrderFlow3DVisualization: React.FC = () => {
                   onClick={() => setActiveNodeIndex(isSelected ? null : idx)}
                   className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-white border-orange-600 shadow-md ring-2 ring-orange-500/20'
+                      ? 'bg-white border-brand-700 shadow-md ring-2 ring-brand-500/20'
                       : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
                   }`}
                 >

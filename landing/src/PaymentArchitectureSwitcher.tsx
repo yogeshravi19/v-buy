@@ -34,7 +34,7 @@ export const PaymentArchitectureSwitcher: React.FC = () => {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Wallet className="w-3.5 h-3.5 text-orange-600" />
+            <Wallet className="w-3.5 h-3.5 text-brand-700" />
             <span>Phase 1: Campus Wallet (Current)</span>
           </button>
           <button
@@ -57,7 +57,7 @@ export const PaymentArchitectureSwitcher: React.FC = () => {
           {/* Step Flow Cards */}
           <div className="grid md:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 relative">
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1">Step 1</span>
+              <span className="text-[10px] font-bold text-brand-700 uppercase tracking-wider block mb-1">Step 1</span>
               <h5 className="text-sm font-bold text-slate-900 mb-2">Student Top-Up</h5>
               <p className="text-xs text-slate-600 leading-relaxed">
                 User loads ₹200–₹1000 via PhonePe UPI. 0% transaction fee for UPI and RuPay transfers.
@@ -65,7 +65,7 @@ export const PaymentArchitectureSwitcher: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 relative">
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1">Step 2</span>
+              <span className="text-[10px] font-bold text-brand-700 uppercase tracking-wider block mb-1">Step 2</span>
               <h5 className="text-sm font-bold text-slate-900 mb-2">Ledger Reservation</h5>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Wallet balance is securely reserved with atomic Postgres transactions and idempotency keys.
@@ -73,7 +73,7 @@ export const PaymentArchitectureSwitcher: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 relative">
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1">Step 3</span>
+              <span className="text-[10px] font-bold text-brand-700 uppercase tracking-wider block mb-1">Step 3</span>
               <h5 className="text-sm font-bold text-slate-900 mb-2">Zero-Latency Checkout</h5>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Orders process in &lt;100ms. No bank gateway timeouts or 2-factor delays while rushing between lectures.
@@ -133,7 +133,7 @@ export const PaymentArchitectureSwitcher: React.FC = () => {
         <div className="space-y-8 animate-in fade-in duration-200">
           <div className="grid md:grid-cols-3 gap-6">
             <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs mb-3">
+              <div className="w-8 h-8 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-xs mb-3">
                 01
               </div>
               <h5 className="text-sm font-bold text-slate-900 mb-2">Direct UPI App Intent</h5>

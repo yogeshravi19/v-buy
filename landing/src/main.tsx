@@ -7,8 +7,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <WelcomePage
       onOpenApp={() => {
-        // Points to the live deployed application URL or local dev
-        const appUrl = import.meta.env.VITE_APP_URL || 'https://v-foods.vercel.app'
+        // Points to the live deployed application on Render or custom VITE_APP_URL
+        const appUrl = import.meta.env.VITE_APP_URL || 'https://campusbite-web.onrender.com'
         window.location.href = appUrl
       }}
     />

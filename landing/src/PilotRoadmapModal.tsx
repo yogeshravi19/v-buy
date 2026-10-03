@@ -38,7 +38,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
 
         {!submitted ? (
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 mb-3">
               <Sparkles className="w-3.5 h-3.5" />
               <span>EARLY ACCESS PILOT</span>
             </div>
@@ -56,7 +56,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Alex Sharma"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white"
                 />
               </div>
 
@@ -68,7 +68,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   placeholder="alex.sharma@vitstudent.ac.in"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white"
                 />
               </div>
 
@@ -78,7 +78,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                   <select
                     value={formData.role}
                     onChange={e => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-brand-500"
                   >
                     <option value="student">User / Student</option>
                     <option value="vendor">Canteen Owner</option>
@@ -91,7 +91,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                   <select
                     value={formData.canteen}
                     onChange={e => setFormData({ ...formData, canteen: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-brand-500"
                   >
                     <option value="Gazebo C1">Gazebo C1</option>
                     <option value="North Square">North Square</option>
@@ -103,7 +103,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all mt-2 cursor-pointer"
+                className="w-full py-3 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all mt-2 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Reserve My Pilot Access</span>
@@ -184,7 +184,7 @@ export const PilotRoadmapSection: React.FC = () => {
             key={step.title}
             className={`p-6 rounded-3xl border text-left flex flex-col justify-between ${
               step.active
-                ? 'bg-white border-orange-500 shadow-lg shadow-orange-500/10 ring-1 ring-orange-500/30'
+                ? 'bg-white border-brand-500 shadow-lg shadow-brand-500/10 ring-1 ring-brand-500/30'
                 : 'bg-white border-slate-200 shadow-xs'
             }`}
           >
@@ -194,7 +194,7 @@ export const PilotRoadmapSection: React.FC = () => {
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                     step.active
-                      ? 'bg-orange-50 text-orange-600 border border-orange-200'
+                      ? 'bg-brand-50 text-brand-700 border border-brand-200'
                       : 'bg-slate-100 text-slate-600'
                   }`}
                 >
@@ -207,7 +207,7 @@ export const PilotRoadmapSection: React.FC = () => {
 
             <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-500">Zero vendor setup fee</span>
-              {step.active && <span className="text-orange-600 font-bold">Active Pilot</span>}
+              {step.active && <span className="text-brand-700 font-bold">Active Pilot</span>}
             </div>
           </div>
         ))}
@@ -217,7 +217,7 @@ export const PilotRoadmapSection: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <span className="text-xs font-bold text-orange-600 uppercase tracking-wider block mb-2">Zero Specialty Hardware</span>
+            <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block mb-2">Zero Specialty Hardware</span>
             <h4 className="text-xl font-bold text-slate-900 mb-3">
               Runs in Any Modern Web Browser or Tablet
             </h4>
@@ -247,7 +247,7 @@ export const PilotRoadmapSection: React.FC = () => {
             </p>
             <button
               onClick={() => setModalOpen(true)}
-              className="px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+              className="px-6 py-3 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <span>Join Campus Early Access</span>
               <ArrowRight className="w-4 h-4" />
