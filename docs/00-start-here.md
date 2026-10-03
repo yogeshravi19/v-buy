@@ -23,7 +23,7 @@ Every document is available as both Markdown (`.md`) and a standalone printable 
 4. **[04-the-database.md](04-the-database.md)** ([PDF Version](04-the-database.pdf)): What information the database stores, how stalls are connected, and how built-in security rules keep data safe.
 5. **[05-tools-used.md](05-tools-used.md)** ([PDF Version](05-tools-used.pdf)): The software, services, and tools powering the application, explained in plain English without jargon.
 6. **[06-features.md](06-features.md)** ([PDF Version](06-features.pdf)): A catalog of all active features (reordering, ratings, group carts, scheduled slots, coupons) and retired experiments.
-7. **[07-payments-phonepe.md](07-payments-phonepe.md)** ([PDF Version](07-payments-phonepe.pdf)): A deep dive into the wallet-first model, how PhonePe handles top-ups safely, and why checkout never waits on a bank gateway.
+7. **[07-payments-paytm.md](07-payments-paytm.md)**: A deep dive into the dual payment model (top-up vs direct pay), how Paytm handles confirmations via HMAC-signed webhooks, and the automated three-way split.
 8. **[08-running-it-locally.md](08-running-it-locally.md)** ([PDF Version](08-running-it-locally.pdf)): A practical guide for developers wanting to start the frontend and backend on their local machine.
 9. **[PITCH_DECK.md](PITCH_DECK.md)** ([PDF Version](PITCH_DECK.pdf)): Executive investor and administration pitch deck highlighting unit economics, TAM, and rollouts.
 10. **[V_FOODS_COMPLETE_SYSTEM_GUIDE.md](V_FOODS_COMPLETE_SYSTEM_GUIDE.md)** ([PDF Version](V_FOODS_COMPLETE_SYSTEM_GUIDE.pdf)): Comprehensive system guide with full architecture diagrams and operational specs.

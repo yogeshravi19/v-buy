@@ -943,7 +943,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                     { icon: Shield, title: 'Server-Side Pricing', desc: 'Cart totals compute from database records, not client payloads. Tampering with network requests has zero effect.' },
                     { icon: Lock, title: 'Row Level Security', desc: 'PostgreSQL RLS ensures staff only query their assigned canteen. No cross-outlet data leaks are possible.' },
                     { icon: QrCode, title: 'Signed QR Handover', desc: 'Pickup QR passes are cryptographically verified before marking an order Collected. Screenshots cannot duplicate meals.' },
-                    { icon: Wallet, title: 'Bank-Signed Webhooks', desc: 'Wallet credits require an HMAC SHA-256 signature from PhonePe. Phone browser redirects are never trusted for money.' },
+                    { icon: Wallet, title: 'Bank-Signed Webhooks', desc: 'Wallet credits require an HMAC SHA-256 signature from Paytm. Phone browser redirects are never trusted for money.' },
                   ].map(s => {
                     const Icon = s.icon
                     return (

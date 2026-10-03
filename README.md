@@ -20,10 +20,10 @@ The `/docs` directory is organized as a step-by-step reading path for anyone new
 - **[01-what-is-vfoods.md](docs/01-what-is-vfoods.md)**: The campus problem and why V FOODS exists
 - **[02-the-four-roles.md](docs/02-the-four-roles.md)**: Super Admin, Shop Owner, Kitchen Staff, and Student roles
 - **[03-how-an-order-works.md](docs/03-how-an-order-works.md)**: The end-to-end order and pickup lifecycle
-- **[04-the-database.md](docs/04-the-database.md)**: Live tables, outlet connections, RLS security, and money rules
+- **[04-the-database.md](docs/04-the-database.md)** ([DATABASE.md](docs/DATABASE.md)): Live tables, outlet connections, RLS security, and three-way split
 - **[05-tools-used.md](docs/05-tools-used.md)**: Frontend, backend, database, and messaging tools explained simply
 - **[06-features.md](docs/06-features.md)**: Catalog of active and retired features
-- **[07-payments-phonepe.md](docs/07-payments-phonepe.md)**: The wallet-first payment architecture and PhonePe integration
+- **[07-payments-paytm.md](docs/07-payments-paytm.md)**: Dual payment architecture, Paytm webhook confirmation, and three-way split
 - **[08-running-it-locally.md](docs/08-running-it-locally.md)**: Local developer setup and environment configuration
 
 ---

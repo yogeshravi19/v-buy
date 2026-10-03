@@ -15,9 +15,17 @@ Here are the real tables active inside V FOODS's database, with a simple explana
 - **profiles**: Holds basic user accounts across the campus, storing each person's full name, role (student, staff, shop owner, or admin), phone number, and account status.
 - **wallets**: Holds each student's current prepaid balance so they can pay for food instantly without needing bank cards or internet banking at the counter.
 - **wallet_txns**: Holds an unchangeable history of every rupee added or spent, recording the exact reason, time, and reference code for every balance change.
-- **payments**: Holds all PhonePe payment attempts when students top up their wallet, recording whether the bank transaction succeeded or failed.
+- **payments**: Holds all Paytm payment attempts across both wallet top-up and direct order checkout, storing the Paytm order ID, bank transaction ID, payment purpose, method, and status.
+- **outlet_paytm_accounts**: Holds each shop's Paytm recipient sub-account ID, onboarding status, and configurable shop split percentage (default 90%).
+- **platform_settlement_account**: Holds the startup's master Paytm settlement account and fixed platform split percentage (5%).
+- **college_settlement_accounts**: Holds the host university's active campus Paytm account and institutional split percentage (5%).
+- **payment_splits**: Records the exact three-way revenue distribution (Shop, Platform, College) generated automatically on every meal order.
+- **refunds**: Holds full audit records of customer refunds across orders, wallet top-ups, and split rollbacks.
 - **invites**: Holds special single-use invite codes used by administrators to add new shop owners and kitchen staff members safely.
 - **settings**: Holds campus-wide master controls, such as turning on festival mode to feature special event food stalls.
+
+> *For the complete relational schema, full column definitions, and constraint specifications, see the technical reference in [DATABASE.md](DATABASE.md).*
+
 
 ---
 
@@ -76,9 +84,11 @@ V FOODS follows two strict money rules to protect both students and shop owners:
 - The database looks up the official menu prices saved in its own tables, multiplies them, and computes the exact total.
 - **Why this matters**: A malicious user could tamper with a phone app to claim an item costs 1 rupee instead of 80 rupees. Because the database looks up official prices itself, price tampering is impossible.
 
-### 2. Platform Margin (5%) Is Calculated Automatically
-- When an order is created, the database calculates two financial figures:
-  - **Shop Payout**: The exact price of the food items that belongs to the canteen owner.
-  - **Student Total**: The final amount debited from the student wallet, including the small 5% platform fee (for example, ₹100 food + ₹5 fee = ₹105 total).
-- The canteen owner is guaranteed their exact menu payout, while the 5% platform fee is securely recorded in the platform's accounting records.
-- All fee logic is locked inside database stored procedures and cannot be altered or bypassed by any app screen.
+### 2. Three-Way Split (Shop, Platform, College) Is Calculated Automatically
+- When an order is paid—whether via direct Paytm checkout or campus wallet—the database immediately calculates and records an unalterable three-way revenue distribution in `payment_splits`:
+  - **Shop Share**: The fulfilling outlet's configured split share (default **90%**, customizable per outlet agreement).
+  - **Platform Share**: The V Foods startup company's fixed app-wide platform fee (**5%**).
+  - **College Share**: The host institution's active campus royalty (**5%**).
+- A database trigger guarantees that Shop + Platform + College splits strictly sum to 100%, and exact penny calculations ensure zero rounding leakage.
+- All split logic is executed inside database stored procedures (`calculate_order_split`) and cannot be altered or bypassed by any app screen.
+
