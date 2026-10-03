@@ -517,6 +517,70 @@ function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
+  async function loadUserWallet(userId) {
+    if (!supabase || !userId) return
+    try {
+      const { data: w } = await supabase.from('wallets').select('balance').eq('user_id', userId).single()
+      const { data: txns } = await supabase.from('wallet_txns').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
+      if (w) {
+        setWallet({
+          balance: Number(w.balance || 0),
+          transactions: (txns || []).map(t => ({
+            id: t.id,
+            amount: t.amount,
+            kind: t.note || t.kind || 'Wallet Transaction',
+            ref: t.ref,
+            created_at: t.created_at
+          }))
+        })
+      }
+    } catch (err) {
+      console.warn('Wallet fetch fallback:', err)
+    }
+  }
+
+  async function loadUserOrders(user) {
+    if (!supabase || !user) return
+    try {
+      let query = supabase.from('orders').select(`
+        id, user_id, outlet_id, token, status, payment_method, total, shop_payout,
+        pickup_slot_id, group_id, is_group_payer, created_at, updated_at,
+        order_items (item_id, name, price, qty),
+        outlets (name, location)
+      `).order('created_at', { ascending: false }).limit(100)
+
+      const r = user.role || 'student'
+      if (r === 'user' || r === 'student' || r === 'customer') {
+        query = query.eq('user_id', user.id)
+      } else if (r === 'staff' || r === 'shop_admin' || r === 'owner') {
+        if (user.outlet_id) query = query.eq('outlet_id', user.outlet_id)
+      }
+
+      const { data: ords } = await query
+      if (ords && ords.length > 0) {
+        setOrders(ords.map(o => ({
+          id: o.id,
+          user_id: o.user_id,
+          outlet_id: o.outlet_id,
+          outlets: o.outlets || { name: o.outlet_id, location: 'Campus' },
+          token: o.token || String(o.id % 900 + 100),
+          status: o.status || 'placed',
+          payment_method: o.payment_method || 'wallet',
+          total: o.total || 0,
+          created_at: o.created_at,
+          order_items: (o.order_items || []).map(i => ({
+            item_id: i.item_id,
+            name: i.name,
+            price: i.price,
+            qty: i.qty
+          }))
+        })))
+      }
+    } catch (err) {
+      console.warn('Orders fetch fallback:', err)
+    }
+  }
+
   async function loadProfile(userId) {
     if (!supabase) return
     try {
@@ -527,26 +591,66 @@ function App() {
           if (match) p.outlet_name = match.name
         }
         setCurrentUser(p)
+        loadUserWallet(userId)
+        loadUserOrders(p)
         if (p.role === 'staff' || p.role === 'admin' || p.role === 'shop_admin') setTab('ops')
       }
     } catch (e) { console.warn('Profile fetch fallback:', e) }
   }
 
-  // Realtime subscription + new-order sound alert for staff
+  // Load live outlets & menu_items from database on startup
+  useEffect(() => {
+    if (!supabase) return
+    async function fetchDbOutlets() {
+      try {
+        const { data: dbOutlets } = await supabase.from('outlets').select(`
+          id, name, location, is_open, is_event,
+          menu_items (id, name, price, available, is_veg, category, stock_qty)
+        `)
+        if (dbOutlets && dbOutlets.length > 0) {
+          setOutlets(prev => {
+            return prev.map(p => {
+              const matched = dbOutlets.find(o => o.id === p.id)
+              if (!matched) return p
+              return {
+                ...p,
+                name: matched.name || p.name,
+                location: matched.location || p.location,
+                is_open: matched.is_open !== undefined ? matched.is_open : p.is_open,
+                is_event: matched.is_event !== undefined ? matched.is_event : p.is_event,
+                menu_items: matched.menu_items && matched.menu_items.length > 0 ? matched.menu_items : p.menu_items
+              }
+            })
+          })
+        }
+      } catch (e) {
+        console.warn('DB outlets fetch fallback:', e)
+      }
+    }
+    fetchDbOutlets()
+  }, [])
+
+  // Realtime subscription + live multi-role sync
   useEffect(() => {
     if (!supabase || !session) return
     const channel = supabase.channel('vfoods-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-        if (payload.new?.status === 'ready' && Notification.permission === 'granted') {
-          new Notification('V FOODS — Order Ready!', {
-            body: `Order #${payload.new.id} (Token #${payload.new.token}) is ready for pickup!`,
-            icon: '/vit-chennai-logo.png'
-          })
+        if (payload.eventType === 'INSERT' && currentUser) {
+          loadUserOrders(currentUser)
+        } else if (payload.eventType === 'UPDATE') {
+          const updated = payload.new
+          setOrders(prev => prev.map(o => o.id === updated.id ? { ...o, status: updated.status, token: updated.token || o.token } : o))
+          if (updated.status === 'ready' && Notification.permission === 'granted') {
+            new Notification('V FOODS — Order Ready!', {
+              body: `Order #${payload.new.id} (Token #${payload.new.token}) is ready for pickup!`,
+              icon: '/vit-chennai-logo.png'
+            })
+          }
         }
       })
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [session])
+  }, [session, currentUser])
 
   // Staff: chime when new active orders arrive (demo mode)
   const activeOrderCount = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
@@ -820,6 +924,26 @@ function App() {
       const paymentMsg = isGateway ? `Paid via ${paymentProviderName}` : 'Paid from Campus Wallet'
       setNotice(`Order #${newId} placed! (${paymentMsg}) Pickup Token: #${token}${selectedSlot ? ` · Scheduled for ${selectedSlot.time_label}` : ''}`)
       addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(studentDebit)}${discount > 0 ? `, saved ₹${discount}` : ''}) via ${paymentProviderName}`)
+
+      // Persist order to Supabase
+      if (supabase && currentUser?.id && currentUser.id.length > 20) {
+        const payloadItems = cart.items.map(i => ({ item_id: i.id, qty: i.qty }))
+        supabase.rpc('place_order', {
+          p_user_id: currentUser.id,
+          p_outlet_id: cart.outlet.id,
+          p_items: payloadItems,
+          p_payment_method: isGateway ? 'gateway' : 'wallet',
+          p_pickup_slot_id: selectedSlot?.id || null,
+          p_discount_amount: discount,
+          p_coupon_code: appliedCoupon?.code || null
+        }).then(({ data: dbOrderId, error }) => {
+          if (!error && dbOrderId) {
+            setOrders(ords => ords.map(o => o.id === newId ? { ...o, id: Number(dbOrderId) } : o))
+            loadUserWallet(currentUser.id)
+            loadUserOrders(currentUser)
+          }
+        }).catch(err => console.warn('Supabase place_order sync error:', err))
+      }
     }, 700)
   }
 
@@ -856,6 +980,14 @@ function App() {
     setBusy(false)
     setNotice(`Added ${money(amount)} to wallet! New balance: ${money(wallet.balance + amount)}`)
     addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'WALLET', 'WALLET_TOPUP', `Credited ${money(amount)} via Razorpay UPI (${ref})`)
+
+    if (supabase && currentUser?.id && currentUser.id.length > 20) {
+      supabase.rpc('topup_my_wallet', { p_amount: amount, p_payment_ref: ref }).then(({ data, error }) => {
+        if (!error && data) {
+          setWallet(w => ({ ...w, balance: data.new_balance }))
+        }
+      }).catch(err => console.warn('Supabase topup sync:', err))
+    }
   }
 
   function toggleItemAvailability(outletId, itemId) {
@@ -971,25 +1103,41 @@ function App() {
 
   function toggleOutletOpen(outletId) {
     let outletName = outletId
+    let nextOpen = true
     setOutlets(outs => outs.map(o => {
       if (o.id !== outletId) return o
       outletName = o.name
+      nextOpen = !o.is_open
       return { ...o, is_open: !o.is_open }
     }))
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'OUTLET', 'OUTLET_TOGGLE', `Toggled open/close state for ${outletName}`)
+
+    if (supabase && outletId) {
+      supabase.from('outlets').update({ is_open: nextOpen }).eq('id', outletId).then(({ error }) => {
+        if (error) console.warn('toggleOutletOpen Supabase sync:', error)
+      }).catch(err => console.warn('toggleOutletOpen Supabase error:', err))
+    }
   }
 
   function advanceOrderStatus(orderId) {
+    let targetStatus = ''
     setOrders(ords => ords.map(o => {
       if (o.id !== orderId) return o
       const idx = statuses.indexOf(o.status)
       const nextStatus = idx < statuses.length - 1 ? statuses[idx + 1] : o.status
+      targetStatus = nextStatus
       if (nextStatus !== o.status) {
         addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'ORDER', 'KDS_STATUS_CHANGE', `Order #${orderId} moved to "${nextStatus}" (Token #${o.token})`)
       }
 
       return { ...o, status: nextStatus }
     }))
+
+    if (supabase && orderId && targetStatus) {
+      supabase.from('orders').update({ status: targetStatus, updated_at: new Date().toISOString() }).eq('id', orderId).then(({ error }) => {
+        if (error) console.warn('advanceOrderStatus Supabase sync:', error)
+      }).catch(err => console.warn('advanceOrderStatus Supabase error:', err))
+    }
   }
 
   async function handleSignOut() {
