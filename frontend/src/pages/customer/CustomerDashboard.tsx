@@ -543,7 +543,8 @@ function CartSheet({ onClose }: { onClose: () => void }) {
   const [pendingOrderId, setPendingOrderId] = useState<number | null>(null)
 
   const shopPayout = total()
-  const orderTotal = Math.ceil(shopPayout * 1.05)
+  const convenienceFee = shopPayout > 0 ? Math.round(shopPayout * 0.07) : 0
+  const orderTotal = shopPayout + convenienceFee
   const insufficientBalance = method === 'wallet' && (balance ?? 0) < orderTotal
 
   useEffect(() => {
@@ -687,7 +688,9 @@ function CartSheet({ onClose }: { onClose: () => void }) {
           {/* Totals */}
           <div className="space-y-2 mb-5 text-sm">
             <div className="flex justify-between text-white/60"><span>Subtotal</span><span>₹{shopPayout}</span></div>
-            <div className="flex justify-between text-white/60"><span>Platform fee (5%)</span><span>₹{orderTotal - shopPayout}</span></div>
+            {convenienceFee > 0 && (
+              <div className="flex justify-between text-white/60"><span>Convenience Fees</span><span>₹{convenienceFee}</span></div>
+            )}
             <div className="flex justify-between text-white font-bold text-base"><span>Total</span><span>₹{orderTotal}</span></div>
           </div>
 

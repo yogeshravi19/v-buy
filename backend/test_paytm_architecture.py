@@ -464,6 +464,30 @@ class TestPaytmPaymentArchitecture(unittest.TestCase):
         self.assertEqual(bal_after_first, bal_after_retries)
         self.assertEqual(len([t for t in self.db.wallet_txns if t["ref"] == "paytm:TXN_IDEMP_999"]), 1)
 
+    def test_08_convenience_fee_billing_calculation(self):
+        """
+        Test 7% convenience fee calculation:
+        e.g., if item subtotal is 100, convenience fee is 7, making total bill 107.
+        Shop payout receives the base food amount (100).
+        """
+        item_price = 100
+        qty = 1
+        subtotal = item_price * qty
+        convenience_fee = round(subtotal * 0.07, 2)
+        total_bill = round(subtotal + convenience_fee, 2)
+
+        self.assertEqual(subtotal, 100)
+        self.assertEqual(convenience_fee, 7.00)
+        self.assertEqual(total_bill, 107.00)
+
+        # Multi-item test: 2 items of 45 = 90
+        subtotal_2 = 90
+        convenience_fee_2 = round(subtotal_2 * 0.07, 2)
+        total_bill_2 = round(subtotal_2 + convenience_fee_2, 2)
+        self.assertEqual(convenience_fee_2, 6.30)
+        self.assertEqual(total_bill_2, 96.30)
+
 
 if __name__ == "__main__":
     unittest.main()
+

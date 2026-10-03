@@ -150,7 +150,8 @@ export default function VFoodsUserDashboard({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  const finalDebit = Math.max(0, subtotal - discount)
+  const convenienceFee = subtotal > 0 ? Math.round(subtotal * 0.07) : 0
+  const finalDebit = Math.max(0, subtotal - discount + convenienceFee)
   const isInsufficient = (wallet?.balance || 0) < finalDebit
   const deficit = Math.max(0, finalDebit - (wallet?.balance || 0))
 
@@ -916,6 +917,18 @@ export default function VFoodsUserDashboard({
                         <Store size={12} /> FREE PICKUP
                       </span>
                     </div>
+                    {convenienceFee > 0 && (
+                      <div className="vfoods-cart-bill-row">
+                        <span>Convenience Fees</span>
+                        <span>{money(convenienceFee)}</span>
+                      </div>
+                    )}
+                    {discount > 0 && (
+                      <div className="vfoods-cart-bill-row" style={{ color: '#10B981' }}>
+                        <span>Coupon Savings</span>
+                        <span>-{money(discount)}</span>
+                      </div>
+                    )}
                     <div className="vfoods-cart-bill-total">
                       <span>To Pay</span>
                       <span>{money(finalDebit)}</span>

@@ -338,13 +338,16 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
         # Instant Payment Gateway Checkout (PhonePe / Paytm UPI) — Zero wallet deduction
         merchant_txn_id = req.gateway_txn_id or f"ORD-UPI-{user['id'][:6]}-{int(time.time())}"
         
-        # Calculate order total
-        total_amount = 0
+        # Calculate order total with 7% convenience fee
+        item_subtotal = 0
         for item in req.items:
             item_row = sb.from_("menu_items").select("name,price,is_available").eq("id", item.item_id).single().execute().data
             if not item_row:
                 raise HTTPException(400, f"Item {item.item_id} not found")
-            total_amount += item_row["price"] * item.qty
+            item_subtotal += item_row["price"] * item.qty
+
+        convenience_fee = round(item_subtotal * 0.07, 2)
+        total_amount = round(item_subtotal + convenience_fee, 2)
 
         token = str(random.randint(100, 999))
         order_insert = sb.from_("orders").insert({
@@ -354,6 +357,7 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
             "status": "placed",
             "payment_method": "gateway",
             "total": total_amount,
+            "shop_payout": item_subtotal,
             "student_paid": total_amount,
             "discount": 0
         }).execute()
@@ -405,12 +409,15 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
 @app.post("/order/checkout/gateway-session")
 async def initiate_gateway_order_session(req: CheckoutRequest, user=Depends(get_current_user)):
     """Creates a direct PhonePe / Paytm payment session for an order without deducting from wallet."""
-    total_amount = 0
+    item_subtotal = 0
     for item in req.items:
         item_row = sb.from_("menu_items").select("name,price").eq("id", item.item_id).single().execute().data
         if not item_row:
             raise HTTPException(400, f"Item {item.item_id} not found")
-        total_amount += item_row["price"] * item.qty
+        item_subtotal += item_row["price"] * item.qty
+
+    convenience_fee = round(item_subtotal * 0.07, 2)
+    total_amount = round(item_subtotal + convenience_fee, 2)
 
     merchant_txn_id = f"ORD-{user['id'][:6]}-{int(time.time())}"
     token = str(random.randint(100, 999))
@@ -423,6 +430,7 @@ async def initiate_gateway_order_session(req: CheckoutRequest, user=Depends(get_
         "status": "payment_pending",
         "payment_method": "gateway",
         "total": total_amount,
+        "shop_payout": item_subtotal,
         "student_paid": total_amount,
         "discount": 0
     }).execute()
@@ -570,12 +578,15 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
     On verified webhook callback, the order is confirmed, stock decremented, and the
     three-way split (Shop, Platform, College) is calculated and recorded.
     """
-    total_amount = 0
+    item_subtotal = 0
     for item in req.items:
         item_row = sb.from_("menu_items").select("name,price").eq("id", item.item_id).single().execute().data
         if not item_row:
             raise HTTPException(400, f"Item {item.item_id} not found")
-        total_amount += item_row["price"] * item.qty
+        item_subtotal += item_row["price"] * item.qty
+
+    convenience_fee = round(item_subtotal * 0.07, 2)
+    total_amount = round(item_subtotal + convenience_fee, 2)
 
     merchant_order_id = f"ORD-PAYTM-{user['id'][:6]}-{int(time.time())}"
     token = str(secrets.randbelow(900) + 100)
@@ -588,7 +599,7 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
         "status": "payment_pending",
         "payment_method": "gateway",
         "total": total_amount,
-        "shop_payout": int(total_amount * 0.90)
+        "shop_payout": item_subtotal
     }).execute()
 
     order_id = order_insert.data[0]["id"] if order_insert.data else secrets.randbelow(6000) + 3000

@@ -450,7 +450,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
   // ─────────────────────────────────────────────────────────────────────────────
   const cartSubtotal = getCartTotal()
   const discountAmount = appliedDiscount?.amount || 0
-  const finalPayable = Math.max(0, cartSubtotal - discountAmount)
+  const convenienceFee = cartSubtotal > 0 ? Math.round(cartSubtotal * 0.07) : 0
+  const finalPayable = Math.max(0, cartSubtotal - discountAmount + convenienceFee)
   const cartCount = cartItems.reduce((acc, i) => acc + i.qty, 0)
 
   const handleAddToCart = (item: MenuItem) => {
@@ -1423,7 +1424,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
                 <div>
                   <div className="text-xs uppercase tracking-wider font-extrabold opacity-85">Campus Tray</div>
                   <div className="font-mono font-black text-base leading-tight">
-                    {formatMoney(cartSubtotal)}
+                    {formatMoney(finalPayable)}
                   </div>
                 </div>
               </div>
@@ -1674,6 +1675,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
                       <span>Item Subtotal</span>
                       <span className="font-mono text-white">₹{cartSubtotal}</span>
                     </div>
+                    {convenienceFee > 0 && (
+                      <div className="flex justify-between text-slate-300">
+                        <span>Convenience Fees</span>
+                        <span className="font-mono text-white">₹{convenienceFee}</span>
+                      </div>
+                    )}
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-emerald-400 font-bold">
                         <span>Promotional Discount</span>

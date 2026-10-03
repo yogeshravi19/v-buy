@@ -2367,7 +2367,8 @@ function CartDock({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  const finalDebit = Math.max(0, subtotal - discount)
+  const convenienceFee = subtotal > 0 ? Math.round(subtotal * 0.07) : 0
+  const finalDebit = Math.max(0, subtotal - discount + convenienceFee)
   const isInsufficient = wallet.balance < finalDebit
   const deficit = Math.max(0, finalDebit - wallet.balance)
 
@@ -2623,6 +2624,12 @@ function CartDock({
                 <span>Campus Counter Pickup (Skip Queue)</span>
                 <span style={{ color: '#059669', fontWeight: 700 }}>FREE</span>
               </div>
+              {convenienceFee > 0 && (
+                <div className="bill-summary-row">
+                  <span>Convenience Fees</span>
+                  <span>{money(convenienceFee)}</span>
+                </div>
+              )}
               {discount > 0 && (
                 <div className="bill-summary-row savings">
                   <span>Coupon Discount ({appliedCoupon?.code})</span>
