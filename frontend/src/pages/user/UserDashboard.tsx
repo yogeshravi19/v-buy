@@ -167,16 +167,16 @@ function OrderCardSkeleton() {
   )
 }
 
-// ─── Main StudentDashboard Component ──────────────────────────────────────────
+// ─── Main UserDashboard Component ──────────────────────────────────────────
 
-interface StudentDashboardProps {
+interface UserDashboardProps {
   onSignOut?: () => void
 }
 
-export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut }) => {
+export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
   const profile = useAuthStore(state => state.profile)
   const user = useAuthStore(state => state.user)
-  const currentUserId = user?.id || profile?.id || 'usr-student'
+  const currentUserId = user?.id || profile?.id || 'usr-customer'
 
   // Navigation tabs (Menu, Orders, Wallet)
   const [tab, setTab] = useState<'menu' | 'orders' | 'wallet'>('menu')
@@ -1895,4 +1895,5 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
   )
 }
 
-export default StudentDashboard
+export const StudentDashboard = UserDashboard
+export default UserDashboard
