@@ -190,6 +190,8 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   // Outlet operational mode: 'open' | 'rush' | 'paused'
   const [outletStatus, setOutletStatus] = useState<'open' | 'rush' | 'paused'>('open')
   const [syncing, setSyncing] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
   // Rush Hour Batch Optimization States
   const [autoAcceptRushMode, setAutoAcceptRushMode] = useState<boolean>(false)
 
