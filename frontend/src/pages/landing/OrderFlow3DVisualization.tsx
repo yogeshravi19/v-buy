@@ -653,8 +653,8 @@ export const OrderFlow3DVisualization: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                 LIVE NETWORK PACKET
               </span>
-              <span className="text-[10px] font-mono text-slate-400 font-bold bg-slate-800 px-1.5 py-0.5 rounded">
-                ⚡ {step.latency}
+              <span className="text-[10px] font-mono text-slate-400 font-bold bg-slate-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+                <Zap size={10} className="text-amber-400" /> {step.latency}
               </span>
             </div>
 
@@ -739,8 +739,8 @@ export const OrderFlow3DVisualization: React.FC = () => {
             )}
 
             {step.technicalDetails.security && (
-              <div className="text-purple-300 text-[10px] pt-1">
-                🔒 {step.technicalDetails.security}
+              <div className="text-purple-300 text-[10px] pt-1 flex items-center gap-1">
+                <ShieldCheck size={11} className="text-purple-300" /> {step.technicalDetails.security}
               </div>
             )}
           </div>

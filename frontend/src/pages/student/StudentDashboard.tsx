@@ -4,7 +4,7 @@ import {
   Wallet, ShoppingBag, History, LogOut, Plus, Minus, Search,
   Leaf, X, ChevronRight, ArrowUpRight, ArrowDownLeft, Loader2,
   Store, CheckCircle2, AlertCircle, Star, Clock, Flame, QrCode,
-  Sparkles, Award, Users, Share2, Copy, Tag, RefreshCw, Send,
+  Award, Users, Share2, Copy, Tag, RefreshCw, Send,
   ThumbsUp, Calendar, Zap, MessageSquare, ArrowRight, ShieldCheck,
   ChefHat, Bell, UtensilsCrossed, Receipt, ArrowLeft
 } from 'lucide-react'
@@ -759,8 +759,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
       {eventMode && (
         <div className="bg-gradient-to-r from-purple-900 to-indigo-900 text-purple-200 text-xs font-bold px-4 py-2 flex items-center justify-between border-b border-purple-700/50">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-300 animate-spin" strokeWidth={2} />
-            <span>RIVIERA EVENT STALLS LIVE · 20+ Exclusive Stalls Open!</span>
+            <Tag className="h-4 w-4 text-purple-300" strokeWidth={2} />
+            <span>RIVIERA EVENT STALLS LIVE · 20+ Stalls Open</span>
           </div>
         </div>
       )}
@@ -811,7 +811,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onSignOut })
                         <div className="flex items-center gap-3.5">
                           <div className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 flex-shrink-0">
                             {outlet.is_event ? (
-                              <Sparkles className="h-5 w-5 text-amber-400" strokeWidth={2} />
+                              <Tag className="h-5 w-5 text-amber-400" strokeWidth={2} />
                             ) : (
                               <UtensilsCrossed className="h-5 w-5 text-orange-400" strokeWidth={2} />
                             )}

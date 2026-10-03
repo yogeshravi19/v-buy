@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock, CheckCircle2, AlertCircle, ChefHat, Volume2, VolumeX,
   Search, RefreshCw, QrCode, Plus, Minus, Flame, Eye,
-  ArrowRight, ShieldCheck, Check, Sparkles, Filter, Store,
+  ArrowRight, ShieldCheck, Check, Filter, Store,
   Zap, AlertTriangle, Layers, X, Hash, ShoppingBag, Bell,
   Delete, Kanban, LayoutGrid, Camera, User, CreditCard,
   ArrowUpRight, ChevronRight, SlidersHorizontal, Edit3, Image as ImageIcon

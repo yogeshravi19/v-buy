@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import {
   Search, X, ArrowLeft, Store, ShoppingBag, Clock, User, CreditCard,
-  ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle, Sparkles,
+  ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle,
   Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw,
   Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck, Lock
 } from 'lucide-react'
@@ -496,7 +496,7 @@ export default function VFoodsUserDashboard({
               onClick={() => handleRoleSwitch('admin')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
-              <Sparkles size={14} /> Super Admin
+              <ShieldCheck size={14} /> Super Admin
             </button>
           </div>
         )}

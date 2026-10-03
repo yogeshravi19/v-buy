@@ -6,7 +6,7 @@ import {
   Wallet, ShoppingBag, History, LogOut, Plus, Minus, Search,
   Leaf, X, ChevronRight, ArrowUpRight, ArrowDownLeft, Loader2,
   Store, CheckCircle2, AlertCircle, Star, Clock, Flame,
-  ChefHat, Bell, UtensilsCrossed, Sparkles, AlertTriangle, Smartphone, Zap
+  ChefHat, Bell, UtensilsCrossed, Tag, AlertTriangle, Smartphone, Zap
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
@@ -313,7 +313,7 @@ function MenuTab() {
         <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
           {eventMode ? (
             <>
-              <Sparkles className="w-5 h-5 text-amber-400" strokeWidth={2} />
+              <Tag className="w-5 h-5 text-amber-400" strokeWidth={2} />
               <span>Event Stalls</span>
             </>
           ) : (
@@ -337,7 +337,7 @@ function MenuTab() {
             >
               <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-orange-400">
                 {outlet.is_event ? (
-                  <Sparkles className="w-6 h-6 text-amber-400" strokeWidth={2} />
+                  <Tag className="w-6 h-6 text-amber-400" strokeWidth={2} />
                 ) : (
                   <UtensilsCrossed className="w-6 h-6 text-orange-400" strokeWidth={2} />
                 )}

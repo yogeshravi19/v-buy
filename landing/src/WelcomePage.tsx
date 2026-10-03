@@ -650,7 +650,8 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="p-6 rounded-2xl bg-[#0F2540] border border-red-500/30">
                       <h4 className="text-sm font-bold text-red-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <span>✕ Traditional Canteen Chaos</span>
+                        <X size={15} />
+                        <span>Traditional Canteen Bottlenecks</span>
                       </h4>
                       <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
                         <li className="flex items-start gap-2.5">
@@ -670,7 +671,8 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
 
                     <div className="p-6 rounded-2xl bg-[#0F2540] border border-emerald-500/30">
                       <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <span>✓ The V Foods Flow</span>
+                        <Check size={15} />
+                        <span>The V Foods Workflow</span>
                       </h4>
                       <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
                         <li className="flex items-start gap-2.5">

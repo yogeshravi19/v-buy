@@ -361,7 +361,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                 onClick={() => { setMobileMenuOpen(false); setWaitlistOpen(true) }}
                 className="text-left text-xs font-bold text-amber-700 py-1.5 cursor-pointer"
               >
-                ★ Join Pilot Waitlist
+                Join Pilot Waitlist
               </button>
             </div>
           )}

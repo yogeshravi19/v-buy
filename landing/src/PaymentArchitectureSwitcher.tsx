@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   CreditCard, Wallet, ArrowRight, ShieldCheck, RefreshCw,
-  CheckCircle2, AlertTriangle, Zap, Building, Lock
+  CheckCircle2, AlertTriangle, Zap, Building, Lock, Check
 } from 'lucide-react'
 
 export const PaymentArchitectureSwitcher: React.FC = () => {
@@ -98,11 +98,11 @@ export const PaymentArchitectureSwitcher: React.FC = () => {
               </h5>
               <ul className="space-y-2 text-xs text-slate-700">
                 <li className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold">✓</span>
+                  <Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                   <span><strong>99.98% checkout success rate:</strong> Unaffected by campus 4G cell tower congestion.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold">✓</span>
+                  <Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                   <span><strong>1-tap re-orders:</strong> Eliminates entering UPI PIN 3 times a day for small snacks.</span>
                 </li>
               </ul>

@@ -25,7 +25,6 @@ import {
   CreditCard,
   Banknote,
   QrCode,
-  Sparkles,
   ShoppingBag,
   ExternalLink,
   Printer,

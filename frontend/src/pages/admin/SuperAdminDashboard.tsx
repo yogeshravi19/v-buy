@@ -291,7 +291,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const next = !eventMode
     setEventMode(next)
     if (setPropEventMode) setPropEventMode(next)
-    setNotice(next ? '🎉 Festival & Event Mode ENABLED. 20 Riviera food stalls now visible to campus students!' : 'Event Mode disabled. Standard dining outlets active.')
+    setNotice(next ? 'Festival and Event Mode enabled. 20 Riviera food stalls are now visible to campus students.' : 'Event Mode disabled. Standard dining outlets active.')
     setTimeout(() => setNotice(null), 5000)
     if (addAuditLog) {
       addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'SYSTEM', 'EVENT_MODE_TOGGLE', `Global festival mode set to ${next}`)
