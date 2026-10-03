@@ -315,24 +315,16 @@ export default function VFoodsUserDashboard({
             <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
             <div className="vfoods-dish-meta-row">
               <span className="vfoods-rating-pill">
-                <Star size={7.5} fill="#FFFFFF" color="#FFFFFF" /> 4.3
+                <Star size={9} fill="#FFFFFF" color="#FFFFFF" /> 4.3
               </span>
               <span className="vfoods-prep-time">
-                <Clock size={8.5} /> 10-15m
+                <Clock size={10} /> 10-15m
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginTop: '2px' }}>
-              <span className="vfoods-dish-canteen" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {item.outlet?.name}
-              </span>
-              <span style={{
-                fontSize: '9px',
-                fontWeight: 600,
-                color: '#64748B',
-                whiteSpace: 'nowrap'
-              }}>
-                {item.outlet?.location || 'Campus Counter'}
-              </span>
+            <div style={{ marginTop: '3px' }}>
+              <div className="vfoods-dish-canteen" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.outlet?.name || 'Campus Canteen'}
+              </div>
             </div>
           </div>
           <div className="vfoods-dish-bottom">
