@@ -33,7 +33,10 @@ import {
   Banknote,
   Percent,
   Sliders,
-  Bell
+  Bell,
+  FastForward,
+  CheckCheck,
+  Layers
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -187,7 +190,24 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   // Outlet operational mode: 'open' | 'rush' | 'paused'
   const [outletStatus, setOutletStatus] = useState<'open' | 'rush' | 'paused'>('open')
   const [syncing, setSyncing] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
+  // Rush Hour Batch Optimization States
+  const [autoAcceptRushMode, setAutoAcceptRushMode] = useState<boolean>(false)
+
+  // Aggregated quantities across all currently active tickets (placed + preparing)
+  const activePrepItems = useMemo(() => {
+    const active = localOrders.filter(o => o.status === 'placed' || o.status === 'preparing')
+    const itemMap = new Map<string, number>()
+    active.forEach(order => {
+      (order.order_items || []).forEach(item => {
+        const name = item.name || 'Custom Item'
+        const count = item.qty || 1
+        itemMap.set(name, (itemMap.get(name) || 0) + count)
+      })
+    })
+    return Array.from(itemMap.entries())
+      .map(([name, qty]) => ({ name, qty }))
+      .sort((a, b) => b.qty - a.qty)
+  }, [localOrders])
 
   // Filters & search
   const [searchOrderQuery, setSearchOrderQuery] = useState('')
@@ -357,6 +377,54 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       console.error('Failed to advance order status:', e)
     }
   }
+
+  // Batch 1: Move all 'placed' orders to 'preparing' (Start Cooking All)
+  const handleStartCookingAll = async () => {
+    const placedOrders = localOrders.filter(o => o.status === 'placed')
+    if (placedOrders.length === 0) return
+
+    setLocalOrders(prev => prev.map(o => o.status === 'placed' ? { ...o, status: 'preparing' } : o))
+
+    try {
+      const orderIds = placedOrders.map(o => o.id)
+      await supabase.from('orders').update({ status: 'preparing' }).in('id', orderIds)
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Shop Admin', 'shop_admin', 'ORDER', 'BATCH_START_COOKING', `Batch started cooking for ${orderIds.length} orders`)
+      }
+    } catch (e) {
+      console.error('Failed to batch start cooking:', e)
+    }
+  }
+
+  // Batch 2: Move all 'preparing' orders to 'ready' (Mark All Ready)
+  const handleMarkAllCookingReady = async () => {
+    const prepOrders = localOrders.filter(o => o.status === 'preparing')
+    if (prepOrders.length === 0) return
+
+    setLocalOrders(prev => prev.map(o => o.status === 'preparing' ? { ...o, status: 'ready' } : o))
+
+    try {
+      const orderIds = prepOrders.map(o => o.id)
+      await supabase.from('orders').update({ status: 'ready' }).in('id', orderIds)
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Shop Admin', 'shop_admin', 'ORDER', 'BATCH_READY', `Batch marked ${orderIds.length} orders ready`)
+      }
+    } catch (e) {
+      console.error('Failed to batch mark ready:', e)
+    }
+  }
+
+  // Auto-Accept Rush Mode Hook
+  useEffect(() => {
+    if (!autoAcceptRushMode) return
+    const placed = localOrders.filter(o => o.status === 'placed')
+    if (placed.length > 0) {
+      const timer = setTimeout(() => {
+        handleStartCookingAll()
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [autoAcceptRushMode, localOrders])
 
   // Cancel order
   const handleCancelOrder = async (orderId: number) => {
@@ -1266,23 +1334,114 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'kds' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>Kitchen Display System (KDS)</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Live cook line order tickets & timers</p>
                 </div>
-                <button className="saas-btn saas-btn-secondary saas-btn-sm" onClick={loadData}>
-                  <RefreshCw size={13} />
-                  <span>Sync Tickets</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAutoAcceptRushMode(!autoAcceptRushMode)}
+                    className={`saas-btn saas-btn-sm ${autoAcceptRushMode ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: autoAcceptRushMode ? '#2563EB' : '#FFFFFF',
+                      borderColor: autoAcceptRushMode ? '#1D4ED8' : '#CBD5E1',
+                      color: autoAcceptRushMode ? '#FFFFFF' : '#475569'
+                    }}
+                    title="Automatically accept and move new placed orders to cooking during rush periods"
+                  >
+                    <FastForward size={13} />
+                    <span>Auto-Accept Rush: {autoAcceptRushMode ? 'Active' : 'Off'}</span>
+                  </button>
+                  <button className="saas-btn saas-btn-secondary saas-btn-sm" onClick={loadData}>
+                    <RefreshCw size={13} />
+                    <span>Sync Tickets</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Live Batch Prep Summary Bar (Aggregated Cook Queue) */}
+              {activePrepItems.length > 0 && (
+                <div style={{
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={14} style={{ color: '#2563EB' }} />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Live Batch Prep Aggregator ({activePrepItems.reduce((acc, i) => acc + i.qty, 0)} total units across active orders)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#64748B' }}>
+                      Cook in batches to clear peak line bottlenecks
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {activePrepItems.map((item, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: '#FFFFFF',
+                          border: '1px solid #CBD5E1',
+                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#0F172A'
+                        }}
+                      >
+                        <span style={{ color: '#2563EB', fontWeight: 800 }}>{item.qty}×</span>
+                        <span>{item.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="saas-kds-grid">
                 {/* Placed */}
                 <div className="saas-kds-col">
-                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #F59E0B' }}>
-                    <span style={{ fontWeight: 700 }}>1. Placed / New Orders</span>
-                    <span className="saas-badge saas-badge-warning">{localOrders.filter(o => o.status === 'placed').length}</span>
+                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={15} className="text-amber-500" />
+                      <span style={{ fontWeight: 700 }}>1. Placed / New Orders</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="saas-badge saas-badge-warning">{localOrders.filter(o => o.status === 'placed').length}</span>
+                      {localOrders.filter(o => o.status === 'placed').length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleStartCookingAll}
+                          className="saas-btn saas-btn-sm"
+                          style={{
+                            background: '#F59E0B',
+                            borderColor: '#D97706',
+                            color: '#FFFFFF',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            borderRadius: '4px'
+                          }}
+                          title="Move all new orders to cooking in one click"
+                        >
+                          <FastForward size={11} />
+                          <span>Start All ({localOrders.filter(o => o.status === 'placed').length})</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="saas-kds-list">
                     {localOrders.filter(o => o.status === 'placed').map(o => (
@@ -1313,9 +1472,34 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
 
                 {/* Preparing */}
                 <div className="saas-kds-col">
-                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #3B82F6' }}>
-                    <span style={{ fontWeight: 700 }}>2. In Prep / Cooking</span>
-                    <span className="saas-badge saas-badge-info">{localOrders.filter(o => o.status === 'preparing').length}</span>
+                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ChefHat size={15} className="text-blue-500" />
+                      <span style={{ fontWeight: 700 }}>2. In Prep / Cooking</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="saas-badge saas-badge-info">{localOrders.filter(o => o.status === 'preparing').length}</span>
+                      {localOrders.filter(o => o.status === 'preparing').length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllCookingReady}
+                          className="saas-btn saas-btn-sm"
+                          style={{
+                            background: '#10B981',
+                            borderColor: '#059669',
+                            color: '#FFFFFF',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            borderRadius: '4px'
+                          }}
+                          title="Mark all active cooking orders as ready for pickup"
+                        >
+                          <CheckCheck size={11} />
+                          <span>Ready All ({localOrders.filter(o => o.status === 'preparing').length})</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="saas-kds-list">
                     {localOrders.filter(o => o.status === 'preparing').map(o => (

@@ -31,7 +31,11 @@ import {
   ChevronRight,
   ChevronDown,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  FastForward,
+  CheckCheck,
+  Flame,
+  Layers
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -339,6 +343,92 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       console.error('Error updating order:', err)
     }
   }
+
+  // Peak Rush & Kitchen Batch Actions
+  const [autoAcceptRushMode, setAutoAcceptRushMode] = useState(false)
+
+  // Live Batch Prep Summary: Aggregates total dish quantities across placed & preparing orders
+  const activePrepItems = useMemo(() => {
+    const counts: Record<string, { name: string; qty: number }> = {}
+    const activeOrders = localOrders.filter(o => o.status === 'placed' || o.status === 'preparing')
+    activeOrders.forEach(o => {
+      (o.order_items || []).forEach(item => {
+        const key = item.name.trim().toLowerCase()
+        if (!counts[key]) {
+          counts[key] = { name: item.name, qty: 0 }
+        }
+        counts[key].qty += Number(item.qty || 1)
+      })
+    })
+    return Object.values(counts).sort((a, b) => b.qty - a.qty)
+  }, [localOrders])
+
+  // Batch Start Cooking All Placed Orders
+  const handleStartCookingAll = async () => {
+    const placedOrders = localOrders.filter(o => o.status === 'placed')
+    if (placedOrders.length === 0) return
+
+    const ids = placedOrders.map(o => o.id)
+    setLocalOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'preparing' } : o))
+    if (setGlobalOrders) {
+      setGlobalOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'preparing' } : o))
+    }
+
+    setBannerNotice(`Started cooking ${placedOrders.length} orders in batch`)
+    setTimeout(() => setBannerNotice(null), 3500)
+
+    try {
+      await supabase.from('orders').update({ status: 'preparing', updated_at: new Date().toISOString() }).in('id', ids)
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Kitchen Lead', 'staff', 'ORDER', 'BATCH_COOKING_START', `Batch started cooking for ${placedOrders.length} orders`)
+      }
+    } catch (err) {
+      console.warn('Batch cooking update fallback:', err)
+    }
+  }
+
+  // Batch Mark All Cooking Orders Ready at Counter
+  const handleMarkAllCookingReady = async () => {
+    const cookingOrders = localOrders.filter(o => o.status === 'preparing')
+    if (cookingOrders.length === 0) return
+
+    const ids = cookingOrders.map(o => o.id)
+    setLocalOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'ready' } : o))
+    if (setGlobalOrders) {
+      setGlobalOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'ready' } : o))
+    }
+
+    setBannerNotice(`Marked ${cookingOrders.length} orders Ready at Counter`)
+    setTimeout(() => setBannerNotice(null), 3500)
+
+    try {
+      await supabase.from('orders').update({ status: 'ready', updated_at: new Date().toISOString() }).in('id', ids)
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Kitchen Lead', 'staff', 'ORDER', 'BATCH_READY', `Batch marked ${cookingOrders.length} orders ready at counter`)
+      }
+    } catch (err) {
+      console.warn('Batch ready update fallback:', err)
+    }
+  }
+
+  // Auto-Accept Peak Rush Effect: Automatically moves new placed orders to preparing
+  useEffect(() => {
+    if (!autoAcceptRushMode) return
+    const placedOrders = localOrders.filter(o => o.status === 'placed')
+    if (placedOrders.length > 0) {
+      const ids = placedOrders.map(o => o.id)
+      const timer = setTimeout(() => {
+        setLocalOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'preparing' } : o))
+        if (setGlobalOrders) {
+          setGlobalOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'preparing' } : o))
+        }
+        supabase.from('orders').update({ status: 'preparing', updated_at: new Date().toISOString() }).in('id', ids).catch(() => {})
+        setBannerNotice(`Auto-accepted ${placedOrders.length} incoming rush order(s)`)
+        setTimeout(() => setBannerNotice(null), 3000)
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [autoAcceptRushMode, localOrders])
 
   // Stock Adjustment (+1 / -1 / Availability)
   const handleUpdateStock = async (itemId: number, delta: number) => {
@@ -1062,12 +1152,29 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'kds' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>Kitchen Display Kanban</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Real-time ticket progression for cook station</p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAutoAcceptRushMode(!autoAcceptRushMode)}
+                    className={`saas-btn saas-btn-sm ${autoAcceptRushMode ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: autoAcceptRushMode ? '#2563EB' : '#FFFFFF',
+                      borderColor: autoAcceptRushMode ? '#1D4ED8' : '#CBD5E1',
+                      color: autoAcceptRushMode ? '#FFFFFF' : '#475569'
+                    }}
+                    title="Automatically accept and move new placed orders to cooking during rush periods"
+                  >
+                    <FastForward size={13} />
+                    <span>Auto-Accept Rush: {autoAcceptRushMode ? 'Active' : 'Off'}</span>
+                  </button>
                   <button className="saas-btn saas-btn-secondary saas-btn-sm" onClick={loadData}>
                     <RefreshCw size={13} />
                     <span>Auto-sync Active</span>
@@ -1075,18 +1182,87 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 </div>
               </div>
 
+              {/* Live Batch Prep Summary Bar (Aggregated Cook Queue) */}
+              {activePrepItems.length > 0 && (
+                <div style={{
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={14} style={{ color: '#2563EB' }} />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Live Batch Prep Aggregator ({activePrepItems.reduce((acc, i) => acc + i.qty, 0)} total units across active orders)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#64748B' }}>
+                      Cook in batches to clear peak line bottlenecks
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {activePrepItems.map((item, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: '#FFFFFF',
+                          border: '1px solid #CBD5E1',
+                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#0F172A'
+                        }}
+                      >
+                        <span style={{ color: '#2563EB', fontWeight: 800 }}>{item.qty}×</span>
+                        <span>{item.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 3-Column KDS Board */}
               <div className="saas-kds-grid">
                 {/* 1. PLACED / NEW TICKETS */}
                 <div className="saas-kds-col">
-                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #F59E0B' }}>
+                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Clock size={15} className="text-amber-500" />
                       <span style={{ fontWeight: 700 }}>New Placed Orders</span>
                     </div>
-                    <span className="saas-badge saas-badge-warning">
-                      {localOrders.filter(o => o.status === 'placed').length}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="saas-badge saas-badge-warning">
+                        {localOrders.filter(o => o.status === 'placed').length}
+                      </span>
+                      {localOrders.filter(o => o.status === 'placed').length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleStartCookingAll}
+                          className="saas-btn saas-btn-sm"
+                          style={{
+                            background: '#F59E0B',
+                            borderColor: '#D97706',
+                            color: '#FFFFFF',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            borderRadius: '4px'
+                          }}
+                          title="Move all new orders to cooking in one click"
+                        >
+                          <FastForward size={11} />
+                          <span>Start All ({localOrders.filter(o => o.status === 'placed').length})</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="saas-kds-list">
@@ -1194,14 +1370,36 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
                 {/* 2. PREPARING / COOKING */}
                 <div className="saas-kds-col">
-                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #3B82F6' }}>
+                  <div className="saas-kds-col-header" style={{ borderLeft: '4px solid #3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <ChefHat size={15} className="text-blue-500" />
                       <span style={{ fontWeight: 700 }}>In Kitchen / Cooking</span>
                     </div>
-                    <span className="saas-badge saas-badge-info">
-                      {localOrders.filter(o => o.status === 'preparing').length}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="saas-badge saas-badge-info">
+                        {localOrders.filter(o => o.status === 'preparing').length}
+                      </span>
+                      {localOrders.filter(o => o.status === 'preparing').length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllCookingReady}
+                          className="saas-btn saas-btn-sm"
+                          style={{
+                            background: '#10B981',
+                            borderColor: '#059669',
+                            color: '#FFFFFF',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            borderRadius: '4px'
+                          }}
+                          title="Mark all active cooking orders as ready for pickup"
+                        >
+                          <CheckCheck size={11} />
+                          <span>Ready All ({localOrders.filter(o => o.status === 'preparing').length})</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="saas-kds-list">
