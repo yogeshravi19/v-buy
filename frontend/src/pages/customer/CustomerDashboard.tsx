@@ -543,8 +543,8 @@ function CartSheet({ onClose }: { onClose: () => void }) {
   const [pendingOrderId, setPendingOrderId] = useState<number | null>(null)
 
   const shopPayout = total()
-  const convenienceFee = shopPayout > 0 ? Math.round(shopPayout * 0.07) : 0
-  const orderTotal = shopPayout + convenienceFee
+  const convenienceFee = shopPayout > 0 ? Number((shopPayout * 0.07).toFixed(2)) : 0
+  const orderTotal = Number((shopPayout + convenienceFee).toFixed(2))
   const insufficientBalance = method === 'wallet' && (balance ?? 0) < orderTotal
 
   useEffect(() => {

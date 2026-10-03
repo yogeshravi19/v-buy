@@ -98,7 +98,7 @@ export default function VFoodsUserDashboard({
   OrdersView,
   WalletView,
   ProfileView,
-  money = (v) => `₹${Number(v || 0).toLocaleString('en-IN')}`,
+  money = (v) => `₹${Number(Number(v || 0).toFixed(2)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
 }) {
   // Navigation & Screen selection
   const [selectedFoodCourt, setSelectedFoodCourt] = useState(null)
@@ -150,8 +150,8 @@ export default function VFoodsUserDashboard({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  const convenienceFee = subtotal > 0 ? Math.round(subtotal * 0.07) : 0
-  const finalDebit = Math.max(0, subtotal - discount + convenienceFee)
+  const convenienceFee = subtotal > 0 ? Number((subtotal * 0.07).toFixed(2)) : 0
+  const finalDebit = Number(Math.max(0, subtotal - discount + convenienceFee).toFixed(2))
   const isInsufficient = (wallet?.balance || 0) < finalDebit
   const deficit = Math.max(0, finalDebit - (wallet?.balance || 0))
 

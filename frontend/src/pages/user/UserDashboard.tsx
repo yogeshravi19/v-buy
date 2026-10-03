@@ -52,7 +52,7 @@ type PickupSlot = {
   current_orders: number
 }
 
-const formatMoney = (v: number) => `₹${Number(v || 0).toLocaleString('en-IN')}`
+const formatMoney = (v: number) => `₹${Number(Number(v || 0).toFixed(2)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
 
 // ─── Humanized Subcomponents ──────────────────────────────────────────────────
 
@@ -450,8 +450,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
   // ─────────────────────────────────────────────────────────────────────────────
   const cartSubtotal = getCartTotal()
   const discountAmount = appliedDiscount?.amount || 0
-  const convenienceFee = cartSubtotal > 0 ? Math.round(cartSubtotal * 0.07) : 0
-  const finalPayable = Math.max(0, cartSubtotal - discountAmount + convenienceFee)
+  const convenienceFee = cartSubtotal > 0 ? Number((cartSubtotal * 0.07).toFixed(2)) : 0
+  const finalPayable = Number(Math.max(0, cartSubtotal - discountAmount + convenienceFee).toFixed(2))
   const cartCount = cartItems.reduce((acc, i) => acc + i.qty, 0)
 
   const handleAddToCart = (item: MenuItem) => {
@@ -1678,7 +1678,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
                     {convenienceFee > 0 && (
                       <div className="flex justify-between text-slate-300">
                         <span>Convenience Fees</span>
-                        <span className="font-mono text-white">₹{convenienceFee}</span>
+                        <span className="font-mono text-white">{formatMoney(convenienceFee)}</span>
                       </div>
                     )}
                     {discountAmount > 0 && (

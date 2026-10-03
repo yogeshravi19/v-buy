@@ -487,6 +487,13 @@ class TestPaytmPaymentArchitecture(unittest.TestCase):
         self.assertEqual(convenience_fee_2, 6.30)
         self.assertEqual(total_bill_2, 96.30)
 
+        # Exact decimal test without round-off: Veg puff at 20 -> fee is 1.4, total bill is 21.4
+        subtotal_3 = 20
+        convenience_fee_3 = round(subtotal_3 * 0.07, 2)
+        total_bill_3 = round(subtotal_3 + convenience_fee_3, 2)
+        self.assertEqual(convenience_fee_3, 1.40)
+        self.assertEqual(total_bill_3, 21.40)
+
 
 if __name__ == "__main__":
     unittest.main()

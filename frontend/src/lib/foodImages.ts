@@ -87,7 +87,7 @@ const FOOD_IMAGES: { keywords: string[]; url: string; emoji: string }[] = [
   // ── Rice / Biryani ─────────────────────────────────────────────────────────
   {
     keywords: ['biryani', 'biriyani', 'briyani'],
-    url: 'https://images.unsplash.com/photo-1563379091339-03246963d96c?w=300&h=300&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=400&h=400&fit=crop&q=80',
   },
   {
     keywords: ['fried rice', 'egg rice', 'veg rice', 'chicken rice'],
