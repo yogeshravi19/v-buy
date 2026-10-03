@@ -26,7 +26,7 @@ const ROLES: RoleDetail[] = [
     targetUser: 'University students, faculty, and campus visitors',
     device: 'Mobile Browser / PWA (Phone)',
     deviceIcon: Smartphone,
-    colorBadge: 'bg-blue-50 text-blue-700 border-blue-200',
+    colorBadge: 'bg-orange-50 text-orange-700 border-orange-200',
     screenshot: '/assets/landing/user-menu-veg.webp',
     activeTabs: [
       'Explore Menu & Outlets',
@@ -62,7 +62,7 @@ const ROLES: RoleDetail[] = [
     targetUser: 'Canteen cooks, assembly staff, and counter operators',
     device: 'Countertop Tablet / Smartphone (KDS)',
     deviceIcon: Tablet,
-    colorBadge: 'bg-brand-50 text-brand-700 border-brand-200',
+    colorBadge: 'bg-blue-50 text-blue-700 border-blue-200',
     screenshot: '/assets/landing/staff-live-queue.webp',
     activeTabs: [
       'Overview',

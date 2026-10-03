@@ -95,7 +95,8 @@ function PhoneFrame({ src, alt, width = 220 }: { src: string; alt: string; width
         <img
           src={src}
           alt={alt}
-          loading="lazy"
+          loading="eager"
+          decoding="async"
           width={width}
           height={Math.round(width * 1.82)}
           style={{ width: '100%', display: 'block', background: '#F8FAFC' }}
@@ -113,7 +114,7 @@ function StepBadge({ n }: { n: number }) {
       width: 30,
       height: 30,
       borderRadius: '50%',
-      background: 'linear-gradient(135deg, #1E40AF, #1D4ED8)',
+      background: 'linear-gradient(135deg, #EA580C, #F97316)',
       color: '#fff',
       fontWeight: 800,
       fontSize: 13,
@@ -121,7 +122,7 @@ function StepBadge({ n }: { n: number }) {
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      boxShadow: '0 4px 10px rgba(30, 64, 175, 0.28)',
+      boxShadow: '0 4px 10px rgba(234, 88, 12, 0.28)',
     }}>
       {n}
     </div>
@@ -249,13 +250,13 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               onClick={() => navigateTo('overview')}
               className="flex items-center gap-3 bg-transparent border-0 text-left p-0 cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-xl bg-brand-700 flex items-center justify-center text-white shadow-md shadow-brand-700/30">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25">
                 <ChefHat className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-lg text-white tracking-tight">V Foods</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#1E3E62] text-brand-200 border border-brand-500/30">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#1E3E62] text-amber-200 border border-amber-500/30">
                     CAMPUS DINING
                   </span>
                 </div>
@@ -273,7 +274,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                     onClick={() => navigateTo(item.id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-brand-700 text-white shadow-xs'
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs font-bold'
                         : 'text-slate-300 hover:text-white hover:bg-white/5'
                     }`}
                   >
@@ -288,7 +289,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setWaitlistOpen(true)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-brand-200 bg-[#1E3E62]/70 border border-brand-500/30 hover:bg-[#1E3E62] transition-all cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-200 bg-[#1E3E62]/70 border border-amber-500/30 hover:bg-[#1E3E62] transition-all cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Join Pilot</span>
@@ -297,7 +298,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               <button
                 id="nav-open-app"
                 onClick={handleOpenApp}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-700 hover:bg-brand-600 shadow-md shadow-brand-700/30 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md shadow-orange-500/25 active:scale-95 transition-all cursor-pointer"
               >
                 <span>Launch App</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -323,7 +324,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                   onClick={() => { navigateTo(item.id); setMobileMenuOpen(false) }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-left transition-colors cursor-pointer ${
                     activePage === item.id
-                      ? 'bg-brand-700 text-white'
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold'
                       : 'text-slate-300 hover:bg-white/5'
                   }`}
                 >
@@ -350,7 +351,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={() => navigateTo('overview')}
-                className="inline-flex items-center gap-2 text-xs font-bold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 text-xs font-bold text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
               >
                 <ArrowLeft size={14} />
                 <span>Back to Overview</span>
@@ -390,14 +391,14 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                   
                   {/* Left Column: Clear Value Proposition */}
                   <div className="lg:col-span-6 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-brand-50 text-brand-800 border border-brand-200">
-                      <Sparkles className="w-3.5 h-3.5 text-brand-700" />
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-orange-50 text-orange-800 border border-orange-200">
+                      <Sparkles className="w-3.5 h-3.5 text-orange-600" />
                       <span>CAMPUS PRE-ORDERING &amp; WALLET PLATFORM</span>
                     </div>
 
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.08]">
                       Order ahead.<br />
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-800 via-brand-700 to-[#1E3E62]">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0B192C] via-orange-600 to-amber-500">
                         Skip the canteen queue.
                       </span>
                     </h1>
@@ -411,7 +412,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                       <button
                         id="hero-open-app"
                         onClick={handleOpenApp}
-                        className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-brand-700 hover:bg-brand-800 text-white shadow-xl shadow-brand-700/25 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                        className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-xl shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                       >
                         <span>Open V Foods App</span>
                         <ArrowRight className="w-4 h-4" />
@@ -421,7 +422,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                         onClick={() => navigateTo('order-flow')}
                         className="px-5 py-3.5 rounded-2xl font-bold text-sm bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-xs transition-all flex items-center gap-2 cursor-pointer"
                       >
-                        <Clock className="w-4 h-4 text-brand-700" />
+                        <Clock className="w-4 h-4 text-orange-600" />
                         <span>See How It Works</span>
                       </button>
                     </div>
@@ -433,7 +434,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                         <p className="text-[11px] text-slate-500 mt-0.5">Canteens &amp; Fest Stalls</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-extrabold text-brand-700">2 mins</p>
+                        <p className="text-2xl font-extrabold text-orange-600">2 mins</p>
                         <p className="text-[11px] text-slate-500 mt-0.5">Avg Counter Pickup</p>
                       </div>
                       <div>
@@ -453,7 +454,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               {/* 1.2 CORE SUBPAGE GATEWAYS (THE 4 PILLARS) */}
               <section className="py-16 px-6 sm:px-10 max-w-7xl mx-auto border-t border-slate-200">
                 <div className="text-center max-w-2xl mx-auto mb-12">
-                  <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block mb-2">Explore the Platform</span>
+                  <span className="text-xs font-bold text-orange-600 uppercase tracking-wider block mb-2">Explore the Platform</span>
                   <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                     Everything You Need in Clear Sub-Pages
                   </h2>
@@ -466,18 +467,18 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                   {/* Card 1: Order Flow & 3D Simulation */}
                   <div
                     onClick={() => navigateTo('order-flow')}
-                    className="group bg-white border border-slate-200 hover:border-brand-500 rounded-3xl p-7 shadow-xs hover:shadow-xl hover:shadow-brand-700/5 transition-all cursor-pointer flex flex-col justify-between"
+                    className="group bg-white border border-slate-200 hover:border-orange-500 rounded-3xl p-7 shadow-xs hover:shadow-xl hover:shadow-orange-500/10 transition-all cursor-pointer flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 border border-orange-200 flex items-center justify-center group-hover:scale-105 transition-transform">
                           <Clock className="w-6 h-6" />
                         </div>
                         <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
                           SUB-PAGE 1
                         </span>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-brand-700 transition-colors mb-2">
+                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-orange-600 transition-colors mb-2">
                         How It Works &amp; 3D Order Flow
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
@@ -485,21 +486,21 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                       </p>
                       <ul className="space-y-1.5 text-xs text-slate-700">
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-700 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                           <span>4-step student checkout flow</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-700 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                           <span>Interactive 3D Three.js data packet flow</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-700 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                           <span>Real-time WebSocket tracking stages</span>
                         </li>
                       </ul>
                     </div>
 
-                    <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-700 group-hover:translate-x-1 transition-transform">
+                    <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-orange-600 group-hover:translate-x-1 transition-transform">
                       <span>Explore Order Flow &amp; 3D Journey</span>
                       <ArrowRight size={16} />
                     </div>
@@ -692,8 +693,8 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
 
               {/* 1.4 CLOSING CTA BANNER */}
               <section className="py-16 px-6 sm:px-10 max-w-5xl mx-auto text-center">
-                <div className="bg-gradient-to-br from-[#0B192C] via-[#0F2540] to-brand-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-[#1E3E62]">
-                  <span className="text-xs font-bold text-brand-300 uppercase tracking-wider block mb-2">Ready for Lunch?</span>
+                <div className="bg-gradient-to-br from-[#060D17] via-[#0B192C] to-[#0F2540] text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-[#1E3E62]">
+                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-2">Ready for Lunch?</span>
                   <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
                     Skip Queues Across University Dining Halls
                   </h3>
@@ -704,7 +705,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <button
                       onClick={handleOpenApp}
-                      className="px-7 py-3.5 rounded-2xl font-bold text-sm bg-brand-600 hover:bg-brand-500 text-white shadow-xl shadow-brand-700/30 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                      className="px-7 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-xl shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                     >
                       <span>Open V Foods App</span>
                       <ArrowRight className="w-4 h-4" />
@@ -731,7 +732,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               
               {/* Header */}
               <div className="text-center max-w-3xl mx-auto">
-                <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block mb-2">Sub-Page 1</span>
+                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider block mb-2">Sub-Page 1</span>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                   How It Works &amp; Real-Time Order Flow
                 </h1>
@@ -871,7 +872,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             <div className="py-10 px-6 sm:px-10 max-w-7xl mx-auto space-y-16 animate-in fade-in duration-200">
               {/* Header */}
               <div className="text-center max-w-3xl mx-auto">
-                <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block mb-2">Sub-Page 2</span>
+                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider block mb-2">Sub-Page 2</span>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                   Campus Roles &amp; Interactive Dashboards
                 </h1>
@@ -899,7 +900,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             <div className="py-10 px-6 sm:px-10 max-w-7xl mx-auto space-y-16 animate-in fade-in duration-200">
               {/* Header */}
               <div className="text-center max-w-3xl mx-auto">
-                <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block mb-2">Sub-Page 3</span>
+                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider block mb-2">Sub-Page 3</span>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                   Database Schemas, APIs &amp; Security Architecture
                 </h1>
@@ -967,7 +968,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             <div className="py-10 px-6 sm:px-10 max-w-7xl mx-auto space-y-16 animate-in fade-in duration-200">
               {/* Header */}
               <div className="text-center max-w-3xl mx-auto">
-                <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block mb-2">Sub-Page 4</span>
+                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider block mb-2">Sub-Page 4</span>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                   Campus Pilot Roadmap &amp; FAQ
                 </h1>

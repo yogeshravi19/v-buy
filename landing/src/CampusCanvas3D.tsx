@@ -326,7 +326,7 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           13 Canteens Live
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md border border-slate-200 text-brand-700 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md border border-slate-200 text-orange-600 shadow-sm">
           2 min Counter Pickup
         </span>
       </div>
@@ -344,11 +344,11 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
             top: `${Math.max(activeNode.y - 45, 10)}px`,
             pointerEvents: 'none',
           }}
-          className="z-20 bg-white/95 backdrop-blur-md border border-brand-300 rounded-xl px-3.5 py-2 shadow-xl text-left min-w-[150px] transition-transform animate-in fade-in zoom-in-95 duration-150"
+          className="z-20 bg-white/95 backdrop-blur-md border border-orange-300 rounded-xl px-3.5 py-2 shadow-xl text-left min-w-[150px] transition-transform animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-bold text-slate-900 tracking-tight">{activeNode.name}</p>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200">
               {activeNode.wait}
             </span>
           </div>
