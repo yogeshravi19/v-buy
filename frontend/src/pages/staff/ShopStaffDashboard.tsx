@@ -35,7 +35,8 @@ import {
   FastForward,
   CheckCheck,
   Flame,
-  Layers
+  Layers,
+  Menu
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -152,6 +153,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [stockCategoryFilter, setStockCategoryFilter] = useState('all')
   const [syncing, setSyncing] = useState(false)
   const [bannerNotice, setBannerNotice] = useState<string | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Figma-inspired Kitchen Rush Management & Ticket Accordion
   const [delayBuffers, setDelayBuffers] = useState<Record<number, number>>({})
@@ -606,15 +608,30 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
   return (
     <div className="saas-layout">
+      {/* ── MOBILE SIDEBAR BACKDROP ── */}
+      {mobileMenuOpen && (
+        <div className="saas-sidebar-backdrop" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* ── LEFT SIDEBAR (Shop Staff's Exact 7 Sections) ── */}
-      <aside className="saas-sidebar">
+      <aside className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         {/* Brand */}
         <div className="saas-sidebar-brand">
           <div className="saas-brand-wrap">
             <img src="/vit-chennai-logo.png" alt="V Foods" className="saas-brand-img" />
             <span className="saas-brand-text">V-<span>FOODS</span></span>
           </div>
-          <span className="saas-role-badge saas-role-staff">Shop Staff</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="saas-role-badge saas-role-staff">Shop Staff</span>
+            <button
+              type="button"
+              className="saas-sidebar-close-btn"
+              onClick={() => setMobileMenuOpen(false)}
+              title="Close navigation"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Current Outlet Badge */}
@@ -635,7 +652,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         <nav className="saas-nav">
           <button
             className={`saas-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <LayoutDashboard size={16} />
@@ -645,7 +662,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'live-orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('live-orders')}
+            onClick={() => { setActiveTab('live-orders'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Clock size={16} />
@@ -658,7 +675,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'kds' ? 'active' : ''}`}
-            onClick={() => setActiveTab('kds')}
+            onClick={() => { setActiveTab('kds'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <ChefHat size={16} />
@@ -671,7 +688,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'stock' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stock')}
+            onClick={() => { setActiveTab('stock'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Boxes size={16} />
@@ -686,7 +703,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'pickup-queue' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pickup-queue')}
+            onClick={() => { setActiveTab('pickup-queue'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <BellRing size={16} />
@@ -701,7 +718,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'pos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pos')}
+            onClick={() => { setActiveTab('pos'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Calculator size={16} />
@@ -711,7 +728,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'shift-billing' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shift-billing')}
+            onClick={() => { setActiveTab('shift-billing'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <ReceiptText size={16} />
@@ -740,18 +757,29 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       <main className="saas-main">
         {/* Topbar */}
         <header className="saas-topbar">
-          <div className="saas-breadcrumb">
-            <span>Staff Console</span>
-            <ChevronRight size={14} />
-            <span className="saas-breadcrumb-title">
-              {activeTab === 'overview' && 'Overview'}
-              {activeTab === 'live-orders' && 'Live Orders'}
-              {activeTab === 'kds' && 'KDS / Kitchen Display'}
-              {activeTab === 'stock' && 'Stock & Inventory'}
-              {activeTab === 'pickup-queue' && 'Pickup & Token Queue'}
-              {activeTab === 'pos' && 'Counter POS Terminal'}
-              {activeTab === 'shift-billing' && 'Shift Billing & Reconciliation'}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <button
+              type="button"
+              className="saas-mobile-toggle"
+              onClick={() => setMobileMenuOpen(true)}
+              title="Open navigation menu"
+            >
+              <Menu size={16} />
+              <span>Menu</span>
+            </button>
+            <div className="saas-breadcrumb">
+              <span>Staff Console</span>
+              <ChevronRight size={14} />
+              <span className="saas-breadcrumb-title">
+                {activeTab === 'overview' && 'Overview'}
+                {activeTab === 'live-orders' && 'Live Orders'}
+                {activeTab === 'kds' && 'KDS / Kitchen Display'}
+                {activeTab === 'stock' && 'Stock & Inventory'}
+                {activeTab === 'pickup-queue' && 'Pickup & Token Queue'}
+                {activeTab === 'pos' && 'Counter POS Terminal'}
+                {activeTab === 'shift-billing' && 'Shift Billing & Reconciliation'}
+              </span>
+            </div>
           </div>
 
           <div className="saas-top-actions">

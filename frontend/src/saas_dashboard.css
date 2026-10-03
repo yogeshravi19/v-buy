@@ -838,3 +838,140 @@
   background: #F1F5F9;
 }
 
+/* ── RESPONSIVE MOBILE & TABLET DRAWER (STAFF, SHOP ADMIN, SUPER ADMIN) ── */
+.saas-mobile-toggle {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F172A;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.saas-mobile-toggle:hover {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1D4ED8;
+}
+
+.saas-sidebar-close-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.saas-sidebar-close-btn:hover {
+  color: #FFFFFF;
+}
+
+@media (max-width: 900px) {
+  .saas-layout {
+    position: relative;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .saas-mobile-toggle {
+    display: inline-flex !important;
+  }
+
+  .saas-sidebar-close-btn {
+    display: inline-flex !important;
+  }
+
+  .saas-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .saas-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .saas-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999;
+  }
+
+  .saas-main {
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .saas-topbar {
+    padding: 0 16px;
+    gap: 8px;
+    height: 58px;
+  }
+
+  .saas-breadcrumb {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .saas-breadcrumb-title {
+    font-size: 14px;
+  }
+
+  .saas-body {
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  .saas-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .saas-kds-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .saas-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 540px) {
+  .saas-top-actions .saas-btn span {
+    display: none;
+  }
+  .saas-top-actions .saas-btn {
+    padding: 6px 10px;
+  }
+  .saas-kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .saas-body {
+    padding: 12px;
+  }
+}
+

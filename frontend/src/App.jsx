@@ -2705,6 +2705,87 @@ function CartDock({
 // ─────────────────────────────────────────────────────────────────────────────
 function ReceiptModal({ order, onClose }) {
   if (!order) return null
+
+  function handleDownloadReceipt() {
+    const itemsHtml = (order.order_items || []).map(it => `
+      <tr>
+        <td style="padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #0f172a;">
+          <strong>${it.qty}×</strong> ${it.name} ${it.notes ? `<span style="color:#64748b; font-size: 11px;">(${it.notes})</span>` : ''}
+        </td>
+        <td style="padding: 7px 0; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 13px; font-weight: 700; color: #0f172a;">
+          ₹${((it.price || 0) * (it.qty || 1)).toLocaleString('en-IN')}
+        </td>
+      </tr>
+    `).join('')
+
+    const invoiceContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>V FOODS Official Receipt - Token #${order.token || order.id}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 24px 16px; background: #f8fafc; color: #0f172a; margin: 0; display: flex; justify-content: center; }
+    .receipt { background: #ffffff; width: 100%; max-width: 400px; padding: 28px; border-radius: 16px; border: 1.5px solid #0f172a; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box; }
+    .header { text-align: center; border-bottom: 2px dashed #94a3b8; padding-bottom: 14px; margin-bottom: 16px; }
+    .token-box { text-align: center; background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 12px; padding: 12px; margin: 14px 0; }
+    .token { font-size: 26px; font-weight: 900; color: #1d4ed8; font-family: monospace; letter-spacing: -0.5px; }
+    .row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; color: #475569; }
+    .row strong { color: #0f172a; }
+    .total-row { display: flex; justify-content: space-between; font-size: 17px; font-weight: 900; color: #0f172a; border-top: 2px solid #0f172a; padding-top: 12px; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 14px; line-height: 1.5; }
+    @media print { body { background: #fff; padding: 0; } .receipt { border: 1px solid #000; box-shadow: none; max-width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="header">
+      <div style="font-size: 20px; font-weight: 900; color: #1e3a8a; letter-spacing: -0.5px;">V FOODS · VIT CHENNAI</div>
+      <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 600;">Official Campus Dining Tax Invoice</div>
+    </div>
+    <div class="token-box">
+      <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #2563eb; letter-spacing: 0.5px;">Pickup Token Pass</div>
+      <div class="token">TOKEN #${order.token || order.id}</div>
+      <div style="font-size: 11px; color: #16a34a; font-weight: 700; margin-top: 3px;">✓ Verified Paid (${order.payment_method || 'VIT Campus Wallet'})</div>
+    </div>
+    <div class="row"><span>Order ID:</span><strong>#${order.id}</strong></div>
+    <div class="row"><span>Canteen / Counter:</span><strong>${order.outlets?.name || order.outlet_id}</strong></div>
+    <div class="row"><span>Date & Time:</span><span>${new Date(order.created_at).toLocaleString('en-IN')}</span></div>
+    <div class="row"><span>Payment Status:</span><span style="color:#16a34a; font-weight:700;">PAID</span></div>
+    
+    <div style="margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px;">Itemized Order Breakdown</div>
+      <table>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="total-row">
+      <span>Total Paid</span>
+      <span>${money(order.total)}</span>
+    </div>
+
+    <div class="footer">
+      VIT Chennai Campus Dining Operations<br>
+      Please present Token #${order.token || order.id} at the counter station for fast pickup.<br>
+      Thank you for dining with V FOODS!
+    </div>
+  </div>
+</body>
+</html>`
+
+    const blob = new Blob([invoiceContent], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `VFOODS-Receipt-Token-${order.token || order.id}.html`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="ios-modal-overlay" onClick={onClose}>
       <div className="receipt-modal-card modal-enter" onClick={e => e.stopPropagation()}>
@@ -2731,7 +2812,7 @@ function ReceiptModal({ order, onClose }) {
         </div>
         <div className="receipt-row">
           <span>Payment Status</span>
-          <span style={{ color: '#059669', fontWeight: 700 }}>PAID (VIT Campus Wallet)</span>
+          <span style={{ color: '#059669', fontWeight: 700 }}>PAID ({order.payment_method || 'VIT Campus Wallet'})</span>
         </div>
 
         {/* Canteen Scannable QR Code on Receipt */}
@@ -2767,9 +2848,12 @@ function ReceiptModal({ order, onClose }) {
           <span>{money(order.total)}</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button className="btn-secondary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={() => window.print()}>
-            <Download size={14} /> Print / Save
+        <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
+          <button className="btn-secondary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={handleDownloadReceipt} title="Download neat receipt file">
+            <Download size={14} /> Download
+          </button>
+          <button className="btn-secondary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={() => window.print()} title="Print isolated receipt slip">
+            <Printer size={14} /> Print
           </button>
           <button className="btn-primary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
             Close

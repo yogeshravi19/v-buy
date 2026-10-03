@@ -34,7 +34,8 @@ import {
   Activity,
   Calendar,
   Lock,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Menu
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -149,6 +150,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     | 'system-settings'
 
   const [activeTab, setActiveTab] = useState<SuperTab>('overview')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Global Festival / Event Mode
   const [eventMode, setEventMode] = useState<boolean>(propEventMode)
@@ -374,15 +376,30 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   return (
     <div className="saas-layout">
+      {/* ── MOBILE SIDEBAR BACKDROP ── */}
+      {mobileMenuOpen && (
+        <div className="saas-sidebar-backdrop" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* ── LEFT SIDEBAR (Super Admin's Exact 10 Sections) ── */}
-      <aside className="saas-sidebar">
+      <aside className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         {/* Brand */}
         <div className="saas-sidebar-brand">
           <div className="saas-brand-wrap">
             <img src="/vit-chennai-logo.png" alt="V Foods" className="saas-brand-img" />
             <span className="saas-brand-text">V-<span>FOODS</span></span>
           </div>
-          <span className="saas-role-badge saas-role-admin">Super Admin</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="saas-role-badge saas-role-admin">Super Admin</span>
+            <button
+              type="button"
+              className="saas-sidebar-close-btn"
+              onClick={() => setMobileMenuOpen(false)}
+              title="Close navigation"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Platform Status Banner */}
@@ -403,7 +420,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         <nav className="saas-nav">
           <button
             className={`saas-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <LayoutDashboard size={15} />
@@ -413,7 +430,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'campuses' ? 'active' : ''}`}
-            onClick={() => setActiveTab('campuses')}
+            onClick={() => { setActiveTab('campuses'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Building2 size={15} />
@@ -424,7 +441,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'outlets' ? 'active' : ''}`}
-            onClick={() => setActiveTab('outlets')}
+            onClick={() => { setActiveTab('outlets'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Store size={15} />
@@ -435,7 +452,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
+            onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Users size={15} />
@@ -446,7 +463,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
+            onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <ShoppingBag size={15} />
@@ -459,7 +476,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'payments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('payments')}
+            onClick={() => { setActiveTab('payments'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <CreditCard size={15} />
@@ -469,7 +486,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'settlements' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settlements')}
+            onClick={() => { setActiveTab('settlements'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Receipt size={15} />
@@ -479,7 +496,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'analytics-reports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('analytics-reports')}
+            onClick={() => { setActiveTab('analytics-reports'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <BarChart3 size={15} />
@@ -489,7 +506,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'coupons' ? 'active' : ''}`}
-            onClick={() => setActiveTab('coupons')}
+            onClick={() => { setActiveTab('coupons'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Tag size={15} />
@@ -500,7 +517,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           <button
             className={`saas-nav-btn ${activeTab === 'system-settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('system-settings')}
+            onClick={() => { setActiveTab('system-settings'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Settings size={15} />
@@ -529,21 +546,32 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       <main className="saas-main">
         {/* Topbar */}
         <header className="saas-topbar">
-          <div className="saas-breadcrumb">
-            <span>Platform Governance</span>
-            <ChevronRight size={14} />
-            <span className="saas-breadcrumb-title">
-              {activeTab === 'overview' && 'Executive Telemetry & GMV Overview'}
-              {activeTab === 'campuses' && 'Campuses & Regional Dining Hubs'}
-              {activeTab === 'outlets' && 'Outlets & Canteen Master Registry'}
-              {activeTab === 'users' && 'User Directory & Access Governance'}
-              {activeTab === 'orders' && 'Cross-Platform Global Orders Telemetry'}
-              {activeTab === 'payments' && 'Payment Gateways & Wallet Ledger'}
-              {activeTab === 'settlements' && 'Franchise Payout Clearinghouse'}
-              {activeTab === 'analytics-reports' && 'Cross-Campus Analytics & Reports'}
-              {activeTab === 'coupons' && 'Platform Promotional Coupons'}
-              {activeTab === 'system-settings' && 'Global System Configuration & Audit'}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <button
+              type="button"
+              className="saas-mobile-toggle"
+              onClick={() => setMobileMenuOpen(true)}
+              title="Open navigation menu"
+            >
+              <Menu size={16} />
+              <span>Menu</span>
+            </button>
+            <div className="saas-breadcrumb">
+              <span>Platform Governance</span>
+              <ChevronRight size={14} />
+              <span className="saas-breadcrumb-title">
+                {activeTab === 'overview' && 'Executive Telemetry & GMV Overview'}
+                {activeTab === 'campuses' && 'Campuses & Regional Dining Hubs'}
+                {activeTab === 'outlets' && 'Outlets & Canteen Master Registry'}
+                {activeTab === 'users' && 'User Directory & Access Governance'}
+                {activeTab === 'orders' && 'Cross-Platform Global Orders Telemetry'}
+                {activeTab === 'payments' && 'Payment Gateways & Wallet Ledger'}
+                {activeTab === 'settlements' && 'Franchise Payout Clearinghouse'}
+                {activeTab === 'analytics-reports' && 'Cross-Campus Analytics & Reports'}
+                {activeTab === 'coupons' && 'Platform Promotional Coupons'}
+                {activeTab === 'system-settings' && 'Global System Configuration & Audit'}
+              </span>
+            </div>
           </div>
 
           <div className="saas-top-actions">
