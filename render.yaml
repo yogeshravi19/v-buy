@@ -19,7 +19,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: SUPABASE_URL
-        sync: false
+        value: https://wahftohnwfoepuszvzrx.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: QR_SECRET
@@ -75,3 +75,19 @@ services:
         value: https://wahftohnwfoepuszvzrx.supabase.co
       - key: VITE_SUPABASE_ANON_KEY
         value: sb_publishable_sFtEv2kLNn0vcmFNGzsEYg_Vx2yjHd5
+
+  # ── 3. Presentation & Showcase Landing Site ────────────────────────────────
+  - type: web
+    name: v-foods-landing
+    runtime: static
+    rootDir: landing
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
