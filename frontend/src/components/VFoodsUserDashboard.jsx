@@ -115,80 +115,6 @@ export default function VFoodsUserDashboard({
   const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
   const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
 
-  // Campus Service Slots: All-Day Quick Bites + Scheduled Meals (Savvy HRMS)
-  const SERVICE_SLOTS = useMemo(() => [
-    {
-      id: 'all-day',
-      name: 'All-Day Quick Bites',
-      type: 'continuous',
-      time: '08:00 - 22:30',
-      badge: 'Open All Day',
-      keywords: ['puff', 'samosa', 'roll', 'juice', 'shake', 'coffee', 'tea', 'lassi', 'maggi', 'sandwich', 'ice cream', 'cutlet', 'beverage', 'snack', 'cake', 'biscuit', 'chips']
-    },
-    {
-      id: 'breakfast',
-      name: 'Breakfast',
-      type: 'scheduled',
-      time: '07:30 - 10:30',
-      badge: 'Morning Tiffin',
-      startHour: 7.5,
-      endHour: 10.5,
-      keywords: ['dosa', 'idli', 'poori', 'vada', 'pongal', 'coffee', 'tea', 'sandwich', 'bread', 'omelette', 'egg']
-    },
-    {
-      id: 'lunch',
-      name: 'Lunch',
-      type: 'scheduled',
-      time: '11:30 - 15:00',
-      badge: 'Thali & Meals',
-      startHour: 11.5,
-      endHour: 15.0,
-      keywords: ['meals', 'thali', 'biryani', 'rice', 'dal', 'paneer', 'chicken', 'curry', 'chapati', 'parotta', 'pulao']
-    },
-    {
-      id: 'snacks',
-      name: 'Evening Snacks',
-      type: 'scheduled',
-      time: '16:30 - 18:45',
-      badge: 'Tea & Warm Bakes',
-      startHour: 16.5,
-      endHour: 18.75,
-      keywords: ['samosa', 'puff', 'cutlet', 'roll', 'juice', 'shake', 'maggi', 'nuggets', 'fries', 'tea', 'bhel']
-    },
-    {
-      id: 'dinner',
-      name: 'Dinner',
-      type: 'scheduled',
-      time: '19:30 - 22:30',
-      badge: 'Dinner Combos',
-      startHour: 19.5,
-      endHour: 22.5,
-      keywords: ['parotta', 'roti', 'naan', 'fried rice', 'noodles', 'dosa', 'chicken', 'paneer', 'egg', 'kothu']
-    }
-  ], [])
-
-  const currentHour = useMemo(() => {
-    const d = new Date()
-    return d.getHours() + d.getMinutes() / 60
-  }, [])
-
-  const defaultActiveScheduledWindow = useMemo(() => {
-    const match = SERVICE_SLOTS.filter(s => s.type === 'scheduled').find(w => currentHour >= w.startHour && currentHour <= w.endHour)
-    return match ? match.id : 'lunch'
-  }, [currentHour, SERVICE_SLOTS])
-
-  const [selectedServiceSlot, setSelectedServiceSlot] = useState('all')
-
-  const getOutletServiceType = useCallback((outlet) => {
-    if (!outlet) return { isScheduled: false, label: 'All-Day Quick Bites' }
-    const name = (outlet.name || '').toLowerCase()
-    const loc = (outlet.location || '').toLowerCase()
-    if (name.includes('meals') || name.includes('thali') || name.includes('biryani') || name.includes('diner') || name.includes('mess') || name.includes('dakshin') || name.includes('chitra') || loc.includes('academic blocks')) {
-      return { isScheduled: true, label: 'Scheduled Meal Counter' }
-    }
-    return { isScheduled: false, label: 'All-Day Quick Bites' }
-  }, [])
-
   const handleGatewayCheckout = () => {
     setIsGatewayProcessing(true)
     setGatewayStep('processing')
@@ -242,30 +168,13 @@ export default function VFoodsUserDashboard({
     return list
   }, [outlets])
 
-  // Popular on Campus items (12 curated dishes across outlets, optionally filtered by service slot)
+  // Popular on Campus items (filtered by veg / non-veg)
   const popularDishes = useMemo(() => {
     let items = allDishes
     if (popularFilter === 'veg') items = items.filter(i => i.is_veg === true)
     if (popularFilter === 'non-veg') items = items.filter(i => i.is_veg === false)
-    if (selectedServiceSlot !== 'all') {
-      const activeSlot = SERVICE_SLOTS.find(w => w.id === selectedServiceSlot)
-      if (activeSlot) {
-        if (activeSlot.id === 'all-day') {
-          const matched = items.filter(i => {
-            const outletType = getOutletServiceType(i.outlet)
-            return !outletType.isScheduled || activeSlot.keywords.some(k => i.name.toLowerCase().includes(k) || (i.category || '').toLowerCase().includes(k))
-          })
-          if (matched.length > 0) items = matched
-        } else {
-          const matched = items.filter(i =>
-            activeSlot.keywords.some(k => i.name.toLowerCase().includes(k) || (i.category || '').toLowerCase().includes(k))
-          )
-          if (matched.length > 0) items = matched
-        }
-      }
-    }
-    return items.slice(0, 12)
-  }, [allDishes, popularFilter, selectedServiceSlot, SERVICE_SLOTS, getOutletServiceType])
+    return items.slice(0, 18)
+  }, [allDishes, popularFilter])
 
   // Search results
   const searchResults = useMemo(() => {
@@ -348,8 +257,52 @@ export default function VFoodsUserDashboard({
             className="vfoods-dish-img"
             loading="lazy"
           />
-          <div className={`vfoods-dish-veg-badge ${item.is_veg ? 'veg' : 'nonveg'}`} title={item.is_veg ? 'Pure Veg' : 'Non-Veg'}>
-            <span className={item.is_veg ? 'vfoods-veg-icon' : 'vfoods-nonveg-icon'} />
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            left: '8px',
+            zIndex: 2,
+            background: 'rgba(255, 255, 255, 0.96)',
+            padding: '3px',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+          }} title={item.is_veg ? 'Pure Veg' : 'Non-Veg'}>
+            {item.is_veg ? (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '13px',
+                height: '13px',
+                border: '1.5px solid #16A34A',
+                borderRadius: '2.5px',
+                background: '#FFFFFF'
+              }}>
+                <span style={{ width: '5.5px', height: '5.5px', borderRadius: '50%', background: '#16A34A' }} />
+              </span>
+            ) : (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '13px',
+                height: '13px',
+                border: '1.5px solid #DC2626',
+                borderRadius: '2.5px',
+                background: '#FFFFFF'
+              }}>
+                <span style={{
+                  width: 0,
+                  height: 0,
+                  borderLeft: '3px solid transparent',
+                  borderRight: '3px solid transparent',
+                  borderBottom: '5.5px solid #DC2626'
+                }} />
+              </span>
+            )}
           </div>
           {isBestseller && (
             <div className="vfoods-bestseller-ribbon">
@@ -374,14 +327,11 @@ export default function VFoodsUserDashboard({
               </span>
               <span style={{
                 fontSize: '9px',
-                fontWeight: 700,
-                padding: '1px 5px',
-                borderRadius: '3px',
-                whiteSpace: 'nowrap',
-                background: getOutletServiceType(item.outlet).isScheduled ? '#FEF3C7' : '#E0F2FE',
-                color: getOutletServiceType(item.outlet).isScheduled ? '#B45309' : '#0369A1'
+                fontWeight: 600,
+                color: '#64748B',
+                whiteSpace: 'nowrap'
               }}>
-                {getOutletServiceType(item.outlet).isScheduled ? 'Meal Slot' : 'All-Day'}
+                {item.outlet?.location || 'Campus Counter'}
               </span>
             </div>
           </div>
@@ -478,7 +428,7 @@ export default function VFoodsUserDashboard({
               onClick={() => handleRoleSwitch('user')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: '#EFF6FF', color: '#1D4ED8', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
             >
-              <User size={14} /> User / Student
+              <User size={14} /> User (Diner)
             </button>
             <button
               onClick={() => handleRoleSwitch('staff')}
@@ -566,146 +516,13 @@ export default function VFoodsUserDashboard({
               </div>
             ) : (
               <>
-                {/* Savvy HRMS: Campus Dining Windows & All-Day Counters */}
-                <div style={{
-                  background: '#FFFFFF',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '14px',
-                  padding: '14px 16px',
-                  marginBottom: '16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 3px #DCFCE7' }} />
-                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
-                        Dining Schedules & Quick Bites
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                        {SERVICE_SLOTS.find(w => w.id === defaultActiveScheduledWindow)?.name} Window Active
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
-                      Main Canteen Slots + Continuous Snack Stalls
-                    </div>
-                  </div>
-
-                  {/* Service Slot Tabs */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
-                    {SERVICE_SLOTS.map(slot => {
-                      const isCurrentLive = slot.id === defaultActiveScheduledWindow
-                      const isSelected = selectedServiceSlot === slot.id || (selectedServiceSlot === 'all' && (slot.id === 'all-day' || isCurrentLive))
-                      const isContinuous = slot.type === 'continuous'
-                      return (
-                        <button
-                          key={slot.id}
-                          type="button"
-                          onClick={() => setSelectedServiceSlot(selectedServiceSlot === slot.id ? 'all' : slot.id)}
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: '10px',
-                            border: isSelected ? (isContinuous ? '1.5px solid #0284C7' : '1.5px solid #2563EB') : '1px solid #E2E8F0',
-                            background: isSelected ? (isContinuous ? '#F0F9FF' : '#EFF6FF') : '#F8FAFC',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                            <span style={{ fontSize: '11.5px', fontWeight: 700, color: isSelected ? (isContinuous ? '#0369A1' : '#1E40AF') : '#1E293B' }}>
-                              {slot.name}
-                            </span>
-                            {isContinuous ? (
-                              <span style={{ fontSize: '9px', fontWeight: 700, color: '#0284C7', background: '#E0F2FE', padding: '1px 4px', borderRadius: '3px' }}>
-                                All-Day
-                              </span>
-                            ) : isCurrentLive ? (
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16A34A' }} title="Current Live Slot" />
-                            ) : null}
-                          </div>
-                          <div style={{ fontSize: '10px', color: isSelected ? (isContinuous ? '#0284C7' : '#2563EB') : '#64748B', marginTop: '3px', fontWeight: 500 }}>
-                            {slot.time}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {selectedServiceSlot !== 'all' && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0', fontSize: '11px' }}>
-                      <span style={{ color: '#475569', fontWeight: 600 }}>
-                        {selectedServiceSlot === 'all-day' 
-                          ? 'Showing continuous service all-day snacks, bakery items, juices and beverages'
-                          : `Showing scheduled meal items for ${SERVICE_SLOTS.find(w => w.id === selectedServiceSlot)?.name}`
-                        }
-                      </span>
-                      <button
-                        onClick={() => setSelectedServiceSlot('all')}
-                        style={{ background: 'none', border: 'none', color: '#2563EB', fontWeight: 700, cursor: 'pointer', fontSize: '11px' }}
-                      >
-                        Reset Filter
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Kitchen Rush Notice if active orders exist */}
-                {orders && orders.some(o => o.status === 'placed' || o.status === 'preparing') && (
-                  <div style={{
-                    background: '#FFF7ED',
-                    border: '1px solid #FFEDD5',
-                    borderRadius: '12px',
-                    padding: '10px 14px',
-                    marginBottom: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                  }}>
-                    <Clock size={16} color="#EA580C" />
-                    <div style={{ flex: 1, fontSize: '12px', color: '#9A3412', fontWeight: 600 }}>
-                      Kitchen Rush Notice: High counter traffic right now. Chefs are preparing orders fresh with temporary kitchen buffers.
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Section 1: Popular on Campus ── */}
+                {/* ── Section 1: Campus Food Courts & Counters (FIRST) ── */}
                 <div className="vfoods-section-header">
                   <span className="vfoods-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <Flame size={17} color="#2563EB" /> Popular on Campus
-                  </span>
-                  <div className="vfoods-filter-pill-group">
-                    <button
-                      className={`vfoods-filter-pill-btn ${popularFilter === 'all' ? 'active' : ''}`}
-                      onClick={() => setPopularFilter('all')}
-                    >
-                      All
-                    </button>
-                    <button
-                      className={`vfoods-filter-pill-btn ${popularFilter === 'veg' ? 'active' : ''}`}
-                      onClick={() => setPopularFilter('veg')}
-                    >
-                      <span className="vfoods-veg-dot" /> Pure Veg
-                    </button>
-                    <button
-                      className={`vfoods-filter-pill-btn ${popularFilter === 'non-veg' ? 'active' : ''}`}
-                      onClick={() => setPopularFilter('non-veg')}
-                    >
-                      <span className="vfoods-nonveg-dot" /> Non-Veg
-                    </button>
-                  </div>
-                </div>
-
-                <div className="vfoods-dish-grid-3">
-                  {popularDishes.map((item, idx) => renderDishCard(item, idx < 6))}
-                </div>
-
-                {/* ── Section 2: Campus Food Courts ── */}
-                <div className="vfoods-section-header">
-                  <span className="vfoods-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <Building2 size={17} color="#2563EB" /> Campus Food Courts
+                    <Store size={17} color="#2563EB" /> Campus Food Courts & Counters
                   </span>
                   <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
-                    Tap any food court to view counters & menus
+                    Select a court to explore counters & live menus
                   </span>
                 </div>
 
@@ -730,14 +547,106 @@ export default function VFoodsUserDashboard({
                           <h3 className="vfoods-fc-title">{fc.name}</h3>
                           <p className="vfoods-fc-sub">{fc.subtitle}</p>
                           <div className="vfoods-fc-pill">
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Store size={11} /> {courtOutlets.length} {courtOutlets.length === 1 ? 'counter' : 'counters'}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Store size={11} /> {courtOutlets.length} {courtOutlets.length === 1 ? 'counter' : 'counters'}
+                            </span>
                             <span>|</span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Utensils size={11} /> {itemCount} items <ChevronRight size={11} /></span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Utensils size={11} /> {itemCount} items <ChevronRight size={11} />
+                            </span>
                           </div>
                         </div>
                       </div>
                     )
                   })}
+                </div>
+
+                {/* ── Section 2: Popular Campus Dishes (SECOND) ── */}
+                <div className="vfoods-section-header" style={{ marginTop: '24px' }}>
+                  <span className="vfoods-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Utensils size={17} color="#2563EB" /> Popular Campus Dishes
+                  </span>
+                  <div className="vfoods-filter-pill-group">
+                    <button
+                      className={`vfoods-filter-pill-btn ${popularFilter === 'all' ? 'active' : ''}`}
+                      onClick={() => setPopularFilter('all')}
+                    >
+                      All
+                    </button>
+                    <button
+                      className={`vfoods-filter-pill-btn ${popularFilter === 'veg' ? 'active' : ''}`}
+                      onClick={() => setPopularFilter('veg')}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '12px',
+                        height: '12px',
+                        border: '1.5px solid #16A34A',
+                        borderRadius: '2px',
+                        background: '#FFFFFF'
+                      }}>
+                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#16A34A' }} />
+                      </span>
+                      Pure Veg
+                    </button>
+                    <button
+                      className={`vfoods-filter-pill-btn ${popularFilter === 'non-veg' ? 'active' : ''}`}
+                      onClick={() => setPopularFilter('non-veg')}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '12px',
+                        height: '12px',
+                        border: '1.5px solid #DC2626',
+                        borderRadius: '2px',
+                        background: '#FFFFFF'
+                      }}>
+                        <span style={{
+                          width: 0,
+                          height: 0,
+                          borderLeft: '3px solid transparent',
+                          borderRight: '3px solid transparent',
+                          borderBottom: '5px solid #DC2626'
+                        }} />
+                      </span>
+                      Non-Veg
+                    </button>
+                  </div>
+                </div>
+
+                <div className="vfoods-dish-grid-3">
+                  {popularDishes.map((item, idx) => renderDishCard(item, idx < 6))}
+                </div>
+
+                {/* ── Campus Dining Info Footer Card ── */}
+                <div style={{
+                  marginTop: '28px',
+                  marginBottom: '16px',
+                  padding: '18px 16px',
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
+                    <Store size={15} color="#2563EB" /> V FOODS · VIT Chennai Campus Dining
+                  </div>
+                  <p style={{ fontSize: '11.5px', color: '#64748B', margin: 0, maxWidth: '440px', lineHeight: 1.5 }}>
+                    Pre-order ahead, receive your pickup token, and collect your fresh food directly from counters across Gazebo, North Square, AB3, and Academic Blocks.
+                  </p>
+                  <span style={{ fontSize: '10.5px', color: '#94A3B8', fontWeight: 600, marginTop: '2px' }}>
+                    19 campus canteens & food counters · Open daily 07:30 AM – 10:30 PM
+                  </span>
                 </div>
               </>
             )}
