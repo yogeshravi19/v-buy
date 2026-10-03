@@ -787,9 +787,9 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 background: '#FFFFFF'
               }}
             >
-              <option value="open">🟢 Operational (Open)</option>
-              <option value="rush">🟠 Rush Hour (+10m)</option>
-              <option value="paused">🔴 Kitchen Paused</option>
+              <option value="open">Operational (Normal)</option>
+              <option value="rush">Rush Hour (+10m Buffer)</option>
+              <option value="paused">Kitchen Paused</option>
             </select>
 
             <button
@@ -829,46 +829,78 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Executive KPI Grid */}
+              {/* Executive KPI Grid (Figma Restaurant Dashboard Style) */}
               <div className="saas-kpi-grid">
-                <div className="saas-kpi-card">
-                  <div className="saas-kpi-header">
-                    <span className="saas-kpi-title">Gross Sales Today</span>
-                    <TrendingUp size={16} className="text-blue-600" />
+                <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Gross Sales Today</span>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <TrendingUp size={18} className="text-blue-600" />
+                    </div>
                   </div>
-                  <div className="saas-kpi-value" style={{ color: '#1E40AF' }}>
+                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
                     {money(totalRevenue)}
                   </div>
-                  <div className="saas-kpi-sub">Across all payment channels</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
+                      <TrendingUp size={11} /> +9.6% vs yesterday
+                    </span>
+                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>All payment channels</span>
+                  </div>
                 </div>
 
-                <div className="saas-kpi-card">
-                  <div className="saas-kpi-header">
-                    <span className="saas-kpi-title">Net Outlet Payout (95%)</span>
-                    <Banknote size={16} className="text-emerald-600" />
+                <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Net Payout (95%)</span>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Banknote size={18} className="text-emerald-600" />
+                    </div>
                   </div>
-                  <div className="saas-kpi-value" style={{ color: '#15803D' }}>
+                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
                     {money(netEarnings)}
                   </div>
-                  <div className="saas-kpi-sub">After 5% V Foods platform fee</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
+                      <TrendingUp size={11} /> +9.6% net yield
+                    </span>
+                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>After 5% platform fee</span>
+                  </div>
                 </div>
 
-                <div className="saas-kpi-card">
-                  <div className="saas-kpi-header">
-                    <span className="saas-kpi-title">Active Kitchen Load</span>
-                    <ChefHat size={16} className="text-amber-500" />
+                <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Active Kitchen Load</span>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ChefHat size={18} className="text-amber-600" />
+                    </div>
                   </div>
-                  <div className="saas-kpi-value">{activeKitchenCount}</div>
-                  <div className="saas-kpi-sub">Orders currently in prep</div>
+                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
+                    {activeKitchenCount}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#C2410C', background: '#FFEDD5', padding: '2px 8px', borderRadius: '12px' }}>
+                      <Clock size={11} /> Live Prep Queue
+                    </span>
+                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>Currently in kitchen</span>
+                  </div>
                 </div>
 
-                <div className="saas-kpi-card">
-                  <div className="saas-kpi-header">
-                    <span className="saas-kpi-title">Completed Orders</span>
-                    <CheckCircle2 size={16} className="text-slate-600" />
+                <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Completed Orders</span>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <CheckCircle2 size={18} className="text-slate-700" />
+                    </div>
                   </div>
-                  <div className="saas-kpi-value">{completedCount}</div>
-                  <div className="saas-kpi-sub">Fulfilled today</div>
+                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
+                    {completedCount}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
+                      <TrendingUp size={11} /> +8.6% completion
+                    </span>
+                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>Fulfilled today</span>
+                  </div>
                 </div>
               </div>
 
@@ -895,6 +927,131 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                       <span>Settlements Ledger</span>
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* Savvy HRMS: Kitchen Batch Prep & Demand Forecast */}
+              <div className="saas-card" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ChefHat size={18} className="text-orange-600" />
+                      <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                        Kitchen Batch Prep & Demand Forecast
+                      </h3>
+                      <span style={{ fontSize: '11px', color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                        Waste Prevention Target: -22%
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0' }}>
+                      Calculated from current running tickets, pre-order reservations, and historical cafeteria peak demand.
+                    </p>
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#475569', background: '#F1F5F9', padding: '6px 12px', borderRadius: '6px', fontWeight: 600 }}>
+                    Active Meal Window: <strong>Lunch (11:30 AM – 3:00 PM)</strong>
+                  </div>
+                </div>
+
+                {/* Batch Forecast Table */}
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="saas-table" style={{ fontSize: '12.5px' }}>
+                    <thead>
+                      <tr>
+                        <th>Item & Station</th>
+                        <th>Meal Window</th>
+                        <th>Live Demand</th>
+                        <th>Recommended Prep Batch</th>
+                        <th>Station Guidance</th>
+                        <th>Waste Risk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0F172A' }}>Veg Puff & Samosa</div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>Snack Fryer Station</div>
+                        </td>
+                        <td><span className="saas-badge saas-badge-neutral">Snack / Lunch</span></td>
+                        <td>
+                          <span style={{ fontWeight: 700 }}>{Math.max(12, activeKitchenCount * 3)} units</span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: '#1E40AF' }}>Prep batch of 25 units</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#166534', background: '#DCFCE7', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                            Optimal Warm Holding
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#15803D', fontWeight: 600 }}>Low (High turnover)</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0F172A' }}>Special Chicken Biryani</div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>Dum Rice Station</div>
+                        </td>
+                        <td><span className="saas-badge saas-badge-info">Lunch Peak</span></td>
+                        <td>
+                          <span style={{ fontWeight: 700 }}>{Math.max(18, activeKitchenCount * 4)} portions</span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: '#1E40AF' }}>Prep 1 pot (35 portions)</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#C2410C', background: '#FFEDD5', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                            Stage 1 Pot by 12:15 PM
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#B45309', fontWeight: 600 }}>Controlled via tokens</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0F172A' }}>Paneer Butter Masala Combo</div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>Curry & Gravy Station</div>
+                        </td>
+                        <td><span className="saas-badge saas-badge-info">Lunch Peak</span></td>
+                        <td>
+                          <span style={{ fontWeight: 700 }}>{Math.max(10, activeKitchenCount * 2)} portions</span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: '#1E40AF' }}>Prep 15 portions buffer</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#166534', background: '#DCFCE7', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                            Base gravy ready
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#15803D', fontWeight: 600 }}>Low (Re-usable base)</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0F172A' }}>Cold Beverages & Juices</div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>Beverage Counter</div>
+                        </td>
+                        <td><span className="saas-badge saas-badge-neutral">All-Day</span></td>
+                        <td>
+                          <span style={{ fontWeight: 700 }}>{Math.max(22, completedCount + 5)} cups</span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: '#1E40AF' }}>Continuous on-demand</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#1E40AF', background: '#DBEAFE', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                            Pre-chill pulp & syrups
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '11.5px', color: '#15803D', fontWeight: 600 }}>Near Zero</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -1213,7 +1370,9 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                           style={{ width: '100%', marginTop: '10px', justifyContent: 'center' }}
                           onClick={() => handleAdvanceStatus(o.id, 'ready')}
                         >
-                          Confirm Handover ✓
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            Confirm Handover <Check size={14} />
+                          </span>
                         </button>
                       </div>
                     ))}

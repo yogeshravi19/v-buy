@@ -115,6 +115,26 @@ export default function VFoodsUserDashboard({
   const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
   const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
 
+  // Savvy HRMS-inspired Meal Windows & Time-Slot Availability
+  const MEAL_WINDOWS = useMemo(() => [
+    { id: 'breakfast', name: 'Breakfast', time: '07:30 - 10:30', startHour: 7.5, endHour: 10.5, keywords: ['dosa', 'idli', 'poori', 'vada', 'pongal', 'coffee', 'tea', 'sandwich', 'bread', 'omelette', 'egg'] },
+    { id: 'lunch', name: 'Lunch', time: '11:30 - 15:00', startHour: 11.5, endHour: 15.0, keywords: ['meals', 'thali', 'biryani', 'rice', 'dal', 'paneer', 'chicken', 'curry', 'chapati', 'parotta', 'pulao'] },
+    { id: 'snacks', name: 'Snacks', time: '16:30 - 18:45', startHour: 16.5, endHour: 18.75, keywords: ['samosa', 'puff', 'cutlet', 'roll', 'juice', 'shake', 'maggi', 'nuggets', 'fries', 'tea', 'bhel'] },
+    { id: 'dinner', name: 'Dinner', time: '19:30 - 22:30', startHour: 19.5, endHour: 22.5, keywords: ['parotta', 'roti', 'naan', 'fried rice', 'noodles', 'dosa', 'chicken', 'paneer', 'egg', 'kothu'] }
+  ], [])
+
+  const currentHour = useMemo(() => {
+    const d = new Date()
+    return d.getHours() + d.getMinutes() / 60
+  }, [])
+
+  const defaultActiveWindow = useMemo(() => {
+    const match = MEAL_WINDOWS.find(w => currentHour >= w.startHour && currentHour <= w.endHour)
+    return match ? match.id : 'lunch'
+  }, [currentHour, MEAL_WINDOWS])
+
+  const [selectedMealWindow, setSelectedMealWindow] = useState('all')
+
   const handleGatewayCheckout = () => {
     setIsGatewayProcessing(true)
     setGatewayStep('processing')
@@ -168,13 +188,22 @@ export default function VFoodsUserDashboard({
     return list
   }, [outlets])
 
-  // Popular on Campus items (12 curated dishes across outlets)
+  // Popular on Campus items (12 curated dishes across outlets, optionally filtered by meal window)
   const popularDishes = useMemo(() => {
     let items = allDishes
     if (popularFilter === 'veg') items = items.filter(i => i.is_veg === true)
     if (popularFilter === 'non-veg') items = items.filter(i => i.is_veg === false)
+    if (selectedMealWindow !== 'all') {
+      const activeWin = MEAL_WINDOWS.find(w => w.id === selectedMealWindow)
+      if (activeWin) {
+        const matched = items.filter(i =>
+          activeWin.keywords.some(k => i.name.toLowerCase().includes(k) || (i.category || '').toLowerCase().includes(k))
+        )
+        if (matched.length > 0) items = matched
+      }
+    }
     return items.slice(0, 12)
-  }, [allDishes, popularFilter])
+  }, [allDishes, popularFilter, selectedMealWindow, MEAL_WINDOWS])
 
   // Search results
   const searchResults = useMemo(() => {
@@ -460,6 +489,100 @@ export default function VFoodsUserDashboard({
               </div>
             ) : (
               <>
+                {/* Savvy HRMS: Campus Meal Window Schedule Bar */}
+                <div style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '14px',
+                  padding: '14px 16px',
+                  marginBottom: '16px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 3px #DCFCE7' }} />
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
+                        Campus Meal Windows
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                        {MEAL_WINDOWS.find(w => w.id === defaultActiveWindow)?.name} Active
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
+                      Live Counters & Pre-Orders Open
+                    </div>
+                  </div>
+
+                  {/* Meal Slot Tabs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '8px' }}>
+                    {MEAL_WINDOWS.map(win => {
+                      const isCurrentLive = win.id === defaultActiveWindow
+                      const isSelected = selectedMealWindow === win.id || (selectedMealWindow === 'all' && isCurrentLive)
+                      return (
+                        <button
+                          key={win.id}
+                          type="button"
+                          onClick={() => setSelectedMealWindow(selectedMealWindow === win.id ? 'all' : win.id)}
+                          style={{
+                            padding: '8px 10px',
+                            borderRadius: '10px',
+                            border: isSelected ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
+                            background: isSelected ? '#EFF6FF' : '#F8FAFC',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#1E40AF' : '#1E293B' }}>
+                              {win.name}
+                            </span>
+                            {isCurrentLive && (
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16A34A' }} title="Current Live Slot" />
+                            )}
+                          </div>
+                          <div style={{ fontSize: '10px', color: isSelected ? '#2563EB' : '#64748B', marginTop: '3px', fontWeight: 500 }}>
+                            {win.time}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {selectedMealWindow !== 'all' && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0', fontSize: '11px' }}>
+                      <span style={{ color: '#475569', fontWeight: 600 }}>
+                        Showing recommended items for {MEAL_WINDOWS.find(w => w.id === selectedMealWindow)?.name}
+                      </span>
+                      <button
+                        onClick={() => setSelectedMealWindow('all')}
+                        style={{ background: 'none', border: 'none', color: '#2563EB', fontWeight: 700, cursor: 'pointer', fontSize: '11px' }}
+                      >
+                        Reset Filter
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Kitchen Rush Notice if active orders exist */}
+                {orders && orders.some(o => o.status === 'placed' || o.status === 'preparing') && (
+                  <div style={{
+                    background: '#FFF7ED',
+                    border: '1px solid #FFEDD5',
+                    borderRadius: '12px',
+                    padding: '10px 14px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <Clock size={16} color="#EA580C" />
+                    <div style={{ flex: 1, fontSize: '12px', color: '#9A3412', fontWeight: 600 }}>
+                      Kitchen Rush Notice: High counter traffic right now. Chefs are preparing orders fresh with temporary kitchen buffers.
+                    </div>
+                  </div>
+                )}
+
                 {/* ── Section 1: Popular on Campus ── */}
                 <div className="vfoods-section-header">
                   <span className="vfoods-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

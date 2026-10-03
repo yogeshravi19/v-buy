@@ -30,6 +30,7 @@ import {
   ExternalLink,
   Printer,
   ChevronRight,
+  ChevronDown,
   TrendingUp,
   AlertTriangle
 } from 'lucide-react'
@@ -149,6 +150,26 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [syncing, setSyncing] = useState(false)
   const [bannerNotice, setBannerNotice] = useState<string | null>(null)
 
+  // Figma-inspired Kitchen Rush Management & Ticket Accordion
+  const [delayBuffers, setDelayBuffers] = useState<Record<number, number>>({})
+  const [collapsedTickets, setCollapsedTickets] = useState<Record<number, boolean>>({})
+
+  const handleApplyDelayBuffer = (orderId: number, minutes: number) => {
+    setDelayBuffers(prev => {
+      const next = (prev[orderId] === minutes) ? 0 : minutes
+      return { ...prev, [orderId]: next }
+    })
+    setBannerNotice(`Updated prep buffer for ticket #${orderId} (+${minutes}m rush buffer)`)
+    setTimeout(() => setBannerNotice(null), 3500)
+  }
+
+  const toggleTicketCollapse = (orderId: number) => {
+    setCollapsedTickets(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }))
+  }
+
   // Pickup Verification Modal
   const [showVerifyModal, setShowVerifyModal] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
@@ -214,7 +235,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         const placedCount = formatted.filter(o => o.status === 'placed').length
         if (placedCount > prevPlacedCountRef.current && prevPlacedCountRef.current !== 0) {
           if (soundEnabled) playNotificationChime()
-          setBannerNotice('🔔 New order received!')
+          setBannerNotice('New order received')
           setTimeout(() => setBannerNotice(null), 4000)
         }
         prevPlacedCountRef.current = placedCount
@@ -390,7 +411,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       if (!error && data) {
         setMenuItems(prev => prev.map(i => i.id === newItem.id ? (data as MenuItem) : i))
       }
-      setBannerNotice(`✅ Added "${newItemForm.name}" to menu!`)
+      setBannerNotice(`Added "${newItemForm.name}" to menu successfully`)
       setTimeout(() => setBannerNotice(null), 3000)
     } catch (err) {
       console.error('Error inserting item:', err)
@@ -975,13 +996,20 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             {money(order.total)}
                           </td>
                           <td>
-                            <span className={`saas-badge ${
-                              order.status === 'placed' ? 'saas-badge-warning' :
-                              order.status === 'preparing' ? 'saas-badge-info' :
-                              order.status === 'ready' ? 'saas-badge-success' : 'saas-badge-neutral'
-                            }`}>
-                              {order.status.toUpperCase()}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                              <span className={`saas-badge ${
+                                order.status === 'placed' ? 'saas-badge-warning' :
+                                order.status === 'preparing' ? 'saas-badge-info' :
+                                order.status === 'ready' ? 'saas-badge-success' : 'saas-badge-neutral'
+                              }`}>
+                                {order.status.toUpperCase()}
+                              </span>
+                              {delayBuffers[order.id] > 0 && (
+                                <span style={{ fontSize: '10.5px', color: '#C2410C', background: '#FFF7ED', padding: '1px 5px', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                  <Clock size={10} /> +{delayBuffers[order.id]}m buffer
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td style={{ textAlign: 'right' }}>
                             {order.status === 'placed' && (
@@ -1069,15 +1097,84 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           <span className="saas-ticket-token">#{order.token || order.id}</span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
-                        <div className="saas-ticket-items">
-                          {(order.order_items || []).map((item, idx) => (
-                            <div key={idx} className="saas-ticket-item-row">
-                              <span className="saas-ticket-item-name">{item.name}</span>
-                              <span className="saas-ticket-item-qty">×{item.qty}</span>
-                            </div>
-                          ))}
+
+                        {/* Collapsible Ticket Items */}
+                        <div 
+                          onClick={() => toggleTicketCollapse(order.id)}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between', 
+                            margin: '6px 0 4px', 
+                            padding: '4px 6px',
+                            borderRadius: '4px',
+                            background: '#F8FAFC',
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                          }}
+                        >
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
+                            {(order.order_items || []).length} {(order.order_items || []).length === 1 ? 'item' : 'items'}
+                          </span>
+                          <ChevronDown 
+                            size={13} 
+                            style={{ 
+                              color: '#64748B', 
+                              transform: collapsedTickets[order.id] ? 'rotate(-90deg)' : 'none', 
+                              transition: 'transform 0.15s ease' 
+                            }} 
+                          />
                         </div>
-                        <div style={{ marginTop: '12px' }}>
+
+                        {!collapsedTickets[order.id] && (
+                          <div className="saas-ticket-items">
+                            {(order.order_items || []).map((item, idx) => (
+                              <div key={idx} className="saas-ticket-item-row">
+                                <span className="saas-ticket-item-name">{item.name}</span>
+                                <span className="saas-ticket-item-qty">×{item.qty}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Figma-style Kitchen Rush Buffer Chips */}
+                        <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 600 }}>Rush Buffer:</span>
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {[5, 10, 15].map(mins => {
+                              const isSelected = delayBuffers[order.id] === mins
+                              return (
+                                <button
+                                  key={mins}
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleApplyDelayBuffer(order.id, mins); }}
+                                  style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    border: isSelected ? '1px solid #EA580C' : '1px solid #CBD5E1',
+                                    background: isSelected ? '#EA580C' : '#FFFFFF',
+                                    color: isSelected ? '#FFFFFF' : '#475569',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  title={`Add ${mins}m rush buffer`}
+                                >
+                                  +{mins}m
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {delayBuffers[order.id] > 0 && (
+                          <div style={{ marginTop: '6px', fontSize: '10.5px', color: '#C2410C', background: '#FFF7ED', padding: '3px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                            <Clock size={10} /> +{delayBuffers[order.id]}m buffer applied
+                          </div>
+                        )}
+
+                        <div style={{ marginTop: '10px' }}>
                           <button
                             className="saas-btn saas-btn-primary saas-btn-sm"
                             style={{ width: '100%', justifyContent: 'center' }}
@@ -1115,15 +1212,84 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           <span className="saas-ticket-token">#{order.token || order.id}</span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
-                        <div className="saas-ticket-items">
-                          {(order.order_items || []).map((item, idx) => (
-                            <div key={idx} className="saas-ticket-item-row">
-                              <span className="saas-ticket-item-name">{item.name}</span>
-                              <span className="saas-ticket-item-qty">×{item.qty}</span>
-                            </div>
-                          ))}
+
+                        {/* Collapsible Ticket Items */}
+                        <div 
+                          onClick={() => toggleTicketCollapse(order.id)}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between', 
+                            margin: '6px 0 4px', 
+                            padding: '4px 6px',
+                            borderRadius: '4px',
+                            background: '#F8FAFC',
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                          }}
+                        >
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
+                            {(order.order_items || []).length} {(order.order_items || []).length === 1 ? 'item' : 'items'}
+                          </span>
+                          <ChevronDown 
+                            size={13} 
+                            style={{ 
+                              color: '#64748B', 
+                              transform: collapsedTickets[order.id] ? 'rotate(-90deg)' : 'none', 
+                              transition: 'transform 0.15s ease' 
+                            }} 
+                          />
                         </div>
-                        <div style={{ marginTop: '12px' }}>
+
+                        {!collapsedTickets[order.id] && (
+                          <div className="saas-ticket-items">
+                            {(order.order_items || []).map((item, idx) => (
+                              <div key={idx} className="saas-ticket-item-row">
+                                <span className="saas-ticket-item-name">{item.name}</span>
+                                <span className="saas-ticket-item-qty">×{item.qty}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Figma-style Kitchen Rush Buffer Chips */}
+                        <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 600 }}>Rush Buffer:</span>
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {[5, 10, 15].map(mins => {
+                              const isSelected = delayBuffers[order.id] === mins
+                              return (
+                                <button
+                                  key={mins}
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleApplyDelayBuffer(order.id, mins); }}
+                                  style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    border: isSelected ? '1px solid #EA580C' : '1px solid #CBD5E1',
+                                    background: isSelected ? '#EA580C' : '#FFFFFF',
+                                    color: isSelected ? '#FFFFFF' : '#475569',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  title={`Add ${mins}m rush buffer`}
+                                >
+                                  +{mins}m
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {delayBuffers[order.id] > 0 && (
+                          <div style={{ marginTop: '6px', fontSize: '10.5px', color: '#C2410C', background: '#FFF7ED', padding: '3px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                            <Clock size={10} /> +{delayBuffers[order.id]}m buffer applied
+                          </div>
+                        )}
+
+                        <div style={{ marginTop: '10px' }}>
                           <button
                             className="saas-btn saas-btn-success saas-btn-sm"
                             style={{ width: '100%', justifyContent: 'center' }}
@@ -1163,21 +1329,55 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           </span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
-                        <div className="saas-ticket-items">
-                          {(order.order_items || []).map((item, idx) => (
-                            <div key={idx} className="saas-ticket-item-row">
-                              <span className="saas-ticket-item-name">{item.name}</span>
-                              <span className="saas-ticket-item-qty">×{item.qty}</span>
-                            </div>
-                          ))}
+
+                        {/* Collapsible Ticket Items */}
+                        <div 
+                          onClick={() => toggleTicketCollapse(order.id)}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between', 
+                            margin: '6px 0 4px', 
+                            padding: '4px 6px',
+                            borderRadius: '4px',
+                            background: '#F8FAFC',
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                          }}
+                        >
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
+                            {(order.order_items || []).length} {(order.order_items || []).length === 1 ? 'item' : 'items'}
+                          </span>
+                          <ChevronDown 
+                            size={13} 
+                            style={{ 
+                              color: '#64748B', 
+                              transform: collapsedTickets[order.id] ? 'rotate(-90deg)' : 'none', 
+                              transition: 'transform 0.15s ease' 
+                            }} 
+                          />
                         </div>
+
+                        {!collapsedTickets[order.id] && (
+                          <div className="saas-ticket-items">
+                            {(order.order_items || []).map((item, idx) => (
+                              <div key={idx} className="saas-ticket-item-row">
+                                <span className="saas-ticket-item-name">{item.name}</span>
+                                <span className="saas-ticket-item-qty">×{item.qty}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <div style={{ marginTop: '12px' }}>
                           <button
                             className="saas-btn saas-btn-secondary saas-btn-sm"
                             style={{ width: '100%', justifyContent: 'center' }}
                             onClick={() => handleAdvanceStatus(order.id, 'ready')}
                           >
-                            <span>Handed Over ✓</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              Handed Over <Check size={14} />
+                            </span>
                           </button>
                         </div>
                       </div>
@@ -1373,7 +1573,9 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                         style={{ marginTop: '6px', justifyContent: 'center' }}
                         onClick={() => handleAdvanceStatus(order.id, 'ready')}
                       >
-                        Hand Over ✓
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          Hand Over <Check size={14} />
+                        </span>
                       </button>
                     </div>
                   ))}
