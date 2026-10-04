@@ -2514,8 +2514,16 @@ function CartDock({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  const convenienceFee = subtotal > 0 ? Number((subtotal * 0.07).toFixed(2)) : 0
-  const finalDebit = Number(Math.max(0, subtotal - discount + convenienceFee).toFixed(2))
+  const packagingCharges = (cart.items || []).reduce(
+    (sum, item) => sum + (Number(item.packaging_fee || item.packaging_charge || 0) * (item.qty || 1)),
+    0
+  ) + Number(cart.outlet?.packaging_charge || cart.outlet?.packaging_fee || 0)
+
+  const applicableBase = Math.max(0, subtotal - discount)
+  const totalAdditionalFee = applicableBase > 0 ? Number((applicableBase * 0.07).toFixed(2)) : 0
+  const convenienceFee = Number((totalAdditionalFee / 3).toFixed(2))
+  const taxAndServiceCharges = Number((totalAdditionalFee - convenienceFee).toFixed(2))
+  const finalDebit = Number((applicableBase + packagingCharges + totalAdditionalFee).toFixed(2))
   const isInsufficient = wallet.balance < finalDebit
   const deficit = Math.max(0, finalDebit - wallet.balance)
 
@@ -2551,7 +2559,7 @@ function CartDock({
             <div>
               <strong>{cart.outlet?.name}</strong>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
-                <Store size={13} color="var(--blue-primary)" /> Campus Counter Pre-Order
+                <Store size={13} color="var(--blue-primary)" /> Campus Pickup
               </div>
             </div>
             <button className="cart-clear-btn" onClick={() => { setCart({ outlet: null, items: [] }); setExpanded(false) }}>
@@ -2588,7 +2596,7 @@ function CartDock({
                 className={`slot-toggle-opt ${!isScheduled ? 'active' : ''}`}
                 onClick={() => { setIsScheduled(false); setSelectedSlotId(null) }}
               >
-                <Zap size={13} /> Order Now (Immediate Prep)
+                <Zap size={13} /> Immediate (10–15 mins)
               </button>
               <button
                 className={`slot-toggle-opt ${isScheduled ? 'active' : ''}`}
@@ -2600,20 +2608,19 @@ function CartDock({
                   }
                 }}
               >
-                <Clock size={13} /> Schedule Pickup
+                <Clock size={13} /> Pick up later
               </button>
             </div>
 
             {isScheduled && (
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  Select today's pickup time slot (batch-prepped by kitchen):
+                <p style={{ margin: '0 0 6px', fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  Select pickup time:
                 </p>
                 <div className="slots-grid">
                   {outletSlots.map(slot => {
                     const isFull = slot.current_orders >= slot.max_orders
                     const isSelected = selectedSlotId === slot.id
-                    const remaining = Math.max(0, slot.max_orders - slot.current_orders)
 
                     return (
                       <button
@@ -2622,12 +2629,14 @@ function CartDock({
                         className={`slot-pill ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''}`}
                         disabled={isFull}
                         onClick={() => setSelectedSlotId(slot.id)}
-                        title={isFull ? 'This slot has reached capacity (15/15)' : `${remaining} spots remaining`}
+                        title={isFull ? 'This slot has reached capacity' : 'Select slot'}
                       >
-                        <div style={{ fontWeight: 800 }}>{slot.time_label}</div>
-                        <div style={{ fontSize: '10px', color: isFull ? '#EF4444' : '#059669', marginTop: 2 }}>
-                          {isFull ? 'FULL (15/15)' : `${remaining} slots left`}
-                        </div>
+                        <div style={{ fontWeight: 700 }}>{slot.time_label}</div>
+                        {isFull && (
+                          <div style={{ fontSize: '10px', color: '#EF4444', marginTop: 2 }}>
+                            Full
+                          </div>
+                        )}
                       </button>
                     )
                   })}
@@ -2764,27 +2773,31 @@ function CartDock({
                 <Receipt size={14} /> Bill Summary
               </div>
               <div className="bill-summary-row">
-                <span>Item Total</span>
+                <span>Canteen Items</span>
                 <span>{money(subtotal)}</span>
               </div>
-              <div className="bill-summary-row">
-                <span>Campus Counter Pickup (Skip Queue)</span>
-                <span style={{ color: '#059669', fontWeight: 700 }}>FREE</span>
-              </div>
-              {convenienceFee > 0 && (
-                <div className="bill-summary-row">
-                  <span>Convenience Fees</span>
-                  <span>{money(convenienceFee)}</span>
-                </div>
-              )}
               {discount > 0 && (
                 <div className="bill-summary-row savings">
                   <span>Coupon Discount ({appliedCoupon?.code})</span>
                   <span>-{money(discount)}</span>
                 </div>
               )}
+              {packagingCharges > 0 && (
+                <div className="bill-summary-row">
+                  <span>Packaging Charges</span>
+                  <span>{money(packagingCharges)}</span>
+                </div>
+              )}
+              <div className="bill-summary-row">
+                <span>Tax &amp; Service Charges</span>
+                <span>{money(taxAndServiceCharges)}</span>
+              </div>
+              <div className="bill-summary-row">
+                <span>Convenience Fee</span>
+                <span>{money(convenienceFee)}</span>
+              </div>
               <div className="bill-summary-row total">
-                <span>To Pay</span>
+                <span>Total</span>
                 <span>{money(finalDebit)}</span>
               </div>
             </div>
@@ -2822,7 +2835,7 @@ function CartDock({
       <div className="cart-dock-bar">
         <button className="cart-expand-btn" onClick={() => setExpanded(e => !e)}>
           <strong>{qty} Items {hasUnavailable && <span style={{ color: '#EF4444', fontSize: '11px', display: 'block' }}>Has Unavailable</span>}</strong>
-          <small>{cart.outlet?.name}{isScheduled ? ' · Scheduled Counter Pickup' : ' · Counter Pre-Order'}</small>
+          <small>{cart.outlet?.name}{isScheduled ? ' · Scheduled Pickup' : ' · Standard Pickup'}</small>
         </button>
         <div className="cart-dock-total">
           {discount > 0 && <small style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.6)', marginRight: 6, fontSize: '12px' }}>{money(subtotal)}</small>}
@@ -3847,10 +3860,10 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
         </div>
       </div>
 
-      {/* Campus Dining & Counter Pre-Order Details */}
+      {/* Campus Dining & Pickup Details */}
       <div className="profile-section-card">
         <div className="profile-section-header">
-          <MapPin size={16} /> Campus Dining & Pickup Counter Details
+          <MapPin size={16} /> Campus Dining & Pickup Details
         </div>
 
         <div className="profile-info-row">
@@ -6130,7 +6143,7 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
         <div className="admin-card">
           <h3><QrCode size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Token & QR Code Verifier Terminal</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '14px' }}>
-            Instant verification for counter pickups across all canteens
+            Instant verification for order pickups across all canteens
           </p>
           <form onSubmit={handleScanSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
             <input
@@ -6439,7 +6452,7 @@ function CompleteProfileScreen({ currentUser, onCompleted, onSignOut }) {
                 />
               </div>
               <small style={{ color: 'var(--text-muted)', fontSize: '11.5px', marginTop: '4px', display: 'block' }}>
-                Used for counter pickup tokens and fast mobile login.
+                Used for order pickup tokens and fast mobile login.
               </small>
             </div>
 

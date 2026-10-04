@@ -150,8 +150,24 @@ export default function VFoodsUserDashboard({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  const convenienceFee = subtotal > 0 ? Number((subtotal * 0.07).toFixed(2)) : 0
-  const finalDebit = Number(Math.max(0, subtotal - discount + convenienceFee).toFixed(2))
+  // Packaging charges if applicable
+  const packagingCharges = (cart.items || []).reduce(
+    (sum, item) => sum + (Number(item.packaging_fee || item.packaging_charge || 0) * (item.qty || 1)),
+    0
+  ) + Number(cart.outlet?.packaging_charge || cart.outlet?.packaging_fee || 0)
+
+  // Applicable base amount for fees (after discount)
+  const applicableBase = Math.max(0, subtotal - discount)
+
+  // Total additional charge is exactly 7% of applicable base
+  const totalAdditionalCharge = applicableBase > 0 ? Number((applicableBase * 0.07).toFixed(2)) : 0
+
+  // Each of Tax (1/3), Service Charges (1/3), and Convenience Fee (1/3) receives an equal one-third share of the 7%
+  const convenienceFee = Number((totalAdditionalCharge / 3).toFixed(2))
+  const taxAndServiceCharges = Number((totalAdditionalCharge - convenienceFee).toFixed(2))
+
+  // Total payable
+  const finalDebit = Number((applicableBase + packagingCharges + totalAdditionalCharge).toFixed(2))
   const isInsufficient = (wallet?.balance || 0) < finalDebit
   const deficit = Math.max(0, finalDebit - (wallet?.balance || 0))
 
@@ -772,29 +788,16 @@ export default function VFoodsUserDashboard({
               <button className="vfoods-back-btn" onClick={() => setTab('browse')} title="Back to menu">
                 <ArrowLeft size={16} />
               </button>
-              <h2>Your Pre-Order Cart</h2>
+              <h2>Your Cart</h2>
             </div>
 
             <div className="vfoods-cart-content">
-              {/* Pickup Mode Notice */}
-              <div className="vfoods-pickup-banner">
-                <div className="vfoods-pickup-banner-icon">
-                  <Store size={18} />
-                </div>
-                <div>
-                  <div className="vfoods-pickup-banner-title">Counter Pre-Order (Fast Pickup)</div>
-                  <div className="vfoods-pickup-banner-sub">
-                    Freshly prepared in kitchen. Show your 4-digit token at counter to collect.
-                  </div>
-                </div>
-              </div>
-
               {!cart.items || cart.items.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
                   <ShoppingCart size={42} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-                  <h3 style={{ fontSize: '15px', color: '#0F172A', fontWeight: 800 }}>Your cart is empty</h3>
+                  <h3 style={{ fontSize: '15px', color: '#0F172A', fontWeight: 700 }}>Your cart is empty</h3>
                   <p style={{ fontSize: '12px', margin: '4px 0 16px 0' }}>
-                    Browse campus canteens and add items for quick counter pickup!
+                    Browse campus canteens and add items to your cart.
                   </p>
                   <button
                     className="vfoods-pay-btn-primary"
@@ -843,8 +846,8 @@ export default function VFoodsUserDashboard({
                   </div>
 
                   {/* Timing Option: Immediate vs Scheduled */}
-                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '14px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '14px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Clock size={15} color="#2563EB" /> When do you want to pick it up?
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -852,23 +855,37 @@ export default function VFoodsUserDashboard({
                         type="button"
                         onClick={() => setIsScheduled(false)}
                         style={{
-                          padding: '10px', borderRadius: '10px', border: !isScheduled ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                          background: !isScheduled ? '#EFF6FF' : '#FFFFFF', color: !isScheduled ? '#1D4ED8' : '#475569',
-                          fontWeight: 700, fontSize: '11.5px', cursor: 'pointer', textAlign: 'center'
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: !isScheduled ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                          background: !isScheduled ? '#EFF6FF' : '#FFFFFF',
+                          color: !isScheduled ? '#1D4ED8' : '#475569',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <Zap size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} /> As soon as ready (10-15 mins)
+                        Immediate (10–15 mins)
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsScheduled(true)}
                         style={{
-                          padding: '10px', borderRadius: '10px', border: isScheduled ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                          background: isScheduled ? '#EFF6FF' : '#FFFFFF', color: isScheduled ? '#1D4ED8' : '#475569',
-                          fontWeight: 700, fontSize: '11.5px', cursor: 'pointer', textAlign: 'center'
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: isScheduled ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                          background: isScheduled ? '#EFF6FF' : '#FFFFFF',
+                          color: isScheduled ? '#1D4ED8' : '#475569',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <Clock size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} /> Pick up later (Slot)
+                        Pick up later
                       </button>
                     </div>
 
@@ -877,133 +894,122 @@ export default function VFoodsUserDashboard({
                         <select
                           value={selectedSlotId || ''}
                           onChange={e => setSelectedSlotId(e.target.value)}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                          style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12px', color: '#0F172A', background: '#FFFFFF' }}
                         >
-                          <option value="">Select counter pickup slot...</option>
-                          {pickupSlots.map(s => (
-                            <option key={s.id} value={s.id}>
-                              {s.time_label} ({s.max_orders - s.current_orders} slots left)
-                            </option>
-                          ))}
+                          <option value="">Select pickup time...</option>
+                          {pickupSlots.map(s => {
+                            const isFull = (s.max_orders - s.current_orders) <= 0
+                            return (
+                              <option key={s.id} value={s.id} disabled={isFull}>
+                                {s.time_label}{isFull ? ' (Full)' : ''}
+                              </option>
+                            )
+                          })}
                         </select>
                       </div>
                     )}
+
+                    <div style={{ marginTop: '8px', fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span>Pickup:</span>
+                      <strong style={{ color: '#0F172A' }}>
+                        {isScheduled 
+                          ? (pickupSlots.find(s => s.id === selectedSlotId)?.time_label || 'Select a time')
+                          : '10–15 mins'}
+                      </strong>
+                    </div>
                   </div>
 
                   {/* Bill Details */}
                   <div className="vfoods-cart-bill-card">
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '8px' }}>
                       Bill Summary
                     </div>
                     <div className="vfoods-cart-bill-row">
-                      <span>Item Total ({cartQty} items)</span>
+                      <span>Canteen Items</span>
                       <span>{money(subtotal)}</span>
                     </div>
                     {discount > 0 && (
-                      <div className="vfoods-cart-bill-row" style={{ color: '#059669', fontWeight: 700 }}>
+                      <div className="vfoods-cart-bill-row" style={{ color: '#059669', fontWeight: 600 }}>
                         <span>Discount Savings</span>
                         <span>-{money(discount)}</span>
                       </div>
                     )}
-                    <div className="vfoods-cart-bill-row">
-                      <span>Taxes & Canteen Packaging</span>
-                      <span style={{ color: '#10B981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <Check size={12} /> ₹0 (FREE)
-                      </span>
-                    </div>
-                    <div className="vfoods-cart-bill-row">
-                      <span>Counter Pickup Service</span>
-                      <span style={{ color: '#10B981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <Store size={12} /> FREE PICKUP
-                      </span>
-                    </div>
-                    {convenienceFee > 0 && (
+                    {packagingCharges > 0 && (
                       <div className="vfoods-cart-bill-row">
-                        <span>Convenience Fees</span>
-                        <span>{money(convenienceFee)}</span>
+                        <span>Packaging Charges</span>
+                        <span>{money(packagingCharges)}</span>
                       </div>
                     )}
-                    {discount > 0 && (
-                      <div className="vfoods-cart-bill-row" style={{ color: '#10B981' }}>
-                        <span>Coupon Savings</span>
-                        <span>-{money(discount)}</span>
-                      </div>
-                    )}
+                    <div className="vfoods-cart-bill-row">
+                      <span>Tax &amp; Service Charges</span>
+                      <span>{money(taxAndServiceCharges)}</span>
+                    </div>
+                    <div className="vfoods-cart-bill-row">
+                      <span>Convenience Fee</span>
+                      <span>{money(convenienceFee)}</span>
+                    </div>
                     <div className="vfoods-cart-bill-total">
-                      <span>To Pay</span>
+                      <span>Total</span>
                       <span>{money(finalDebit)}</span>
                     </div>
                   </div>
 
-                  {/* Dual Payment Method Selector */}
+                  {/* Payment Method Selector */}
                   <div className="vfoods-payment-method-card">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>Select Payment Option</span>
-                      <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#EA580C', background: '#FFF7ED', padding: '2px 8px', borderRadius: '12px' }}>
-                        Dual Checkout
-                      </span>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '10px' }}>
+                      Payment Method
                     </div>
 
                     <div className="vfoods-payment-options-grid">
-                      {/* Option 1: V FOODS Campus Wallet */}
+                      {/* Option 1: Campus Wallet */}
                       <div 
                         className={`vfoods-payment-option-tile ${paymentMode === 'wallet' ? 'selected' : ''}`}
                         onClick={() => setPaymentMode('wallet')}
+                        role="button"
+                        tabIndex={0}
                       >
                         <div className="vfoods-payment-option-header">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div className="vfoods-pay-icon-box wallet">
                               <Wallet size={16} />
                             </div>
                             <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Campus Prepaid Wallet</span>
-                                <span className="vfoods-payment-chip wallet">1-TAP FASTPAY</span>
+                              <div style={{ fontWeight: 700, fontSize: '13px', color: '#0F172A' }}>
+                                Campus Wallet
                               </div>
-                              <div style={{ fontSize: '11px', color: isInsufficient ? '#DC2626' : '#166534', fontWeight: 700 }}>
-                                Balance: {money(wallet?.balance)} {isInsufficient ? `(Low by ${money(deficit)})` : '• Ready'}
+                              <div style={{ fontSize: '11.5px', color: isInsufficient ? '#DC2626' : '#166534', fontWeight: 600, marginTop: '1px' }}>
+                                Balance: {money(wallet?.balance)} {isInsufficient && `(Short by ${money(deficit)})`}
                               </div>
                             </div>
                           </div>
                           <div className={`vfoods-custom-radio ${paymentMode === 'wallet' ? 'checked' : ''}`} />
                         </div>
-                        <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
-                          Direct campus ID prepaid balance. Zero gateway latency.
-                        </div>
                       </div>
 
-                      {/* Option 2: Instant Payment Gateway */}
+                      {/* Option 2: UPI & Online Payment */}
                       <div 
                         className={`vfoods-payment-option-tile ${paymentMode === 'instant_gateway' ? 'selected' : ''}`}
                         onClick={() => setPaymentMode('instant_gateway')}
+                        role="button"
+                        tabIndex={0}
                       >
                         <div className="vfoods-payment-option-header">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div className="vfoods-pay-icon-box gateway">
-                              <Zap size={16} />
+                              <CreditCard size={16} />
                             </div>
                             <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#0F172A' }}>Instant Payment Gateway</span>
-                                <span className="vfoods-payment-chip gateway">256-BIT SSL</span>
+                              <div style={{ fontWeight: 700, fontSize: '13px', color: '#0F172A' }}>
+                                UPI &amp; Online Payment
                               </div>
-                              <div style={{ fontSize: '11px', color: '#4F46E5', fontWeight: 700 }}>
-                                PhonePe • Paytm • GPay • UPI
+                              <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '1px' }}>
+                                PhonePe, Paytm, Google Pay, UPI
                               </div>
                             </div>
                           </div>
                           <div className={`vfoods-custom-radio ${paymentMode === 'instant_gateway' ? 'checked' : ''}`} />
                         </div>
-                        <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '6px' }}>
-                          Direct per-order checkout. No wallet balance required.
-                        </div>
                       </div>
-                    </div>
-
-                    {/* Top App Trust & Security Banner */}
-                    <div className="vfoods-cart-trust-banner">
-                      <ShieldCheck size={14} color="#16A34A" />
-                      <span>100% Safe & Secure Campus Payments · SSL Encrypted</span>
                     </div>
                   </div>
                 </>
@@ -1015,10 +1021,10 @@ export default function VFoodsUserDashboard({
               <div className="vfoods-cart-bottom-bar">
                 <div className="vfoods-cart-wallet-info">
                   <span style={{ color: '#64748B', fontWeight: 600 }}>
-                    {paymentMode === 'wallet' ? 'Paying via: Campus Wallet' : 'Paying via: Instant Gateway'}
+                    {paymentMode === 'wallet' ? 'Paying via: Campus Wallet' : 'Paying via: UPI / Online'}
                   </span>
-                  <strong style={{ color: paymentMode === 'wallet' ? (isInsufficient ? '#DC2626' : '#166534') : '#4F46E5' }}>
-                    {paymentMode === 'wallet' ? money(wallet?.balance) : 'PhonePe / Paytm UPI'}
+                  <strong style={{ color: paymentMode === 'wallet' ? (isInsufficient ? '#DC2626' : '#166534') : '#2563EB' }}>
+                    {paymentMode === 'wallet' ? money(wallet?.balance) : 'UPI'}
                   </strong>
                 </div>
 
@@ -1029,7 +1035,7 @@ export default function VFoodsUserDashboard({
                       disabled={busy}
                       onClick={() => placeOrder('wallet')}
                     >
-                      <Zap size={16} /> Pay {money(finalDebit)} from Wallet
+                      Pay {money(finalDebit)} from Wallet
                     </button>
                   ) : (
                     <div className="vfoods-deficit-btn-row">
@@ -1037,13 +1043,13 @@ export default function VFoodsUserDashboard({
                         className="vfoods-topup-pay-btn"
                         onClick={handleDeficitPay}
                       >
-                        + Top Up {money(deficit)} & Pay
+                        Top Up {money(deficit)} &amp; Pay
                       </button>
                       <button
                         className="vfoods-switch-gateway-btn"
                         onClick={() => setPaymentMode('instant_gateway')}
                       >
-                        Use Instant UPI
+                        Pay via UPI
                       </button>
                     </div>
                   )
@@ -1053,7 +1059,7 @@ export default function VFoodsUserDashboard({
                     disabled={busy}
                     onClick={() => setIsGatewayModalOpen(true)}
                   >
-                    <Zap size={16} /> Pay {money(finalDebit)} via PhonePe / Paytm UPI
+                    Pay {money(finalDebit)} via UPI
                   </button>
                 )}
               </div>

@@ -6550,22 +6550,25 @@ body::before {
 .vfoods-payment-option-tile {
   border: 1.5px solid #E2E8F0;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   cursor: pointer;
   background: #FFFFFF;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .vfoods-payment-option-tile:hover {
   border-color: #CBD5E1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.vfoods-payment-option-tile:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
 }
 
 .vfoods-payment-option-tile.selected {
-  border-color: #EA580C;
-  background: #FFFBF7;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.12);
+  border-color: #2563EB;
+  background: #F8FAFC;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
 }
 
 .vfoods-payment-option-header {
@@ -6585,13 +6588,13 @@ body::before {
 }
 
 .vfoods-pay-icon-box.wallet {
-  background: #FEF3C7;
-  color: #D97706;
+  background: #EFF6FF;
+  color: #2563EB;
 }
 
 .vfoods-pay-icon-box.gateway {
-  background: #EEF2FF;
-  color: #4F46E5;
+  background: #F1F5F9;
+  color: #475569;
 }
 
 .vfoods-custom-radio {
@@ -6602,13 +6605,13 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
   flex-shrink: 0;
 }
 
 .vfoods-custom-radio.checked {
-  border-color: #EA580C;
-  background: #EA580C;
+  border-color: #2563EB;
+  background: #2563EB;
 }
 
 .vfoods-custom-radio.checked::after {
@@ -6623,23 +6626,31 @@ body::before {
   width: 100%;
   padding: 12px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+  background: #2563EB;
   color: #FFFFFF;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .vfoods-pay-btn-gateway:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+  background: #1D4ED8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vfoods-payment-option-tile,
+  .vfoods-pay-btn-primary,
+  .vfoods-pay-btn-gateway,
+  .vfoods-custom-radio {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 .vfoods-switch-gateway-btn {
