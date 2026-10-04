@@ -7441,3 +7441,114 @@ body::before {
 .vfoods-food-courts-grid > div:nth-child(3) { animation-delay: 0.12s; }
 .vfoods-food-courts-grid > div:nth-child(4) { animation-delay: 0.16s; }
 .vfoods-food-courts-grid > div:nth-child(5) { animation-delay: 0.20s; }
+
+/* ── 8. RECEIPT DOWNLOAD FORMAT PICKER ── */
+.receipt-format-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.receipt-format-modal {
+  background: #FFFFFF;
+  border-radius: 20px;
+  max-width: 420px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+  border: 1px solid #E2E8F0;
+  position: relative;
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.receipt-format-option-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1.5px solid #E2E8F0;
+  background: #F8FAFC;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  margin-bottom: 12px;
+}
+
+.receipt-format-option-card:hover {
+  background: #EFF6FF;
+  border-color: #3B82F6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.12);
+}
+
+.receipt-format-option-card:active {
+  transform: scale(0.98);
+}
+
+.receipt-format-option-card.active-loading {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+  cursor: wait;
+}
+
+.receipt-format-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.receipt-format-icon-photo {
+  background: #EFF6FF;
+  color: #2563EB;
+  border: 1px solid #BFDBFE;
+}
+
+.receipt-format-icon-pdf {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+.receipt-quick-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.receipt-quick-chip-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid #CBD5E1;
+  background: #F8FAFC;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.receipt-quick-chip-btn:hover {
+  background: #EFF6FF;
+  border-color: #3B82F6;
+  color: #1D4ED8;
+}
+

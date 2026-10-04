@@ -8,12 +8,14 @@ import {
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
   Volume2, VolumeX, Monitor, Download, Users, ChevronDown, ChevronUp, Star, Clock,
   MapPin, BarChart2, FileText, Settings, Moon, Wifi, WifiOff, MessageSquare, Maximize2, Receipt, Trash2,
-  ChefHat, Tag, Printer, Sandwich, Soup, GlassWater, Cake, Utensils, Flame, Shield, ChevronRight, Headphones, Home
+  ChefHat, Tag, Printer, Sandwich, Soup, GlassWater, Cake, Utensils, Flame, Shield, ChevronRight, Headphones, Home,
+  Image as ImageIcon, Loader2
 } from 'lucide-react'
 import { VegIndicator } from './components/VegIndicator'
 import './styles.css'
 import { getFoodImage } from './lib/foodImages'
 import QRCode from 'qrcode'
+import { downloadReceiptAsPhoto, downloadReceiptAsPdf } from './utils/receiptGenerator'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import UserDashboard from './pages/user/UserDashboard'
 import ShopDashboard from './pages/shop/ShopDashboard'
@@ -2895,84 +2897,33 @@ function CartDock({
 function ReceiptModal({ order, onClose }) {
   if (!order) return null
 
-  function handleDownloadReceipt() {
-    const itemsHtml = (order.order_items || []).map(it => `
-      <tr>
-        <td style="padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #0f172a;">
-          <strong>${it.qty}×</strong> ${it.name} ${it.notes ? `<span style="color:#64748b; font-size: 11px;">(${it.notes})</span>` : ''}
-        </td>
-        <td style="padding: 7px 0; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 13px; font-weight: 700; color: #0f172a;">
-          ₹${((it.price || 0) * (it.qty || 1)).toLocaleString('en-IN')}
-        </td>
-      </tr>
-    `).join('')
+  const [showFormatPicker, setShowFormatPicker] = useState(false)
+  const [downloading, setDownloading] = useState(null) // 'photo' | 'pdf' | null
+  const [downloadNotice, setDownloadNotice] = useState(null) // { type: 'success'|'error', message: string } | null
 
-    const invoiceContent = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>V FOODS Official Receipt - Token #${order.token || order.id}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 24px 16px; background: #f8fafc; color: #0f172a; margin: 0; display: flex; justify-content: center; }
-    .receipt { background: #ffffff; width: 100%; max-width: 400px; padding: 28px; border-radius: 16px; border: 1.5px solid #0f172a; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box; }
-    .header { text-align: center; border-bottom: 2px dashed #94a3b8; padding-bottom: 14px; margin-bottom: 16px; }
-    .token-box { text-align: center; background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 12px; padding: 12px; margin: 14px 0; }
-    .token { font-size: 26px; font-weight: 900; color: #1d4ed8; font-family: monospace; letter-spacing: -0.5px; }
-    .row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; color: #475569; }
-    .row strong { color: #0f172a; }
-    .total-row { display: flex; justify-content: space-between; font-size: 17px; font-weight: 900; color: #0f172a; border-top: 2px solid #0f172a; padding-top: 12px; margin-top: 14px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 14px; line-height: 1.5; }
-    @media print { body { background: #fff; padding: 0; } .receipt { border: 1px solid #000; box-shadow: none; max-width: 100%; } }
-  </style>
-</head>
-<body>
-  <div class="receipt">
-    <div class="header">
-      <div style="font-size: 20px; font-weight: 900; color: #1e3a8a; letter-spacing: -0.5px;">V FOODS · VIT CHENNAI</div>
-      <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 600;">Official Campus Dining Tax Invoice</div>
-    </div>
-    <div class="token-box">
-      <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #2563eb; letter-spacing: 0.5px;">Pickup Token Pass</div>
-      <div class="token">TOKEN #${order.token || order.id}</div>
-      <div style="font-size: 11px; color: #16a34a; font-weight: 700; margin-top: 3px;">✓ Verified Paid (${order.payment_method || 'VIT Campus Wallet'})</div>
-    </div>
-    <div class="row"><span>Order ID:</span><strong>#${order.id}</strong></div>
-    <div class="row"><span>Canteen / Counter:</span><strong>${order.outlets?.name || order.outlet_id}</strong></div>
-    <div class="row"><span>Date & Time:</span><span>${new Date(order.created_at).toLocaleString('en-IN')}</span></div>
-    <div class="row"><span>Payment Status:</span><span style="color:#16a34a; font-weight:700;">PAID</span></div>
-    
-    <div style="margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
-      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px;">Itemized Order Breakdown</div>
-      <table>
-        <tbody>${itemsHtml}</tbody>
-      </table>
-    </div>
+  async function executeDownload(format) {
+    try {
+      setDownloading(format)
+      setDownloadNotice(null)
 
-    <div class="total-row">
-      <span>Total Paid</span>
-      <span>${money(order.total)}</span>
-    </div>
+      if (format === 'photo') {
+        await downloadReceiptAsPhoto(order)
+        setDownloadNotice({ type: 'success', message: 'Receipt saved as Photo (PNG) successfully!' })
+      } else {
+        await downloadReceiptAsPdf(order)
+        setDownloadNotice({ type: 'success', message: 'Receipt saved as PDF successfully!' })
+      }
 
-    <div class="footer">
-      VIT Chennai Campus Dining Operations<br>
-      Please present Token #${order.token || order.id} at the counter station for fast pickup.<br>
-      Thank you for dining with V FOODS!
-    </div>
-  </div>
-</body>
-</html>`
-
-    const blob = new Blob([invoiceContent], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `VFOODS-Receipt-Token-${order.token || order.id}.html`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+      setTimeout(() => {
+        setDownloadNotice(null)
+        setShowFormatPicker(false)
+      }, 1600)
+    } catch (err) {
+      console.error('Download error:', err)
+      setDownloadNotice({ type: 'error', message: 'Download failed: ' + (err.message || 'Please try again') })
+    } finally {
+      setDownloading(null)
+    }
   }
 
   return (
@@ -2983,6 +2934,7 @@ function ReceiptModal({ order, onClose }) {
           <h3>V FOODS · VIT Chennai</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Campus Dining e-Receipt & Tax Invoice</p>
         </div>
+
         <div className="receipt-row">
           <span>Order ID</span>
           <strong>#{order.id}</strong>
@@ -3037,17 +2989,186 @@ function ReceiptModal({ order, onClose }) {
           <span>{money(order.total)}</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
-          <button className="btn-secondary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={handleDownloadReceipt} title="Download neat receipt file">
-            <Download size={14} /> Download
+        {/* Notice feedback if any */}
+        {downloadNotice && (
+          <div style={{
+            margin: '12px 0 0',
+            padding: '10px 14px',
+            borderRadius: '10px',
+            fontSize: '12px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: downloadNotice.type === 'success' ? '#DCFCE7' : '#FEE2E2',
+            color: downloadNotice.type === 'success' ? '#166534' : '#991B1B',
+            border: `1px solid ${downloadNotice.type === 'success' ? '#BBF7D0' : '#FECACA'}`
+          }}>
+            {downloadNotice.type === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+            <span>{downloadNotice.message}</span>
+          </div>
+        )}
+
+        {/* Direct Quick Format Actions */}
+        <div className="receipt-quick-chips">
+          <button
+            type="button"
+            className="receipt-quick-chip-btn"
+            onClick={() => executeDownload('photo')}
+            disabled={downloading !== null}
+            title="Download receipt as high-res PNG photo"
+          >
+            {downloading === 'photo' ? (
+              <Loader2 size={13} className="animate-spin text-blue-600" />
+            ) : (
+              <ImageIcon size={13} className="text-blue-600" />
+            )}
+            <span>{downloading === 'photo' ? 'Saving...' : 'Photo (PNG)'}</span>
           </button>
-          <button className="btn-secondary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={() => window.print()} title="Print isolated receipt slip">
-            <Printer size={14} /> Print
+
+          <button
+            type="button"
+            className="receipt-quick-chip-btn"
+            onClick={() => executeDownload('pdf')}
+            disabled={downloading !== null}
+            title="Download receipt as official PDF tax invoice"
+          >
+            {downloading === 'pdf' ? (
+              <Loader2 size={13} className="animate-spin text-rose-600" />
+            ) : (
+              <FileText size={13} className="text-rose-600" />
+            )}
+            <span>{downloading === 'pdf' ? 'Saving...' : 'PDF Document'}</span>
           </button>
-          <button className="btn-primary btn-spring" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
+        </div>
+
+        {/* Primary Action Row (No Print button - only Download & Close) */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+          <button
+            type="button"
+            className="btn-primary btn-spring"
+            style={{ flex: 1.5, justifyContent: 'center', background: '#2563EB', borderColor: '#2563EB' }}
+            onClick={() => setShowFormatPicker(true)}
+            disabled={downloading !== null}
+            title="Choose format to download receipt"
+          >
+            <Download size={14} /> Download Receipt
+          </button>
+          <button
+            type="button"
+            className="btn-secondary btn-spring"
+            style={{ flex: 1, justifyContent: 'center' }}
+            onClick={onClose}
+          >
             Close
           </button>
         </div>
+
+        {/* ── FORMAT SELECTION MODAL PROMPT ── */}
+        {showFormatPicker && (
+          <div className="receipt-format-overlay" onClick={() => !downloading && setShowFormatPicker(false)}>
+            <div className="receipt-format-modal" onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0F172A' }}>
+                    Download Receipt
+                  </h4>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748B' }}>
+                    Choose format for Token #{order.token}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !downloading && setShowFormatPicker(false)}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Status Notice inside format modal */}
+              {downloadNotice && (
+                <div style={{
+                  marginBottom: '14px',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: downloadNotice.type === 'success' ? '#DCFCE7' : '#FEE2E2',
+                  color: downloadNotice.type === 'success' ? '#166534' : '#991B1B'
+                }}>
+                  {downloadNotice.type === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+                  <span>{downloadNotice.message}</span>
+                </div>
+              )}
+
+              {/* Option 1: Download as Photo */}
+              <div
+                className={`receipt-format-option-card ${downloading === 'photo' ? 'active-loading' : ''}`}
+                onClick={() => !downloading && executeDownload('photo')}
+              >
+                <div className="receipt-format-icon-wrap receipt-format-icon-photo">
+                  {downloading === 'photo' ? (
+                    <Loader2 size={22} className="animate-spin text-blue-600" />
+                  ) : (
+                    <ImageIcon size={22} />
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                    Photo (PNG Image)
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
+                    High-resolution picture file. Perfect for phone gallery and instant WhatsApp sharing.
+                  </div>
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#2563EB' }}>
+                  {downloading === 'photo' ? 'Generating...' : 'Save →'}
+                </span>
+              </div>
+
+              {/* Option 2: Download as PDF */}
+              <div
+                className={`receipt-format-option-card ${downloading === 'pdf' ? 'active-loading' : ''}`}
+                onClick={() => !downloading && executeDownload('pdf')}
+              >
+                <div className="receipt-format-icon-wrap receipt-format-icon-pdf">
+                  {downloading === 'pdf' ? (
+                    <Loader2 size={22} className="animate-spin text-red-600" />
+                  ) : (
+                    <FileText size={22} />
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                    PDF Document (.pdf)
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
+                    Official tax invoice document. Formatted for expense claims and campus archiving.
+                  </div>
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626' }}>
+                  {downloading === 'pdf' ? 'Generating...' : 'Save →'}
+                </span>
+              </div>
+
+              <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn-secondary btn-spring"
+                  style={{ width: '100%', justifyContent: 'center', fontSize: '12px' }}
+                  onClick={() => setShowFormatPicker(false)}
+                  disabled={downloading !== null}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
