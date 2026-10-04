@@ -3,7 +3,7 @@ import {
   ArrowRight, Wallet, QrCode, Clock, CheckCircle2,
   ChevronDown, ChevronUp, Shield, Store,
   Zap, Lock, Package, ChefHat, User,
-  TrendingUp, Menu, X, Sparkles, Check
+  TrendingUp, Menu, X, Sparkles, Check, Download
 } from 'lucide-react'
 
 // Modular Interactive Components
@@ -322,6 +322,15 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                 <span>Join Pilot</span>
+              </button>
+
+              <button
+                onClick={handleOpenApp}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer"
+                title="Download V Foods App on your device"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download App</span>
               </button>
 
               <button

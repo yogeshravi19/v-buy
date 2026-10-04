@@ -647,7 +647,7 @@ function App() {
         `)
         if (dbOutlets && dbOutlets.length > 0) {
           setOutlets(prev => {
-            return prev.map(p => {
+            const merged = prev.map(p => {
               const matched = dbOutlets.find(o => o.id === p.id)
               if (!matched) return p
               return {
@@ -659,6 +659,11 @@ function App() {
                 menu_items: matched.menu_items && matched.menu_items.length > 0 ? matched.menu_items : p.menu_items
               }
             })
+            const knownIds = new Set(prev.map(p => p.id))
+            const dbOnly = dbOutlets
+              .filter(o => !knownIds.has(o.id))
+              .map(o => ({ ...o, menu_items: o.menu_items || [] }))
+            return [...merged, ...dbOnly]
           })
         }
       } catch (e) {
@@ -1292,7 +1297,40 @@ function App() {
   }
 
   // ── MAIN APP DIRECT AUTHENTICATION ──
-  if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
+  if (!currentUser) {
+    return (
+      <>
+        {showIosPrompt && (
+          <div className="ios-modal-overlay" onClick={() => setShowIosPrompt(false)}>
+            <div className="ios-modal" onClick={e => e.stopPropagation()}>
+              <div className="ios-modal-header">
+                <h3>Install V FOODS on iOS</h3>
+                <button className="close-btn" onClick={() => setShowIosPrompt(false)}><X size={18} /></button>
+              </div>
+              <div className="ios-steps">
+                <div className="ios-step">
+                  <div className="step-num">1</div>
+                  <div className="step-text">Tap the <strong>Share</strong> button in Safari's bottom toolbar.</div>
+                </div>
+                <div className="ios-step">
+                  <div className="step-num">2</div>
+                  <div className="step-text">Scroll down and tap <strong>Add to Home Screen</strong>.</div>
+                </div>
+                <div className="ios-step">
+                  <div className="step-num">3</div>
+                  <div className="step-text">Tap <strong>Add</strong> in the top-right corner. Done!</div>
+                </div>
+              </div>
+              <button className="btn-primary" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }} onClick={() => setShowIosPrompt(false)}>
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
+        <AuthScreen onLoginUser={setCurrentUser} onInstallClick={handleInstallClick} />
+      </>
+    )
+  }
 
   // Mandatory one-time profile completion for Google OAuth users (cannot be skipped)
   if (currentUser.requiresProfileCompletion) {
@@ -1345,7 +1383,6 @@ function App() {
         itemRatings={itemRatings}
         submitItemRating={submitItemRating}
         handleSignOut={handleSignOut}
-        handleInstallClick={handleInstallClick}
         pickupSlots={pickupSlots}
         isScheduled={isScheduled}
         setIsScheduled={setIsScheduled}
@@ -1455,10 +1492,6 @@ function App() {
           {!isOnline && (
             <span className="offline-badge"><WifiOff size={13} /> Offline</span>
           )}
-          <button className="install-app-btn" onClick={handleInstallClick} title="Install V FOODS as Mobile or Desktop App">
-            <Download size={13} />
-            <span>Install App</span>
-          </button>
           <span className="role-tag-badge inline-flex items-center gap-1.5">
             {role === 'owner' || role === 'shop_admin' ? <><Store size={12} strokeWidth={2} /> Shop Admin</> :
              role === 'staff' ? <><ChefHat size={12} strokeWidth={2} /> Shop Staff</> :
@@ -6496,7 +6529,7 @@ function CompleteProfileScreen({ currentUser, onCompleted, onSignOut }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // UNIFIED AUTH SCREEN (Unified Login, Manual Signup, Google Signup, Forgot Password)
 // ─────────────────────────────────────────────────────────────────────────────
-function AuthScreen({ onLoginUser }) {
+function AuthScreen({ onLoginUser, onInstallClick }) {
   // Modes: 'login' | 'signup' | 'forgot'
   const [authMode, setAuthMode] = useState('login')
   const [error, setError] = useState('')
@@ -6888,10 +6921,22 @@ function AuthScreen({ onLoginUser }) {
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
               V Foods Access
             </span>
+            {onInstallClick && (
+              <button
+                type="button"
+                onClick={onInstallClick}
+                className="install-app-btn"
+                style={{ fontSize: '11.5px', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                title="Download V Foods App on your device"
+              >
+                <Download size={13} />
+                <span>Download App</span>
+              </button>
+            )}
           </div>
 
           {/* ════ VIEW 1: UNIFIED LOGIN ════ */}

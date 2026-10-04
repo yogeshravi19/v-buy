@@ -366,93 +366,29 @@ export default function VFoodsUserDashboard({
           <div className="vfoods-brand-block">
             <div className="vfoods-brand-row">
               <img src="/vit-chennai-logo.png" alt="V FOODS" className="vfoods-brand-logo" />
-              <div className="vfoods-brand-name" title="V FOODS — Campus Dining">
+              <div className="vfoods-brand-name" title="V FOODS">
                 <span className="vfoods-logo-v">V</span>
                 <span className="vfoods-logo-space"> </span>
                 <span className="vfoods-logo-f">F</span>
                 <span className="vfoods-logo-oods">OODS</span>
               </div>
             </div>
-            <div className="vfoods-location-pill" onClick={() => { setSelectedFoodCourt(null); setTab('browse') }} title="Campus Location">
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> VIT Chennai Campus</span>
-              <ChevronDown size={11} />
-            </div>
           </div>
 
           <div className="vfoods-top-actions">
-            {/* Quick Wallet Chip */}
-            <div className="vfoods-wallet-chip" onClick={() => setTab('wallet')} title="Open Wallet">
+            <div
+              className="vfoods-wallet-chip"
+              role="button"
+              tabIndex={0}
+              onClick={() => setTab('wallet')}
+              onKeyDown={e => { if (e.key === 'Enter') setTab('wallet') }}
+              title="Open Wallet"
+            >
               <CreditCard size={14} />
               <span>{money(wallet?.balance)}</span>
             </div>
-
-            {/* Quick Role Switcher Pill (Developer / Tester Friendly) */}
-            <button
-              className="vfoods-role-chip"
-              onClick={() => setShowRoleSwitcher(s => !s)}
-              title="Switch user role for testing"
-            >
-              <User size={13} />
-              <span>User</span>
-              <ChevronDown size={10} />
-            </button>
-
-            {handleInstallClick && (
-              <button
-                onClick={handleInstallClick}
-                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '4px' }}
-                title="Install V FOODS App"
-              >
-                <Download size={17} />
-              </button>
-            )}
-
-            <button
-              onClick={handleSignOut}
-              style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '4px' }}
-              title="Sign Out"
-            >
-              <LogOut size={17} />
-            </button>
           </div>
         </header>
-
-        {/* Role Switcher Dropdown Modal */}
-        {showRoleSwitcher && (
-          <div style={{
-            position: 'absolute', top: '56px', right: '16px', background: '#FFFFFF',
-            border: '1px solid #E2E8F0', borderRadius: '14px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-            zIndex: 100, padding: '8px', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '4px'
-          }}>
-            <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', padding: '4px 8px', textTransform: 'uppercase' }}>
-              Switch Operational Role
-            </span>
-            <button
-              onClick={() => handleRoleSwitch('user')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: '#EFF6FF', color: '#1D4ED8', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              <User size={14} /> User (Diner)
-            </button>
-            <button
-              onClick={() => handleRoleSwitch('staff')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              <Store size={14} /> Shop Staff
-            </button>
-            <button
-              onClick={() => handleRoleSwitch('owner')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              <Store size={14} /> Shop Admin
-            </button>
-            <button
-              onClick={() => handleRoleSwitch('admin')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              <ShieldCheck size={14} /> Super Admin
-            </button>
-          </div>
-        )}
 
         {/* Notice toast */}
         {notice && (

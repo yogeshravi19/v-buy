@@ -165,16 +165,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     { id: 'vit-riviera', name: 'Riviera Festival Food Court Arena', city: 'Festival Grounds', outlets_count: 20, students_count: 18500, today_gmv: 215000, status: 'active' }
   ])
 
-  // Outlets master list
-  const [outletList, setOutletList] = useState<OutletRecord[]>([
-    { id: 'g1', name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)', owner_name: 'Murugan Foodworks', owner_phone: '9876542001', is_open: true, is_event: false, today_gmv: 24200, order_count: 142 },
-    { id: 'g2', name: 'Gazebo C2 — Desserts & Sweets', location: 'Gazebo (Main Canteen)', owner_name: 'Sweet Tooth Confections', owner_phone: '9876542002', is_open: true, is_event: false, today_gmv: 15400, order_count: 89 },
-    { id: 'g3', name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)', owner_name: 'Dakshin Caterers', owner_phone: '9876542003', is_open: true, is_event: false, today_gmv: 31000, order_count: 175 },
-    { id: 'g4', name: 'Lassi House (Gazebo C4)', location: 'Gazebo (Main Canteen)', owner_name: 'Lassi House Chennai', owner_phone: '9876542004', is_open: true, is_event: false, today_gmv: 18900, order_count: 110 },
-    { id: 'n1', name: 'Georgia (North Square C1)', location: 'North Square', owner_name: 'Georgia Beverages', owner_phone: '9876542005', is_open: true, is_event: false, today_gmv: 12400, order_count: 95 },
-    { id: 'n2', name: 'Shawarma Nation (North Square C2)', location: 'North Square', owner_name: 'Shawarma Nation', owner_phone: '9876542006', is_open: true, is_event: false, today_gmv: 28600, order_count: 130 },
-    { id: 'f1', name: 'Rolls & Bowls', location: 'Food Street', owner_name: 'Fast Track Dining', owner_phone: '9876542007', is_open: true, is_event: false, today_gmv: 22100, order_count: 104 }
-  ])
+  // Outlets master list (loaded from the `outlets` table)
+  const [outletList, setOutletList] = useState<OutletRecord[]>([])
+  const [outletsLoading, setOutletsLoading] = useState(true)
+  const [outletsError, setOutletsError] = useState<string | null>(null)
 
   // Global Orders list
   const [orders, setOrders] = useState<PlatformOrder[]>([])
@@ -211,10 +205,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [showAddOutletModal, setShowAddOutletModal] = useState(false)
   const [outletForm, setOutletForm] = useState({
     name: '',
-    location: 'Gazebo (Main Canteen)',
-    owner_name: '',
-    owner_phone: ''
+    location: '',
+    is_event: false
   })
+  const [outletFormError, setOutletFormError] = useState<string | null>(null)
+  const [savingOutlet, setSavingOutlet] = useState(false)
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -319,18 +314,110 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   }, [loadGlobalData, setGlobalOrders])
 
-  // Toggle Outlet Force Open/Close
-  const handleToggleOutlet = (outletId: string) => {
-    setOutletList(prev =>
-      prev.map(o => {
-        if (o.id !== outletId) return o
-        const nextState = !o.is_open
-        if (addAuditLog) {
-          addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'OUTLET', 'OVERRIDE_STATUS', `Forced outlet ${o.name} to ${nextState ? 'OPEN' : 'CLOSED'}`)
-        }
-        return { ...o, is_open: nextState }
-      })
-    )
+  // Translate a Supabase/PostgREST error into a message the admin can act on
+  const describeDbError = (err: any): string => {
+    const code = err?.code
+    const msg = err?.message || 'Unknown error'
+    if (code === '23505') return 'An outlet with this ID already exists. Use a different name.'
+    if (code === '42501' || /row-level security/i.test(msg)) return 'Permission denied. Only a signed-in Super Admin account can change outlets.'
+    if (code === '23502') return `A required field is missing: ${err?.details || msg}`
+    if (code === '23503') return `Related record not found: ${err?.details || msg}`
+    if (code === 'PGRST301' || /JWT/i.test(msg)) return 'Your session has expired. Sign in again.'
+    return msg
+  }
+
+  // Load outlets from the database (source of truth)
+  const loadOutlets = useCallback(async () => {
+    setOutletsError(null)
+    const { data, error } = await supabase
+      .from('outlets')
+      .select('id, name, location, is_event, is_open')
+      .order('name', { ascending: true })
+    if (error) {
+      setOutletsError(describeDbError(error))
+      setOutletsLoading(false)
+      return
+    }
+    setOutletList((data || []).map((o: any) => ({
+      id: o.id,
+      name: o.name,
+      location: o.location,
+      owner_name: '',
+      owner_phone: '',
+      is_open: o.is_open,
+      is_event: o.is_event,
+      today_gmv: 0,
+      order_count: 0
+    })))
+    setOutletsLoading(false)
+  }, [])
+
+  useEffect(() => { loadOutlets() }, [loadOutlets])
+
+  // Toggle Outlet Force Open/Close (persisted; RLS decides who may do this)
+  const handleToggleOutlet = async (outletId: string) => {
+    const target = outletList.find(o => o.id === outletId)
+    if (!target) return
+    const nextState = !target.is_open
+    const { error } = await supabase.from('outlets').update({ is_open: nextState }).eq('id', outletId)
+    if (error) {
+      setNotice(`Could not update ${target.name}: ${describeDbError(error)}`)
+      setTimeout(() => setNotice(null), 5000)
+      return
+    }
+    setOutletList(prev => prev.map(o => o.id === outletId ? { ...o, is_open: nextState } : o))
+    if (setGlobalOutlets) setGlobalOutlets(prev => prev.map(o => o.id === outletId ? { ...o, is_open: nextState } : o))
+    if (addAuditLog) {
+      addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'OUTLET', 'OVERRIDE_STATUS', `Forced outlet ${target.name} to ${nextState ? 'OPEN' : 'CLOSED'}`)
+    }
+  }
+
+  const openAddOutletModal = () => {
+    setOutletForm({ name: '', location: '', is_event: false })
+    setOutletFormError(null)
+    setShowAddOutletModal(true)
+  }
+
+  // Create a new outlet in the database
+  const handleSaveOutlet = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (savingOutlet) return
+    const name = outletForm.name.trim()
+    const location = outletForm.location.trim()
+    if (name.length < 3) { setOutletFormError('Outlet name must be at least 3 characters.'); return }
+    if (!location) { setOutletFormError('Location is required.'); return }
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+    if (!id) { setOutletFormError('Outlet name must contain letters or numbers.'); return }
+    if (outletList.some(o => o.id === id || o.name.toLowerCase() === name.toLowerCase())) {
+      setOutletFormError('An outlet with this name already exists.')
+      return
+    }
+
+    setSavingOutlet(true)
+    setOutletFormError(null)
+    const { data, error } = await supabase
+      .from('outlets')
+      .insert({ id, name, location, is_event: outletForm.is_event, is_open: true })
+      .select('id, name, location, is_event, is_open')
+      .single()
+    setSavingOutlet(false)
+
+    if (error || !data) {
+      console.error('Create outlet failed:', error)
+      setOutletFormError(describeDbError(error))
+      return
+    }
+
+    await loadOutlets()
+    if (setGlobalOutlets) {
+      setGlobalOutlets(prev => prev.some(o => o.id === data.id) ? prev : [...prev, { ...data, menu_items: [] }])
+    }
+    setShowAddOutletModal(false)
+    setNotice(`Outlet "${data.name}" created.`)
+    setTimeout(() => setNotice(null), 4000)
+    if (addAuditLog) {
+      addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'OUTLET', 'CREATE', `Created outlet ${data.name} (${data.id}) at ${data.location}`)
+    }
   }
 
   // Toggle Global Event Mode
@@ -868,11 +955,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlets & Canteen Master Registry</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Control operational status and force overrides across all canteens</p>
                 </div>
-                <button className="saas-btn saas-btn-primary" onClick={() => setShowAddOutletModal(true)}>
+                <button className="saas-btn saas-btn-primary" onClick={openAddOutletModal}>
                   <Plus size={15} />
-                  <span>Register New Outlet</span>
+                  <span>Create New Outlet</span>
                 </button>
               </div>
+
+              {outletsError && (
+                <div className="saas-card" style={{ padding: '12px 16px', borderLeft: '3px solid #DC2626', color: '#991B1B', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                  <span>Could not load outlets: {outletsError}</span>
+                  <button className="saas-btn saas-btn-sm saas-btn-secondary" onClick={loadOutlets}>Retry</button>
+                </div>
+              )}
 
               <div className="saas-card">
                 <div className="saas-table-container">
@@ -880,22 +974,31 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     <thead>
                       <tr>
                         <th>Outlet Name</th>
+                        <th>ID</th>
                         <th>Location</th>
-                        <th>Franchise Owner</th>
-                        <th>Phone</th>
+                        <th>Type</th>
                         <th>Today's Volume</th>
                         <th>Kitchen State</th>
                         <th style={{ textAlign: 'right' }}>Master Override</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {outletList.map(outlet => (
+                      {outletsLoading && (
+                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>Loading outlets...</td></tr>
+                      )}
+                      {!outletsLoading && !outletsError && outletList.length === 0 && (
+                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>No outlets yet. Use Create New Outlet to add one.</td></tr>
+                      )}
+                      {outletList.map(outlet => {
+                        const outletOrders = orders.filter(o => o.outlet_id === outlet.id)
+                        const volume = outletOrders.reduce((s, o) => s + (o.total || 0), 0)
+                        return (
                         <tr key={outlet.id}>
                           <td style={{ fontWeight: 700 }}>{outlet.name}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: '12px', color: '#64748B' }}>{outlet.id}</td>
                           <td style={{ fontSize: '12.5px', color: '#64748B' }}>{outlet.location}</td>
-                          <td style={{ fontSize: '12.5px' }}>{outlet.owner_name}</td>
-                          <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{outlet.owner_phone}</td>
-                          <td style={{ fontWeight: 700 }}>{money(outlet.today_gmv)} ({outlet.order_count} ords)</td>
+                          <td style={{ fontSize: '12.5px' }}>{outlet.is_event ? 'Event stall' : 'Regular'}</td>
+                          <td style={{ fontWeight: 700 }}>{money(volume)} ({outletOrders.length} ords)</td>
                           <td>
                             <span className={`saas-badge ${outlet.is_open ? 'saas-badge-success' : 'saas-badge-danger'}`}>
                               {outlet.is_open ? 'OPEN' : 'CLOSED'}
@@ -910,7 +1013,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                             </button>
                           </td>
                         </tr>
-                      ))}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1426,6 +1530,79 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           )}
         </div>
       </main>
+
+      {/* ── CREATE OUTLET MODAL ── */}
+      {showAddOutletModal && (
+        <div className="saas-modal-backdrop" onClick={() => !savingOutlet && setShowAddOutletModal(false)}>
+          <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <h3 className="saas-modal-title">Create New Outlet</h3>
+              <button className="saas-modal-close" onClick={() => setShowAddOutletModal(false)} disabled={savingOutlet} aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveOutlet} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label htmlFor="outlet-name" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Outlet Name
+                </label>
+                <input
+                  id="outlet-name"
+                  type="text"
+                  required
+                  minLength={3}
+                  maxLength={80}
+                  placeholder="e.g. Food Street Grill"
+                  value={outletForm.name}
+                  onChange={e => setOutletForm(prev => ({ ...prev, name: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                />
+              </div>
+              <div>
+                <label htmlFor="outlet-location" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Location
+                </label>
+                <input
+                  id="outlet-location"
+                  type="text"
+                  required
+                  list="outlet-location-options"
+                  placeholder="e.g. North Square"
+                  value={outletForm.location}
+                  onChange={e => setOutletForm(prev => ({ ...prev, location: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                />
+                <datalist id="outlet-location-options">
+                  {Array.from(new Set(outletList.map(o => o.location))).map(loc => <option key={loc} value={loc} />)}
+                </datalist>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#334155' }}>
+                <input
+                  type="checkbox"
+                  checked={outletForm.is_event}
+                  onChange={e => setOutletForm(prev => ({ ...prev, is_event: e.target.checked }))}
+                />
+                Event stall (open only during event mode)
+              </label>
+
+              {outletFormError && (
+                <div role="alert" style={{ padding: '8px 10px', borderRadius: '6px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: '12.5px' }}>
+                  {outletFormError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowAddOutletModal(false)} disabled={savingOutlet}>
+                  Cancel
+                </button>
+                <button type="submit" className="saas-btn saas-btn-primary" disabled={savingOutlet}>
+                  {savingOutlet ? 'Creating...' : 'Create Outlet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── CREATE COUPON MODAL ── */}
       {showAddCouponModal && (
