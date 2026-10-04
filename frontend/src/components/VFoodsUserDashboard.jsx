@@ -150,12 +150,6 @@ export default function VFoodsUserDashboard({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  // Packaging charges if applicable
-  const packagingCharges = (cart.items || []).reduce(
-    (sum, item) => sum + (Number(item.packaging_fee || item.packaging_charge || 0) * (item.qty || 1)),
-    0
-  ) + Number(cart.outlet?.packaging_charge || cart.outlet?.packaging_fee || 0)
-
   // Applicable base amount for fees (after discount)
   const applicableBase = Math.max(0, subtotal - discount)
 
@@ -167,7 +161,7 @@ export default function VFoodsUserDashboard({
   const taxAndServiceCharges = Number((totalAdditionalCharge - convenienceFee).toFixed(2))
 
   // Total payable
-  const finalDebit = Number((applicableBase + packagingCharges + totalAdditionalCharge).toFixed(2))
+  const finalDebit = Number((applicableBase + totalAdditionalCharge).toFixed(2))
   const isInsufficient = (wallet?.balance || 0) < finalDebit
   const deficit = Math.max(0, finalDebit - (wallet?.balance || 0))
 
@@ -932,12 +926,6 @@ export default function VFoodsUserDashboard({
                       <div className="vfoods-cart-bill-row" style={{ color: '#059669', fontWeight: 600 }}>
                         <span>Discount Savings</span>
                         <span>-{money(discount)}</span>
-                      </div>
-                    )}
-                    {packagingCharges > 0 && (
-                      <div className="vfoods-cart-bill-row">
-                        <span>Packaging Charges</span>
-                        <span>{money(packagingCharges)}</span>
                       </div>
                     )}
                     <div className="vfoods-cart-bill-row">

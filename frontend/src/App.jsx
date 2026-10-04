@@ -2514,16 +2514,11 @@ function CartDock({
       discount = Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100))
     }
   }
-  const packagingCharges = (cart.items || []).reduce(
-    (sum, item) => sum + (Number(item.packaging_fee || item.packaging_charge || 0) * (item.qty || 1)),
-    0
-  ) + Number(cart.outlet?.packaging_charge || cart.outlet?.packaging_fee || 0)
-
   const applicableBase = Math.max(0, subtotal - discount)
   const totalAdditionalFee = applicableBase > 0 ? Number((applicableBase * 0.07).toFixed(2)) : 0
   const convenienceFee = Number((totalAdditionalFee / 3).toFixed(2))
   const taxAndServiceCharges = Number((totalAdditionalFee - convenienceFee).toFixed(2))
-  const finalDebit = Number((applicableBase + packagingCharges + totalAdditionalFee).toFixed(2))
+  const finalDebit = Number((applicableBase + totalAdditionalFee).toFixed(2))
   const isInsufficient = wallet.balance < finalDebit
   const deficit = Math.max(0, finalDebit - wallet.balance)
 
@@ -2780,12 +2775,6 @@ function CartDock({
                 <div className="bill-summary-row savings">
                   <span>Coupon Discount ({appliedCoupon?.code})</span>
                   <span>-{money(discount)}</span>
-                </div>
-              )}
-              {packagingCharges > 0 && (
-                <div className="bill-summary-row">
-                  <span>Packaging Charges</span>
-                  <span>{money(packagingCharges)}</span>
                 </div>
               )}
               <div className="bill-summary-row">
