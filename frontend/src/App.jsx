@@ -591,6 +591,15 @@ function App() {
           const match = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === p.outlet_id) || DEMO_OUTLETS.find(o => o.id === p.outlet_id)
           if (match) p.outlet_name = match.name
         }
+        // Detect if Google OAuth user requires profile completion (mobile + password)
+        const { data: authData } = await supabase.auth.getUser()
+        const user = authData?.user
+        const isOAuth = user?.app_metadata?.provider === 'google' || user?.identities?.some(i => i.provider === 'google')
+        if (isOAuth && (!p.mobile_number || !p.profile_completed || !p.has_password)) {
+          p.requiresProfileCompletion = true
+        } else {
+          p.requiresProfileCompletion = false
+        }
         setCurrentUser(p)
         loadUserWallet(userId)
         loadUserOrders(p)
@@ -1256,6 +1265,21 @@ function App() {
 
   // ── MAIN APP DIRECT AUTHENTICATION ──
   if (!currentUser) return <AuthScreen onLoginUser={setCurrentUser} />
+
+  // Mandatory one-time profile completion for Google OAuth users (cannot be skipped)
+  if (currentUser.requiresProfileCompletion) {
+    return (
+      <CompleteProfileScreen
+        currentUser={currentUser}
+        onCompleted={(completedUser) => {
+          setCurrentUser(completedUser)
+          loadUserWallet(completedUser.id)
+          loadUserOrders(completedUser)
+        }}
+        onSignOut={handleSignOut}
+      />
+    )
+  }
 
   const role      = currentUser.role || 'user'
 
@@ -6244,52 +6268,236 @@ function StaffAdminConsole({ profile, orders, outlets, eventMode, setEventMode,
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH SCREEN (Universal Dining Platform — User, Shop Staff, Shop Owner, Super Admin)
 // ─────────────────────────────────────────────────────────────────────────────
-function AuthScreen({ onLoginUser }) {
-  const [authMethod, setAuthMethod]   = useState('phone') // 'phone' (primary) | 'email' (staff/admin)
-  const [isSignUp, setIsSignUp]       = useState(false)
-  const [selectedCanteenId, setSelectedCanteenId] = useState('g1')
-  const [showAllCanteens, setShowAllCanteens] = useState(false)
-  
-  // Phone OTP State
-  const [phoneStep, setPhoneStep]     = useState('input') // 'input' | 'otp'
-  const [phone, setPhone]             = useState('9876543210')
-  const [otp, setOtp]                 = useState('')
-  const [resendTimer, setResendTimer] = useState(30)
-  
-  // Registration & Profile Info (Common to all users)
-  const [fullName, setFullName]       = useState('')
-  const [regEmail, setRegEmail]       = useState('')
-  const [role, setRole]               = useState('user') // 'user' | 'staff' | 'owner' | 'admin'
-  const [password, setPassword]       = useState('')
-  const [email, setEmail]             = useState('')
-  const [error, setError]             = useState('')
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE BRAND ICON
+// ─────────────────────────────────────────────────────────────────────────────
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+    </svg>
+  )
+}
 
-  // Resend OTP countdown timer
-  useEffect(() => {
-    let interval = null
-    if (phoneStep === 'otp' && resendTimer > 0) {
-      interval = setInterval(() => setResendTimer(t => t - 1), 1000)
-    }
-    return () => { if (interval) clearInterval(interval) }
-  }, [phoneStep, resendTimer])
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPLETE PROFILE SCREEN (Mandatory One-Time Setup for Google OAuth Accounts)
+// ─────────────────────────────────────────────────────────────────────────────
+function CompleteProfileScreen({ currentUser, onCompleted, onSignOut }) {
+  const [mobile, setMobile] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSendOtp(e) {
-    if (e) e.preventDefault()
+  async function handleProfileSubmit(e) {
+    e.preventDefault()
     setError('')
-    const cleanPhone = phone.replace(/\D/g, '')
-    if (cleanPhone.length < 10) {
+    const cleanMobile = mobile.replace(/\D/g, '')
+
+    if (cleanMobile.length !== 10) {
       return setError('Please enter a valid 10-digit mobile number')
     }
-    if (isSignUp) {
-      if (!fullName.trim()) return setError('Please enter your full name')
-      if (!regEmail.trim()) return setError('Please enter your email address')
-      if (!regEmail.includes('@')) return setError('Please enter a valid email address')
+    if (password.length < 6) {
+      return setError('Password must be at least 6 characters')
     }
-    setPhoneStep('otp')
-    setResendTimer(30)
-    setOtp('')
+    if (password !== confirmPassword) {
+      return setError('Passwords do not match')
+    }
+
+    setSubmitting(true)
+    try {
+      if (supabase) {
+        // 1. Enforce mobile uniqueness at DB level via RPC
+        const { data: isAvail, error: availErr } = await supabase.rpc('check_mobile_availability', {
+          p_mobile: cleanMobile,
+          p_user_id: currentUser?.id
+        })
+        if (!availErr && isAvail === false) {
+          setSubmitting(false)
+          return setError('This mobile number is already registered to another account. Please enter a different number.')
+        }
+
+        // 2. Complete profile on DB profiles table FIRST so onAuthStateChange doesn't see empty profile
+        const { error: rpcErr } = await supabase.rpc('complete_google_profile', { p_mobile: cleanMobile })
+        if (rpcErr) {
+          console.warn('complete_google_profile RPC fallback:', rpcErr)
+          await supabase.from('profiles').update({
+            mobile_number: cleanMobile,
+            phone: cleanMobile,
+            profile_completed: true,
+            has_password: true
+          }).eq('id', currentUser.id)
+        }
+
+        // 3. Set account password on Supabase Auth User
+        const { error: pwdErr } = await supabase.auth.updateUser({ password })
+        if (pwdErr) {
+          setSubmitting(false)
+          return setError(pwdErr.message)
+        }
+      }
+
+      onCompleted({
+        ...currentUser,
+        mobile_number: cleanMobile,
+        phone: cleanMobile,
+        profile_completed: true,
+        has_password: true,
+        requiresProfileCompletion: false
+      })
+    } catch (err) {
+      setError(err.message || 'Failed to complete profile')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
+  return (
+    <div className="login-container">
+      <div className="login-art">
+        <div className="login-art-top">
+          <img src="/vit-chennai-logo.png" alt="V Foods Logo" className="vit-logo-img" />
+          <div className="vfoods-brand-name login-hero-brand" title="V Foods">
+            <span className="vfoods-logo-v">V</span>
+            <span className="vfoods-logo-space"> </span>
+            <span className="vfoods-logo-f">F</span>
+            <span className="vfoods-logo-oods">OODS</span>
+          </div>
+        </div>
+        <div>
+          <h1>One final step,<br /><span>complete your profile.</span></h1>
+          <p style={{ marginTop: '16px', color: '#94A3B8', fontSize: '15px', lineHeight: 1.6 }}>
+            Set your mobile number for campus canteen pickup tokens and create a password so you can sign in directly from any device.
+          </p>
+        </div>
+        <small style={{ color: '#64748B' }}>© 2026 V Foods · VIT Chennai Campus Dining</small>
+      </div>
+
+      <div className="login-form-wrapper">
+        <div className="login-card-inner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
+              One-Time Profile Setup
+            </span>
+          </div>
+
+          <h2>Complete Your Profile</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px', lineHeight: 1.5 }}>
+            Welcome, <strong>{currentUser?.full_name || currentUser?.email}</strong>! Please enter your mobile number and create a password.
+          </p>
+
+          <div className="auth-feedback-banner info">
+            This password allows you to log in later using your mobile number or email without going through Google again.
+          </div>
+
+          <form onSubmit={handleProfileSubmit}>
+            <div className="form-group">
+              <label>Mobile Number *</label>
+              <div className="phone-input-group">
+                <span className="phone-prefix">+91</span>
+                <input
+                  id="complete-mobile"
+                  type="tel"
+                  maxLength="10"
+                  className="phone-number-field"
+                  value={mobile}
+                  onChange={e => setMobile(e.target.value.replace(/\D/g, ''))}
+                  placeholder="9876543210"
+                  required
+                />
+              </div>
+              <small style={{ color: 'var(--text-muted)', fontSize: '11.5px', marginTop: '4px', display: 'block' }}>
+                Used for counter pickup tokens and fast mobile login.
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label>Create Password *</label>
+              <input
+                id="complete-password"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                minLength={6}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Confirm Password *</label>
+              <input
+                id="complete-confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter password"
+                minLength={6}
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="auth-feedback-banner error">
+                {error}
+              </div>
+            )}
+
+            <button
+              id="btn-complete-profile"
+              type="submit"
+              className="btn-primary"
+              disabled={submitting}
+              style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}
+            >
+              {submitting ? 'Saving Profile...' : 'Complete & Continue'} <ArrowRight size={16} />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIFIED AUTH SCREEN (Unified Login, Manual Signup, Google Signup, Forgot Password)
+// ─────────────────────────────────────────────────────────────────────────────
+function AuthScreen({ onLoginUser }) {
+  // Modes: 'login' | 'signup' | 'forgot'
+  const [authMode, setAuthMode] = useState('login')
+  const [error, setError] = useState('')
+  const [noticeMsg, setNoticeMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Unified Login state
+  const [identifier, setIdentifier] = useState('') // email or 10-digit mobile
+  const [loginPassword, setLoginPassword] = useState('')
+
+  // Manual Signup state
+  const [signupName, setSignupName] = useState('')
+  const [signupEmail, setSignupEmail] = useState('')
+  const [signupMobile, setSignupMobile] = useState('')
+  const [signupPassword, setSignupPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  // Forgot password state
+  const [forgotIdentifier, setForgotIdentifier] = useState('')
+
+  // Quick Test Bar state (preserved)
+  const [selectedCanteenId, setSelectedCanteenId] = useState('g1')
+  const [showAllCanteens, setShowAllCanteens] = useState(false)
+
+  // Clear errors when switching modes
+  function switchMode(newMode) {
+    setAuthMode(newMode)
+    setError('')
+    setNoticeMsg('')
+  }
+
+  // Quick login handler for test buttons
   async function handleQuickLogin(userObj) {
     if (!userObj) return
     onLoginUser(userObj)
@@ -6305,84 +6513,317 @@ function AuthScreen({ onLoginUser }) {
     }
   }
 
-  function handleVerifyOtp(e) {
-    if (e) e.preventDefault()
+  // 1. UNIFIED LOGIN HANDLER
+  async function handleUnifiedLogin(e) {
+    e.preventDefault()
     setError('')
-    if (!otp || otp.length < 4) {
-      return setError('Please enter the 4-digit OTP sent to your phone')
+    setNoticeMsg('')
+    setLoading(true)
+
+    const rawId = identifier.trim()
+    if (!rawId) {
+      setLoading(false)
+      return setError('Please enter your email or mobile number')
+    }
+    if (!loginPassword) {
+      setLoading(false)
+      return setError('Please enter your password')
     }
 
-    // Match phone against test users (including all 26 canteen staff and owner accounts)
-    const cleanPhone = phone.replace(/\D/g, '').slice(-10)
-    const matched = TEST_USERS.find(u => u.phone?.replace(/\D/g, '').slice(-10) === cleanPhone)
+    try {
+      let resolvedEmail = null
 
-    if (matched && !isSignUp) {
-      handleQuickLogin(matched)
-    } else {
-      const isSuper = role === 'admin'
-      const chosenCanteen = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
-      const newProfile = {
-        id: `usr-${Date.now()}`,
-        full_name: fullName.trim() || `User (+91 ${cleanPhone})`,
-        phone: cleanPhone,
-        email: regEmail.trim() || `${cleanPhone}@vfood.vit.ac.in`,
-        role: role,
-        is_superadmin: isSuper,
-        outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
-        outlet_name: role === 'owner' || role === 'staff' ? chosenCanteen.name : undefined,
-        balance: 0
+      if (rawId.includes('@')) {
+        resolvedEmail = rawId
+      } else {
+        // Mobile number provided: look up matching email via database RPC
+        const cleanMobile = rawId.replace(/\D/g, '')
+        if (supabase) {
+          const { data: lookedUpEmail, error: rpcErr } = await supabase.rpc('lookup_email_by_mobile', {
+            p_mobile: cleanMobile
+          })
+          if (rpcErr) console.warn('lookup_email_by_mobile error:', rpcErr)
+          resolvedEmail = lookedUpEmail
+        }
+        // Fallback test users check
+        if (!resolvedEmail) {
+          const matchedTest = TEST_USERS.find(u => u.phone?.replace(/\D/g, '').slice(-10) === cleanMobile.slice(-10))
+          if (matchedTest) resolvedEmail = matchedTest.email
+        }
       }
-      onLoginUser(newProfile)
+
+      // If no account found for this mobile/email, show ONE generic error
+      if (!resolvedEmail) {
+        setLoading(false)
+        return setError('Invalid login details')
+      }
+
+      if (supabase) {
+        const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+          email: resolvedEmail,
+          password: loginPassword
+        })
+
+        if (authErr) {
+          // Check quick test accounts fallback
+          const matchedTest = TEST_USERS.find(u =>
+            (u.email.toLowerCase() === resolvedEmail.toLowerCase()) &&
+            (u.password === loginPassword || !u.password)
+          )
+          if (matchedTest) {
+            setLoading(false)
+            return onLoginUser(matchedTest)
+          }
+          // Never reveal whether email or password was wrong
+          setLoading(false)
+          return setError('Invalid login details')
+        }
+
+        // Fetch user profile from database
+        const userId = authData.user.id
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single()
+
+        let userObj = profile
+        if (userObj) {
+          if (userObj.outlet_id) {
+            const match = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === userObj.outlet_id) || DEMO_OUTLETS.find(o => o.id === userObj.outlet_id)
+            if (match) userObj.outlet_name = match.name
+          }
+          // Check if Google OAuth account has completed profile setup
+          const isOAuth = authData.user.app_metadata?.provider === 'google' || authData.user.identities?.some(i => i.provider === 'google')
+          if (isOAuth && (!userObj.mobile_number || !userObj.profile_completed || !userObj.has_password)) {
+            userObj.requiresProfileCompletion = true
+          }
+        } else {
+          userObj = {
+            id: userId,
+            email: resolvedEmail,
+            full_name: resolvedEmail.split('@')[0],
+            role: 'user',
+            balance: 0
+          }
+        }
+
+        setLoading(false)
+        onLoginUser(userObj)
+      } else {
+        const matchedTest = TEST_USERS.find(u =>
+          (u.email.toLowerCase() === resolvedEmail.toLowerCase()) &&
+          (u.password === loginPassword || !u.password)
+        )
+        setLoading(false)
+        if (matchedTest) return onLoginUser(matchedTest)
+        setError('Invalid login details')
+      }
+    } catch (err) {
+      setLoading(false)
+      setError('Invalid login details')
     }
   }
 
-  async function handleEmailSubmit(e) {
+  // 2. MANUAL SIGNUP HANDLER (PATH A)
+  async function handleManualSignup(e) {
     e.preventDefault()
     setError('')
-    const matchedTest = TEST_USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password))
-    if (supabase) {
-      if (isSignUp) {
-        const chosenCanteen = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
-        const { data, error: authErr } = await supabase.auth.signUp({
-          email, password,
-          options: {
-            data: {
-              full_name: fullName,
-              role,
-              outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined
-            }
-          }
+    setNoticeMsg('')
+
+    if (!signupName.trim()) {
+      return setError('Please enter your full name')
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(signupEmail.trim())) {
+      return setError('Please enter a valid email address')
+    }
+    const cleanMobile = signupMobile.replace(/\D/g, '')
+    if (cleanMobile.length !== 10) {
+      return setError('Please enter a valid 10-digit mobile number')
+    }
+    if (signupPassword.length < 6) {
+      return setError('Password must be at least 6 characters')
+    }
+    if (signupPassword !== confirmPassword) {
+      return setError('Passwords do not match')
+    }
+
+    setLoading(true)
+    try {
+      if (supabase) {
+        // Enforce mobile uniqueness at database level via RPC first
+        const { data: isAvail, error: availErr } = await supabase.rpc('check_mobile_availability', {
+          p_mobile: cleanMobile
         })
-        if (authErr) return setError(authErr.message)
-        onLoginUser({
-          id: data.user.id,
-          full_name: fullName,
-          email,
-          role,
-          outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
-          outlet_name: role === 'owner' || role === 'staff' ? chosenCanteen.name : undefined,
+        if (!availErr && isAvail === false) {
+          setLoading(false)
+          return setError('Mobile number is already registered to another account')
+        }
+
+        // Call register_manual_user to create the auth.users credential with instant confirmation
+        const { data: uid, error: regErr } = await supabase.rpc('register_manual_user', {
+          p_name: signupName.trim(),
+          p_email: signupEmail.trim(),
+          p_mobile: cleanMobile,
+          p_password: signupPassword
+        })
+
+        if (regErr) {
+          setLoading(false)
+          if (regErr.message?.includes('MOBILE_EXISTS') || regErr.message?.includes('already registered to another account')) {
+            return setError('Mobile number is already registered to another account')
+          }
+          if (regErr.message?.includes('EMAIL_EXISTS')) {
+            return setError('Email address is already registered to another account')
+          }
+          return setError(regErr.message || 'Signup failed')
+        }
+
+        // Establish session with Supabase Auth
+        const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+          email: signupEmail.trim(),
+          password: signupPassword
+        })
+
+        if (loginErr) {
+          setLoading(false)
+          return setError('Account created but login failed: ' + loginErr.message)
+        }
+
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', loginData.user.id).single()
+
+        setLoading(false)
+        onLoginUser(profile || {
+          id: loginData.user.id,
+          full_name: signupName.trim(),
+          email: signupEmail.trim(),
+          mobile_number: cleanMobile,
+          phone: cleanMobile,
+          role: 'customer',
+          has_password: true,
+          profile_completed: true,
           balance: 0
         })
       } else {
-        const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
-        if (authErr) {
-          if (matchedTest) return onLoginUser(matchedTest)
-          return setError(authErr.message)
-        }
-        try {
-          const { data: p } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
-          if (p) {
-            const match = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === p.outlet_id) || DEMO_OUTLETS.find(o => o.id === p.outlet_id)
-            if (match) p.outlet_name = match.name
-            return onLoginUser(p)
-          }
-        } catch (_) {}
-        if (matchedTest) return onLoginUser(matchedTest)
-        onLoginUser({ id: data.user.id, email, full_name: email.split('@')[0], role: 'user', balance: 0 })
+        setLoading(false)
+        onLoginUser({
+          id: `usr-${Date.now()}`,
+          full_name: signupName.trim(),
+          email: signupEmail.trim(),
+          mobile_number: cleanMobile,
+          phone: cleanMobile,
+          role: 'user',
+          has_password: true,
+          profile_completed: true,
+          balance: 0
+        })
       }
-    } else {
-      if (matchedTest) onLoginUser(matchedTest)
-      else onLoginUser({ id: 'usr-new', full_name: fullName || email.split('@')[0], email, role, balance: 0 })
+    } catch (err) {
+      setLoading(false)
+      setError(err.message || 'Signup failed')
+    }
+  }
+
+  // 3. GOOGLE SIGNUP / SIGNIN HANDLER (PATH B)
+  async function handleGoogleLogin() {
+    setError('')
+    setNoticeMsg('')
+    if (supabase) {
+      const { error: gErr } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+      if (gErr) setError(gErr.message)
+    }
+  }
+
+  // Google Test Simulator: sets up or logs into a real Google test user
+  async function handleSimulateGoogleLogin(isNewUser = true) {
+    setError('')
+    setNoticeMsg('')
+    setLoading(true)
+    const testEmail = isNewUser ? `google.new.${Date.now()}@vitstudent.ac.in` : 'google.returning@vitstudent.ac.in'
+    const testName = isNewUser ? 'Vikram Google' : 'Ananya Google (Returning)'
+
+    try {
+      if (supabase) {
+        if (isNewUser) {
+          // Creates real auth user with provider = 'google' and profile_completed = false
+          const { data: uid, error: createErr } = await supabase.rpc('create_google_test_user', {
+            p_email: testEmail,
+            p_name: testName
+          })
+          if (createErr) console.warn('create_google_test_user rpc:', createErr)
+        }
+
+        // Sign in using the test account's auth credentials
+        const { data: authData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: testEmail,
+          password: 'GoogleTest@123'
+        })
+
+        if (signInErr) {
+          setLoading(false)
+          return setError(`Google test simulation: ${signInErr.message}`)
+        }
+
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single()
+        const userObj = profile || { id: authData.user.id, email: testEmail, full_name: testName, role: 'user' }
+
+        if (isNewUser || !userObj.profile_completed || !userObj.mobile_number) {
+          userObj.requiresProfileCompletion = true
+        }
+
+        setLoading(false)
+        onLoginUser(userObj)
+      } else {
+        setLoading(false)
+        onLoginUser({
+          id: `usr-google-${Date.now()}`,
+          full_name: testName,
+          email: testEmail,
+          role: 'user',
+          requiresProfileCompletion: isNewUser
+        })
+      }
+    } catch (err) {
+      setLoading(false)
+      setError(err.message || 'Google simulation failed')
+    }
+  }
+
+  // 4. FORGOT PASSWORD HANDLER
+  async function handleForgotPassword(e) {
+    e.preventDefault()
+    setError('')
+    setNoticeMsg('')
+    const rawId = forgotIdentifier.trim()
+    if (!rawId) return setError('Please enter your registered email or mobile number')
+
+    setLoading(true)
+    try {
+      let targetEmail = null
+      if (rawId.includes('@')) {
+        targetEmail = rawId
+      } else {
+        const cleanMobile = rawId.replace(/\D/g, '')
+        if (supabase) {
+          const { data: foundEmail } = await supabase.rpc('lookup_email_by_mobile', { p_mobile: cleanMobile })
+          targetEmail = foundEmail
+        }
+      }
+
+      if (supabase && targetEmail) {
+        supabase.auth.resetPasswordForEmail(targetEmail, {
+          redirectTo: window.location.origin
+        }).catch(err => console.warn('resetPasswordForEmail notice:', err))
+      }
+
+      // Neutral confirmation message (prevents account enumeration)
+      setLoading(false)
+      setNoticeMsg('If an account exists, a reset link has been sent to the registered email.')
+    } catch (_) {
+      setLoading(false)
+      setNoticeMsg('If an account exists, a reset link has been sent to the registered email.')
     }
   }
 
@@ -6390,8 +6831,8 @@ function AuthScreen({ onLoginUser }) {
     <div className="login-container">
       <div className="login-art">
         <div className="login-art-top">
-          <img src="/vit-chennai-logo.png" alt="V FOODS Logo" className="vit-logo-img" />
-          <div className="vfoods-brand-name login-hero-brand" title="V FOODS">
+          <img src="/vit-chennai-logo.png" alt="V Foods Logo" className="vit-logo-img" />
+          <div className="vfoods-brand-name login-hero-brand" title="V Foods">
             <span className="vfoods-logo-v">V</span>
             <span className="vfoods-logo-space"> </span>
             <span className="vfoods-logo-f">F</span>
@@ -6405,251 +6846,283 @@ function AuthScreen({ onLoginUser }) {
             <br />Get your digital token, skip the counter line, and grab hot food on your way.
           </p>
         </div>
-        <small style={{ color: '#64748B' }}>© 2026 V FOODS · VIT Chennai Campus Dining</small>
+        <small style={{ color: '#64748B' }}>© 2026 V Foods · VIT Chennai Campus Dining</small>
       </div>
 
       <div className="login-form-wrapper">
         <div className="login-card-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ background: '#EFF6FF', color: 'var(--blue-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
-              V FOODS Access
+              V Foods Access
             </span>
           </div>
 
-          <h2>{isSignUp ? 'Create New Account' : 'Sign In to V FOODS'}</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
-            {authMethod === 'phone'
-              ? (isSignUp ? 'Enter your details & verify with Mobile OTP' : 'Instant 1-tap login via Mobile OTP')
-              : 'Sign in using your email & password'}
-          </p>
-
-          {/* Primary / Secondary Method Toggle Tabs */}
-          <div className="auth-tabs-toggle">
-            <button
-              type="button"
-              className={`auth-tab-btn ${authMethod === 'phone' ? 'active' : ''}`}
-              onClick={() => { setAuthMethod('phone'); setError(''); setPhoneStep('input') }}
-            >
-              Mobile OTP (Primary)
-            </button>
-            <button
-              type="button"
-              className={`auth-tab-btn ${authMethod === 'email' ? 'active' : ''}`}
-              onClick={() => { setAuthMethod('email'); setError('') }}
-            >
-              Email & Password (Staff/Admin)
-            </button>
-          </div>
-
-          {/* ════ PRIMARY FLOW: MOBILE NUMBER + OTP ════ */}
-          {authMethod === 'phone' && (
+          {/* ════ VIEW 1: UNIFIED LOGIN ════ */}
+          {authMode === 'login' && (
             <div>
-              {phoneStep === 'input' ? (
-                <form onSubmit={handleSendOtp}>
-                  {isSignUp && (
-                    <>
-                      <div className="form-group">
-                        <label>Full Name *</label>
-                        <input
-                          value={fullName}
-                          onChange={e => setFullName(e.target.value)}
-                          placeholder="e.g. Rahul Sharma"
-                          required
-                        />
-                      </div>
+              <h2>Sign In to V Foods</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
+                Enter your email or mobile number to continue.
+              </p>
 
-                      <div className="form-group">
-                        <label>Email Address *</label>
-                        <input
-                          type="email"
-                          value={regEmail}
-                          onChange={e => setRegEmail(e.target.value)}
-                          placeholder="e.g. rahul.sharma@gmail.com"
-                          required
-                        />
-                        <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                          Used for order receipts, payment invoices, and account recovery.
-                        </small>
-                      </div>
+              {/* Continue with Google */}
+              <button
+                id="btn-google-login"
+                type="button"
+                className="btn-google"
+                onClick={handleGoogleLogin}
+              >
+                <GoogleIcon />
+                <span>Continue with Google</span>
+              </button>
 
-                      <div className="form-group">
-                        <label>Account Role</label>
-                        <select value={role} onChange={e => setRole(e.target.value)}>
-                          <option value="user">User (Customer — Browse, Order & Wallet)</option>
-                          <option value="staff">Shop Staff (Kitchen Orders & Dispatch)</option>
-                          <option value="owner">Shop Owner (Sales & Store Management)</option>
-                          <option value="admin">Super Admin (Platform Telemetry & Controls)</option>
-                        </select>
-                      </div>
+              <div className="auth-divider">
+                <span>OR</span>
+              </div>
 
-                      {(role === 'staff' || role === 'owner') && (
-                        <div className="form-group">
-                          <label>Assign to Canteen *</label>
-                          <select value={selectedCanteenId} onChange={e => setSelectedCanteenId(e.target.value)}>
-                            {CANTEEN_STAFF_OWNER_MAP.map(c => (
-                              <option key={c.id} value={c.id}>{c.name} ({c.location})</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  <div className="form-group">
-                    <label>Mobile Number (Primary Identity) *</label>
-                    <div className="phone-input-group">
-                      <span className="phone-prefix">+91</span>
-                      <input
-                        type="tel"
-                        maxLength="10"
-                        className="phone-number-field"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                        placeholder="9876543210"
-                        required
-                      />
-                    </div>
-                    <small style={{ color: 'var(--text-muted)', fontSize: '11.5px', marginTop: '4px', display: 'block' }}>
-                      We will send a 4-digit verification code to this mobile number.
-                    </small>
-                  </div>
-
-                  {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
-
-                  <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
-                    {isSignUp ? 'Send OTP & Register' : 'Get Login OTP'} <ArrowRight size={16} />
-                  </button>
-                </form>
-              ) : (
-                /* OTP Verification Step */
-                <form onSubmit={handleVerifyOtp}>
-                  <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                    <p style={{ fontSize: '14px', color: 'var(--text-main)', margin: '0 0 4px', fontWeight: 600 }}>
-                      Enter 4-digit OTP sent to
-                    </p>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#F1F5F9', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>
-                      <span>+91 {phone}</span>
-                      <button
-                        type="button"
-                        onClick={() => setPhoneStep('input')}
-                        style={{ border: 0, background: 'none', color: 'var(--blue-primary)', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}
-                      >
-                        Change
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* SMS Gateway Banner */}
-                  <div className="sms-preview-banner">
-                    <div>
-                      <strong>SMS Gateway:</strong><br />
-                      <span>Your V FOODS verification code is <strong>4826</strong> (Valid for 5 mins).</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap' }}
-                      onClick={() => setOtp('4826')}
-                    >
-                      Auto-fill 4826
-                    </button>
-                  </div>
-
-                  <div className="form-group" style={{ textAlign: 'center' }}>
-                    <input
-                      type="text"
-                      maxLength="4"
-                      autoFocus
-                      className="otp-box-input"
-                      style={{ width: '160px', height: '52px', letterSpacing: '12px', paddingLeft: '22px' }}
-                      value={otp}
-                      onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder="••••"
-                      required
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '12.5px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>
-                      {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Didn't receive SMS?"}
-                    </span>
-                    {resendTimer === 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleSendOtp()}
-                        style={{ border: 0, background: 'none', color: 'var(--blue-primary)', fontWeight: 700, cursor: 'pointer' }}
-                      >
-                        Resend Code
-                      </button>
-                    )}
-                  </div>
-
-                  {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
-
-                  <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                    {isSignUp ? 'Verify & Complete Registration' : 'Verify & Sign In'} <ArrowRight size={16} />
-                  </button>
-                </form>
+              {noticeMsg && (
+                <div className="auth-feedback-banner success">
+                  {noticeMsg}
+                </div>
               )}
+
+              {error && (
+                <div className="auth-feedback-banner error">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleUnifiedLogin}>
+                <div className="form-group">
+                  <label htmlFor="login-identifier">Email or Mobile Number *</label>
+                  <input
+                    id="login-identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
+                    placeholder="user@vitstudent.ac.in or 9876543210"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label htmlFor="login-password" style={{ margin: 0 }}>Password *</label>
+                    <a
+                      href="#"
+                      onClick={e => { e.preventDefault(); switchMode('forgot') }}
+                      style={{ fontSize: '12px', color: 'var(--blue-primary)', fontWeight: 700 }}
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
+                  <input
+                    id="login-password"
+                    type="password"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+
+                <button
+                  id="btn-sign-in"
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
+                >
+                  {loading ? 'Signing In...' : 'Sign In'} <ArrowRight size={16} />
+                </button>
+              </form>
+
+              <p style={{ textAlign: 'center', marginTop: '18px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+                Don't have an account?{' '}
+                <a
+                  href="#"
+                  style={{ color: 'var(--blue-primary)', fontWeight: 700 }}
+                  onClick={e => { e.preventDefault(); switchMode('signup') }}
+                >
+                  Register New Account
+                </a>
+              </p>
             </div>
           )}
 
-          {/* ════ SECONDARY FLOW: EMAIL & PASSWORD ════ */}
-          {authMethod === 'email' && (
-            <form onSubmit={handleEmailSubmit}>
-              {isSignUp && (
-                <div className="form-group">
-                  <label>Full Name *</label>
-                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" required />
+          {/* ════ VIEW 2: MANUAL SIGNUP (PATH A) ════ */}
+          {authMode === 'signup' && (
+            <div>
+              <h2>Create Account</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
+                Sign up with your details to pre-order meals across campus.
+              </p>
+
+              {error && (
+                <div className="auth-feedback-banner error">
+                  {error}
                 </div>
               )}
-              <div className="form-group">
-                <label>Email Address *</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" required />
-              </div>
-              <div className="form-group">
-                <label>Password *</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
-              </div>
-              {isSignUp && (
-                <>
-                  <div className="form-group">
-                    <label>Account Role</label>
-                    <select value={role} onChange={e => setRole(e.target.value)}>
-                      <option value="user">User (Customer — Browse, Order & Wallet)</option>
-                      <option value="staff">Shop Staff (Kitchen Orders & Dispatch)</option>
-                      <option value="owner">Shop Owner (Sales & Store Management)</option>
-                      <option value="admin">Super Admin (Platform Telemetry & Controls)</option>
-                    </select>
+
+              <form onSubmit={handleManualSignup}>
+                <div className="form-group">
+                  <label htmlFor="signup-name">Full Name *</label>
+                  <input
+                    id="signup-name"
+                    type="text"
+                    value={signupName}
+                    onChange={e => setSignupName(e.target.value)}
+                    placeholder="Rahul Sharma"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="signup-email">Email Address *</label>
+                  <input
+                    id="signup-email"
+                    type="email"
+                    value={signupEmail}
+                    onChange={e => setSignupEmail(e.target.value)}
+                    placeholder="rahul.sharma@vitstudent.ac.in"
+                    required
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                    Used for order receipts and account recovery.
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="signup-mobile">Mobile Number *</label>
+                  <div className="phone-input-group">
+                    <span className="phone-prefix">+91</span>
+                    <input
+                      id="signup-mobile"
+                      type="tel"
+                      maxLength="10"
+                      className="phone-number-field"
+                      value={signupMobile}
+                      onChange={e => setSignupMobile(e.target.value.replace(/\D/g, ''))}
+                      placeholder="9876543210"
+                      required
+                    />
                   </div>
-                  {(role === 'staff' || role === 'owner') && (
-                    <div className="form-group">
-                      <label>Assign to Canteen *</label>
-                      <select value={selectedCanteenId} onChange={e => setSelectedCanteenId(e.target.value)}>
-                        {CANTEEN_STAFF_OWNER_MAP.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} ({c.location})</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </>
-              )}
-              {error && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{error}</p>}
-              <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
-                {isSignUp ? 'Create Account' : 'Sign In with Email & Password'} <ArrowRight size={16} />
-              </button>
-            </form>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                    Must be unique. Used for token SMS and fast mobile login.
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="signup-password">Password *</label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    value={signupPassword}
+                    onChange={e => setSignupPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    minLength={6}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="signup-confirm-password">Confirm Password *</label>
+                  <input
+                    id="signup-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    minLength={6}
+                    required
+                  />
+                </div>
+
+                <button
+                  id="btn-sign-up"
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}
+                >
+                  {loading ? 'Creating Account...' : 'Create Account'} <ArrowRight size={16} />
+                </button>
+              </form>
+
+              <p style={{ textAlign: 'center', marginTop: '18px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+                Already have an account?{' '}
+                <a
+                  href="#"
+                  style={{ color: 'var(--blue-primary)', fontWeight: 700 }}
+                  onClick={e => { e.preventDefault(); switchMode('login') }}
+                >
+                  Sign In to Account
+                </a>
+              </p>
+            </div>
           )}
 
-          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
-            {isSignUp ? 'Already registered?' : "First time on V FOODS?"}{' '}
-            <a href="#" style={{ color: 'var(--blue-primary)', fontWeight: '700' }}
-              onClick={e => { e.preventDefault(); setIsSignUp(s => !s); setPhoneStep('input'); setError('') }}>
-              {isSignUp ? 'Sign In to Account' : 'Register New Account'}
-            </a>
-          </p>
+          {/* ════ VIEW 3: FORGOT PASSWORD ════ */}
+          {authMode === 'forgot' && (
+            <div>
+              <h2>Reset Password</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
+                Enter your registered email or mobile number to receive a reset link.
+              </p>
 
-          {/* Quick Login - 4 Explicit Dashboards + 13 Canteens Staff & Owner Mapping */}
+              {noticeMsg && (
+                <div className="auth-feedback-banner success">
+                  {noticeMsg}
+                </div>
+              )}
+
+              {error && (
+                <div className="auth-feedback-banner error">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleForgotPassword}>
+                <div className="form-group">
+                  <label htmlFor="forgot-identifier">Email or Mobile Number *</label>
+                  <input
+                    id="forgot-identifier"
+                    type="text"
+                    value={forgotIdentifier}
+                    onChange={e => setForgotIdentifier(e.target.value)}
+                    placeholder="user@domain.com or 9876543210"
+                    required
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    The reset instructions will always be sent to the account's registered email address.
+                  </small>
+                </div>
+
+                <button
+                  id="btn-send-reset"
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}
+                >
+                  {loading ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={16} />
+                </button>
+              </form>
+
+              <p style={{ textAlign: 'center', marginTop: '18px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+                Remember your password?{' '}
+                <a
+                  href="#"
+                  style={{ color: 'var(--blue-primary)', fontWeight: 700 }}
+                  onClick={e => { e.preventDefault(); switchMode('login') }}
+                >
+                  Back to Sign In
+                </a>
+              </p>
+            </div>
+          )}
+
+          {/* ════ QUICK TEST ACCESS BOX (PRESERVED) ════ */}
           <div className="quick-test-box">
             <div className="quick-test-header">
               <p style={{ margin: 0, fontWeight: 800 }}>Quick Test Access (Select Role):</p>
@@ -6723,6 +7196,33 @@ function AuthScreen({ onLoginUser }) {
               >
                 <Shield size={14} strokeWidth={2} />
                 <span style={{ fontWeight: 700 }}>Super Admin (Me)</span>
+              </button>
+            </div>
+
+            {/* Google OAuth Test Simulator Chips */}
+            <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                id="btn-simulate-google-new"
+                type="button"
+                className="quick-chip"
+                style={{ background: '#4285F4', fontSize: '11px', padding: '5px 10px' }}
+                onClick={() => handleSimulateGoogleLogin(true)}
+                title="Simulate first-time Google sign up to test profile completion"
+              >
+                <GoogleIcon />
+                <span>Simulate Google Sign-Up (New)</span>
+              </button>
+
+              <button
+                id="btn-simulate-google-returning"
+                type="button"
+                className="quick-chip"
+                style={{ background: '#334155', fontSize: '11px', padding: '5px 10px' }}
+                onClick={() => handleSimulateGoogleLogin(false)}
+                title="Simulate returning Google sign-in (bypasses profile completion)"
+              >
+                <GoogleIcon />
+                <span>Google Sign-In (Returning)</span>
               </button>
             </div>
 
