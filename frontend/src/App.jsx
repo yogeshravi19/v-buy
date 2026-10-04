@@ -604,6 +604,36 @@ function App() {
         loadUserWallet(userId)
         loadUserOrders(p)
         if (p.role === 'staff' || p.role === 'admin' || p.role === 'shop_admin') setTab('ops')
+      } else {
+        const { data: authData } = await supabase.auth.getUser()
+        const user = authData?.user
+        if (user) {
+          const isOAuth = user.app_metadata?.provider === 'google' || user.identities?.some(i => i.provider === 'google')
+          const fallbackUser = {
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
+            role: 'customer',
+            cust_type: 'student',
+            mobile_number: null,
+            phone: null,
+            has_password: false,
+            profile_completed: false,
+            requiresProfileCompletion: isOAuth
+          }
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            email: user.email,
+            full_name: fallbackUser.full_name,
+            role: 'customer',
+            cust_type: 'student',
+            has_password: false,
+            profile_completed: false
+          })
+          await supabase.from('wallets').upsert({ user_id: user.id, balance: 0 }).select()
+          setCurrentUser(fallbackUser)
+          loadUserWallet(user.id)
+        }
       }
     } catch (e) { console.warn('Profile fetch fallback:', e) }
   }
@@ -6732,7 +6762,13 @@ function AuthScreen({ onLoginUser }) {
           redirectTo: window.location.origin
         }
       })
-      if (gErr) setError(gErr.message)
+      if (gErr) {
+        if (gErr.message?.toLowerCase().includes('not enabled') || gErr.message?.toLowerCase().includes('unsupported provider')) {
+          setError('Google Sign-In is not enabled yet in your Supabase project (Authentication > Providers > Google). Enter your Google OAuth Client ID & Secret in the Supabase Dashboard to complete live activation.')
+        } else {
+          setError(gErr.message)
+        }
+      }
     }
   }
 
