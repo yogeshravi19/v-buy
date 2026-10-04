@@ -220,6 +220,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
 
   // Modals
   const [showAddMenuModal, setShowAddMenuModal] = useState(false)
+  const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null)
   const [menuForm, setMenuForm] = useState({
     name: '',
     price: 35,
@@ -227,6 +228,30 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     is_veg: true,
     stock_qty: 30
   })
+
+  const openAddMenuModal = () => {
+    setEditingMenuItem(null)
+    setMenuForm({
+      name: '',
+      price: 35,
+      category: 'snacks',
+      is_veg: true,
+      stock_qty: 30
+    })
+    setShowAddMenuModal(true)
+  }
+
+  const openEditMenuModal = (item: MenuItem) => {
+    setEditingMenuItem(item)
+    setMenuForm({
+      name: item.name,
+      price: item.price,
+      category: item.category || 'snacks',
+      is_veg: item.is_veg !== false,
+      stock_qty: item.stock_qty ?? 30
+    })
+    setShowAddMenuModal(true)
+  }
 
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [staffForm, setStaffForm] = useState({
@@ -261,7 +286,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           ords.map((o: any) => ({
             id: o.id,
             user_id: o.user_id,
-            customer_name: `Student #${o.id % 900 + 100}`,
+            customer_name: `User #${o.id % 900 + 100}`,
             outlet_id: o.outlet_id,
             token: o.token || String(o.id % 900 + 100),
             status: o.status || 'placed',
@@ -525,10 +550,41 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     }
   }
 
-  // Add Menu Item
+  // Add / Edit Menu Item
   const handleSaveMenuItem = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!menuForm.name) return
+
+    if (editingMenuItem) {
+      setMenuItems(prev => prev.map(i => i.id === editingMenuItem.id ? {
+        ...i,
+        name: menuForm.name,
+        price: Number(menuForm.price),
+        category: menuForm.category,
+        is_veg: menuForm.is_veg,
+        stock_qty: Number(menuForm.stock_qty)
+      } : i))
+      setShowAddMenuModal(false)
+
+      try {
+        await supabase
+          .from('menu_items')
+          .update({
+            name: menuForm.name,
+            price: Number(menuForm.price),
+            category: menuForm.category,
+            is_veg: menuForm.is_veg,
+            stock_qty: Number(menuForm.stock_qty)
+          })
+          .eq('id', editingMenuItem.id)
+
+        setNotice(`Updated "${menuForm.name}" in menu catalog.`)
+        setTimeout(() => setNotice(null), 3500)
+      } catch (e) {
+        console.error('Failed to update menu item:', e)
+      }
+      return
+    }
 
     const item: MenuItem = {
       id: Date.now(),
@@ -1314,7 +1370,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                     <Search size={14} style={{ position: 'absolute', left: '10px', top: '9px', color: '#94A3B8' }} />
                     <input
                       type="text"
-                      placeholder="Search token or student..."
+                      placeholder="Search token or user..."
                       value={searchOrderQuery}
                       onChange={e => setSearchOrderQuery(e.target.value)}
                       style={{
@@ -1335,7 +1391,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                     <thead>
                       <tr>
                         <th>Token #</th>
-                        <th>Student / Items</th>
+                        <th>User / Items</th>
                         <th>Placed</th>
                         <th>Method</th>
                         <th>Total</th>
@@ -1661,7 +1717,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlet Menu Catalog</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Manage prices, category categorization, and availability</p>
                 </div>
-                <button className="saas-btn saas-btn-primary" onClick={() => setShowAddMenuModal(true)}>
+                <button className="saas-btn saas-btn-primary" onClick={openAddMenuModal}>
                   <Plus size={15} />
                   <span>Add New Menu Item</span>
                 </button>
@@ -1725,13 +1781,22 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                             </button>
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="saas-btn saas-btn-danger saas-btn-sm"
-                              onClick={() => handleDeleteMenuItem(item.id, item.name)}
-                              title="Delete from menu"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              <button
+                                className="saas-btn saas-btn-secondary saas-btn-sm"
+                                onClick={() => openEditMenuModal(item)}
+                                title="Edit menu item"
+                              >
+                                <Edit size={13} />
+                              </button>
+                              <button
+                                className="saas-btn saas-btn-danger saas-btn-sm"
+                                onClick={() => handleDeleteMenuItem(item.id, item.name)}
+                                title="Delete from menu"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -2132,7 +2197,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                   </div>
 
                   <div style={{ padding: '14px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Student Meal Wallet</span>
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>User Meal Wallet</span>
                     <div style={{ fontSize: '18px', fontWeight: 800, margin: '4px 0' }}>{money(Math.round(totalRevenue * 0.20))}</div>
                     <span style={{ fontSize: '11px', color: '#3B82F6', fontWeight: 700 }}>20% share</span>
                   </div>
@@ -2312,13 +2377,13 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         </div>
       </main>
 
-      {/* ── ADD MENU ITEM MODAL ── */}
+      {/* ── ADD / EDIT MENU ITEM MODAL ── */}
       {showAddMenuModal && (
-        <div className="saas-modal-backdrop" onClick={() => setShowAddMenuModal(false)}>
+        <div className="saas-modal-backdrop" onClick={() => { setShowAddMenuModal(false); setEditingMenuItem(null) }}>
           <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
             <div className="saas-modal-header">
-              <h3 className="saas-modal-title">Add Menu Item</h3>
-              <button className="saas-modal-close" onClick={() => setShowAddMenuModal(false)}>
+              <h3 className="saas-modal-title">{editingMenuItem ? 'Edit Menu Item' : 'Add Menu Item'}</h3>
+              <button className="saas-modal-close" onClick={() => { setShowAddMenuModal(false); setEditingMenuItem(null) }}>
                 <X size={16} />
               </button>
             </div>
@@ -2397,11 +2462,11 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowAddMenuModal(false)}>
+                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => { setShowAddMenuModal(false); setEditingMenuItem(null) }}>
                   Cancel
                 </button>
                 <button type="submit" className="saas-btn saas-btn-primary">
-                  Save Item
+                  {editingMenuItem ? 'Update Item' : 'Save Item'}
                 </button>
               </div>
             </form>

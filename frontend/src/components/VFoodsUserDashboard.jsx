@@ -1,11 +1,13 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   Search, X, ArrowLeft, Store, ShoppingBag, Clock, User, CreditCard,
   ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle,
   Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw,
-  Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck, Lock
+  Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck, Lock,
+  Edit2, Settings
 } from 'lucide-react'
 import { getFoodImage } from '../lib/foodImages'
+import { supabase } from '../lib/supabase'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTHENTIC VIT CHENNAI FOOD COURTS (V FOODS User Dashboard)
@@ -114,6 +116,66 @@ export default function VFoodsUserDashboard({
   const [selectedGatewayApp, setSelectedGatewayApp] = useState('phonepe') // 'phonepe' | 'paytm' | 'gpay' | 'upi'
   const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
   const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
+
+  // Header Profile Dropdown & Edit Profile State
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+  const profileMenuRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const initials = useMemo(() => {
+    return (currentUser?.full_name || 'User')
+      .split(' ')
+      .filter(Boolean)
+      .map(w => w[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || 'US'
+  }, [currentUser?.full_name])
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault()
+    if (!editName.trim()) return
+    setSavingProfile(true)
+    const cleanPhone = editPhone.replace(/\D/g, '')
+
+    try {
+      if (supabase && currentUser?.id) {
+        await supabase.from('profiles').update({
+          full_name: editName.trim(),
+          mobile_number: cleanPhone,
+          phone: cleanPhone
+        }).eq('id', currentUser.id)
+      }
+      if (setCurrentUser) {
+        setCurrentUser(prev => ({
+          ...prev,
+          full_name: editName.trim(),
+          mobile_number: cleanPhone,
+          phone: cleanPhone
+        }))
+      }
+      if (setNotice) setNotice('Profile updated successfully.')
+      setShowEditProfileModal(false)
+    } catch (err) {
+      console.error('Error updating profile:', err)
+      if (setNotice) setNotice('Failed to update profile.')
+    } finally {
+      setSavingProfile(false)
+    }
+  }
 
   const handleGatewayCheckout = () => {
     setIsGatewayProcessing(true)
@@ -382,10 +444,94 @@ export default function VFoodsUserDashboard({
               tabIndex={0}
               onClick={() => setTab('wallet')}
               onKeyDown={e => { if (e.key === 'Enter') setTab('wallet') }}
-              title="Open Wallet"
+              title="Campus Wallet"
             >
               <CreditCard size={14} />
               <span>{money(wallet?.balance)}</span>
+            </div>
+
+            {/* Profile Avatar / User Menu */}
+            <div className="vfoods-profile-menu-container" ref={profileMenuRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className={`vfoods-profile-avatar-btn ${profileMenuOpen ? 'active' : ''}`}
+                onClick={() => setProfileMenuOpen(prev => !prev)}
+                title="Account Menu"
+                aria-label="Account Menu"
+              >
+                <span className="vfoods-profile-avatar-text">{initials}</span>
+                <ChevronDown size={13} className={`vfoods-profile-chevron ${profileMenuOpen ? 'open' : ''}`} />
+              </button>
+
+              {/* Profile Dropdown */}
+              {profileMenuOpen && (
+                <div className="vfoods-profile-dropdown" onClick={e => e.stopPropagation()}>
+                  <div className="vfoods-profile-dd-header">
+                    <div className="vfoods-profile-dd-avatar">{initials}</div>
+                    <div className="vfoods-profile-dd-user">
+                      <div className="vfoods-profile-dd-name">{currentUser?.full_name || 'V FOODS User'}</div>
+                      <div className="vfoods-profile-dd-meta">
+                        <span className="vfoods-role-badge">User</span>
+                        <span className="vfoods-profile-dd-email">{currentUser?.email || ''}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="vfoods-profile-dd-divider" />
+
+                  <button
+                    type="button"
+                    className="vfoods-profile-dd-item"
+                    onClick={() => { setTab('profile'); setProfileMenuOpen(false) }}
+                  >
+                    <User size={15} />
+                    <span>View Profile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="vfoods-profile-dd-item"
+                    onClick={() => {
+                      setEditName(currentUser?.full_name || '')
+                      setEditPhone(currentUser?.mobile_number || currentUser?.phone || '')
+                      setShowEditProfileModal(true)
+                      setProfileMenuOpen(false)
+                    }}
+                  >
+                    <Edit2 size={15} />
+                    <span>Edit Profile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="vfoods-profile-dd-item"
+                    onClick={() => { setTab('wallet'); setProfileMenuOpen(false) }}
+                  >
+                    <CreditCard size={15} />
+                    <span>Campus Wallet ({money(wallet?.balance)})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="vfoods-profile-dd-item"
+                    onClick={() => { setTab('orders'); setProfileMenuOpen(false) }}
+                  >
+                    <Clock size={15} />
+                    <span>My Orders {activeOrdersCount > 0 ? `(${activeOrdersCount} live)` : ''}</span>
+                  </button>
+
+                  <div className="vfoods-profile-dd-divider" />
+
+                  <button
+                    type="button"
+                    className="vfoods-profile-dd-item danger"
+                    onClick={() => { setProfileMenuOpen(false); handleSignOut() }}
+                  >
+                    <LogOut size={15} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -775,10 +921,10 @@ export default function VFoodsUserDashboard({
                     ))}
                   </div>
 
-                  {/* Timing Option: Immediate vs Scheduled */}
+                  {/* Pickup Timing */}
                   <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '14px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={15} color="#2563EB" /> When do you want to pick it up?
+                      <Clock size={15} color="#2563EB" /> Pickup
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <button
@@ -797,7 +943,7 @@ export default function VFoodsUserDashboard({
                           transition: 'all 0.15s ease'
                         }}
                       >
-                        Immediate (10–15 mins)
+                        Now (10–15 mins)
                       </button>
                       <button
                         type="button"
@@ -815,7 +961,7 @@ export default function VFoodsUserDashboard({
                           transition: 'all 0.15s ease'
                         }}
                       >
-                        Pick up later
+                        Schedule Later
                       </button>
                     </div>
 
@@ -831,7 +977,7 @@ export default function VFoodsUserDashboard({
                             const isFull = (s.max_orders - s.current_orders) <= 0
                             return (
                               <option key={s.id} value={s.id} disabled={isFull}>
-                                {s.time_label}{isFull ? ' (Full)' : ''}
+                                {s.time_label}
                               </option>
                             )
                           })}
@@ -839,7 +985,7 @@ export default function VFoodsUserDashboard({
                       </div>
                     )}
 
-                    <div style={{ marginTop: '8px', fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span>Pickup:</span>
                       <strong style={{ color: '#0F172A' }}>
                         {isScheduled 
@@ -1180,7 +1326,7 @@ export default function VFoodsUserDashboard({
           </div>
         )}
 
-        {/* ── Fixed Bottom 4-Tab Navigation Bar ── */}
+        {/* ── Fixed Bottom Navigation Bar (Home, Cart, Orders) ── */}
         <nav className="vfoods-bottom-nav">
           <button
             className={`vfoods-nav-tab ${(tab === 'browse' || tab === 'home') ? 'active' : ''}`}
@@ -1211,15 +1357,77 @@ export default function VFoodsUserDashboard({
               <span className="vfoods-nav-pulse-dot" />
             )}
           </button>
-
-          <button
-            className={`vfoods-nav-tab ${tab === 'profile' ? 'active' : ''}`}
-            onClick={() => setTab('profile')}
-          >
-            <User size={18} />
-            <span className="vfoods-nav-tab-label">Profile</span>
-          </button>
         </nav>
+
+        {/* ── Edit Profile Modal ── */}
+        {showEditProfileModal && (
+          <div className="saas-modal-backdrop" onClick={() => setShowEditProfileModal(false)}>
+            <div className="saas-modal-card" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+              <div className="saas-modal-header">
+                <h3 className="saas-modal-title">Edit Profile</h3>
+                <button className="saas-modal-close" onClick={() => setShowEditProfileModal(false)}>
+                  <X size={16} />
+                </button>
+              </div>
+              <form onSubmit={handleSaveProfile} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Mobile Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Role
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value="User"
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#64748B' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    className="saas-btn saas-btn-secondary"
+                    onClick={() => setShowEditProfileModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="saas-btn saas-btn-primary"
+                    disabled={savingProfile}
+                  >
+                    {savingProfile ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

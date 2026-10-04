@@ -468,17 +468,17 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                 Lunch Break Lasts 45 Minutes.<br />The Line Takes 30.
               </h2>
               <p className="text-sm sm:text-base text-slate-600 mt-2">
-                Thousands of students release from lectures simultaneously, overwhelming campus kitchens and card readers.
+                Thousands of users release from lectures simultaneously, overwhelming campus kitchens and card readers.
               </p>
             </div>
           </FadeIn>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: Clock, title: 'Crushing Queues', desc: 'When class bells ring, 400 students pack Gazebo C1 and North Square simultaneously. Waiting 25 minutes cuts lunch in half.', color: 'text-orange-600 bg-orange-50 border-orange-100' },
+              { icon: Clock, title: 'Crushing Queues', desc: 'When class bells ring, 400 users pack Gazebo C1 and North Square simultaneously. Waiting 25 minutes cuts lunch in half.', color: 'text-orange-600 bg-orange-50 border-orange-100' },
               { icon: Zap, title: 'Payment Bottlenecks', desc: 'Basement canteens suffer weak 4G signal. Waiting for bank SMS OTPs or counting loose rupee notes stalls the entire queue.', color: 'text-amber-600 bg-amber-50 border-amber-100' },
               { icon: Package, title: 'Sold-Out Surprises', desc: 'After waiting 20 minutes in line, you reach the cashier only to learn the dish you wanted just ran out 2 minutes ago.', color: 'text-rose-600 bg-rose-50 border-rose-100' },
-              { icon: ChefHat, title: 'Kitchen Slip Chaos', desc: 'Cooks juggle shouted token numbers and crumpled paper tickets. Orders get misread, duplicated, or handed to the wrong student.', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
+              { icon: ChefHat, title: 'Kitchen Slip Chaos', desc: 'Cooks juggle shouted token numbers and crumpled paper tickets. Orders get misread, duplicated, or handed to the wrong customer.', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
             ].map((item, i) => {
               const Icon = item.icon
               return (
@@ -775,7 +775,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                   Order From Class.<br />Collect in Seconds.
                 </h2>
                 <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                  Join hundreds of students and faculty skipping the queues every single day across university dining halls.
+                  Join hundreds of users and faculty skipping the queues every single day across university dining halls.
                 </p>
 
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-3">

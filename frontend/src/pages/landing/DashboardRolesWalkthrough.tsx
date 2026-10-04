@@ -22,8 +22,8 @@ interface RoleDetail {
 const ROLES: RoleDetail[] = [
   {
     id: 'student',
-    title: 'Student / Customer',
-    targetUser: 'University students, faculty, and campus visitors',
+    title: 'User / Customer',
+    targetUser: 'Campus users, faculty, and university members',
     device: 'Mobile Browser / PWA (Phone)',
     deviceIcon: Smartphone,
     colorBadge: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -42,7 +42,7 @@ const ROLES: RoleDetail[] = [
       'Browse all 13 campus canteens & Riviera/Gravitas festival stalls',
       'Instant search and pure vegetarian dietary filter toggle',
       'Select 15-minute scheduled pickup slot to avoid counter rush',
-      'Collaborative Group Ordering: share 6-digit room code with classmates',
+      'Collaborative Group Ordering: share 6-digit room code with peers',
       'Apply campus discount coupons (e.g. CAMPUS50, VBIT15)',
       'Dual checkout: 1-tap instant payment from Campus Wallet or instant PhonePe UPI',
       'Track real-time 4-stage order progress (Placed → Preparing → Ready → Collected)',
@@ -50,7 +50,7 @@ const ROLES: RoleDetail[] = [
       'Submit 1–5 star ratings & comments for items; maintain daily loyalty streak',
     ],
     cannotDo: [
-      'Cannot view other students’ orders, balances, or personal phone numbers',
+      'Cannot view other users’ orders, balances, or personal phone numbers',
       'Cannot access the kitchen queue or advance order statuses',
       'Cannot edit menu prices, outlet operating hours, or vendor payouts',
     ],
@@ -75,7 +75,7 @@ const ROLES: RoleDetail[] = [
     ],
     canDo: [
       'Real-time stream of incoming orders for their assigned canteen only',
-      'Instant Web Audio chime alert when a student places a new order',
+      'Instant Web Audio chime alert when a user places a new order',
       'Dedicated KDS board with Placed, Preparing, and Ready operational columns',
       '1-tap status transition buttons (e.g., tap "Start Prep", tap "Mark Ready")',
       'Quick Token search bar to verify 4-digit pickup tokens immediately',
@@ -89,7 +89,7 @@ const ROLES: RoleDetail[] = [
       'Cannot see customer wallet transactions or debit balances directly',
       'Zero access to queue data of other campus canteens',
     ],
-    keyFlow: 'Hear chime alert → Cook meal → Tap "Ready" (triggers student notification) → Verify student token on handover.'
+    keyFlow: 'Hear chime alert → Cook meal → Tap "Ready" (triggers user notification) → Verify user token on handover.'
   },
   {
     id: 'shop_admin',
@@ -155,7 +155,7 @@ const ROLES: RoleDetail[] = [
       'Macro analytics: Gross Merchandise Value (GMV), university commission, daily active users',
       'Hierarchy management: configure Gazebo C1/C2/C3/C4, North Square, Food Park, and fest stalls',
       'Approve new vendor onboarding and manage operating permits',
-      'Role-Based Access Control (RBAC): elevate or demote student, staff, and manager accounts',
+      'Role-Based Access Control (RBAC): elevate or demote user, staff, and manager accounts',
       'Master Order Ledger: cross-campus order lookup, dispute investigation, and instant refund overrides',
       'Configure campus-wide festival discounts (Riviera, Gravitas, freshers orientation)',
       'Comprehensive tamper-evident security audit log tracking price modifications, role changes, and auth events',

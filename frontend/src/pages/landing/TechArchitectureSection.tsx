@@ -18,7 +18,7 @@ export const TechArchitectureSection: React.FC = () => {
         'Vite build engine for instantaneous page loads and hot updates',
         'Lucide UI icons with accessible semantic markup',
         'Pure vegetarian filter and live item search with zero lag',
-        'Works seamlessly across student smartphones, laptops, and canteen tablets',
+        'Works seamlessly across user smartphones, laptops, and canteen tablets',
       ],
       color: 'border-orange-500/60 text-orange-600 bg-orange-50',
     },
@@ -44,7 +44,7 @@ export const TechArchitectureSection: React.FC = () => {
       summary: 'Institutional-grade relational database with strict Row Level Security (RLS) separating roles and outlets.',
       points: [
         'Relational schema across orders, order_items, outlets, menu_items, profiles, and wallets',
-        'Row Level Security policies prevent unauthorized cross-outlet and cross-student data leaks',
+        'Row Level Security policies prevent unauthorized cross-outlet and cross-user data leaks',
         'Foreign key constraints maintain immutable referential integrity',
         'Server-side price computation eliminates client-side tampering',
       ],
@@ -55,12 +55,12 @@ export const TechArchitectureSection: React.FC = () => {
       title: 'Realtime WebSocket Channels',
       badge: 'Postgres Change CDC • Sub-150ms',
       icon: Zap,
-      summary: 'Sub-second event streaming broadcasting order updates from student checkouts directly to kitchen screens.',
+      summary: 'Sub-second event streaming broadcasting order updates from user checkouts directly to kitchen screens.',
       points: [
         'Native Supabase Realtime subscriptions listen to public.orders table inserts and updates',
         'Kitchen display receives new orders instantly without polling or manual page refreshing',
         'Web Audio API triggers an immediate sound chime when a new ticket arrives in kitchen',
-        'Student order status updates synchronously when staff advance the preparation state',
+        'User order status updates synchronously when staff advance the preparation state',
       ],
       color: 'border-amber-500/60 text-amber-600 bg-amber-50',
     },
@@ -71,7 +71,7 @@ export const TechArchitectureSection: React.FC = () => {
       icon: Clock,
       summary: 'Structured time-slotted ordering that flattens 1:00 PM lunch rushes into manageable batches.',
       points: [
-        'Students reserve a convenient 15-minute pickup window during checkout',
+        'Users reserve a convenient 15-minute pickup window during checkout',
         'Configurable outlet capacity caps prevent kitchen overloading',
         'Orders display clear target pickup slots on staff display tickets',
         'Reduces physical crowding in front of campus canteen counters',
@@ -85,7 +85,7 @@ export const TechArchitectureSection: React.FC = () => {
       icon: Shield,
       summary: 'Instantaneous 1-tap balance checkout eliminating bank timeouts during crowded break hours.',
       points: [
-        'Students pre-top up via PhonePe UPI; balance is immediately credited',
+        'Users pre-top up via PhonePe UPI; balance is immediately credited',
         'Order checkout debits balance in <100ms with zero payment gateway latency',
         'Double-entry transaction ledger logs all credit and debit activities with timestamps',
         'HMAC SHA-256 signature verification guarantees bank-grade top-up security',
@@ -95,9 +95,9 @@ export const TechArchitectureSection: React.FC = () => {
     {
       id: 'rbac',
       title: 'Four-Tier Role Permissions',
-      badge: 'Student • Staff • Shop Admin • Super Admin',
+      badge: 'User • Staff • Shop Admin • Super Admin',
       icon: Server,
-      summary: 'Comprehensive access control isolating students, kitchen operators, canteen managers, and platform directors.',
+      summary: 'Comprehensive access control isolating campus users, kitchen operators, canteen managers, and platform directors.',
       points: [
         'Staff invite tokens allow canteen owners to onboard kitchen helpers securely',
         'Staff view is strictly scoped to their assigned outlet and active queue',

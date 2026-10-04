@@ -1332,7 +1332,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
         )}
 
         {tab === 'wallet' && (
-          /* Student Campus Dining Wallet */
+          /* User Campus Dining Wallet */
           <div className="space-y-4">
             {/* Balance Card */}
             <motion.div

@@ -36,7 +36,8 @@ import {
   CheckCheck,
   Flame,
   Layers,
-  Menu
+  Menu,
+  Edit
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -186,8 +187,9 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [posPaymentMode, setPosPaymentMode] = useState<'upi' | 'cash' | 'wallet'>('upi')
   const [posSuccessNotice, setPosSuccessNotice] = useState<string | null>(null)
 
-  // Add Item Modal
+  // Add / Edit Item Modal
   const [showAddItemModal, setShowAddItemModal] = useState(false)
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [newItemForm, setNewItemForm] = useState({
     name: '',
     price: 30,
@@ -195,6 +197,30 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
     is_veg: true,
     stock_qty: 30
   })
+
+  const openAddItemModal = () => {
+    setEditingItem(null)
+    setNewItemForm({
+      name: '',
+      price: 30,
+      category: 'snacks',
+      is_veg: true,
+      stock_qty: 30
+    })
+    setShowAddItemModal(true)
+  }
+
+  const openEditItemModal = (item: MenuItem) => {
+    setEditingItem(item)
+    setNewItemForm({
+      name: item.name,
+      price: item.price,
+      category: item.category || 'snacks',
+      is_veg: item.is_veg !== false,
+      stock_qty: item.stock_qty ?? 30
+    })
+    setShowAddItemModal(true)
+  }
 
   // Audio trigger ref
   const prevPlacedCountRef = useRef(0)
@@ -515,10 +541,41 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
     }
   }
 
-  // Add Item to Menu
+  // Add / Edit Item to Menu
   const handleSaveNewItem = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newItemForm.name) return
+
+    if (editingItem) {
+      setMenuItems(prev => prev.map(i => i.id === editingItem.id ? {
+        ...i,
+        name: newItemForm.name,
+        price: Number(newItemForm.price),
+        category: newItemForm.category,
+        is_veg: newItemForm.is_veg,
+        stock_qty: Number(newItemForm.stock_qty)
+      } : i))
+      setShowAddItemModal(false)
+
+      try {
+        await supabase
+          .from('menu_items')
+          .update({
+            name: newItemForm.name,
+            price: Number(newItemForm.price),
+            category: newItemForm.category,
+            is_veg: newItemForm.is_veg,
+            stock_qty: Number(newItemForm.stock_qty)
+          })
+          .eq('id', editingItem.id)
+
+        setBannerNotice(`Updated "${newItemForm.name}" successfully`)
+        setTimeout(() => setBannerNotice(null), 3000)
+      } catch (err) {
+        console.error('Error updating item:', err)
+      }
+      return
+    }
 
     const newItem: MenuItem = {
       id: Date.now(),
@@ -1682,7 +1739,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     className="saas-btn saas-btn-primary saas-btn-sm"
-                    onClick={() => setShowAddItemModal(true)}
+                    onClick={openAddItemModal}
                   >
                     <Plus size={14} />
                     <span>Add Item</span>
@@ -1702,7 +1759,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                         <th>Price</th>
                         <th>Live Count</th>
                         <th>Availability</th>
-                        <th style={{ textAlign: 'right' }}>Quick Adjust</th>
+                        <th style={{ textAlign: 'right' }}>Actions &amp; Adjust</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1770,6 +1827,15 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                               <button
                                 className="saas-btn saas-btn-secondary saas-btn-sm"
+                                onClick={() => openEditItemModal(item)}
+                                title="Edit item details"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Edit size={11} />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                className="saas-btn saas-btn-secondary saas-btn-sm"
                                 onClick={() => handleUpdateStock(item.id, -1)}
                                 title="Decrease stock by 1"
                               >
@@ -1808,7 +1874,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>Pickup Collection Desk</h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Display ready orders to students & verify token on handover</p>
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Display ready orders to users & verify token on handover</p>
                 </div>
                 <button className="saas-btn saas-btn-primary" onClick={() => setShowVerifyModal(true)}>
                   <QrCode size={15} />
@@ -1976,7 +2042,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="Walk-in student..."
+                    placeholder="Walk-in user..."
                     value={posCustomerName}
                     onChange={e => setPosCustomerName(e.target.value)}
                     style={{ width: '100%', padding: '6px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
@@ -2249,13 +2315,13 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         </div>
       )}
 
-      {/* ── ADD ITEM MODAL ── */}
+      {/* ── ADD / EDIT ITEM MODAL ── */}
       {showAddItemModal && (
-        <div className="saas-modal-backdrop" onClick={() => setShowAddItemModal(false)}>
+        <div className="saas-modal-backdrop" onClick={() => { setShowAddItemModal(false); setEditingItem(null) }}>
           <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
             <div className="saas-modal-header">
-              <h3 className="saas-modal-title">Add Menu Item</h3>
-              <button className="saas-modal-close" onClick={() => setShowAddItemModal(false)}>
+              <h3 className="saas-modal-title">{editingItem ? 'Edit Menu Item' : 'Add Menu Item'}</h3>
+              <button className="saas-modal-close" onClick={() => { setShowAddItemModal(false); setEditingItem(null) }}>
                 <X size={16} />
               </button>
             </div>
@@ -2340,7 +2406,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 <button
                   type="button"
                   className="saas-btn saas-btn-secondary"
-                  onClick={() => setShowAddItemModal(false)}
+                  onClick={() => { setShowAddItemModal(false); setEditingItem(null) }}
                 >
                   Cancel
                 </button>
@@ -2348,7 +2414,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                   type="submit"
                   className="saas-btn saas-btn-primary"
                 >
-                  Save Item
+                  {editingItem ? 'Update Item' : 'Save Item'}
                 </button>
               </div>
             </form>

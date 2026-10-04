@@ -80,7 +80,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                     onChange={e => setFormData({ ...formData, role: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-500"
                   >
-                    <option value="student">User / Student</option>
+                    <option value="student">User / Customer</option>
                     <option value="vendor">Canteen Owner</option>
                     <option value="faculty">Faculty / Staff</option>
                     <option value="admin">University Admin</option>
@@ -139,7 +139,7 @@ export const PilotRoadmapSection: React.FC = () => {
     {
       phase: 'Phase 1 • Weeks 1–2',
       title: 'Initial 2-Canteen Pilot',
-      desc: 'Deploy at Gazebo C1 and North Square with 300 active student testers to validate queue reduction under peak lunch loads.',
+      desc: 'Deploy at Gazebo C1 and North Square with 300 active campus user testers to validate queue reduction under peak lunch loads.',
       badge: 'Current Stage',
       active: true,
     },
@@ -241,9 +241,9 @@ export const PilotRoadmapSection: React.FC = () => {
           </div>
 
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-4">
-            <h5 className="text-sm font-bold text-slate-900">Join the Pilot as a Canteen or Student</h5>
+            <h5 className="text-sm font-bold text-slate-900">Join the Pilot as an Outlet or User</h5>
             <p className="text-xs text-slate-600 max-w-sm mx-auto">
-              Get direct priority onboarding for your canteen stall or early access as a pilot student user.
+              Get direct priority onboarding for your dining outlet or early access as a pilot user.
             </p>
             <button
               onClick={() => setModalOpen(true)}

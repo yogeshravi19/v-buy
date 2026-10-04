@@ -35,7 +35,8 @@ import {
   Calendar,
   Lock,
   FileSpreadsheet,
-  Menu
+  Menu,
+  Edit
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -203,6 +204,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   })
 
   const [showAddOutletModal, setShowAddOutletModal] = useState(false)
+  const [editingOutlet, setEditingOutlet] = useState<OutletRecord | null>(null)
   const [outletForm, setOutletForm] = useState({
     name: '',
     location: '',
@@ -373,12 +375,24 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   }
 
   const openAddOutletModal = () => {
+    setEditingOutlet(null)
     setOutletForm({ name: '', location: '', is_event: false })
     setOutletFormError(null)
     setShowAddOutletModal(true)
   }
 
-  // Create a new outlet in the database
+  const openEditOutletModal = (outlet: OutletRecord) => {
+    setEditingOutlet(outlet)
+    setOutletForm({
+      name: outlet.name,
+      location: outlet.location,
+      is_event: !!outlet.is_event
+    })
+    setOutletFormError(null)
+    setShowAddOutletModal(true)
+  }
+
+  // Create or Edit an outlet in the database
   const handleSaveOutlet = async (e: React.FormEvent) => {
     e.preventDefault()
     if (savingOutlet) return
@@ -386,6 +400,38 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const location = outletForm.location.trim()
     if (name.length < 3) { setOutletFormError('Outlet name must be at least 3 characters.'); return }
     if (!location) { setOutletFormError('Location is required.'); return }
+
+    if (editingOutlet) {
+      setSavingOutlet(true)
+      setOutletFormError(null)
+      const { data, error } = await supabase
+        .from('outlets')
+        .update({ name, location, is_event: outletForm.is_event })
+        .eq('id', editingOutlet.id)
+        .select('id, name, location, is_event, is_open')
+        .single()
+      setSavingOutlet(false)
+
+      if (error || !data) {
+        console.error('Update outlet failed:', error)
+        setOutletFormError(describeDbError(error))
+        return
+      }
+
+      await loadOutlets()
+      if (setGlobalOutlets) {
+        setGlobalOutlets(prev => prev.map(o => o.id === data.id ? { ...o, name: data.name, location: data.location, is_event: data.is_event } : o))
+      }
+      setShowAddOutletModal(false)
+      setEditingOutlet(null)
+      setNotice(`Outlet "${data.name}" updated successfully.`)
+      setTimeout(() => setNotice(null), 4000)
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'OUTLET', 'UPDATE', `Updated outlet ${data.name} (${data.id}) at ${data.location}`)
+      }
+      return
+    }
+
     const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
     if (!id) { setOutletFormError('Outlet name must contain letters or numbers.'); return }
     if (outletList.some(o => o.id === id || o.name.toLowerCase() === name.toLowerCase())) {
@@ -413,6 +459,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       setGlobalOutlets(prev => prev.some(o => o.id === data.id) ? prev : [...prev, { ...data, menu_items: [] }])
     }
     setShowAddOutletModal(false)
+    setEditingOutlet(null)
     setNotice(`Outlet "${data.name}" created.`)
     setTimeout(() => setNotice(null), 4000)
     if (addAuditLog) {
@@ -789,7 +836,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
                 <div className="saas-kpi-card">
                   <div className="saas-kpi-header">
-                    <span className="saas-kpi-title">Student Wallet Float</span>
+                    <span className="saas-kpi-title">User Wallet Float</span>
                     <Banknote size={16} className="text-amber-500" />
                   </div>
                   <div className="saas-kpi-value">{money(studentWalletFloat)}</div>
@@ -920,7 +967,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                         <th>Campus / Festival Hub</th>
                         <th>City / Zone</th>
                         <th>Active Outlets</th>
-                        <th>Student Enrolment</th>
+                        <th>User Enrolment</th>
                         <th>Today's Campus GMV</th>
                         <th>Hub Status</th>
                       </tr>
@@ -931,7 +978,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                           <td style={{ fontWeight: 700 }}>{campus.name}</td>
                           <td style={{ fontSize: '12.5px', color: '#64748B' }}>{campus.city}</td>
                           <td style={{ fontWeight: 700 }}>{campus.outlets_count} food outlets</td>
-                          <td>{campus.students_count.toLocaleString()} students</td>
+                          <td>{campus.students_count.toLocaleString()} users</td>
                           <td style={{ fontWeight: 800, color: '#1E40AF' }}>{money(campus.today_gmv)}</td>
                           <td>
                             <span className="saas-badge saas-badge-success">OPERATIONAL</span>
@@ -1005,12 +1052,23 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                             </span>
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            <button
-                              className={`saas-btn saas-btn-sm ${outlet.is_open ? 'saas-btn-danger' : 'saas-btn-success'}`}
-                              onClick={() => handleToggleOutlet(outlet.id)}
-                            >
-                              {outlet.is_open ? 'Force Close' : 'Force Open'}
-                            </button>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              <button
+                                className="saas-btn saas-btn-sm saas-btn-secondary"
+                                onClick={() => openEditOutletModal(outlet)}
+                                title="Edit outlet details"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Edit size={12} />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                className={`saas-btn saas-btn-sm ${outlet.is_open ? 'saas-btn-danger' : 'saas-btn-success'}`}
+                                onClick={() => handleToggleOutlet(outlet.id)}
+                              >
+                                {outlet.is_open ? 'Force Close' : 'Force Open'}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                         )
@@ -1107,7 +1165,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                                 onChange={e => handleUpdateUserRole(user.id, e.target.value)}
                                 style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #CBD5E1' }}
                               >
-                                <option value="student">User / Student</option>
+                                <option value="student">User</option>
                                 <option value="staff">Shop Staff</option>
                                 <option value="shop_admin">Shop Admin</option>
                                 <option value="super_admin">Super Admin</option>
@@ -1212,11 +1270,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
                 <div className="saas-kpi-card">
                   <div className="saas-kpi-header">
-                    <span className="saas-kpi-title">Student Wallet Float</span>
+                    <span className="saas-kpi-title">User Wallet Float</span>
                     <Banknote size={16} className="text-emerald-600" />
                   </div>
                   <div className="saas-kpi-value" style={{ color: '#15803D' }}>{money(studentWalletFloat)}</div>
-                  <div className="saas-kpi-sub">Pre-loaded student balances</div>
+                  <div className="saas-kpi-sub">Pre-loaded user balances</div>
                 </div>
 
                 <div className="saas-kpi-card">
@@ -1257,7 +1315,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       <tr>
                         <td style={{ fontFamily: 'monospace' }}>UPI-TXN-9021872</td>
                         <td>Sneha Reddy</td>
-                        <td>In-App Student Wallet Debit</td>
+                        <td>In-App User Wallet Debit</td>
                         <td style={{ fontWeight: 700 }}>₹220</td>
                         <td><span className="saas-badge saas-badge-success">CAPTURED</span></td>
                         <td style={{ fontSize: '12px', color: '#64748B' }}>18 mins ago</td>
@@ -1504,7 +1562,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   {/* Wallet Minimum */}
                   <div>
                     <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
-                      Minimum Student Wallet Top-Up Amount (₹)
+                      Minimum User Wallet Top-Up Amount (₹)
                     </label>
                     <input
                       type="number"
@@ -1531,13 +1589,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </div>
       </main>
 
-      {/* ── CREATE OUTLET MODAL ── */}
+      {/* ── CREATE / EDIT OUTLET MODAL ── */}
       {showAddOutletModal && (
-        <div className="saas-modal-backdrop" onClick={() => !savingOutlet && setShowAddOutletModal(false)}>
+        <div className="saas-modal-backdrop" onClick={() => !savingOutlet && (setShowAddOutletModal(false), setEditingOutlet(null))}>
           <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
             <div className="saas-modal-header">
-              <h3 className="saas-modal-title">Create New Outlet</h3>
-              <button className="saas-modal-close" onClick={() => setShowAddOutletModal(false)} disabled={savingOutlet} aria-label="Close">
+              <h3 className="saas-modal-title">{editingOutlet ? `Edit Outlet: ${editingOutlet.name}` : 'Create New Outlet'}</h3>
+              <button className="saas-modal-close" onClick={() => { setShowAddOutletModal(false); setEditingOutlet(null) }} disabled={savingOutlet} aria-label="Close">
                 <X size={16} />
               </button>
             </div>
@@ -1592,11 +1650,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               )}
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
-                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowAddOutletModal(false)} disabled={savingOutlet}>
+                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => { setShowAddOutletModal(false); setEditingOutlet(null) }} disabled={savingOutlet}>
                   Cancel
                 </button>
                 <button type="submit" className="saas-btn saas-btn-primary" disabled={savingOutlet}>
-                  {savingOutlet ? 'Creating...' : 'Create Outlet'}
+                  {savingOutlet ? 'Saving...' : editingOutlet ? 'Update Outlet' : 'Create Outlet'}
                 </button>
               </div>
             </form>
