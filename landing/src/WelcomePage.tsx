@@ -16,6 +16,7 @@ import { DashboardRolesWalkthrough } from './DashboardRolesWalkthrough'
 import { InteractiveMockups } from './InteractiveMockups'
 import { PaymentArchitectureSwitcher } from './PaymentArchitectureSwitcher'
 import { TechArchitectureSection } from './TechArchitectureSection'
+import { GoogleAuthIntegrationSection } from './GoogleAuthIntegrationSection'
 import { PilotRoadmapSection, WaitlistModal } from './PilotRoadmapModal'
 
 export type SubPageId = 'overview' | 'order-flow' | 'dashboards' | 'architecture' | 'pilot-faq'
@@ -634,6 +635,11 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                 </div>
               </section>
 
+              {/* 1.2B LIVE WORLDWIDE GOOGLE AUTH ARCHITECTURE HIGHLIGHT */}
+              <section className="py-12 px-6 sm:px-10 max-w-7xl mx-auto border-t border-slate-200">
+                <GoogleAuthIntegrationSection />
+              </section>
+
               {/* 1.3 CRISP PROBLEM VS SOLUTION (UNCLUTTERED) */}
               <section className="py-16 px-6 sm:px-10 max-w-7xl mx-auto border-t border-slate-200">
                 <div className="bg-[#0B192C] text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-[#1E3E62]">
@@ -924,6 +930,11 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               {/* Production Tech Stack Layers */}
               <div className="pt-8 border-t border-slate-200">
                 <TechArchitectureSection />
+              </div>
+
+              {/* Worldwide Google OAuth 2.0 & Unified Authentication Architecture */}
+              <div className="pt-8 border-t border-slate-200">
+                <GoogleAuthIntegrationSection />
               </div>
 
               {/* Safe By Design Security Cards */}
