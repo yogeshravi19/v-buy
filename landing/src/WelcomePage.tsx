@@ -188,7 +188,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
   const handleOpenApp = () => {
     if (onOpenApp) onOpenApp()
     else {
-      const appUrl = import.meta.env.VITE_APP_URL || 'https://campusbite-web.onrender.com'
+      const appUrl = import.meta.env.VITE_APP_URL || 'https://vfoods.onrender.com'
       window.location.href = appUrl
     }
   }

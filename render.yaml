@@ -8,7 +8,7 @@
 services:
   # ── 1. Backend API (FastAPI + Supabase + PhonePe + QR Engine) ───────────────
   - type: web
-    name: campusbite-api
+    name: vfoods-api
     runtime: python
     rootDir: backend
     plan: free
@@ -45,7 +45,7 @@ services:
   # In Render Blueprint spec: static sites use 'type: web' with 'runtime: static'.
   # Note: Static sites are deployed to Render's global CDN, so 'region' and 'plan' are omitted.
   - type: web
-    name: campusbite-web
+    name: vfoods
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -68,7 +68,7 @@ services:
     envVars:
       - key: VITE_API_URL
         fromService:
-          name: campusbite-api
+          name: vfoods-api
           type: web
           property: host
       - key: VITE_SUPABASE_URL
