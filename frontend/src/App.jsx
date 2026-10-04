@@ -614,7 +614,6 @@ function App() {
             email: user.email,
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
             role: 'customer',
-            cust_type: 'student',
             mobile_number: null,
             phone: null,
             has_password: false,
@@ -626,7 +625,6 @@ function App() {
             email: user.email,
             full_name: fallbackUser.full_name,
             role: 'customer',
-            cust_type: 'student',
             has_password: false,
             profile_completed: false
           })
@@ -3792,19 +3790,20 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
           <div className="profile-online-dot" title="Account Active" />
         </div>
         <div className="profile-hero-info">
-          <h2>{currentUser?.full_name || 'V FOODS Campus User'}</h2>
+          <h2>{currentUser?.full_name || 'V FOODS User'}</h2>
           <div className="profile-hero-meta">
             <span className="profile-role-pill">
               <User size={12} strokeWidth={2.5} /> User
             </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Reg ID: 22BCE1984
-            </span>
           </div>
           <div className="profile-contact-text">
-            <span>{currentUser?.email || 'user@vitchennai.ac.in'}</span>
-            <span>·</span>
-            <span>{currentUser?.phone || '+91 98401 23456'}</span>
+            <span>{currentUser?.email || ''}</span>
+            {currentUser?.mobile_number || currentUser?.phone ? (
+              <>
+                <span>·</span>
+                <span>{currentUser?.mobile_number || currentUser?.phone}</span>
+              </>
+            ) : null}
           </div>
         </div>
       </div>

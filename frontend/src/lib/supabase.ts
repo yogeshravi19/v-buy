@@ -33,8 +33,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          id: string; full_name: string; role: 'student' | 'staff' | 'shop_admin' | 'super_admin'
-          cust_type: 'student' | 'faculty' | 'outsider' | 'event_team'
+          id: string; full_name: string; role: 'customer' | 'staff' | 'shop_admin' | 'super_admin'
           outlet_id: string | null; phone: string | null; created_at: string
           added_by?: string | null; is_active?: boolean
         }

@@ -2,13 +2,12 @@ import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 
-export type UserRole = 'student' | 'staff' | 'shop_admin' | 'super_admin' | 'customer' | 'admin'
+export type UserRole = 'customer' | 'staff' | 'shop_admin' | 'super_admin' | 'admin'
 
 export type Profile = {
   id: string
   full_name: string
   role: UserRole
-  cust_type: 'student' | 'faculty' | 'outsider' | 'event_team'
   outlet_id: string | null
   phone: string | null
   added_by?: string | null
