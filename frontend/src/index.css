@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   * {
@@ -44,27 +43,31 @@
   }
 
   /* ─── Modern Buttons ─── */
-  .btn {
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-icon {
     @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold
            transition-all duration-200 active:scale-95 disabled:opacity-40
            disabled:cursor-not-allowed disabled:active:scale-100 select-none;
   }
   .btn-primary {
-    @apply btn px-5 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400
+    @apply px-5 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400
            text-white font-bold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 text-sm tracking-wide;
   }
   .btn-secondary {
-    @apply btn px-5 py-3 bg-white/10 hover:bg-white/20 text-white border
+    @apply px-5 py-3 bg-white/10 hover:bg-white/20 text-white border
            border-white/10 hover:border-white/20 text-sm backdrop-blur-md;
   }
   .btn-danger {
-    @apply btn px-5 py-3 bg-rose-500/90 hover:bg-rose-500 text-white text-sm shadow-lg shadow-rose-500/20;
+    @apply px-5 py-3 bg-rose-500/90 hover:bg-rose-500 text-white text-sm shadow-lg shadow-rose-500/20;
   }
   .btn-sm {
     @apply px-3 py-2 text-xs rounded-lg;
   }
   .btn-icon {
-    @apply btn w-10 h-10 p-0 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10;
+    @apply w-10 h-10 p-0 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10;
   }
 
   /* ─── Inputs ─── */
@@ -79,15 +82,27 @@
   }
 
   /* ─── Badges ─── */
-  .badge {
+  .badge,
+  .badge-green,
+  .badge-amber,
+  .badge-red,
+  .badge-blue,
+  .badge-purple,
+  .badge-gray,
+  .status-payment_pending,
+  .status-placed,
+  .status-preparing,
+  .status-ready,
+  .status-collected,
+  .status-cancelled {
     @apply inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full tracking-wide;
   }
-  .badge-green  { @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/30; }
-  .badge-amber  { @apply badge bg-amber-500/15   text-amber-300   border border-amber-500/30; }
-  .badge-red    { @apply badge bg-rose-500/15    text-rose-400    border border-rose-500/30; }
-  .badge-blue   { @apply badge bg-cyan-500/15    text-cyan-400    border border-cyan-500/30; }
-  .badge-purple { @apply badge bg-violet-500/15  text-violet-300  border border-violet-500/30; }
-  .badge-gray   { @apply badge bg-white/10       text-white/70    border border-white/10; }
+  .badge-green  { @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30; }
+  .badge-amber  { @apply bg-amber-500/15   text-amber-300   border border-amber-500/30; }
+  .badge-red    { @apply bg-rose-500/15    text-rose-400    border border-rose-500/30; }
+  .badge-blue   { @apply bg-cyan-500/15    text-cyan-400    border border-cyan-500/30; }
+  .badge-purple { @apply bg-violet-500/15  text-violet-300  border border-violet-500/30; }
+  .badge-gray   { @apply bg-white/10       text-white/70    border border-white/10; }
 
   /* ─── Veg / Non-veg dot ─── */
   .veg-dot {
@@ -106,17 +121,18 @@
   }
 
   /* ─── Status pills ─── */
-  .status-payment_pending { @apply badge bg-yellow-500/15 text-yellow-300 border border-yellow-500/30; }
-  .status-placed          { @apply badge bg-cyan-500/15   text-cyan-300   border border-cyan-500/30; }
-  .status-preparing       { @apply badge bg-orange-500/15 text-orange-300 border border-orange-500/30; }
-  .status-ready           { @apply badge bg-emerald-500/15 text-emerald-300 border border-emerald-500/30; }
-  .status-collected       { @apply badge bg-white/10 text-white/50 border border-white/10; }
-  .status-cancelled       { @apply badge bg-rose-500/15 text-rose-300 border border-rose-500/30; }
+  .status-payment_pending { @apply bg-yellow-500/15 text-yellow-300 border border-yellow-500/30; }
+  .status-placed          { @apply bg-cyan-500/15   text-cyan-300   border border-cyan-500/30; }
+  .status-preparing       { @apply bg-orange-500/15 text-orange-300 border border-orange-500/30; }
+  .status-ready           { @apply bg-emerald-500/15 text-emerald-300 border border-emerald-500/30; }
+  .status-collected       { @apply bg-white/10 text-white/50 border border-white/10; }
+  .status-cancelled       { @apply bg-rose-500/15 text-rose-300 border border-rose-500/30; }
 
   /* ─── Bottom nav (mobile) ─── */
   .bottom-nav {
     @apply fixed bottom-0 left-0 right-0 z-50 bg-[#07070d]/95 backdrop-blur-2xl
-           border-t border-white/10 flex items-center safe-area-inset-bottom;
+           border-t border-white/10 flex items-center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .bottom-nav-item {
     @apply flex-1 flex flex-col items-center py-3 gap-1 text-white/40
