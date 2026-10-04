@@ -83,6 +83,16 @@ except Exception as e:
 # ──────────────────────────────────────────────────────────────────────────────
 app = FastAPI(title="V FOODS API", version="1.0.0")
 
+@app.get("/")
+async def root():
+    return {
+        "service": "V FOODS API",
+        "status": "online",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
 @app.get("/health")
 async def health():
     return {
