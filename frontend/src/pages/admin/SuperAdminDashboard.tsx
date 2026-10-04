@@ -270,9 +270,54 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   }, [outletList])
 
+  // Sync when globalOrders updates
+  useEffect(() => {
+    if (globalOrders && globalOrders.length > 0) {
+      setOrders(globalOrders as PlatformOrder[])
+    }
+  }, [globalOrders])
+
   useEffect(() => {
     loadGlobalData()
+    const timer = setInterval(loadGlobalData, 20000)
+    return () => clearInterval(timer)
   }, [loadGlobalData])
+
+  // Dedicated Live Realtime Subscription for Super Admin (all orders across platform)
+  useEffect(() => {
+    if (!supabase) return
+
+    const channel = supabase.channel('super-admin-live-all')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload: any) => {
+        if (payload.eventType === 'INSERT') {
+          loadGlobalData()
+        } else if (payload.eventType === 'UPDATE') {
+          const updated = payload.new
+          setOrders(prev => prev.map(o => o.id === updated.id ? { ...o, status: updated.status, token: updated.token || o.token } : o))
+          if (setGlobalOrders) {
+            setGlobalOrders(prev => prev.map(o => o.id === updated.id ? { ...o, status: updated.status, token: updated.token || o.token } : o))
+          }
+        }
+      })
+      .subscribe()
+
+    const handleCatchup = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        loadGlobalData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleCatchup)
+    window.addEventListener('online', handleCatchup)
+    window.addEventListener('focus', handleCatchup)
+
+    return () => {
+      supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', handleCatchup)
+      window.removeEventListener('online', handleCatchup)
+      window.removeEventListener('focus', handleCatchup)
+    }
+  }, [loadGlobalData, setGlobalOrders])
 
   // Toggle Outlet Force Open/Close
   const handleToggleOutlet = (outletId: string) => {

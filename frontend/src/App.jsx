@@ -234,19 +234,19 @@ const DEMO_OUTLETS = [
 ]
 
 export const CANTEEN_STAFF_OWNER_MAP = [
-  { id: 'g1',  name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)', staffPhone: '9876541001', ownerPhone: '9876542001', staffEmail: 'staff.g1@vfoods.vit.ac.in', ownerEmail: 'owner.g1@vfoods.vit.ac.in' },
-  { id: 'g2',  name: 'Gazebo C2 — Desserts & Sweets', location: 'Gazebo (Main Canteen)', staffPhone: '9876541002', ownerPhone: '9876542002', staffEmail: 'staff.g2@vfoods.vit.ac.in', ownerEmail: 'owner.g2@vfoods.vit.ac.in' },
-  { id: 'g3',  name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541003', ownerPhone: '9876542003', staffEmail: 'staff.g3@vfoods.vit.ac.in', ownerEmail: 'owner.g3@vfoods.vit.ac.in' },
-  { id: 'g4',  name: 'Lassi House (Gazebo C4)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541004', ownerPhone: '9876542004', staffEmail: 'staff.g4@vfoods.vit.ac.in', ownerEmail: 'owner.g4@vfoods.vit.ac.in' },
-  { id: 'n1',  name: 'Georgia (North Square C1)', location: 'North Square', staffPhone: '9876541005', ownerPhone: '9876542005', staffEmail: 'staff.n1@vfoods.vit.ac.in', ownerEmail: 'owner.n1@vfoods.vit.ac.in' },
-  { id: 'n2',  name: 'Alpha Non-Veg (North Square C2)', location: 'North Square', staffPhone: '9876541006', ownerPhone: '9876542006', staffEmail: 'staff.n2@vfoods.vit.ac.in', ownerEmail: 'owner.n2@vfoods.vit.ac.in' },
-  { id: 'n3',  name: "Sri's (North Square C3)", location: 'North Square', staffPhone: '9876541007', ownerPhone: '9876542007', staffEmail: 'staff.n3@vfoods.vit.ac.in', ownerEmail: 'owner.n3@vfoods.vit.ac.in' },
-  { id: 'n4',  name: 'Juice & Rice Corner (North Square C4)', location: 'North Square', staffPhone: '9876541008', ownerPhone: '9876542008', staffEmail: 'staff.n4@vfoods.vit.ac.in', ownerEmail: 'owner.n4@vfoods.vit.ac.in' },
-  { id: 'ab3', name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre', staffPhone: '9876541009', ownerPhone: '9876542009', staffEmail: 'staff.ab3@vfoods.vit.ac.in', ownerEmail: 'owner.ab3@vfoods.vit.ac.in' },
-  { id: 'ab1', name: 'AB1 Canteen', location: 'Academic Blocks', staffPhone: '9876541010', ownerPhone: '9876542010', staffEmail: 'staff.ab1@vfoods.vit.ac.in', ownerEmail: 'owner.ab1@vfoods.vit.ac.in' },
-  { id: 'ab2', name: 'AB2 Georgia Canteen', location: 'Academic Blocks', staffPhone: '9876541011', ownerPhone: '9876542011', staffEmail: 'staff.ab2@vfoods.vit.ac.in', ownerEmail: 'owner.ab2@vfoods.vit.ac.in' },
-  { id: 'av',  name: 'Aavin Centre', location: 'Campus Outlets & Stores', staffPhone: '9876541012', ownerPhone: '9876542012', staffEmail: 'staff.av@vfoods.vit.ac.in', ownerEmail: 'owner.av@vfoods.vit.ac.in' },
-  { id: 'vm',  name: 'V Mart Provisional Store', location: 'Campus Outlets & Stores', staffPhone: '9876541013', ownerPhone: '9876542013', staffEmail: 'staff.vm@vfoods.vit.ac.in', ownerEmail: 'owner.vm@vfoods.vit.ac.in' },
+  { id: 'g1',  name: 'Gazebo C1 — Snacks & Fast Food', location: 'Gazebo (Main Canteen)', staffPhone: '9876541001', ownerPhone: '9876542001', staffEmail: 'staff.g1@vfood.vit.ac.in', ownerEmail: 'owner.g1@vfood.vit.ac.in', staffId: 'd96f9dab-bc74-42fc-8a6d-8ebf66493fcb', ownerId: '8d6db64d-a863-4cf6-b3d2-f994c93e608c' },
+  { id: 'g2',  name: 'Gazebo C2 — Desserts & Sweets', location: 'Gazebo (Main Canteen)', staffPhone: '9876541002', ownerPhone: '9876542002', staffEmail: 'staff.g2@vfood.vit.ac.in', ownerEmail: 'owner.g2@vfood.vit.ac.in', staffId: 'c029e58a-44f1-ac1b-8039ee9e1448', ownerId: 'bba8a8f7-43c0-4f96-9a9e-06e2dd42eac5' },
+  { id: 'g3',  name: 'Dakshin Chitra (Gazebo C3)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541003', ownerPhone: '9876542003', staffEmail: 'staff.g3@vfood.vit.ac.in', ownerEmail: 'owner.g3@vfood.vit.ac.in', staffId: 'b14a9e0c-2480-4950-bd40-a69254ef44b4', ownerId: '373b76d1-32d4-4189-a51b-c46fa5714e27' },
+  { id: 'g4',  name: 'Lassi House (Gazebo C4)', location: 'Gazebo (Main Canteen)', staffPhone: '9876541004', ownerPhone: '9876542004', staffEmail: 'staff.g4@vfood.vit.ac.in', ownerEmail: 'owner.g4@vfood.vit.ac.in', staffId: '7a415480-2ea8-4b9b-977e-d59d0a98c28d', ownerId: '13f65525-3627-41a6-9aa5-4a7ce5609a8a' },
+  { id: 'n1',  name: 'Georgia (North Square C1)', location: 'North Square', staffPhone: '9876541005', ownerPhone: '9876542005', staffEmail: 'staff.n1@vfood.vit.ac.in', ownerEmail: 'owner.n1@vfood.vit.ac.in', staffId: 'eb111346-c24a-462c-ba7f-dfa8b3452c82', ownerId: '0c32a788-80af-434b-bd34-c0d15c026561' },
+  { id: 'n2',  name: 'Alpha Non-Veg (North Square C2)', location: 'North Square', staffPhone: '9876541006', ownerPhone: '9876542006', staffEmail: 'staff.n2@vfood.vit.ac.in', ownerEmail: 'owner.n2@vfood.vit.ac.in', staffId: 'd04cef55-b8b9-4b3e-a34e-08c682ad8702', ownerId: '44197aa2-2d27-4cb7-9541-751baba83872' },
+  { id: 'n3',  name: "Sri's (North Square C3)", location: 'North Square', staffPhone: '9876541007', ownerPhone: '9876542007', staffEmail: 'staff.n3@vfood.vit.ac.in', ownerEmail: 'owner.n3@vfood.vit.ac.in', staffId: '7f3caebf-161a-4f78-90fb-6e0971ce48e3', ownerId: '126bf63c-9594-4f6c-91cd-41e42bcd44a7' },
+  { id: 'n4',  name: 'Juice & Rice Corner (North Square C4)', location: 'North Square', staffPhone: '9876541008', ownerPhone: '9876542008', staffEmail: 'staff.n4@vfood.vit.ac.in', ownerEmail: 'owner.n4@vfood.vit.ac.in', staffId: 'cd50aa66-45a2-44fe-8975-e95435145e10', ownerId: 'd3090bcb-1e86-4ec5-b7d7-36eef04324dc' },
+  { id: 'ab3', name: 'AB3 Amphitheatre Kitchen', location: 'AB3 Amphitheatre', staffPhone: '9876541009', ownerPhone: '9876542009', staffEmail: 'staff.ab3@vfood.vit.ac.in', ownerEmail: 'owner.ab3@vfood.vit.ac.in', staffId: '1a93e26f-0b74-45cb-996c-3c3b6d779127', ownerId: 'd6f7440f-afe9-4388-a005-a7e670d794e5' },
+  { id: 'ab1', name: 'AB1 Canteen', location: 'Academic Blocks', staffPhone: '9876541010', ownerPhone: '9876542010', staffEmail: 'staff.ab1@vfood.vit.ac.in', ownerEmail: 'owner.ab1@vfood.vit.ac.in', staffId: 'cb5ea0b3-de99-48b4-860e-24a2bd61d68e', ownerId: 'fbe945bd-7409-477b-8087-71227f028db2' },
+  { id: 'ab2', name: 'AB2 Georgia Canteen', location: 'Academic Blocks', staffPhone: '9876541011', ownerPhone: '9876542011', staffEmail: 'staff.ab2@vfood.vit.ac.in', ownerEmail: 'owner.ab2@vfood.vit.ac.in', staffId: 'abe97dd7-d51f-434c-ac9a-f334d9c49c73', ownerId: '1d6854e5-0e24-4e79-87c3-f2a4a69c1e95' },
+  { id: 'av',  name: 'Aavin Centre', location: 'Campus Outlets & Stores', staffPhone: '9876541012', ownerPhone: '9876542012', staffEmail: 'staff.av@vfood.vit.ac.in', ownerEmail: 'owner.av@vfood.vit.ac.in', staffId: '614971d3-173f-4c0a-8500-bb8832588bee', ownerId: '1ccd71aa-6207-4f1d-8c9a-09bc1de332db' },
+  { id: 'vm',  name: 'V Mart Provisional Store', location: 'Campus Outlets & Stores', staffPhone: '9876541013', ownerPhone: '9876542013', staffEmail: 'staff.vm@vfood.vit.ac.in', ownerEmail: 'owner.vm@vfood.vit.ac.in', staffId: '0565cf51-3748-4ee0-a833-56eb671ea54a', ownerId: '9be32dfa-7962-4cab-a22b-e84d083b7802' },
 ]
 
 export const MIND_CATEGORIES = [
@@ -289,11 +289,11 @@ export function matchesMindCategory(item, catId) {
 }
 
 const TEST_USERS = [
-  { id: 'usr-student', full_name: 'Rahul Sharma (User)', phone: '9876543210', email: 'student.test@vfoods.vit.ac.in', password: 'Password@123', role: 'user', balance: 0 },
-  { id: 'usr-admin', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfoods.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
+  { id: 'a6d778ae-5174-4bbf-8e68-00ef619a1ced', full_name: 'Rahul Sharma (Student)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 2500 },
+  { id: 'c9d6fc7a-019d-48c6-ae85-ad63fa2b06df', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
   ...CANTEEN_STAFF_OWNER_MAP.flatMap(c => [
     {
-      id: `usr-staff-${c.id}`,
+      id: c.staffId,
       full_name: `Staff — ${c.name}`,
       phone: c.staffPhone,
       email: c.staffEmail,
@@ -304,7 +304,7 @@ const TEST_USERS = [
       balance: 0
     },
     {
-      id: `usr-owner-${c.id}`,
+      id: c.ownerId,
       full_name: `Owner — ${c.name}`,
       phone: c.ownerPhone,
       email: c.ownerEmail,
@@ -316,6 +316,7 @@ const TEST_USERS = [
     }
   ])
 ]
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN APP
@@ -630,27 +631,81 @@ function App() {
     fetchDbOutlets()
   }, [])
 
-  // Realtime subscription + live multi-role sync
+  // Realtime subscription + live multi-role sync with automatic reconnect & catch-up
   useEffect(() => {
-    if (!supabase || !session) return
-    const channel = supabase.channel('vfoods-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-        if (payload.eventType === 'INSERT' && currentUser) {
+    if (!supabase || !currentUser) return
+
+    const r = currentUser.role || 'student'
+    let channelName = `vfoods-user-${currentUser.id}`
+    let changeFilter = {}
+
+    if (r === 'user' || r === 'student' || r === 'customer') {
+      channelName = `vfoods-student-${currentUser.id}`
+      changeFilter = { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${currentUser.id}` }
+    } else if (r === 'staff' || r === 'shop_admin' || r === 'owner') {
+      const oid = currentUser.outlet_id || 'g1'
+      channelName = `vfoods-outlet-${oid}`
+      changeFilter = { event: '*', schema: 'public', table: 'orders', filter: `outlet_id=eq.${oid}` }
+    } else if (r === 'admin' || r === 'superadmin' || r === 'super_admin') {
+      channelName = 'vfoods-superadmin-all'
+      changeFilter = { event: '*', schema: 'public', table: 'orders' }
+    } else {
+      channelName = `vfoods-general-${currentUser.id}`
+      changeFilter = { event: '*', schema: 'public', table: 'orders' }
+    }
+
+    const channel = supabase.channel(channelName)
+      .on('postgres_changes', changeFilter, payload => {
+        if (payload.eventType === 'INSERT') {
+          // Immediately reload orders so full relationships (items, outlet name) are populated
           loadUserOrders(currentUser)
+          if (r === 'staff' || r === 'shop_admin' || r === 'owner') {
+            playNewOrderChime()
+          }
         } else if (payload.eventType === 'UPDATE') {
           const updated = payload.new
           setOrders(prev => prev.map(o => o.id === updated.id ? { ...o, status: updated.status, token: updated.token || o.token } : o))
-          if (updated.status === 'ready' && Notification.permission === 'granted') {
-            new Notification('V FOODS — Order Ready!', {
-              body: `Order #${payload.new.id} (Token #${payload.new.token}) is ready for pickup!`,
-              icon: '/vit-chennai-logo.png'
-            })
+          if (updated.status === 'ready') {
+            playNewOrderChime()
+            if (Notification.permission === 'granted') {
+              new Notification('V FOODS — Order Ready!', {
+                body: `Order #${updated.id} (Token #${updated.token}) is ready for pickup!`,
+                icon: '/vit-chennai-logo.png'
+              })
+            }
           }
         }
       })
-      .subscribe()
-    return () => supabase.removeChannel(channel)
-  }, [session, currentUser])
+      .subscribe((status, err) => {
+        if (err) console.warn(`[Realtime] Subscription warning on ${channelName}:`, err)
+      })
+
+    // Auto-reconnect & catch-up handler when screen unlocks, tab gains focus, or network returns
+    const handleSyncCatchup = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        loadUserOrders(currentUser)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleSyncCatchup)
+    window.addEventListener('online', handleSyncCatchup)
+    window.addEventListener('focus', handleSyncCatchup)
+
+    // Periodic safety sync (every 15s) in case WebSocket was suspended by mobile OS
+    const safetyPoll = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadUserOrders(currentUser)
+      }
+    }, 15000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', handleSyncCatchup)
+      window.removeEventListener('online', handleSyncCatchup)
+      window.removeEventListener('focus', handleSyncCatchup)
+      clearInterval(safetyPoll)
+    }
+  }, [currentUser])
 
   // Staff: chime when new active orders arrive (demo mode)
   const activeOrderCount = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
@@ -926,23 +981,56 @@ function App() {
       addAuditLog(currentUser?.full_name || 'Rahul Sharma', currentUser?.role || 'student', 'ORDER', 'ORDER_PLACED', `Order #${newId} placed at ${cart.outlet.name} (${money(studentDebit)}${discount > 0 ? `, saved ₹${discount}` : ''}) via ${paymentProviderName}`)
 
       // Persist order to Supabase
-      if (supabase && currentUser?.id && currentUser.id.length > 20) {
+      if (supabase && currentUser?.id) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        const dbUserId = uuidRegex.test(currentUser.id) ? currentUser.id : 'a6d778ae-5174-4bbf-8e68-00ef619a1ced'
         const payloadItems = cart.items.map(i => ({ item_id: i.id, qty: i.qty }))
-        supabase.rpc('place_order', {
-          p_user_id: currentUser.id,
-          p_outlet_id: cart.outlet.id,
-          p_items: payloadItems,
-          p_payment_method: isGateway ? 'gateway' : 'wallet',
-          p_pickup_slot_id: selectedSlot?.id || null,
-          p_discount_amount: discount,
-          p_coupon_code: appliedCoupon?.code || null
-        }).then(({ data: dbOrderId, error }) => {
-          if (!error && dbOrderId) {
-            setOrders(ords => ords.map(o => o.id === newId ? { ...o, id: Number(dbOrderId) } : o))
-            loadUserWallet(currentUser.id)
-            loadUserOrders(currentUser)
-          }
-        }).catch(err => console.warn('Supabase place_order sync error:', err))
+
+        if (isGateway) {
+          supabase.from('orders').insert({
+            user_id: dbUserId,
+            outlet_id: cart.outlet.id,
+            token: token,
+            status: 'placed',
+            payment_method: 'gateway',
+            total: baseTotal,
+            shop_payout: baseTotal,
+            created_at: new Date().toISOString()
+          }).select().single().then(async ({ data: dbOrder, error }) => {
+            if (!error && dbOrder) {
+              const orderItemsPayload = cart.items.map(i => ({
+                order_id: dbOrder.id,
+                item_id: i.id,
+                name: i.name,
+                price: i.price,
+                qty: i.qty
+              }))
+              await supabase.from('order_items').insert(orderItemsPayload)
+              setOrders(ords => ords.map(o => o.id === newId ? { ...o, id: Number(dbOrder.id), token: dbOrder.token || token } : o))
+              loadUserOrders(currentUser)
+            } else if (error) {
+              console.warn('Supabase gateway order insert error:', error)
+            }
+          }).catch(err => console.warn('Supabase gateway order insert error:', err))
+        } else {
+          supabase.rpc('place_order', {
+            p_user_id: dbUserId,
+            p_outlet_id: cart.outlet.id,
+            p_items: payloadItems,
+            p_payment_method: 'wallet',
+            p_pickup_slot_id: selectedSlot?.id || null,
+            p_discount_amount: discount,
+            p_coupon_code: appliedCoupon?.code || null
+          }).then(({ data: dbOrderId, error }) => {
+            if (!error && dbOrderId) {
+              setOrders(ords => ords.map(o => o.id === newId ? { ...o, id: Number(dbOrderId) } : o))
+              loadUserWallet(dbUserId)
+              loadUserOrders(currentUser)
+            } else if (error) {
+              console.warn('Supabase place_order RPC error:', error)
+            }
+          }).catch(err => console.warn('Supabase place_order sync error:', err))
+        }
       }
     }, 700)
   }
@@ -1134,9 +1222,16 @@ function App() {
     }))
 
     if (supabase && orderId && targetStatus) {
-      supabase.from('orders').update({ status: targetStatus, updated_at: new Date().toISOString() }).eq('id', orderId).then(({ error }) => {
-        if (error) console.warn('advanceOrderStatus Supabase sync:', error)
-      }).catch(err => console.warn('advanceOrderStatus Supabase error:', err))
+      supabase.rpc('update_order_status', { p_order_id: orderId, p_status: targetStatus }).then(({ error: rpcErr }) => {
+        if (rpcErr) {
+          console.warn('update_order_status RPC fallback to table update:', rpcErr)
+          supabase.from('orders').update({ status: targetStatus, updated_at: new Date().toISOString() }).eq('id', orderId).then(({ error }) => {
+            if (error) console.warn('advanceOrderStatus Supabase sync:', error)
+          }).catch(err => console.warn('advanceOrderStatus Supabase error:', err))
+        }
+      }).catch(() => {
+        supabase.from('orders').update({ status: targetStatus, updated_at: new Date().toISOString() }).eq('id', orderId).catch(() => {})
+      })
     }
   }
 
@@ -6195,6 +6290,21 @@ function AuthScreen({ onLoginUser }) {
     setOtp('')
   }
 
+  async function handleQuickLogin(userObj) {
+    if (!userObj) return
+    onLoginUser(userObj)
+    if (supabase && userObj.email) {
+      try {
+        await supabase.auth.signInWithPassword({
+          email: userObj.email,
+          password: userObj.password || 'Password@123'
+        })
+      } catch (err) {
+        console.warn('Quick login session establishment:', err)
+      }
+    }
+  }
+
   function handleVerifyOtp(e) {
     if (e) e.preventDefault()
     setError('')
@@ -6207,7 +6317,7 @@ function AuthScreen({ onLoginUser }) {
     const matched = TEST_USERS.find(u => u.phone?.replace(/\D/g, '').slice(-10) === cleanPhone)
 
     if (matched && !isSignUp) {
-      onLoginUser(matched)
+      handleQuickLogin(matched)
     } else {
       const isSuper = role === 'admin'
       const chosenCanteen = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
@@ -6215,7 +6325,7 @@ function AuthScreen({ onLoginUser }) {
         id: `usr-${Date.now()}`,
         full_name: fullName.trim() || `User (+91 ${cleanPhone})`,
         phone: cleanPhone,
-        email: regEmail.trim() || `${cleanPhone}@vfoods.com`,
+        email: regEmail.trim() || `${cleanPhone}@vfood.vit.ac.in`,
         role: role,
         is_superadmin: isSuper,
         outlet_id: role === 'owner' || role === 'staff' ? chosenCanteen.id : undefined,
@@ -6567,7 +6677,7 @@ function AuthScreen({ onLoginUser }) {
               <button
                 type="button"
                 className="quick-chip"
-                onClick={() => onLoginUser(TEST_USERS.find(u => u.role === 'user' || u.role === 'student'))}
+                onClick={() => handleQuickLogin(TEST_USERS.find(u => u.role === 'user' || u.role === 'student'))}
                 title="Login as Rahul Sharma (User)"
               >
                 <User size={14} strokeWidth={2} />
@@ -6580,7 +6690,7 @@ function AuthScreen({ onLoginUser }) {
                 className="quick-chip"
                 onClick={() => {
                   const staffUser = TEST_USERS.find(u => u.role === 'staff' && u.outlet_id === selectedCanteenId)
-                  if (staffUser) onLoginUser(staffUser)
+                  if (staffUser) handleQuickLogin(staffUser)
                 }}
                 title={`Login as Shop Staff for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
                 style={{ background: '#1E40AF' }}
@@ -6595,7 +6705,7 @@ function AuthScreen({ onLoginUser }) {
                 className="quick-chip"
                 onClick={() => {
                   const ownerUser = TEST_USERS.find(u => (u.role === 'owner' || u.role === 'shop_admin') && u.outlet_id === selectedCanteenId)
-                  if (ownerUser) onLoginUser(ownerUser)
+                  if (ownerUser) handleQuickLogin(ownerUser)
                 }}
                 title={`Login as Shop Admin for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
                 style={{ background: '#0B192C' }}
@@ -6608,7 +6718,7 @@ function AuthScreen({ onLoginUser }) {
               <button
                 type="button"
                 className="quick-chip"
-                onClick={() => onLoginUser(TEST_USERS.find(u => u.is_superadmin))}
+                onClick={() => handleQuickLogin(TEST_USERS.find(u => u.is_superadmin))}
                 title="Login as Platform Super Admin"
               >
                 <Shield size={14} strokeWidth={2} />
@@ -6657,7 +6767,7 @@ function AuthScreen({ onLoginUser }) {
                             type="button"
                             className="canteen-matrix-btn staff"
                             title={`Staff Login: ${c.staffEmail} | Phone: ${c.staffPhone} | Password: Password@123`}
-                            onClick={() => onLoginUser(staffU)}
+                            onClick={() => handleQuickLogin(staffU)}
                           >
                             Staff
                           </button>
@@ -6665,7 +6775,7 @@ function AuthScreen({ onLoginUser }) {
                             type="button"
                             className="canteen-matrix-btn owner"
                             title={`Owner Login: ${c.ownerEmail} | Phone: ${c.ownerPhone} | Password: Password@123`}
-                            onClick={() => onLoginUser(ownerU)}
+                            onClick={() => handleQuickLogin(ownerU)}
                           >
                             Owner
                           </button>

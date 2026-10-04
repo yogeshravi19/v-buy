@@ -315,11 +315,58 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
     }
   }, [activeOutletId, soundEnabled])
 
+  // Sync localOrders whenever globalOrders prop updates
+  useEffect(() => {
+    if (globalOrders && globalOrders.length > 0) {
+      setLocalOrders(globalOrders)
+    }
+  }, [globalOrders])
+
   useEffect(() => {
     loadData()
     const timer = setInterval(loadData, 20000)
     return () => clearInterval(timer)
   }, [loadData])
+
+  // Dedicated Live Realtime Subscription for this outlet
+  useEffect(() => {
+    if (!supabase || !activeOutletId) return
+
+    const channelName = `staff-kds-live-${activeOutletId}`
+    const channel = supabase.channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `outlet_id=eq.${activeOutletId}` }, (payload: any) => {
+        if (payload.eventType === 'INSERT') {
+          loadData()
+          if (soundEnabled) playNotificationChime()
+          setBannerNotice(`New Order #${payload.new?.id} (Token #${payload.new?.token}) received!`)
+          setTimeout(() => setBannerNotice(null), 4000)
+        } else if (payload.eventType === 'UPDATE') {
+          const updated = payload.new
+          setLocalOrders(prev => prev.map(o => o.id === updated.id ? { ...o, status: updated.status, token: updated.token || o.token } : o))
+          if (setGlobalOrders) {
+            setGlobalOrders(prev => prev.map(o => o.id === updated.id ? { ...o, status: updated.status, token: updated.token || o.token } : o))
+          }
+        }
+      })
+      .subscribe()
+
+    const handleCatchup = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        loadData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleCatchup)
+    window.addEventListener('online', handleCatchup)
+    window.addEventListener('focus', handleCatchup)
+
+    return () => {
+      supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', handleCatchup)
+      window.removeEventListener('online', handleCatchup)
+      window.removeEventListener('focus', handleCatchup)
+    }
+  }, [activeOutletId, loadData, soundEnabled, setGlobalOrders])
 
   // Advance Order Status Helper
   const handleAdvanceStatus = async (orderId: number, currentStatus: string) => {
@@ -337,7 +384,10 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
     }
 
     try {
-      await supabase.from('orders').update({ status: nextStatus }).eq('id', orderId)
+      const { error: rpcErr } = await supabase.rpc('update_order_status', { p_order_id: orderId, p_status: nextStatus })
+      if (rpcErr) {
+        await supabase.from('orders').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', orderId)
+      }
       if (addAuditLog) {
         addAuditLog(currentUser?.full_name || 'Shop Staff', 'staff', 'ORDER', 'STATUS_ADVANCE', `Order #${orderId} moved to ${nextStatus}`)
       }
