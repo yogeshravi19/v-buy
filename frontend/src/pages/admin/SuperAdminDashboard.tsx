@@ -181,12 +181,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // Global Users list
   const [usersList, setUsersList] = useState<PlatformUser[]>([
-    { id: 'u1', full_name: 'Aarav Patel', phone: '9876543210', email: 'aarav.patel2023@vitstudent.ac.in', role: 'student', is_active: true, wallet_balance: 450, created_at: '2025-08-12' },
+    { id: 'u1', full_name: 'Aarav Patel', phone: '9876543210', email: 'aarav.patel@gmail.com', role: 'customer', is_active: true, wallet_balance: 450, created_at: '2025-08-12' },
     { id: 'u2', full_name: 'Murugan Staff', phone: '9876541001', email: 'staff.gazebo1@vfoods.com', role: 'staff', outlet_id: 'g1', is_active: true, created_at: '2025-09-01' },
     { id: 'u3', full_name: 'Gazebo Franchise Owner', phone: '9876542001', email: 'owner.gazebo1@vfoods.com', role: 'shop_admin', outlet_id: 'g1', is_active: true, created_at: '2025-07-20' },
     { id: 'u4', full_name: 'Super Admin Me', phone: '9876543200', email: 'superadmin@vfoods.in', role: 'super_admin', is_active: true, created_at: '2025-06-01' },
-    { id: 'u5', full_name: 'Sneha Reddy', phone: '9876543211', email: 'sneha.reddy2024@vitstudent.ac.in', role: 'student', is_active: true, wallet_balance: 820, created_at: '2025-09-10' },
-    { id: 'u6', full_name: 'Vikram Joshi', phone: '9876543212', email: 'vikram.joshi2024@vitstudent.ac.in', role: 'student', is_active: true, wallet_balance: 150, created_at: '2025-10-01' }
+    { id: 'u5', full_name: 'Sneha Reddy', phone: '9876543211', email: 'sneha.reddy@gmail.com', role: 'customer', is_active: true, wallet_balance: 820, created_at: '2025-09-10' },
+    { id: 'u6', full_name: 'Vikram Joshi', phone: '9876543212', email: 'vikram.joshi@gmail.com', role: 'customer', is_active: true, wallet_balance: 150, created_at: '2025-10-01' }
   ])
 
   // Coupons state

@@ -22,13 +22,13 @@ async (page) => {
   const runId = Date.now().toString().slice(-6);
   const test1User = {
     name: `Ananya Sharma ${runId}`,
-    email: `ananya.${runId}@vitstudent.ac.in`,
+    email: `ananya.${runId}@gmail.com`,
     mobile: `98${runId}12`, // 10 digits
     password: `TestPassword@${runId}`
   };
 
   const test2GoogleUser = {
-    email: `google.user.${runId}@vitstudent.ac.in`,
+    email: `google.user.${runId}@gmail.com`,
     name: `Vikram Google ${runId}`,
     mobile: `97${runId}34`, // 10 digits
     password: `GooglePass@${runId}`
@@ -223,7 +223,7 @@ async (page) => {
     // Attempt to register with test1User.mobile which is ALREADY in use
     log(`Attempting signup with ALREADY registered mobile: ${test1User.mobile}...`);
     await page.locator('#signup-name').fill('Imposter User');
-    await page.locator('#signup-email').fill(`imposter.${runId}@vitstudent.ac.in`);
+    await page.locator('#signup-email').fill(`imposter.${runId}@gmail.com`);
     await page.locator('#signup-mobile').fill(test1User.mobile);
     await page.locator('#signup-password').fill('SomePassword123');
     await page.locator('#signup-confirm-password').fill('SomePassword123');

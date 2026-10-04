@@ -289,7 +289,7 @@ export function matchesMindCategory(item, catId) {
 }
 
 const TEST_USERS = [
-  { id: 'a6d778ae-5174-4bbf-8e68-00ef619a1ced', full_name: 'Rahul Sharma (Student)', phone: '9876543210', email: 'student.test@vfood.vit.ac.in', password: 'Password@123', role: 'user', balance: 2500 },
+  { id: 'a6d778ae-5174-4bbf-8e68-00ef619a1ced', full_name: 'Rahul Sharma', phone: '9876543210', email: 'user.test@gmail.com', password: 'Password@123', role: 'user', balance: 2500 },
   { id: 'c9d6fc7a-019d-48c6-ae85-ad63fa2b06df', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
   ...CANTEEN_STAFF_OWNER_MAP.flatMap(c => [
     {
@@ -6741,7 +6741,7 @@ function AuthScreen({ onLoginUser }) {
     setError('')
     setNoticeMsg('')
     setLoading(true)
-    const testEmail = isNewUser ? `google.new.${Date.now()}@vitstudent.ac.in` : 'google.returning@vitstudent.ac.in'
+    const testEmail = isNewUser ? `google.new.${Date.now()}@gmail.com` : 'google.returning@gmail.com'
     const testName = isNewUser ? 'Vikram Google' : 'Ananya Google (Returning)'
 
     try {
@@ -6900,7 +6900,7 @@ function AuthScreen({ onLoginUser }) {
                     type="text"
                     value={identifier}
                     onChange={e => setIdentifier(e.target.value)}
-                    placeholder="user@vitstudent.ac.in or 9876543210"
+                    placeholder="user@gmail.com or 9876543210"
                     required
                   />
                 </div>
@@ -6984,7 +6984,7 @@ function AuthScreen({ onLoginUser }) {
                     type="email"
                     value={signupEmail}
                     onChange={e => setSignupEmail(e.target.value)}
-                    placeholder="rahul.sharma@vitstudent.ac.in"
+                    placeholder="rahul.sharma@gmail.com"
                     required
                   />
                   <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>

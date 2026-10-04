@@ -67,7 +67,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                   required
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="alex.sharma@vitstudent.ac.in"
+                  placeholder="alex.sharma@gmail.com"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white"
                 />
               </div>
