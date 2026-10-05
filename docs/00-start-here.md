@@ -25,6 +25,8 @@ Every document is available as both Markdown (`.md`) and a standalone printable 
 6. **[06-features.md](06-features.md)** ([PDF Version](06-features.pdf)): A catalog of all active features (reordering, ratings, group carts, scheduled slots, coupons) and retired experiments.
 7. **[07-payments-paytm.md](07-payments-paytm.md)**: A deep dive into the dual payment model (top-up vs direct pay), how Paytm handles confirmations via HMAC-signed webhooks, and the automated three-way split.
 8. **[08-running-it-locally.md](08-running-it-locally.md)** ([PDF Version](08-running-it-locally.pdf)): A practical guide for developers wanting to start the frontend and backend on their local machine.
-9. **[PITCH_DECK.md](PITCH_DECK.md)** ([PDF Version](PITCH_DECK.pdf)): Executive investor and administration pitch deck highlighting unit economics, TAM, and rollouts.
-10. **[V_FOODS_COMPLETE_SYSTEM_GUIDE.md](V_FOODS_COMPLETE_SYSTEM_GUIDE.md)** ([PDF Version](V_FOODS_COMPLETE_SYSTEM_GUIDE.pdf)): Comprehensive system guide with full architecture diagrams and operational specs.
+9. **[09-high-traffic-and-caching.md](09-high-traffic-and-caching.md)**: How V Foods handles 1,000+ students simultaneously (TanStack Query, Stale-While-Revalidate caching, in-memory catalog cache, zero-gateway wallet RPCs).
+10. **[10-ui-ux-design-system.md](10-ui-ux-design-system.md)**: Catalog of UI polish features (Skeleton shimmer screens, Spotlight Search `⌘K`, Live Order Tracker, Mobile Bottom Sheets, Web Haptics, and KDS ticket aging).
+11. **[PITCH_DECK.md](PITCH_DECK.md)** ([PDF Version](PITCH_DECK.pdf)): Executive investor and administration pitch deck highlighting unit economics, TAM, and rollouts.
+12. **[V_FOODS_COMPLETE_SYSTEM_GUIDE.md](V_FOODS_COMPLETE_SYSTEM_GUIDE.md)** ([PDF Version](V_FOODS_COMPLETE_SYSTEM_GUIDE.pdf)): Comprehensive system guide with full architecture diagrams and operational specs.
 

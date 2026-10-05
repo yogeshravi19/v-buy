@@ -121,6 +121,23 @@ function formatElapsed(dateString: string): string {
   return `${hrs}h ${mins % 60}m ago`
 }
 
+function getAgingBadge(dateString: string) {
+  const diffMs = Date.now() - new Date(dateString).getTime()
+  const mins = Math.max(0, Math.floor(diffMs / 60000))
+  let badgeStyle = { color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', fontWeight: 600 }
+  if (mins >= 10) {
+    badgeStyle = { color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', fontWeight: 800 }
+  } else if (mins >= 5) {
+    badgeStyle = { color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A', fontWeight: 700 }
+  }
+  const text = mins < 1 ? 'Just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ${mins % 60}m ago`
+  return (
+    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '3px', ...badgeStyle }}>
+      <Clock size={11} /> {text}
+    </span>
+  )
+}
+
 export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   currentUser,
   outlets = [],
@@ -1064,8 +1081,8 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                               {(order.order_items || []).map(i => `${i.name} × ${i.qty}`).join(', ') || 'No item details'}
                             </div>
                           </td>
-                          <td style={{ fontSize: '12px', color: '#64748B' }}>
-                            {formatElapsed(order.created_at)}
+                          <td>
+                            {getAgingBadge(order.created_at)}
                           </td>
                           <td style={{ fontWeight: 700 }}>
                             {money(order.total)}
@@ -1208,8 +1225,8 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                               {(order.order_items || []).map(i => `${i.name} (×${i.qty})`).join(' • ')}
                             </div>
                           </td>
-                          <td style={{ fontSize: '12px', color: '#64748B' }}>
-                            {formatElapsed(order.created_at)}
+                          <td>
+                            {getAgingBadge(order.created_at)}
                           </td>
                           <td>
                             <span style={{ fontSize: '12px', color: '#475569' }}>

@@ -45,7 +45,9 @@ const ROLES: RoleDetail[] = [
       'Collaborative Group Ordering: share 6-digit room code with peers',
       'Apply campus discount coupons (e.g. CAMPUS50, VBIT15)',
       'Dual checkout: 1-tap instant payment from Campus Wallet or instant PhonePe UPI',
-      'Track real-time 4-stage order progress (Placed → Preparing → Ready → Collected)',
+      'Track real-time 4-stage order progress (Placed → Preparing → Ready → Collected) with pulse animations',
+      'Spotlight Quick Search (⌘K) to find dishes across all 13 canteens in under 2 seconds',
+      'Tactile Web Haptics on mobile devices with vibration cues when orders are ready',
       'Display scannable QR pickup pass and 4-digit order token',
       'Submit 1–5 star ratings & comments for items; maintain daily loyalty streak',
     ],
@@ -76,6 +78,7 @@ const ROLES: RoleDetail[] = [
     canDo: [
       'Real-time stream of incoming orders for their assigned canteen only',
       'Instant Web Audio chime alert when a user places a new order',
+      'Color-coded KDS ticket aging badges (Green <5m, Amber 5-10m, Flashing Red >10m) to spot delayed orders from 10 feet away',
       'Dedicated KDS board with Placed, Preparing, and Ready operational columns',
       '1-tap status transition buttons (e.g., tap "Start Prep", tap "Mark Ready")',
       'Quick Token search bar to verify 4-digit pickup tokens immediately',

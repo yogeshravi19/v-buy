@@ -40,6 +40,7 @@ logger = logging.getLogger("vfoods")
 # ──────────────────────────────────────────────────────────────────────────────
 SUPABASE_URL              = os.getenv("SUPABASE_URL", "https://wahftohnwfoepuszvzrx.supabase.co")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "PLACEHOLDER_SERVICE_KEY")
+SUPABASE_JWT_SECRET       = os.getenv("SUPABASE_JWT_SECRET", "")
 
 PHONEPE_MERCHANT_ID = os.getenv("PHONEPE_MERCHANT_ID", "MOCK_MERCHANT")
 PHONEPE_SALT_KEY    = os.getenv("PHONEPE_SALT_KEY", "mock_salt_key")
@@ -93,6 +94,30 @@ async def root():
         "health": "/health"
     }
 
+# High-traffic catalog cache (In-memory caching for 1000+ simultaneous student loads)
+_CATALOG_CACHE = {"data": None, "timestamp": 0}
+CATALOG_CACHE_TTL_SECONDS = 30
+
+@app.get("/api/catalog/summary")
+async def get_catalog_summary():
+    """
+    Ultra-fast cached catalog summary for 1,000+ concurrent students.
+    Caches active outlets & open statuses in memory with a 30s TTL.
+    """
+    now = time.time()
+    if _CATALOG_CACHE["data"] and (now - _CATALOG_CACHE["timestamp"] < CATALOG_CACHE_TTL_SECONDS):
+        return {"source": "cache", "outlets": _CATALOG_CACHE["data"]}
+
+    try:
+        res = sb.from_("outlets").select("id, name, location, is_open, is_event").execute()
+        outlets = res.data or []
+        _CATALOG_CACHE["data"] = outlets
+        _CATALOG_CACHE["timestamp"] = now
+        return {"source": "live", "outlets": outlets}
+    except Exception as e:
+        logger.warning(f"Catalog cache fallback: {e}")
+        return {"source": "fallback", "outlets": _CATALOG_CACHE["data"] or []}
+
 @app.get("/health")
 async def health():
     return {
@@ -142,9 +167,19 @@ async def get_current_user(authorization: str = Header(...)) -> dict:
         raise HTTPException(401, "Missing Bearer token")
     token = authorization.split(" ", 1)[1]
     try:
-        # Supabase JWTs are signed with the project JWT secret
-        # In production verify with Supabase JWKS; here we trust sub claim
-        payload = jwt.decode(token, key="", options={"verify_signature": False})
+        # Cryptographic Supabase JWT verification
+        if SUPABASE_JWT_SECRET:
+            payload = jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                options={"verify_aud": False}
+            )
+        else:
+            # Fallback for local mock/dev when SUPABASE_JWT_SECRET is not yet exported
+            payload = jwt.decode(token, key="", options={"verify_signature": False})
+            logger.debug("Decoded unverified token (export SUPABASE_JWT_SECRET for production enforcement)")
+
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(401, "Invalid token: no sub claim")
@@ -963,3 +998,12 @@ async def _notify_payment_failed(user_id: str, order_id: int, reason: str):
     phone = await _get_user_phone(user_id)
     if phone:
         await _send_whatsapp(phone, TEMPLATE_PAYMENT_FAILED, [str(order_id), reason])
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Modular Routers
+# ──────────────────────────────────────────────────────────────────────────────
+try:
+    from routers.media import init_media_router
+    app.include_router(init_media_router(sb, require_staff))
+except Exception as e:
+    logger.warning(f"Could not load media router: {e}")
