@@ -3604,7 +3604,7 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
               <button
                 className="reorder-btn btn-spring"
                 onClick={() => repeatOrder(mostRecentPast)}
-                style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px' }}
+                style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '12px' }}
                 title="Reorder this exact meal into your cart"
               >
                 <Repeat size={14} /> Reorder My Usual
@@ -3713,7 +3713,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
       {/* ── Badges for Scheduled Slots & Group Orders ── */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
         {order.pickup_slot_time && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '3px 8px', borderRadius: 6, fontSize: '11px', fontWeight: 700 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
             <Clock size={12} /> Scheduled Pickup: {order.pickup_slot_time}
           </span>
         )}
@@ -3723,7 +3723,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
           </span>
         )}
         {order.coupon_code && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 6, fontSize: '11px', fontWeight: 700 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
             Promo {order.coupon_code} Applied
           </span>
         )}
@@ -3756,7 +3756,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
           <div className="order-qr-meta">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div className="token-badge" style={{ margin: 0 }}>TOKEN #{order.token}</div>
-              {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 8px', borderRadius: '6px' }}>READY FOR PICKUP</span>}
+              {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 10px', borderRadius: '9999px' }}>READY FOR PICKUP</span>}
             </div>
             <span className="order-qr-hint">
               {isReady ? 'Ready at counter! Present QR to staff' : 'Order placed! Counter verification QR code generated'}
@@ -3830,7 +3830,7 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
           <div style={{
             background: 'rgba(56, 189, 248, 0.15)',
             border: '1.5px solid #38BDF8',
-            borderRadius: '10px',
+            borderRadius: '14px',
             padding: '8px 14px',
             margin: '12px 0 6px',
             display: 'flex',
@@ -7557,7 +7557,7 @@ function ScannableQrCode({ value, size = 90, label = '', onEnlarge }) {
         <img
           src={dataUrl}
           alt={`QR-${value}`}
-          style={{ width: size, height: size, borderRadius: '8px', display: 'block', background: '#FFFFFF', padding: '3px', border: '1px solid #E2E8F0' }}
+          style={{ width: size, height: size, borderRadius: '12px', display: 'block', background: '#FFFFFF', padding: '3px', border: '1px solid #E2E8F0' }}
         />
       ) : (
         <SvgQrCode value={value} size={size} />
@@ -7584,7 +7584,7 @@ function QrEnlargeModal({ order, onClose }) {
           <button className="cart-clear-btn" onClick={onClose} style={{ padding: '6px' }}><X size={18} /></button>
         </div>
 
-        <div style={{ textAlign: 'center', background: '#FFFFFF', padding: '16px', borderRadius: '16px', border: '2px dashed var(--blue-primary)', boxShadow: '0 8px 24px rgba(30,58,138,0.1)' }}>
+        <div style={{ textAlign: 'center', background: '#FFFFFF', padding: '16px', borderRadius: '18px', border: '2px dashed var(--blue-primary)', boxShadow: '0 8px 24px rgba(30,58,138,0.1)' }}>
           <div style={{ display: 'inline-block' }}>
             <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={180} />
           </div>
@@ -7593,7 +7593,7 @@ function QrEnlargeModal({ order, onClose }) {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '6px' }}>
             <span className={`status-badge ${order.status}`}>{order.status.toUpperCase()}</span>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '2px 10px', borderRadius: '9999px' }}>
               PAID {money(order.total)}
             </span>
           </div>

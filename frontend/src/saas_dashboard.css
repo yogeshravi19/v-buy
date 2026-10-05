@@ -285,8 +285,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  border-radius: 7px;
+  padding: 8px 14px;
+  border-radius: 10px;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -578,9 +578,9 @@
 
 .saas-modal-card {
   background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.15);
   width: 100%;
   max-width: 480px;
   overflow: hidden;

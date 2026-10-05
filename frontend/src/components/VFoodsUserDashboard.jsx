@@ -337,7 +337,7 @@ export default function VFoodsUserDashboard({
             zIndex: 2,
             background: 'rgba(255, 255, 255, 0.96)',
             padding: '3px',
-            borderRadius: '4px',
+            borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -922,7 +922,7 @@ export default function VFoodsUserDashboard({
                   </div>
 
                   {/* Pickup Timing */}
-                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid rgba(226, 232, 240, 0.85)', borderRadius: '18px', padding: '14px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)' }}>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Clock size={15} color="#2563EB" /> Pickup
                     </div>
@@ -932,7 +932,7 @@ export default function VFoodsUserDashboard({
                         onClick={() => setIsScheduled(false)}
                         style={{
                           padding: '10px',
-                          borderRadius: '10px',
+                          borderRadius: '12px',
                           border: !isScheduled ? '2px solid #2563EB' : '1px solid #E2E8F0',
                           background: !isScheduled ? '#EFF6FF' : '#FFFFFF',
                           color: !isScheduled ? '#1D4ED8' : '#475569',
@@ -950,7 +950,7 @@ export default function VFoodsUserDashboard({
                         onClick={() => setIsScheduled(true)}
                         style={{
                           padding: '10px',
-                          borderRadius: '10px',
+                          borderRadius: '12px',
                           border: isScheduled ? '2px solid #2563EB' : '1px solid #E2E8F0',
                           background: isScheduled ? '#EFF6FF' : '#FFFFFF',
                           color: isScheduled ? '#1D4ED8' : '#475569',
@@ -970,7 +970,7 @@ export default function VFoodsUserDashboard({
                         <select
                           value={selectedSlotId || ''}
                           onChange={e => setSelectedSlotId(e.target.value)}
-                          style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12px', color: '#0F172A', background: '#FFFFFF' }}
+                          style={{ width: '100%', padding: '9px 12px', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '12px', color: '#0F172A', background: '#FFFFFF' }}
                         >
                           <option value="">Select pickup time...</option>
                           {pickupSlots.map(s => {
@@ -1379,7 +1379,7 @@ export default function VFoodsUserDashboard({
                     required
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
-                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '12px', border: '1px solid #CBD5E1' }}
                   />
                 </div>
 
@@ -1392,7 +1392,7 @@ export default function VFoodsUserDashboard({
                     placeholder="10-digit mobile number"
                     value={editPhone}
                     onChange={e => setEditPhone(e.target.value)}
-                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '12px', border: '1px solid #CBD5E1' }}
                   />
                 </div>
 
@@ -1404,7 +1404,7 @@ export default function VFoodsUserDashboard({
                     type="text"
                     disabled
                     value="User"
-                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#64748B' }}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#64748B' }}
                   />
                 </div>
 
