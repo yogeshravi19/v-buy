@@ -36,7 +36,10 @@ import {
   Lock,
   FileSpreadsheet,
   Menu,
-  Edit
+  Edit,
+  ShieldAlert,
+  FileText,
+  Eye
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -101,6 +104,20 @@ export interface CouponRecord {
   is_active: boolean
 }
 
+export interface AuditLogRecord {
+  id: string
+  actor_id?: string | null
+  actor_name: string
+  actor_role: string
+  category: string
+  action: string
+  details: string
+  metadata?: Record<string, any>
+  ip_address?: string | null
+  status: string
+  created_at: string
+}
+
 interface SuperAdminDashboardProps {
   currentUser: any
   setCurrentUser?: (u: any) => void
@@ -110,6 +127,7 @@ interface SuperAdminDashboardProps {
   setOrders?: React.Dispatch<React.SetStateAction<any[]>>
   advanceOrderStatus?: (orderId: number) => void
   addAuditLog?: (actor: string, role: string, entity: string, action: string, details: string) => void
+  auditLogs?: any[]
   handleSignOut?: () => void
   money?: (amount: number) => string
   eventMode?: boolean
@@ -132,12 +150,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   orders: globalOrders = [],
   setOrders: setGlobalOrders,
   addAuditLog,
+  auditLogs: propAuditLogs = [],
   handleSignOut,
   money = (v: number) => `₹${Number(v || 0).toLocaleString('en-IN')}`,
   eventMode: propEventMode = false,
   setEventMode: setPropEventMode
 }) => {
-  // Required 10 tabs strictly matching Super Admin specifications
+  // Required 11 tabs strictly matching Super Admin specifications
   type SuperTab =
     | 'overview'
     | 'campuses'
@@ -148,6 +167,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     | 'settlements'
     | 'analytics-reports'
     | 'coupons'
+    | 'audit-logs'
     | 'system-settings'
 
   const [activeTab, setActiveTab] = useState<SuperTab>('overview')
@@ -216,6 +236,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
   const [userRoleFilter, setUserRoleFilter] = useState('all')
+
+  // Audit Logs Telemetry state
+  const [auditLogsList, setAuditLogsList] = useState<AuditLogRecord[]>([])
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false)
+  const [auditCategoryFilter, setAuditCategoryFilter] = useState('ALL')
+  const [auditSearchQuery, setAuditSearchQuery] = useState('')
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogRecord | null>(null)
 
   // Fetch cross-outlet global orders
   const loadGlobalData = useCallback(async () => {
@@ -356,6 +383,81 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   useEffect(() => { loadOutlets() }, [loadOutlets])
 
+  // Load Audit Logs from Supabase audit_logs table (source of truth)
+  const loadAuditLogs = useCallback(async () => {
+    setAuditLogsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200)
+
+      if (!error && data && data.length > 0) {
+        setAuditLogsList(data as AuditLogRecord[])
+      } else if (propAuditLogs && propAuditLogs.length > 0) {
+        setAuditLogsList(propAuditLogs.map((l: any) => ({
+          id: l.id || `aud-${Math.random()}`,
+          actor_name: l.actor || 'User',
+          actor_role: l.role || 'user',
+          category: l.category || 'SYSTEM',
+          action: l.action || 'ACTION',
+          details: l.details || '',
+          status: l.status || 'SUCCESS',
+          created_at: l.timestamp || l.created_at || new Date().toISOString(),
+          metadata: l.metadata || {}
+        })))
+      }
+    } catch (err) {
+      console.warn('Audit logs load warning:', err)
+      if (propAuditLogs && propAuditLogs.length > 0) {
+        setAuditLogsList(propAuditLogs as any)
+      }
+    } finally {
+      setAuditLogsLoading(false)
+    }
+  }, [propAuditLogs])
+
+  useEffect(() => { loadAuditLogs() }, [loadAuditLogs])
+
+  // Realtime subscription on audit_logs table
+  useEffect(() => {
+    if (!supabase) return
+    const channel = supabase.channel('super-admin-audit-stream')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs' }, (payload: any) => {
+        if (payload.new) {
+          setAuditLogsList(prev => [payload.new as AuditLogRecord, ...prev.filter(l => l.id !== payload.new.id)])
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  // Sync when propAuditLogs changes from external callers
+  useEffect(() => {
+    if (propAuditLogs && propAuditLogs.length > 0) {
+      setAuditLogsList(prev => {
+        const map = new Map<string, AuditLogRecord>()
+        propAuditLogs.forEach((l: any) => map.set(l.id, {
+          id: l.id,
+          actor_name: l.actor || 'User',
+          actor_role: l.role || 'user',
+          category: l.category || 'SYSTEM',
+          action: l.action || 'ACTION',
+          details: l.details || '',
+          status: l.status || 'SUCCESS',
+          created_at: l.timestamp || l.created_at || new Date().toISOString(),
+          metadata: l.metadata || {}
+        }))
+        prev.forEach(l => map.set(l.id, l))
+        return Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      })
+    }
+  }, [propAuditLogs])
+
   // Toggle Outlet Force Open/Close (persisted; RLS decides who may do this)
   const handleToggleOutlet = async (outletId: string) => {
     const target = outletList.find(o => o.id === outletId)
@@ -492,7 +594,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // Toggle User Active/Suspended
   const handleToggleUserActive = (userId: string) => {
-    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, is_active: !u.is_active } : u))
+    const target = usersList.find(u => u.id === userId)
+    const next = !target?.is_active
+    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, is_active: next } : u))
+    if (addAuditLog && target) {
+      addAuditLog(
+        currentUser?.full_name || 'Super Admin',
+        'super_admin',
+        'USER',
+        'TOGGLE_STATUS',
+        `${next ? 'Reactivated' : 'Suspended'} user account ${target.full_name} (${target.phone})`
+      )
+    }
   }
 
   // Add Coupon
@@ -514,11 +627,70 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     setShowAddCouponModal(false)
     setNotice(`Coupon "${newCoupon.code}" published.`)
     setTimeout(() => setNotice(null), 3000)
+    if (addAuditLog) {
+      addAuditLog(
+        currentUser?.full_name || 'Super Admin',
+        'super_admin',
+        'COUPON',
+        'CREATE',
+        `Created platform coupon ${newCoupon.code} (${newCoupon.discount_value}${newCoupon.discount_type === 'percent' ? '%' : '₹'} discount)`
+      )
+    }
   }
 
   // Toggle Coupon Active
   const handleToggleCoupon = (couponId: string) => {
-    setCoupons(prev => prev.map(c => c.id === couponId ? { ...c, is_active: !c.is_active } : c))
+    const c = coupons.find(item => item.id === couponId)
+    const next = !c?.is_active
+    setCoupons(prev => prev.map(item => item.id === couponId ? { ...item, is_active: next } : item))
+    if (addAuditLog && c) {
+      addAuditLog(
+        currentUser?.full_name || 'Super Admin',
+        'super_admin',
+        'COUPON',
+        'TOGGLE',
+        `Toggled coupon ${c.code} status to ${next ? 'ACTIVE' : 'PAUSED'}`
+      )
+    }
+  }
+
+  // Filtered Audit Logs computed from search and category
+  const filteredAuditLogs = useMemo(() => {
+    return auditLogsList.filter(log => {
+      if (auditCategoryFilter !== 'ALL' && log.category !== auditCategoryFilter) return false
+      if (auditSearchQuery) {
+        const q = auditSearchQuery.toLowerCase()
+        const matchActor = (log.actor_name || '').toLowerCase().includes(q)
+        const matchAction = (log.action || '').toLowerCase().includes(q)
+        const matchDetails = (log.details || '').toLowerCase().includes(q)
+        const matchRole = (log.actor_role || '').toLowerCase().includes(q)
+        if (!matchActor && !matchAction && !matchDetails && !matchRole) return false
+      }
+      return true
+    })
+  }, [auditLogsList, auditCategoryFilter, auditSearchQuery])
+
+  // Export Audit Logs CSV
+  const handleExportAuditLogsCsv = () => {
+    const headers = ['Log ID', 'Timestamp', 'Actor Name', 'Actor Role', 'Category', 'Action', 'Details', 'Status']
+    const rows = filteredAuditLogs.map(l => [
+      l.id,
+      l.created_at,
+      `"${(l.actor_name || '').replace(/"/g, '""')}"`,
+      l.actor_role,
+      l.category,
+      `"${(l.action || '').replace(/"/g, '""')}"`,
+      `"${(l.details || '').replace(/"/g, '""')}"`,
+      l.status
+    ])
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `vfoods-audit-trail-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // Export Master Orders CSV
@@ -695,6 +867,21 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           </button>
 
           <button
+            className={`saas-nav-btn ${activeTab === 'audit-logs' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('audit-logs'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <ShieldAlert size={15} />
+              <span>Audit Logs</span>
+            </div>
+            {auditLogsList.length > 0 && (
+              <span className="saas-nav-badge" style={{ background: '#0284C7', color: '#FFFFFF' }}>
+                {auditLogsList.length}
+              </span>
+            )}
+          </button>
+
+          <button
             className={`saas-nav-btn ${activeTab === 'system-settings' ? 'active' : ''}`}
             onClick={() => { setActiveTab('system-settings'); setMobileMenuOpen(false); }}
           >
@@ -748,7 +935,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 {activeTab === 'settlements' && 'Franchise Payout Clearinghouse'}
                 {activeTab === 'analytics-reports' && 'Cross-Campus Analytics & Reports'}
                 {activeTab === 'coupons' && 'Platform Promotional Coupons'}
-                {activeTab === 'system-settings' && 'Global System Configuration & Audit'}
+                {activeTab === 'audit-logs' && 'Security & Operations Audit Trail'}
+                {activeTab === 'system-settings' && 'Global System Configuration Parameters'}
               </span>
             </div>
           </div>
@@ -1522,7 +1710,249 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           )}
 
           {/* ══════════════════════════════════════════════════════════
-              TAB 10: SYSTEM SETTINGS
+              TAB 10: AUDIT LOGS & SECURITY TELEMETRY
+              ══════════════════════════════════════════════════════════ */}
+          {activeTab === 'audit-logs' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Header & Controls Card */}
+              <div className="saas-card" style={{ padding: '16px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                        Security & Operations Audit Trail
+                      </h3>
+                      <span className="saas-badge saas-badge-neutral" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
+                        {filteredAuditLogs.length} Events
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
+                      Immutable ledger recorded in Supabase PostgreSQL tracking role elevations, outlet overrides, catalog edits, and system actions.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      className="saas-btn saas-btn-secondary saas-btn-sm"
+                      onClick={loadAuditLogs}
+                      disabled={auditLogsLoading}
+                      title="Refresh audit logs from Supabase"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <RefreshCw size={13} className={auditLogsLoading ? 'animate-spin' : ''} />
+                      <span>{auditLogsLoading ? 'Fetching...' : 'Sync'}</span>
+                    </button>
+
+                    <button
+                      className="saas-btn saas-btn-secondary saas-btn-sm"
+                      onClick={handleExportAuditLogsCsv}
+                      disabled={filteredAuditLogs.length === 0}
+                      title="Download audit logs as CSV"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <Download size={13} />
+                      <span>Export CSV</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filters & Search Row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #E2E8F0' }}>
+                  {/* Category Filter Pills */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {(['ALL', 'OUTLET', 'MENU', 'ORDER', 'USER', 'COUPON', 'SYSTEM', 'WALLET', 'SECURITY'] as const).map(cat => {
+                      const count = cat === 'ALL' ? auditLogsList.length : auditLogsList.filter(l => l.category === cat).length
+                      return (
+                        <button
+                          key={cat}
+                          className={`saas-btn saas-btn-sm ${auditCategoryFilter === cat ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                          onClick={() => setAuditCategoryFilter(cat)}
+                          style={{ fontSize: '11.5px', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                        >
+                          <span>{cat}</span>
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '1px 5px',
+                            borderRadius: '10px',
+                            background: auditCategoryFilter === cat ? 'rgba(255,255,255,0.25)' : '#E2E8F0',
+                            color: auditCategoryFilter === cat ? '#FFF' : '#475569',
+                            fontWeight: 700
+                          }}>
+                            {count}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Search Bar */}
+                  <div style={{ position: 'relative', width: '280px' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '9px', color: '#94A3B8' }} />
+                    <input
+                      type="text"
+                      placeholder="Search actor, action, details..."
+                      value={auditSearchQuery}
+                      onChange={e => setAuditSearchQuery(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '6px 12px 6px 32px',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '12.5px'
+                      }}
+                    />
+                    {auditSearchQuery && (
+                      <button
+                        onClick={() => setAuditSearchQuery('')}
+                        style={{ position: 'absolute', right: '8px', top: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Audit Table Card */}
+              <div className="saas-card">
+                <div className="saas-table-container">
+                  <table className="saas-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '130px' }}>Timestamp</th>
+                        <th style={{ width: '170px' }}>Actor & Role</th>
+                        <th style={{ width: '110px' }}>Category</th>
+                        <th style={{ width: '150px' }}>Action</th>
+                        <th>Event Description</th>
+                        <th style={{ width: '85px', textAlign: 'center' }}>Status</th>
+                        <th style={{ width: '70px', textAlign: 'right' }}>Inspect</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAuditLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                              <ShieldAlert size={32} style={{ color: '#94A3B8' }} />
+                              <div style={{ fontWeight: 600, fontSize: '14px', color: '#334155' }}>No audit events found</div>
+                              <div style={{ fontSize: '12px' }}>
+                                {auditSearchQuery || auditCategoryFilter !== 'ALL'
+                                  ? 'Try adjusting your search query or category filter.'
+                                  : 'Audit events will appear here as administrative actions occur.'}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredAuditLogs.map(log => {
+                          const tagClass =
+                            log.category === 'ORDER' ? 'tag-order' :
+                            (log.category === 'INVENTORY' || log.category === 'MENU') ? 'tag-stock' :
+                            log.category === 'OUTLET' ? 'tag-outlet' :
+                            log.category === 'WALLET' ? 'tag-wallet' : 'tag-security'
+
+                          const roleBadgeStyle =
+                            log.actor_role === 'super_admin' ? { background: '#FEF3C7', color: '#92400E' } :
+                            log.actor_role === 'shop_admin' ? { background: '#DBEAFE', color: '#1E40AF' } :
+                            log.actor_role === 'staff' ? { background: '#E0E7FF', color: '#3730A3' } :
+                            { background: '#F1F5F9', color: '#475569' }
+
+                          const dateObj = new Date(log.created_at)
+                          const timeStr = !isNaN(dateObj.getTime())
+                            ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                            : '—'
+                          const dateStr = !isNaN(dateObj.getTime())
+                            ? dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
+                            : ''
+
+                          return (
+                            <tr key={log.id}>
+                              <td>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: '#0F172A' }}>
+                                    {timeStr}
+                                  </span>
+                                  <span style={{ fontSize: '10.5px', color: '#94A3B8' }}>
+                                    {dateStr} ({formatElapsed(log.created_at)})
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '13px', color: '#0F172A' }}>
+                                    {log.actor_name || 'System'}
+                                  </span>
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    width: 'fit-content',
+                                    ...roleBadgeStyle
+                                  }}>
+                                    {log.actor_role || 'user'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                <span className={`audit-tag ${tagClass}`}>
+                                  {log.category}
+                                </span>
+                              </td>
+                              <td>
+                                <span style={{
+                                  fontFamily: 'monospace',
+                                  fontSize: '11.5px',
+                                  fontWeight: 700,
+                                  color: '#0F172A',
+                                  background: '#F8FAFC',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #E2E8F0'
+                                }}>
+                                  {log.action}
+                                </span>
+                              </td>
+                              <td style={{ fontSize: '12.5px', color: '#334155', maxWidth: '380px', lineHeight: 1.4 }}>
+                                {log.details}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 800,
+                                  padding: '2px 7px',
+                                  borderRadius: '4px',
+                                  background: log.status === 'SUCCESS' ? '#DCFCE7' : '#FEE2E2',
+                                  color: log.status === 'SUCCESS' ? '#166534' : '#991B1B'
+                                }}>
+                                  {log.status || 'SUCCESS'}
+                                </span>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <button
+                                  className="saas-btn saas-btn-sm saas-btn-secondary"
+                                  onClick={() => setSelectedAuditLog(log)}
+                                  title="Inspect full audit record & metadata"
+                                  style={{ padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  <Eye size={12} />
+                                  <span>View</span>
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════
+              TAB 11: SYSTEM SETTINGS
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'system-settings' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '700px' }}>
@@ -1577,6 +2007,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       onClick={() => {
                         setNotice('Global system parameters updated successfully.')
                         setTimeout(() => setNotice(null), 3000)
+                        if (addAuditLog) {
+                          addAuditLog(
+                            currentUser?.full_name || 'Super Admin',
+                            'super_admin',
+                            'SYSTEM',
+                            'UPDATE_PARAMETERS',
+                            `Updated platform commission to ${platformCommission}% and festival mode to ${eventMode ? 'ACTIVE' : 'DISABLED'}`
+                          )
+                        }
                       }}
                     >
                       Save Parameters
@@ -1750,6 +2189,73 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── AUDIT LOG INSPECT MODAL ── */}
+      {selectedAuditLog && (
+        <div className="saas-modal-backdrop" onClick={() => setSelectedAuditLog(null)}>
+          <div className="saas-modal-card" style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldAlert size={18} style={{ color: '#0284C7' }} />
+                <h3 className="saas-modal-title">Audit Record Details</h3>
+              </div>
+              <button className="saas-modal-close" onClick={() => setSelectedAuditLog(null)} aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12.5px' }}>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '11px', fontWeight: 600 }}>EVENT ID</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#0F172A', wordBreak: 'break-all' }}>{selectedAuditLog.id}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '11px', fontWeight: 600 }}>RECORDED AT</div>
+                  <div style={{ fontWeight: 600, color: '#0F172A' }}>{new Date(selectedAuditLog.created_at).toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '11px', fontWeight: 600 }}>ACTOR</div>
+                  <div style={{ fontWeight: 700, color: '#0F172A' }}>{selectedAuditLog.actor_name} ({selectedAuditLog.actor_role})</div>
+                </div>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '11px', fontWeight: 600 }}>CATEGORY / ACTION</div>
+                  <div style={{ fontWeight: 700, color: '#0284C7' }}>{selectedAuditLog.category} &bull; {selectedAuditLog.action}</div>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Description</div>
+                <div style={{ padding: '10px 12px', borderRadius: '6px', background: '#FFFFFF', border: '1px solid #CBD5E1', fontSize: '13px', color: '#0F172A' }}>
+                  {selectedAuditLog.details}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Metadata Payload</div>
+                <pre style={{
+                  margin: 0,
+                  padding: '12px',
+                  borderRadius: '6px',
+                  background: '#0F172A',
+                  color: '#38BDF8',
+                  fontSize: '11.5px',
+                  fontFamily: 'monospace',
+                  overflowX: 'auto',
+                  maxHeight: '220px'
+                }}>
+                  {JSON.stringify(selectedAuditLog.metadata || {}, null, 2)}
+                </pre>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px' }}>
+                <button className="saas-btn saas-btn-secondary" onClick={() => setSelectedAuditLog(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

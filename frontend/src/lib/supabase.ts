@@ -99,6 +99,34 @@ export type Database = {
       settings: {
         Row: { id: number; event_mode: boolean; updated_at?: string }
       }
+      audit_logs: {
+        Row: {
+          id: string
+          actor_id: string | null
+          actor_name: string
+          actor_role: string
+          category: string
+          action: string
+          details: string
+          metadata: Record<string, any>
+          ip_address: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          actor_id?: string | null
+          actor_name: string
+          actor_role?: string
+          category: string
+          action: string
+          details: string
+          metadata?: Record<string, any>
+          ip_address?: string | null
+          status?: string
+          created_at?: string
+        }
+      }
     }
   }
 }

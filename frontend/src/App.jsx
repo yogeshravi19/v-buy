@@ -347,21 +347,38 @@ function App() {
   // Live Audit Log System Telemetry (Starts clean and records live user interactions)
   const [auditLogs, setAuditLogs] = useState([])
 
-  const addAuditLog = useCallback((actor, role, category, action, details) => {
-    setAuditLogs(prev => [
-      {
-        id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        timestamp: new Date().toISOString(),
-        actor: actor || 'User',
-        role: role || 'user',
-        category,
-        action,
-        details,
+  const addAuditLog = useCallback((actor, role, category, action, details, metadata = {}) => {
+    const entry = {
+      id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toISOString(),
+      actor: actor || currentUser?.full_name || 'User',
+      role: role || currentUser?.role || 'user',
+      category: category || 'SYSTEM',
+      action: action || 'ACTION',
+      details: details || '',
+      status: 'SUCCESS'
+    }
+    setAuditLogs(prev => [entry, ...prev])
+
+    // Asynchronously persist to Supabase audit_logs table
+    if (supabase) {
+      const isValidUuid = currentUser?.id && typeof currentUser.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.id)
+      supabase.from('audit_logs').insert([{
+        actor_id: isValidUuid ? currentUser.id : null,
+        actor_name: entry.actor,
+        actor_role: entry.role,
+        category: entry.category,
+        action: entry.action,
+        details: entry.details,
+        metadata: metadata || {},
         status: 'SUCCESS'
-      },
-      ...prev
-    ])
-  }, [])
+      }]).then(({ error }) => {
+        if (error) console.warn('Supabase audit_logs insert note:', error.message)
+      }).catch(err => {
+        console.warn('Supabase audit_logs network error:', err)
+      })
+    }
+  }, [currentUser])
 
   // Item Ratings (Starts clean for live rating submissions)
   const [itemRatings, setItemRatings] = useState([])
@@ -1445,6 +1462,7 @@ function App() {
         setOrders={setOrders}
         advanceOrderStatus={advanceOrderStatus}
         addAuditLog={addAuditLog}
+        auditLogs={auditLogs}
         handleSignOut={handleSignOut}
         money={money}
         eventMode={eventMode}
