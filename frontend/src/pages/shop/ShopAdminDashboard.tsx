@@ -39,6 +39,13 @@ import {
   Layers,
   Menu
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { DataTable } from '../../components/ui/data-table'
+import { ShopAnalyticsChart } from '../../components/analytics/ShopAnalyticsChart'
+import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
+import { toast } from '../../components/ui/toast'
+import { Button } from '../../components/ui/button'
+import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
 
 export interface OrderItem {
@@ -125,6 +132,23 @@ function formatElapsed(dateString: string): string {
   if (mins < 60) return `${mins}m ago`
   const hrs = Math.floor(mins / 60)
   return `${hrs}h ${mins % 60}m ago`
+}
+
+function getAgingBadge(dateString: string) {
+  const diffMs = Date.now() - new Date(dateString).getTime()
+  const mins = Math.max(0, Math.floor(diffMs / 60000))
+  let badgeStyle = { color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', fontWeight: 600 }
+  if (mins >= 10) {
+    badgeStyle = { color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', fontWeight: 800 }
+  } else if (mins >= 5) {
+    badgeStyle = { color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A', fontWeight: 700 }
+  }
+  const text = mins < 1 ? 'Just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ${mins % 60}m ago`
+  return (
+    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '3px', ...badgeStyle }}>
+      <Clock size={11} /> {text}
+    </span>
+  )
 }
 
 export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
@@ -254,11 +278,201 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   }
 
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
+  const [staffToDelete, setStaffToDelete] = useState<{ id: string; name: string } | null>(null)
   const [staffForm, setStaffForm] = useState({
     full_name: '',
     phone: '',
     role: 'Counter Cashier'
   })
+
+  // TanStack Table Columns
+  const menuTableColumns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Item Name',
+      cell: ({ row }: any) => <div className="font-semibold text-slate-900">{row.original.name}</div>
+    },
+    {
+      accessorKey: 'category',
+      header: 'Category',
+      cell: ({ row }: any) => <span className="capitalize text-slate-600">{row.original.category}</span>
+    },
+    {
+      accessorKey: 'is_veg',
+      header: 'Dietary',
+      cell: ({ row }: any) => row.original.is_veg ? (
+        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-[11px] border border-emerald-200">
+          VEG
+        </span>
+      ) : (
+        <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-semibold text-[11px] border border-rose-200">
+          NON-VEG
+        </span>
+      )
+    },
+    {
+      accessorKey: 'price',
+      header: 'Price',
+      cell: ({ row }: any) => <span className="font-semibold tabular-nums text-slate-900">{money(row.original.price)}</span>
+    },
+    {
+      accessorKey: 'stock_qty',
+      header: 'Stock Qty',
+      cell: ({ row }: any) => (
+        <span className={cn('font-semibold tabular-nums', (row.original.stock_qty ?? 10) <= 5 ? 'text-rose-600 font-bold' : 'text-slate-800')}>
+          {row.original.stock_qty ?? 10}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'available',
+      header: 'Availability',
+      cell: ({ row }: any) => (
+        <button
+          onClick={() => handleToggleAvailability(row.original.id, row.original.available)}
+          className={cn(
+            'px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors',
+            row.original.available ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+          )}
+        >
+          {row.original.available ? 'Mark Unavailable' : 'Mark Available'}
+        </button>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <div className="flex items-center gap-1.5 justify-end">
+          <button
+            onClick={() => openEditMenuModal(row.original)}
+            className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors"
+            title="Edit item"
+          >
+            <Edit size={13} />
+          </button>
+          <button
+            onClick={() => handleDeleteMenuItem(row.original.id, row.original.name)}
+            className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors"
+            title="Delete item"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      )
+    }
+  ], [money])
+
+  const staffTableColumns = useMemo(() => [
+    {
+      accessorKey: 'full_name',
+      header: 'Staff Name',
+      cell: ({ row }: any) => <span className="font-bold text-slate-900">{row.original.full_name}</span>
+    },
+    {
+      accessorKey: 'phone',
+      header: 'Mobile Phone',
+      cell: ({ row }: any) => <span className="font-mono text-slate-600 tabular-nums">{row.original.phone}</span>
+    },
+    {
+      accessorKey: 'role',
+      header: 'Assigned Role',
+      cell: ({ row }: any) => <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-xs">{row.original.role}</span>
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ row }: any) => row.original.is_active ? (
+        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-xs border border-emerald-200">
+          Active
+        </span>
+      ) : (
+        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold text-xs border border-slate-200">
+          Deactivated
+        </span>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <div className="flex items-center gap-1.5 justify-end">
+          <button
+            onClick={() => handleToggleStaff(row.original.id)}
+            className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            {row.original.is_active ? 'Deactivate' : 'Activate'}
+          </button>
+          <button
+            onClick={() => setStaffToDelete({ id: row.original.id, name: row.original.full_name })}
+            className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors"
+            title="Remove staff member"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      )
+    }
+  ], [])
+
+  const orderTableColumns = useMemo(() => [
+    {
+      accessorKey: 'token',
+      header: 'Token',
+      cell: ({ row }: any) => (
+        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-xs tabular-nums">
+          #{row.original.token || row.original.id}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'customer_name',
+      header: 'Customer & Items',
+      cell: ({ row }: any) => (
+        <div>
+          <div className="font-semibold text-slate-900">{row.original.customer_name || `Customer #${row.original.id % 900}`}</div>
+          <div className="text-slate-500 text-xs truncate max-w-xs">{(row.original.order_items || []).map((i: any) => `${i.name} ×${i.qty}`).join(' • ')}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Elapsed',
+      cell: ({ row }: any) => getAgingBadge(row.original.created_at)
+    },
+    {
+      accessorKey: 'total',
+      header: 'Amount',
+      cell: ({ row }: any) => <span className="font-semibold text-slate-900 tabular-nums">{money(row.original.total)}</span>
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }: any) => (
+        <span className={cn(
+          'px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider',
+          row.original.status === 'placed' && 'bg-amber-100 text-amber-800 border border-amber-200',
+          row.original.status === 'preparing' && 'bg-blue-100 text-blue-800 border border-blue-200',
+          row.original.status === 'ready' && 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+          row.original.status === 'collected' && 'bg-slate-100 text-slate-700 border border-slate-200'
+        )}>
+          {row.original.status}
+        </span>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'Advance',
+      cell: ({ row }: any) => (
+        <div className="text-right">
+          {row.original.status === 'placed' && <button className="saas-btn saas-btn-primary saas-btn-sm" onClick={() => handleAdvanceStatus(row.original.id, 'placed')}>Start Prep</button>}
+          {row.original.status === 'preparing' && <button className="saas-btn saas-btn-success saas-btn-sm" onClick={() => handleAdvanceStatus(row.original.id, 'preparing')}>Mark Ready</button>}
+          {row.original.status === 'ready' && <button className="saas-btn saas-btn-secondary saas-btn-sm" onClick={() => handleAdvanceStatus(row.original.id, 'ready')}>Handover</button>}
+          {row.original.status === 'collected' && <span className="text-emerald-700 font-semibold text-xs">Delivered</span>}
+        </div>
+      )
+    }
+  ], [money])
 
   // POS State
   const [posCart, setPosCart] = useState<{ [id: number]: number }>({})
@@ -1038,77 +1252,138 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Executive KPI Grid (Figma Restaurant Dashboard Style) */}
-              <div className="saas-kpi-grid">
-                <div className="saas-kpi-card" style={{ padding: '20px' }}>
-                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Gross Sales Today</span>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <TrendingUp size={18} className="text-blue-600" />
+              {/* Section 1: Things to check (Metrics) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>
+                    Things to check — Operations Overview
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8' }}>Auto-updating</span>
+                </div>
+                <div className="saas-kpi-grid">
+                  <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                    <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Gross Sales Today</span>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TrendingUp size={18} className="text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
+                      {money(totalRevenue)}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
+                        <TrendingUp size={11} /> +9.6% vs yesterday
+                      </span>
+                      <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>All payment channels</span>
                     </div>
                   </div>
-                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
-                    {money(totalRevenue)}
+
+                  <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                    <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Net Payout (95%)</span>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Banknote size={18} className="text-emerald-600" />
+                      </div>
+                    </div>
+                    <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
+                      {money(netEarnings)}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
+                        <TrendingUp size={11} /> +9.6% net yield
+                      </span>
+                      <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>After 5% platform fee</span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
-                      <TrendingUp size={11} /> +9.6% vs yesterday
-                    </span>
-                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>All payment channels</span>
+
+                  <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                    <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Active Kitchen Load</span>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ChefHat size={18} className="text-amber-600" />
+                      </div>
+                    </div>
+                    <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
+                      {activeKitchenCount}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#C2410C', background: '#FFEDD5', padding: '2px 8px', borderRadius: '12px' }}>
+                        <Clock size={11} /> Live Prep Queue
+                      </span>
+                      <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>Currently in kitchen</span>
+                    </div>
+                  </div>
+
+                  <div className="saas-kpi-card" style={{ padding: '20px' }}>
+                    <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Completed Orders</span>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CheckCircle2 size={18} className="text-slate-700" />
+                      </div>
+                    </div>
+                    <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
+                      {completedCount}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
+                        <TrendingUp size={11} /> +8.6% completion
+                      </span>
+                      <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>Fulfilled today</span>
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="saas-kpi-card" style={{ padding: '20px' }}>
-                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Net Payout (95%)</span>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Banknote size={18} className="text-emerald-600" />
-                    </div>
-                  </div>
-                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
-                    {money(netEarnings)}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
-                      <TrendingUp size={11} /> +9.6% net yield
-                    </span>
-                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>After 5% platform fee</span>
-                  </div>
+              {/* Section 2: Things to act on (Actionable alerts) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#B45309' }}>
+                    Things to act on — Immediate Attention
+                  </span>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#B45309', background: '#FEF3C7', padding: '1px 7px', borderRadius: '10px' }}>
+                    Requires Action
+                  </span>
                 </div>
-
-                <div className="saas-kpi-card" style={{ padding: '20px' }}>
-                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Active Kitchen Load</span>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <ChefHat size={18} className="text-amber-600" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                  <div style={{ padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertTriangle size={15} className="text-amber-600" />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                          Low Stock Items ({menuItems.filter(i => (i.stock_qty ?? 10) <= 5).length})
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
+                        {menuItems.filter(i => (i.stock_qty ?? 10) <= 5).map(i => i.name).slice(0, 3).join(', ') || 'All catalog items are stocked.'}
+                      </p>
                     </div>
+                    <button
+                      className="saas-btn saas-btn-secondary saas-btn-sm"
+                      onClick={() => setActiveTab('menu-items')}
+                    >
+                      Restock
+                    </button>
                   </div>
-                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
-                    {activeKitchenCount}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#C2410C', background: '#FFEDD5', padding: '2px 8px', borderRadius: '12px' }}>
-                      <Clock size={11} /> Live Prep Queue
-                    </span>
-                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>Currently in kitchen</span>
-                  </div>
-                </div>
 
-                <div className="saas-kpi-card" style={{ padding: '20px' }}>
-                  <div className="saas-kpi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="saas-kpi-title" style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Completed Orders</span>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CheckCircle2 size={18} className="text-slate-700" />
+                  <div style={{ padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Users size={15} className="text-blue-600" />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                          Active Staff Roster ({staffList.filter(s => s.is_active).length} on duty)
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
+                        Review terminal access and shifts for the current meal window.
+                      </p>
                     </div>
-                  </div>
-                  <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '26px', fontWeight: 800, margin: '8px 0 6px' }}>
-                    {completedCount}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px' }}>
-                      <TrendingUp size={11} /> +8.6% completion
-                    </span>
-                    <span className="saas-kpi-sub" style={{ fontSize: '11.5px', color: '#64748B' }}>Fulfilled today</span>
+                    <button
+                      className="saas-btn saas-btn-secondary saas-btn-sm"
+                      onClick={() => setActiveTab('staff')}
+                    >
+                      Manage
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1385,88 +1660,12 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="saas-card">
-                <div className="saas-table-container">
-                  <table className="saas-table">
-                    <thead>
-                      <tr>
-                        <th>Token #</th>
-                        <th>User / Items</th>
-                        <th>Placed</th>
-                        <th>Method</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredOrders.map(order => (
-                        <tr key={order.id}>
-                          <td>
-                            <span style={{
-                              fontWeight: 800,
-                              fontSize: '14px',
-                              fontFamily: 'monospace',
-                              padding: '3px 8px',
-                              background: '#F1F5F9',
-                              borderRadius: '4px',
-                              color: '#0F172A'
-                            }}>
-                              #{order.token || order.id}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ fontWeight: 700, fontSize: '13px' }}>{order.customer_name}</div>
-                            <div style={{ fontSize: '12px', color: '#64748B' }}>
-                              {(order.order_items || []).map(i => `${i.name} (×${i.qty})`).join(', ') || 'Counter Order'}
-                            </div>
-                          </td>
-                          <td style={{ fontSize: '12px', color: '#64748B' }}>{formatElapsed(order.created_at)}</td>
-                          <td style={{ fontSize: '12px' }}>{order.payment_method || 'Online UPI'}</td>
-                          <td style={{ fontWeight: 700 }}>{money(order.total)}</td>
-                          <td>
-                            <span className={`saas-badge ${
-                              order.status === 'placed' ? 'saas-badge-warning' :
-                              order.status === 'preparing' ? 'saas-badge-info' :
-                              order.status === 'ready' ? 'saas-badge-success' : 'saas-badge-neutral'
-                            }`}>
-                              {order.status.toUpperCase()}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'inline-flex', gap: '6px' }}>
-                              {order.status === 'placed' && (
-                                <button className="saas-btn saas-btn-primary saas-btn-sm" onClick={() => handleAdvanceStatus(order.id, 'placed')}>
-                                  Prep
-                                </button>
-                              )}
-                              {order.status === 'preparing' && (
-                                <button className="saas-btn saas-btn-success saas-btn-sm" onClick={() => handleAdvanceStatus(order.id, 'preparing')}>
-                                  Ready
-                                </button>
-                              )}
-                              {order.status === 'ready' && (
-                                <button className="saas-btn saas-btn-secondary saas-btn-sm" onClick={() => handleAdvanceStatus(order.id, 'ready')}>
-                                  Deliver
-                                </button>
-                              )}
-                              {order.status !== 'cancelled' && order.status !== 'collected' && (
-                                <button
-                                  className="saas-btn saas-btn-danger saas-btn-sm"
-                                  onClick={() => handleCancelOrder(order.id)}
-                                  title="Cancel and refund"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              {/* TanStack Live Orders Table */}
+              <DataTable
+                columns={orderTableColumns}
+                data={filteredOrders}
+                searchPlaceholder="Search orders by token or customer name..."
+              />
             </div>
           )}
 
@@ -1723,87 +1922,12 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 </button>
               </div>
 
-              {/* Menu Table */}
-              <div className="saas-card">
-                <div className="saas-table-container">
-                  <table className="saas-table">
-                    <thead>
-                      <tr>
-                        <th>Item Name</th>
-                        <th>Category</th>
-                        <th>Dietary</th>
-                        <th>Price</th>
-                        <th>Stock Qty</th>
-                        <th>Online Availability</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {menuItems.map(item => (
-                        <tr key={item.id}>
-                          <td>
-                            <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0F172A' }}>{item.name}</div>
-                          </td>
-                          <td style={{ textTransform: 'capitalize', fontSize: '12px' }}>{item.category}</td>
-                          <td>
-                            <span style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              background: item.is_veg ? '#DCFCE7' : '#FEE2E2',
-                              color: item.is_veg ? '#166534' : '#991B1B'
-                            }}>
-                              {item.is_veg ? 'VEG' : 'NON-VEG'}
-                            </span>
-                          </td>
-                          <td style={{ fontWeight: 700 }}>{money(item.price)}</td>
-                          <td>
-                            <span style={{ fontWeight: 700, color: (item.stock_qty ?? 10) <= 5 ? '#DC2626' : '#0F172A' }}>
-                              {item.stock_qty ?? 10}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              onClick={() => handleToggleAvailability(item.id, item.available)}
-                              style={{
-                                border: 'none',
-                                background: item.available ? '#DCFCE7' : '#F1F5F9',
-                                color: item.available ? '#166534' : '#64748B',
-                                padding: '4px 10px',
-                                borderRadius: '12px',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {item.available ? 'Available' : 'Disabled'}
-                            </button>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <button
-                                className="saas-btn saas-btn-secondary saas-btn-sm"
-                                onClick={() => openEditMenuModal(item)}
-                                title="Edit menu item"
-                              >
-                                <Edit size={13} />
-                              </button>
-                              <button
-                                className="saas-btn saas-btn-danger saas-btn-sm"
-                                onClick={() => handleDeleteMenuItem(item.id, item.name)}
-                                title="Delete from menu"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              {/* TanStack Menu Catalog Table */}
+              <DataTable
+                columns={menuTableColumns}
+                data={menuItems}
+                searchPlaceholder="Search menu catalog by name or category..."
+              />
             </div>
           )}
 
@@ -2095,49 +2219,12 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 </button>
               </div>
 
-              <div className="saas-card">
-                <div className="saas-table-container">
-                  <table className="saas-table">
-                    <thead>
-                      <tr>
-                        <th>Staff Name</th>
-                        <th>Mobile Number</th>
-                        <th>Assigned Role</th>
-                        <th>Status</th>
-                        <th>Joined</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {staffList.map(st => (
-                        <tr key={st.id}>
-                          <td style={{ fontWeight: 700 }}>{st.full_name}</td>
-                          <td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{st.phone}</td>
-                          <td>
-                            <span style={{ fontSize: '12px', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                              {st.role}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`saas-badge ${st.is_active ? 'saas-badge-success' : 'saas-badge-neutral'}`}>
-                              {st.is_active ? 'Active' : 'Deactivated'}
-                            </span>
-                          </td>
-                          <td style={{ fontSize: '12px', color: '#64748B' }}>{st.created_at}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="saas-btn saas-btn-secondary saas-btn-sm"
-                              onClick={() => handleToggleStaff(st.id)}
-                            >
-                              {st.is_active ? 'Deactivate' : 'Activate'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              {/* TanStack Staff Directory Table */}
+              <DataTable
+                columns={staffTableColumns}
+                data={staffList}
+                searchPlaceholder="Search staff by name, phone or role..."
+              />
             </div>
           )}
 
@@ -2185,6 +2272,9 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                   <div className="saas-kpi-sub">Per ticket average</div>
                 </div>
               </div>
+
+              {/* Recharts Analytics Charts (Royal Blue & Emerald) */}
+              <ShopAnalyticsChart totalRevenue={totalRevenue} />
 
               {/* Payment Methods Breakdown */}
               <div className="saas-card" style={{ padding: '20px' }}>
@@ -2377,99 +2467,109 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         </div>
       </main>
 
-      {/* ── ADD / EDIT MENU ITEM MODAL ── */}
-      {showAddMenuModal && (
-        <div className="saas-modal-backdrop" onClick={() => { setShowAddMenuModal(false); setEditingMenuItem(null) }}>
-          <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
-            <div className="saas-modal-header">
-              <h3 className="saas-modal-title">{editingMenuItem ? 'Edit Menu Item' : 'Add Menu Item'}</h3>
-              <button className="saas-modal-close" onClick={() => { setShowAddMenuModal(false); setEditingMenuItem(null) }}>
-                <X size={16} />
-              </button>
+      {/* Shared MenuItemFormDialog with react-hook-form and Zod validation */}
+      <MenuItemFormDialog
+        isOpen={showAddMenuModal}
+        onClose={() => {
+          setShowAddMenuModal(false)
+          setEditingMenuItem(null)
+        }}
+        initialData={editingMenuItem}
+        onSave={async (formData: any) => {
+          if (editingMenuItem) {
+            setMenuItems(prev => prev.map(i => i.id === editingMenuItem.id ? {
+              ...i,
+              name: formData.name,
+              price: Number(formData.price),
+              category: formData.category,
+              is_veg: formData.is_veg,
+              stock_qty: Number(formData.stock_qty),
+              image_url: formData.image_url
+            } : i))
+            try {
+              await supabase
+                .from('menu_items')
+                .update({
+                  name: formData.name,
+                  price: Number(formData.price),
+                  category: formData.category,
+                  is_veg: formData.is_veg,
+                  stock_qty: Number(formData.stock_qty),
+                  image_url: formData.image_url
+                })
+                .eq('id', editingMenuItem.id)
+            } catch (err) {
+              console.error('Error updating menu item:', err)
+            }
+          } else {
+            const newItem: MenuItem = {
+              id: Date.now(),
+              outlet_id: activeOutletId,
+              name: formData.name,
+              price: Number(formData.price),
+              category: formData.category,
+              is_veg: formData.is_veg,
+              stock_qty: Number(formData.stock_qty),
+              available: true
+            }
+            setMenuItems(prev => [newItem, ...prev])
+            try {
+              const { data, error } = await supabase
+                .from('menu_items')
+                .insert({
+                  outlet_id: activeOutletId,
+                  name: formData.name,
+                  price: Number(formData.price),
+                  category: formData.category,
+                  is_veg: formData.is_veg,
+                  stock_qty: Number(formData.stock_qty),
+                  available: true,
+                  image_url: formData.image_url
+                })
+                .select()
+                .single()
+              if (!error && data) {
+                setMenuItems(prev => prev.map(i => i.id === newItem.id ? (data as MenuItem) : i))
+              }
+            } catch (err) {
+              console.error('Error inserting menu item:', err)
+            }
+          }
+        }}
+      />
+
+      {/* Staff Removal Confirmation Modal */}
+      {staffToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]"
+          onClick={() => setStaffToDelete(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl p-5 border border-slate-200 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 text-rose-600 font-semibold text-sm">
+              <AlertTriangle size={18} />
+              <span>Confirm Team Member Removal</span>
             </div>
-            <form onSubmit={handleSaveMenuItem} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Masala Dosa"
-                  value={menuForm.name}
-                  onChange={e => setMenuForm(prev => ({ ...prev, name: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={menuForm.price}
-                    onChange={e => setMenuForm(prev => ({ ...prev, price: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Category
-                  </label>
-                  <select
-                    value={menuForm.category}
-                    onChange={e => setMenuForm(prev => ({ ...prev, category: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  >
-                    <option value="snacks">Snacks</option>
-                    <option value="meals">Meals</option>
-                    <option value="beverages">Beverages</option>
-                    <option value="desserts">Desserts</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Dietary Classification
-                  </label>
-                  <select
-                    value={menuForm.is_veg ? 'veg' : 'non-veg'}
-                    onChange={e => setMenuForm(prev => ({ ...prev, is_veg: e.target.value === 'veg' }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  >
-                    <option value="veg">Vegetarian</option>
-                    <option value="non-veg">Non-Vegetarian</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Initial Stock Count
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={menuForm.stock_qty}
-                    onChange={e => setMenuForm(prev => ({ ...prev, stock_qty: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => { setShowAddMenuModal(false); setEditingMenuItem(null) }}>
-                  Cancel
-                </button>
-                <button type="submit" className="saas-btn saas-btn-primary">
-                  {editingMenuItem ? 'Update Item' : 'Save Item'}
-                </button>
-              </div>
-            </form>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to remove <strong>{staffToDelete.name}</strong> from the outlet staff roster? Active terminal credentials will be revoked.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button variant="secondary" onClick={() => setStaffToDelete(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setStaffList(prev => prev.filter(s => s.id !== staffToDelete.id))
+                  toast.success(`Removed "${staffToDelete.name}" from team`)
+                  setStaffToDelete(null)
+                }}
+              >
+                Remove Member
+              </Button>
+            </div>
           </div>
         </div>
       )}
