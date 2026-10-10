@@ -31,5 +31,6 @@ Every document is available as both Markdown (`.md`) and a standalone printable 
 10. **[10-ui-ux-design-system.md](10-ui-ux-design-system.md)** ([PDF](10-ui-ux-design-system.pdf)): Catalog of UI polish features (Skeleton shimmer screens, Spotlight Search `⌘K`, Live Order Tracker, Mobile Bottom Sheets, Web Haptics, and KDS ticket aging).
 11. **[PRESENTATION_DECK.md](PRESENTATION_DECK.md)** ([PDF](PRESENTATION_DECK.pdf)): Complete slide-by-slide master presentation covering business model, technical stack comparisons, and startup registration (LLP vs Pvt Ltd).
 12. **[DATABASE.md](DATABASE.md)**: Exhaustive technical database specification with complete SQL schemas, RLS policies, trigger invariants, and forensic audit tables.
+13. **[BACKEND_AND_DATABASE_ARCHITECTURE.md](BACKEND_AND_DATABASE_ARCHITECTURE.md)** ([PDF](BACKEND_AND_DATABASE_ARCHITECTURE.pdf)): Complete 23-table schema reference, SQL DDL data dictionary, 4-tier high-traffic caching architecture, and end-to-end backend operational guide.
 
 
