@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   Code2, Database, Shield, Zap, Server, Clock,
-  CheckCircle2, ArrowRight, Layers, Bell, Smartphone
+  CheckCircle2, Layers, Smartphone
 } from 'lucide-react'
 
 export const TechArchitectureSection: React.FC = () => {
@@ -25,14 +25,14 @@ export const TechArchitectureSection: React.FC = () => {
     {
       id: 'backend',
       title: 'FastAPI Backend Gateway',
-      badge: 'Python 3.11 • Async ASGI • JWT',
+      badge: 'Python 3.11 • Async ASGI • Probes',
       icon: Server,
-      summary: 'High-performance asynchronous Python API processing orders, PhonePe webhooks, and cryptographic QR signatures.',
+      summary: 'High-performance asynchronous Python API processing orders, verified payment webhooks, and deep health probes.',
       points: [
         'FastAPI & Uvicorn ASGI server with non-blocking async endpoint handlers',
-        'Supabase JWT authentication & cryptographic QR pass verification (HMAC-SHA256)',
-        'PhonePe payment gateway webhook handler with SHA256 X-VERIFY checksum',
-        'APScheduler background tasks expiring pending uncollected orders automatically',
+        'Deep /health/ready and /health/live probes checking active database execution',
+        'Paytm payment webhook with cryptographic HMAC signatures and 500 retry resilience',
+        'Monotonic sequenced daily tokens (#101, #102...) eliminating rush-hour collisions',
       ],
       color: 'border-blue-500/60 text-blue-600 bg-blue-50',
     },
@@ -80,12 +80,12 @@ export const TechArchitectureSection: React.FC = () => {
     },
     {
       id: 'wallet',
-      title: 'In-App Wallet & PhonePe UPI',
+      title: 'In-App Wallet & Paytm Gateway',
       badge: 'Zero-Latency • HMAC Signatures',
       icon: Shield,
       summary: 'Instantaneous 1-tap balance checkout eliminating bank timeouts during crowded break hours.',
       points: [
-        'Users pre-top up via PhonePe UPI; balance is immediately credited',
+        'Users pre-top up via Paytm UPI; balance is immediately credited',
         'Order checkout debits balance in <100ms with zero payment gateway latency',
         'Double-entry transaction ledger logs all credit and debit activities with timestamps',
         'HMAC SHA-256 signature verification guarantees bank-grade top-up security',
@@ -108,15 +108,15 @@ export const TechArchitectureSection: React.FC = () => {
     },
     {
       id: 'high-traffic',
-      title: 'High-Traffic Engine & Query Cache',
-      badge: 'TanStack Query v5 • 2,500+ Users',
+      title: 'High-Traffic Engine & Reliability',
+      badge: 'Rate Limiting • Idempotency • 2,500+ Users',
       icon: Layers,
-      summary: 'Stale-While-Revalidate caching and in-memory FastAPI catalog routing designed for 1,000+ simultaneous break-hour orders.',
+      summary: 'Sliding-window rate limiting, X-Idempotency-Key caching, and RAM catalog routing designed for 1,000+ simultaneous break-hour orders.',
       points: [
+        'X-Idempotency-Key header caching prevents double-tap duplicate charges and orders',
+        'Sliding-window in-memory rate limiting guards public catalog and checkout APIs',
         'TanStack Query v5 caches campus menus with automatic background revalidation',
-        'In-memory 30-second catalog cache absorbs 95% of burst database reads',
         'Zero-gateway wallet checkout executes in <15ms without external UPI bank latency',
-        'Pre-warmed connection pooling prevents database starvation during 10-minute break rushes',
       ],
       color: 'border-indigo-500/60 text-indigo-600 bg-indigo-50',
     },

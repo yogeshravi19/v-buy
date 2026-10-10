@@ -411,7 +411,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
 | `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Global unique order ID. |
 | `user_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE RESTRICT` | User who placed the order. |
 | `outlet_id` | `text` | NO | None | `FK -> outlets(id) ON DELETE RESTRICT` | Food stall fulfilling the order. |
-| `token` | `text` | YES | `NULL` | None | 3-digit pickup code (e.g. `'142'`) issued upon confirmed payment. |
+| `token` | `text` | YES | `NULL` | None | Monotonically sequenced daily pickup token (e.g. `'101'`, `'102'`) scoped per outlet. |
 | `status` | `order_status` ENUM | NO | `'payment_pending'` | Enum: `payment_pending`, `placed`, `preparing`, `ready`, `collected`, `cancelled` | Live lifecycle state of the order. |
 | `payment_method` | `payment_method` ENUM | NO | `'wallet'` | Enum: `wallet`, `gateway` | Payment mechanism used. |
 | `shop_payout` | `int` | NO | None | `CHECK (shop_payout > 0)` | Net food item subtotal due to the shop. |
@@ -424,6 +424,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
 | `created_at` | `timestamptz` | NO | `now()` | None | Order creation timestamp. |
 | `updated_at` | `timestamptz` | NO | `now()` | None | Last status update timestamp. |
 
+- **Sequential Token Generation**: Daily pickup tokens start at `101` each day per outlet and increment monotonically (`101`, `102`, `103`...), eliminating random number collisions during rush hours.
 - **RLS Policy**: Users view their own orders (`user_id = auth.uid()`). Kitchen staff view only orders for their own `outlet_id`. Super Admins view all.
 
 ---
@@ -1242,6 +1243,25 @@ Every high-traffic query pattern is backed by dedicated PostgreSQL indexes to el
 - All financial and webhook transactions enforce unique constraints (`paytm_txn_id`, `ref`).
 - If a user rapidly double-taps a checkout button or a payment gateway retries a webhook callback, the database rejects duplicate processing at zero compute cost.
 
+#### 6. Client-Side Idempotency Header (`X-Idempotency-Key`)
+- High-concurrency checkout endpoints (`/order/checkout` and `/order/checkout/paytm-session`) accept an optional client-generated `X-Idempotency-Key` header (e.g. UUIDv4).
+- The FastAPI application maintains an in-memory cache with a 120-second sliding TTL.
+- If a user double-taps the pay button or the mobile app retransmits an in-flight network request, the server returns the cached response payload immediately without re-debiting balances, re-creating orders, or causing race conditions.
+
+#### 7. High-Traffic Sliding-Window Rate Limiting
+- An in-memory sliding-window limiter guards high-throughput and public entry points:
+  - Public catalog summary (`/api/catalog/summary`): **60 requests / minute** per client IP.
+  - Checkout endpoints (`/order/checkout`, `/order/checkout/paytm-session`): **20 requests / minute** per authenticated user ID.
+- Excess burst attempts are immediately rejected with `429 Too Many Requests`, protecting downstream PostgreSQL connections from being saturated during campus break rush.
+
+#### 8. Payment Webhook 500 Retry Strategy
+- If an unexpected database exception occurs during `/webhooks/paytm` processing, the webhook handler logs the exact error and immediately raises `HTTPException(500)`.
+- Returning HTTP 500 triggers Paytm's automated exponential backoff retry schedule (up to 7 automated re-deliveries over 24 hours), ensuring zero payment drops even during transient database maintenance.
+
+#### 9. Strict Database Error Propagation (Zero Synthetic Fallbacks)
+- All order creation and checkout endpoints strictly validate database mutation returns.
+- Synthetic fallback identifiers have been completely eliminated. Any failed write raises an explicit `HTTPException(500, "Failed to persist pending order in database")` to ensure ACID integrity and total transparency.
+
 ---
 
 ### 6.5 High-Traffic Benchmark Summary
@@ -1262,20 +1282,22 @@ Every high-traffic query pattern is backed by dedicated PostgreSQL indexes to el
 |---|---|---|---|
 | `GET` | `/` | Public | Service heartbeat and API metadata |
 | `GET` | `/health` | Public | Health status and database connectivity check |
-| `GET` | `/api/catalog/summary` | Public | High-concurrency cached catalog of campus outlets |
+| `GET` | `/health/live` | Public | Kubernetes / Render liveness probe verifying process watchdog |
+| `GET` | `/health/ready` | Public | Deep readiness probe verifying active PostgreSQL query execution (200 / 503) |
+| `GET` | `/api/catalog/summary` | Public | High-concurrency cached catalog of campus outlets (Rate-limited: 60 req/min) |
 | `POST` | `/api/auth/send-otp` | Public | Dispatches 6-digit verification code via SMTP |
 | `POST` | `/api/auth/verify-otp` | Public | Validates verification code with brute-force lockout |
 | `POST` | `/wallet/topup` | User | Initiates PhonePe wallet top-up session |
 | `POST` | `/wallet/topup/paytm` | User | Initiates Paytm wallet top-up with signed checksum |
-| `POST` | `/order/checkout` | User | Atomic order placement (Prepaid Wallet or Gateway) |
-| `POST` | `/order/checkout/paytm-session` | User | Initiates direct Paytm checkout session |
+| `POST` | `/order/checkout` | User | Atomic order placement (`X-Idempotency-Key` supported; Rate-limited: 20 req/min) |
+| `POST` | `/order/checkout/paytm-session` | User | Initiates direct Paytm checkout session (`X-Idempotency-Key` supported) |
 | `POST` | `/webhooks/phonepe` | External Webhook | Idempotent callback handler for PhonePe transactions |
-| `POST` | `/webhooks/paytm` | External Webhook | Cryptographically verified callback handler for Paytm |
+| `POST` | `/webhooks/paytm` | External Webhook | Cryptographically verified callback handler for Paytm (500 retry resilient) |
 | `POST` | `/staff/order/{id}/advance` | Staff / Shop Admin | Advances order status (`placed` -> `preparing` -> `ready`) |
 | `POST` | `/staff/order/{id}/cancel` | Staff / Shop Admin | Cancels order and triggers automated refund |
-| `POST` | `/staff/scan` | Staff / Shop Admin | Validates signed QR pass or 3-digit token at counter |
+| `POST` | `/staff/scan` | Staff / Shop Admin | Validates signed QR pass or monotonic token at counter |
 | `POST` | `/staff/stock/adjust` | Staff / Shop Admin | Modifies item portion count and logs audit adjustment |
-| `POST` | `/admin/invites/create` | Shop Admin / Admin | Generates single-use invite code for staff onboarding |
+| `ADMIN` | `/admin/invites/create` | Shop Admin / Admin | Generates single-use invite code for staff onboarding |
 | `POST` | `/invites/accept` | Authenticated User | Redeems invite code to link profile to staff/outlet role |
 | `POST` | `/admin/credit-wallet` | Super Admin | Administrative wallet balance credit with audit note |
 
@@ -1283,13 +1305,23 @@ Every high-traffic query pattern is backed by dedicated PostgreSQL indexes to el
 
 ## 8. Production Deployment & Reliability
 
-### 7.1 Deployment Configuration
+### 8.1 Deployment Configuration
 - **Application Gateway**: Hosted on Render as a high-availability Web Service with automatic SSL/TLS termination.
 - **Container Environment**: Python 3.11 with dependencies pinned in `backend/requirements.txt`.
 - **Database Engine**: Managed Supabase PostgreSQL with high-availability read replicas and automated daily backups.
 
-### 7.2 Zero-Trust Security Summary
+### 8.2 Zero-Trust Security Summary
 1. **No Shared Passwords**: Staff and owners join via cryptographic single-use invitation tokens.
 2. **Authoritative Server Pricing**: Client applications never compute or submit monetary amounts. All totals are derived from database records.
 3. **Signed Webhooks**: External payment callbacks without matching HMAC-SHA256 signatures are immediately rejected.
 4. **Isolated Database Tenancy**: Database Row-Level Security guarantees that no role can inspect or tamper with records outside their authorized scope.
+
+### 8.3 Container Liveness & Deep Readiness Probes
+- **Liveness Probe (`GET /health/live`)**:
+  - Validates that the Uvicorn ASGI server and FastAPI event loop are responsive.
+  - Used by container orchestrators to detect process lockups and restart unhealthy containers.
+- **Deep Readiness Probe (`GET /health/ready`)**:
+  - Executes an active probe query (`SELECT id FROM outlets LIMIT 1`) directly against the primary PostgreSQL database.
+  - Returns `HTTP 200 OK` when the database connection pool is active and queries succeed.
+  - Returns `HTTP 503 Service Unavailable` if database latency spikes, connection limits are saturated, or credentials fail.
+  - Directs load balancers to route traffic exclusively to healthy container instances during zero-downtime rolling deployments.

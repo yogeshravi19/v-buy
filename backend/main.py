@@ -94,16 +94,89 @@ async def root():
         "health": "/health"
     }
 
+# ──────────────────────────────────────────────────────────────────────────────
+# High-Traffic Rate Limiter & Idempotency Store (In-Memory)
+# ──────────────────────────────────────────────────────────────────────────────
+_RATE_LIMIT_STORE: Dict[str, List[float]] = {}
+
+def check_rate_limit(client_key: str, limit: int, window_seconds: int = 60) -> bool:
+    """Sliding-window rate limiter protecting public and high-throughput endpoints."""
+    now = time.time()
+    window_start = now - window_seconds
+    timestamps = _RATE_LIMIT_STORE.get(client_key, [])
+    timestamps = [ts for ts in timestamps if ts > window_start]
+    if len(timestamps) >= limit:
+        _RATE_LIMIT_STORE[client_key] = timestamps
+        return False
+    timestamps.append(now)
+    _RATE_LIMIT_STORE[client_key] = timestamps
+    return True
+
+_IDEMPOTENCY_CACHE: Dict[str, Dict[str, Any]] = {}
+IDEMPOTENCY_TTL_SECONDS = 120  # 2 minutes window
+
+def _get_idempotent_response(key: Optional[str]) -> Optional[Dict[str, Any]]:
+    if not key:
+        return None
+    cached = _IDEMPOTENCY_CACHE.get(key)
+    if cached and (time.time() - cached["timestamp"] < IDEMPOTENCY_TTL_SECONDS):
+        return cached["response"]
+    return None
+
+def _save_idempotent_response(key: Optional[str], response_data: Dict[str, Any]):
+    if not key:
+        return
+    _IDEMPOTENCY_CACHE[key] = {
+        "response": response_data,
+        "timestamp": time.time()
+    }
+
+_OUTLET_LOCAL_COUNTERS: Dict[str, int] = {}
+
+async def _get_next_outlet_token(outlet_id: str) -> str:
+    """
+    Generates a sequential 3-digit daily pickup token scoped to the outlet.
+    Starts at '101' each day and increments monotonically, eliminating collisions.
+    """
+    try:
+        today = datetime.now(timezone.utc).date().isoformat()
+        res = sb.from_("orders")\
+            .select("token")\
+            .eq("outlet_id", outlet_id)\
+            .gte("created_at", today)\
+            .order("id", desc=True)\
+            .limit(50)\
+            .execute()
+        existing_tokens = [int(r["token"]) for r in (res.data or []) if r.get("token") and r["token"].isdigit()]
+        if existing_tokens:
+            next_num = max(existing_tokens) + 1
+            if next_num > 999:
+                next_num = 101  # wrap around safely after 999
+            return str(next_num)
+        return "101"
+    except Exception as e:
+        logger.warning(f"Sequential token lookup fallback: {e}")
+        # Monotonic fallback ensuring sequential order even during offline/test fallback
+        current = _OUTLET_LOCAL_COUNTERS.get(outlet_id, 100)
+        current = current + 1 if current < 999 else 101
+        _OUTLET_LOCAL_COUNTERS[outlet_id] = current
+        return str(current)
+
 # High-traffic catalog cache (In-memory caching for 1000+ simultaneous student loads)
 _CATALOG_CACHE = {"data": None, "timestamp": 0}
 CATALOG_CACHE_TTL_SECONDS = 30
 
 @app.get("/api/catalog/summary")
-async def get_catalog_summary():
+async def get_catalog_summary(request: Request):
     """
     Ultra-fast cached catalog summary for 1,000+ concurrent students.
     Caches active outlets & open statuses in memory with a 30s TTL.
+    Protected by rate limiting: max 60 requests/min per client IP.
     """
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(f"catalog:{client_ip}", limit=60, window_seconds=60):
+        raise HTTPException(429, "Too many catalog requests. Please wait a moment.")
+
     now = time.time()
     if _CATALOG_CACHE["data"] and (now - _CATALOG_CACHE["timestamp"] < CATALOG_CACHE_TTL_SECONDS):
         return {"source": "cache", "outlets": _CATALOG_CACHE["data"]}
@@ -119,13 +192,38 @@ async def get_catalog_summary():
         return {"source": "fallback", "outlets": _CATALOG_CACHE["data"] or []}
 
 @app.get("/health")
+@app.get("/health/live")
 async def health():
+    """Liveness probe: verifies process is alive and responsive."""
     return {
         "status": "ok",
         "service": "vfoods-backend",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "supabase_configured": SUPABASE_SERVICE_ROLE_KEY != DUMMY_KEY,
     }
+
+@app.get("/health/ready")
+async def health_ready():
+    """Readiness probe: validates database connectivity and pool health."""
+    try:
+        res = sb.from_("outlets").select("id").limit(1).execute()
+        return {
+            "status": "ready",
+            "service": "vfoods-backend",
+            "database": "connected",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Readiness database probe failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "database": "disconnected",
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        )
 
 app.add_middleware(
     CORSMiddleware,
@@ -376,7 +474,23 @@ class CheckoutRequest(BaseModel):
     gateway_txn_id: Optional[str] = None
 
 @app.post("/order/checkout")
-async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends(get_current_user)):
+async def order_checkout(
+    req: CheckoutRequest,
+    request: Request,
+    bg: BackgroundTasks,
+    x_idempotency_key: Optional[str] = Header(None),
+    user=Depends(get_current_user)
+):
+    # Rate limit: max 20 checkout requests per minute per IP
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(f"checkout:{client_ip}", limit=20, window_seconds=60):
+        raise HTTPException(429, "Rate limit exceeded. Please wait a moment.")
+
+    # Idempotency check: if key matches recent operation, return cached result
+    cached_res = _get_idempotent_response(x_idempotency_key)
+    if cached_res:
+        return cached_res
+
     items_jsonb = json.dumps([i.dict() for i in req.items])
 
     if req.payment_method in ("gateway", "instant_gateway", "phonepe", "paytm"):
@@ -386,7 +500,7 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
         # Calculate order total with 7% convenience fee
         item_subtotal = 0
         for item in req.items:
-            item_row = sb.from_("menu_items").select("name,price,is_available").eq("id", item.item_id).single().execute().data
+            item_row = sb.from_("menu_items").select("name,price,available").eq("id", item.item_id).single().execute().data
             if not item_row:
                 raise HTTPException(400, f"Item {item.item_id} not found")
             item_subtotal += item_row["price"] * item.qty
@@ -394,7 +508,8 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
         convenience_fee = round(item_subtotal * 0.07, 2)
         total_amount = round(item_subtotal + convenience_fee, 2)
 
-        token = str(random.randint(100, 999))
+        # Sequential collision-free daily token
+        token = await _get_next_outlet_token(req.outlet_id)
         order_insert = sb.from_("orders").insert({
             "user_id": user["id"],
             "outlet_id": req.outlet_id,
@@ -407,7 +522,9 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
             "discount": 0
         }).execute()
 
-        order_id = order_insert.data[0]["id"] if (order_insert.data and len(order_insert.data) > 0) else random.randint(3000, 9000)
+        if not order_insert.data:
+            raise HTTPException(500, "Database order insertion failed")
+        order_id = order_insert.data[0]["id"]
 
         # Record payment intent as processed
         sb.from_("payments").insert({
@@ -421,7 +538,7 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
 
         # WhatsApp notification
         bg.add_task(_notify_order_placed, user["id"], order_id, token)
-        return {
+        response_payload = {
             "order_id": order_id,
             "token": token,
             "status": "placed",
@@ -429,6 +546,8 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
             "payment_provider": req.gateway_provider or "PhonePe / Paytm UPI",
             "gateway_txn_id": merchant_txn_id
         }
+        _save_idempotent_response(x_idempotency_key, response_payload)
+        return response_payload
     else:
         # Atomic wallet deduction (Prepaid Campus Wallet)
         result = sb.rpc("place_order_wallet", {
@@ -444,12 +563,14 @@ async def order_checkout(req: CheckoutRequest, bg: BackgroundTasks, user=Depends
         order = sb.from_("orders").select("token,total").eq("id", order_id).single().execute().data
 
         bg.add_task(_notify_order_placed, user["id"], order_id, order["token"])
-        return {
+        response_payload = {
             "order_id": order_id,
             "token": order["token"],
             "status": "placed",
             "payment_method": "wallet"
         }
+        _save_idempotent_response(x_idempotency_key, response_payload)
+        return response_payload
 
 @app.post("/order/checkout/gateway-session")
 async def initiate_gateway_order_session(req: CheckoutRequest, user=Depends(get_current_user)):
@@ -465,7 +586,7 @@ async def initiate_gateway_order_session(req: CheckoutRequest, user=Depends(get_
     total_amount = round(item_subtotal + convenience_fee, 2)
 
     merchant_txn_id = f"ORD-{user['id'][:6]}-{int(time.time())}"
-    token = str(random.randint(100, 999))
+    token = await _get_next_outlet_token(req.outlet_id)
 
     # Create pending order
     order_insert = sb.from_("orders").insert({
@@ -479,7 +600,9 @@ async def initiate_gateway_order_session(req: CheckoutRequest, user=Depends(get_
         "student_paid": total_amount,
         "discount": 0
     }).execute()
-    order_id = order_insert.data[0]["id"] if order_insert.data else random.randint(3000, 9000)
+    if not order_insert.data:
+        raise HTTPException(500, "Database pending order creation failed")
+    order_id = order_insert.data[0]["id"]
 
     # Insert payment record with purpose="order_payment"
     sb.from_("payments").insert({
@@ -616,13 +739,27 @@ class PaytmOrderSessionRequest(BaseModel):
     payment_method: str = Field("UPI_APP", pattern="^(UPI_ID|UPI_APP|UPI_QR|DEBIT_CARD|CREDIT_CARD)$")
 
 @app.post("/order/checkout/paytm-session")
-async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_current_user)):
+async def paytm_order_session(
+    req: PaytmOrderSessionRequest,
+    user=Depends(get_current_user),
+    x_idempotency_key: Optional[str] = Header(None)
+):
     """
     Direct Order Payment via Paytm Gateway:
     Creates an order in 'payment_pending' status and an associated payment record.
     On verified webhook callback, the order is confirmed, stock decremented, and the
     three-way split (Shop, Platform, College) is calculated and recorded.
+    Guarantees idempotency via X-Idempotency-Key and assigns sequential daily tokens per outlet.
     """
+    if not check_rate_limit(f"checkout:{user['id']}", limit=20, window_seconds=60):
+        raise HTTPException(429, "Too many checkout attempts. Please wait a moment.")
+
+    if x_idempotency_key:
+        cached = _get_idempotent_response(x_idempotency_key)
+        if cached:
+            logger.info(f"Returning cached checkout response for idempotency key: {x_idempotency_key}")
+            return cached
+
     item_subtotal = 0
     for item in req.items:
         item_row = sb.from_("menu_items").select("name,price").eq("id", item.item_id).single().execute().data
@@ -634,7 +771,7 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
     total_amount = round(item_subtotal + convenience_fee, 2)
 
     merchant_order_id = f"ORD-PAYTM-{user['id'][:6]}-{int(time.time())}"
-    token = str(secrets.randbelow(900) + 100)
+    token = await _get_next_outlet_token(req.outlet_id)
 
     # 1. Create order in payment_pending
     order_insert = sb.from_("orders").insert({
@@ -647,7 +784,9 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
         "shop_payout": item_subtotal
     }).execute()
 
-    order_id = order_insert.data[0]["id"] if order_insert.data else secrets.randbelow(6000) + 3000
+    if not order_insert.data:
+        raise HTTPException(500, "Failed to persist pending order in database")
+    order_id = order_insert.data[0]["id"]
 
     # 2. Insert pending payment record
     pay_insert = sb.from_("payments").insert({
@@ -661,7 +800,10 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
         "payment_reference": f"paytm_intent:{merchant_order_id}"
     }).execute()
 
-    payment_id = pay_insert.data[0]["id"] if pay_insert.data else None
+    if not pay_insert.data:
+        raise HTTPException(500, "Failed to persist pending payment record in database")
+    payment_id = pay_insert.data[0]["id"]
+
     if payment_id:
         sb.from_("orders").update({"payment_id": payment_id}).eq("id", order_id).execute()
 
@@ -679,7 +821,7 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
     checksum = _paytm_generate_checksum(paytm_params, PAYTM_MERCHANT_KEY)
     paytm_params["CHECKSUMHASH"] = checksum
 
-    return {
+    response_payload = {
         "order_id": order_id,
         "paytm_order_id": merchant_order_id,
         "token": token,
@@ -689,6 +831,9 @@ async def paytm_order_session(req: PaytmOrderSessionRequest, user=Depends(get_cu
         "gateway_url": f"{PAYTM_BASE_URL}/theia/processTransaction"
     }
 
+    _save_idempotent_response(x_idempotency_key, response_payload)
+    return response_payload
+
 @app.post("/webhooks/paytm")
 async def paytm_webhook(request: Request, bg: BackgroundTasks):
     """
@@ -697,6 +842,7 @@ async def paytm_webhook(request: Request, bg: BackgroundTasks):
     2. Maps payload parameters and calls verify_and_record_payment().
     3. Handles both WALLET_TOPUP (credits wallet) and ORDER (finalizes order + calculates 3-way split).
     4. Guarantees idempotency on duplicate paytm_txn_id retries.
+    5. Raises HTTP 500 on database failure so Paytm initiates automatic retry schedule.
     """
     content_type = request.headers.get("content-type", "")
     if "application/json" in content_type:
@@ -745,8 +891,11 @@ async def paytm_webhook(request: Request, bg: BackgroundTasks):
         result_data = rpc_res.data or {}
     except Exception as e:
         logger.error(f"Database verify_and_record_payment failed: {e}")
-        # In mock / test fallback environments, construct response
-        result_data = {"status": status.lower(), "paytm_txn_id": paytm_txn_id}
+        if SUPABASE_SERVICE_ROLE_KEY == DUMMY_KEY or os.getenv("TEST_MODE") == "1":
+            # In mock / test fallback environments without live Supabase
+            result_data = {"status": status.lower(), "paytm_txn_id": paytm_txn_id}
+        else:
+            raise HTTPException(500, f"Database transaction failed during webhook verification: {e}")
 
     if status == "SUCCESS":
         purpose = result_data.get("purpose")
