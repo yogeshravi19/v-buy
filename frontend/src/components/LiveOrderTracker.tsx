@@ -36,7 +36,11 @@ export const LiveOrderTracker: React.FC<LiveOrderTrackerProps> = ({ order, onSho
   }, [order.status])
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-lg relative overflow-hidden transition-all">
+    <div
+      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-lg relative overflow-hidden transition-all"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {/* Background Ambience Glow for Ready Status */}
       <AnimatePresence>
         {isReady && (

@@ -327,7 +327,7 @@ export const CampusCanvas3D: React.FC<CampusCanvas3DProps> = ({ className = '', 
           13 Canteens Live
         </span>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md border border-slate-200 text-orange-600 shadow-sm">
-          2 min Counter Pickup
+          2 min Quick Pickup
         </span>
       </div>
 

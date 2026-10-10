@@ -1325,13 +1325,13 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Column 3: Ready for Counter Pickup (Emerald Green) */}
+                  {/* Column 3: Ready for Pickup (Emerald Green) */}
                   <div className="bg-slate-900/40 rounded-2xl border border-emerald-900/30 p-3.5 flex flex-col">
                     <div className="flex items-center justify-between pb-3 border-b border-emerald-900/30 mb-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-400" strokeWidth={2} />
                         <h3 className="font-black text-xs uppercase tracking-wider text-emerald-300">
-                          3. Ready for Counter Pickup
+                          3. Ready for Pickup
                         </h3>
                       </div>
                       <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-800/50">

@@ -200,7 +200,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           </div>
           <div>
             <p className="text-3xl font-extrabold text-orange-400">2 mins</p>
-            <p className="text-xs font-medium text-slate-400 mt-1">Average Counter Pickup</p>
+            <p className="text-xs font-medium text-slate-400 mt-1">Average Order Pickup</p>
           </div>
           <div>
             <p className="text-3xl font-extrabold text-emerald-400">100%</p>

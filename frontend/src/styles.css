@@ -4814,20 +4814,6 @@ body::before {
   line-height: 1.5;
 }
 
-/* Counter Pickup badge on Order Card */
-.counter-pickup-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  font-weight: 700;
-  background: #EFF6FF;
-  color: #1E40AF;
-  border: 1px solid #DBEAFE;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  margin-top: 4px;
-}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROFILE VIEW STYLING (V FOODS ROYAL BLUE & SLATE AESTHETIC)
@@ -5102,7 +5088,7 @@ body::before {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    V FOODS CAMPUS DINING & PRE-ORDER USER DASHBOARD
-   Strictly 100% V FOODS colors, VIT Chennai campus canteens & pure counter preorder
+   Strictly 100% V FOODS colors, VIT Chennai campus canteens & smart dining
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. Desktop Framing & Canvas ── */
@@ -6470,6 +6456,7 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   background: none;
   border: none;
@@ -6477,6 +6464,8 @@ body::before {
   cursor: pointer;
   position: relative;
   padding: 4px 16px;
+  min-height: 48px;
+  min-width: 56px;
   border-radius: 12px;
   transition: all 0.15s ease;
 }
@@ -6708,25 +6697,44 @@ body::before {
   background: none;
   color: #0F172A;
   font-weight: 800;
-  padding: 3px 6px;
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.vfoods-cart-stepper button:hover {
+  background: #E2E8F0;
 }
 
 .vfoods-cart-stepper span {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  padding: 0 4px;
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .vfoods-cart-delete-btn {
   border: none;
   background: none;
-  color: #EF4444;
+  color: #DC2626;
   cursor: pointer;
-  padding: 4px;
+  min-width: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.vfoods-cart-delete-btn:hover {
+  background: #FEE2E2;
 }
 
 .vfoods-cart-bill-card {

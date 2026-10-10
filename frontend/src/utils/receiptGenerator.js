@@ -142,7 +142,7 @@ export async function generateReceiptCanvas(order) {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#64748B'
     ctx.font = '700 10.5px system-ui, -apple-system, sans-serif'
-    ctx.fillText('COUNTER PICKUP QR PASS', 116, curY + 24)
+    ctx.fillText('ORDER PICKUP QR PASS', 116, curY + 24)
 
     ctx.fillStyle = '#1E3A8A'
     ctx.font = 'bold 14px "Courier New", Courier, monospace'

@@ -2933,11 +2933,11 @@ function CartDock({
 // RECEIPT / INVOICE MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 function ReceiptModal({ order, onClose }) {
-  if (!order) return null
-
   const [showFormatPicker, setShowFormatPicker] = useState(false)
   const [downloading, setDownloading] = useState(null) // 'photo' | 'pdf' | null
   const [downloadNotice, setDownloadNotice] = useState(null) // { type: 'success'|'error', message: string } | null
+
+  if (!order) return null
 
   async function executeDownload(format) {
     try {
@@ -4166,8 +4166,6 @@ function FoodItemModal({
   onSave,
   onDelete
 }) {
-  if (!isOpen || !outlet) return null
-
   const isEdit = Boolean(item)
   const [name, setName] = useState(item?.name || '')
   const [price, setPrice] = useState(item?.price !== undefined ? item.price.toString() : '')
@@ -4177,6 +4175,8 @@ function FoodItemModal({
   const [stockQty, setStockQty] = useState(item?.stock_qty !== undefined ? item.stock_qty : 30)
   const [available, setAvailable] = useState(item?.available !== undefined ? item.available : true)
   const [description, setDescription] = useState(item?.description || '')
+
+  if (!isOpen || !outlet) return null
 
   const standardCategories = [
     { id: 'snacks', label: 'Snacks & Rolls' },

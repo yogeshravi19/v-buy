@@ -432,7 +432,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold text-orange-600">2 mins</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Avg Counter Pickup</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Avg Pickup Time</p>
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold text-emerald-600">100%</p>

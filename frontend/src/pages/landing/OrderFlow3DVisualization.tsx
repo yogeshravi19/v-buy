@@ -124,7 +124,7 @@ const FLOW_STEPS: OrderFlowStep[] = [
   },
   {
     id: 8,
-    title: 'Counter Pickup & QR Handover',
+    title: 'Order Pickup & QR Handover',
     source: 'User Mobile Web / PWA',
     target: 'Express Pickup Bay & Scanner',
     protocol: 'Optical 2D QR Scan / Token Verification',
