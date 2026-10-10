@@ -988,9 +988,18 @@ export default function VFoodsUserDashboard({
                   {/* Outlet Group Card */}
                   <div className="vfoods-cart-outlet-card">
                     <div className="vfoods-cart-outlet-title">
-                      <Store size={16} color="#2563EB" />
-                      <span>{cart.outlet?.name}</span>
-                      <CheckCircle2 size={14} color="#10B981" style={{ marginLeft: 'auto' }} />
+                      <div className="vfoods-cart-outlet-icon-wrap">
+                        <Store size={15} color="#1E40AF" />
+                      </div>
+                      <div className="vfoods-cart-outlet-meta">
+                        <span className="vfoods-cart-outlet-name">{cart.outlet?.name}</span>
+                        {cart.outlet?.location && (
+                          <span className="vfoods-cart-outlet-loc">{cart.outlet.location}</span>
+                        )}
+                      </div>
+                      <span className="vfoods-cart-outlet-badge">
+                        {cart.items.reduce((s, i) => s + (i.qty || 1), 0)} {cart.items.reduce((s, i) => s + (i.qty || 1), 0) === 1 ? 'item' : 'items'}
+                      </span>
                     </div>
 
                     {cart.items.map(item => (
