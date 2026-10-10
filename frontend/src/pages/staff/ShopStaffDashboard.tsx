@@ -39,6 +39,9 @@ import {
   Menu,
   Edit
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../components/ui/sound-toggle'
+import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { supabase } from '../../lib/supabase'
 
 export interface OrderItem {
@@ -93,23 +96,7 @@ interface ShopStaffDashboardProps {
 }
 
 function playNotificationChime() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime) // D5
-    osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12) // A5
-    osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.24) // D6
-    gain.gain.setValueAtTime(0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.5)
-  } catch {
-    // Ignore audio restrictions
-  }
+  playGentleChime()
 }
 
 function formatElapsed(dateString: string): string {
@@ -155,6 +142,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
   // Outlet context
   const activeOutletId = forcedOutletId || currentUser?.outlet_id || 'g1'
+  const { isLocked: isScreenWakeLocked } = useScreenWakeLock()
   const currentOutlet = outlets.find(o => o.id === activeOutletId) || {
     id: activeOutletId,
     name: currentUser?.outlet_name || 'Gazebo C1 — Snacks & Fast Food',
@@ -907,14 +895,32 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
           </div>
 
           <div className="saas-top-actions">
-            <button
-              className="saas-btn saas-btn-secondary saas-btn-sm"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              title={soundEnabled ? 'Mute alert chime' : 'Enable alert chime'}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                background: '#F1F5F9',
+                color: '#475569',
+                fontSize: '11px',
+                fontWeight: 600
+              }}
+              title={isScreenWakeLocked ? 'Screen wake lock active during service' : 'Screen wake lock standby'}
             >
-              {soundEnabled ? <Volume2 size={14} className="text-emerald-600" /> : <VolumeX size={14} />}
-              <span>{soundEnabled ? 'Chime On' : 'Chime Off'}</span>
-            </button>
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: isScreenWakeLocked ? '#10B981' : '#94A3B8'
+                }}
+              />
+              <span>{isScreenWakeLocked ? 'Screen Awake' : 'Standby'}</span>
+            </div>
+
+            <SoundToggle />
 
             <button
               className="saas-btn saas-btn-secondary saas-btn-sm"
@@ -1419,7 +1425,15 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
                   <div className="saas-kds-list">
                     {localOrders.filter(o => o.status === 'placed').map(order => (
-                      <div key={order.id} className="saas-ticket">
+                      <motion.div
+                        layout
+                        key={order.id}
+                        className="saas-ticket"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
                         <div className="saas-ticket-header">
                           <span className="saas-ticket-token">#{order.token || order.id}</span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
@@ -1446,9 +1460,9 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           <ChevronDown 
                             size={13} 
                             style={{ 
-                              color: '#64748B', 
-                              transform: collapsedTickets[order.id] ? 'rotate(-90deg)' : 'none', 
-                              transition: 'transform 0.15s ease' 
+                            color: '#64748B', 
+                            transform: collapsedTickets[order.id] ? 'rotate(-90deg)' : 'none', 
+                            transition: 'transform 0.15s ease' 
                             }} 
                           />
                         </div>
@@ -1510,7 +1524,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             <span>Start Cooking →</span>
                           </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                     {localOrders.filter(o => o.status === 'placed').length === 0 && (
                       <div style={{ textAlign: 'center', padding: '32px 16px', color: '#94A3B8', fontSize: '13px' }}>
@@ -1556,7 +1570,15 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
                   <div className="saas-kds-list">
                     {localOrders.filter(o => o.status === 'preparing').map(order => (
-                      <div key={order.id} className="saas-ticket">
+                      <motion.div
+                        layout
+                        key={order.id}
+                        className="saas-ticket"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
                         <div className="saas-ticket-header">
                           <span className="saas-ticket-token">#{order.token || order.id}</span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
@@ -1647,7 +1669,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             <span>Mark as Ready →</span>
                           </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                     {localOrders.filter(o => o.status === 'preparing').length === 0 && (
                       <div style={{ textAlign: 'center', padding: '32px 16px', color: '#94A3B8', fontSize: '13px' }}>
@@ -1671,7 +1693,15 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
                   <div className="saas-kds-list">
                     {localOrders.filter(o => o.status === 'ready').map(order => (
-                      <div key={order.id} className="saas-ticket">
+                      <motion.div
+                        layout
+                        key={order.id}
+                        className="saas-ticket"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
                         <div className="saas-ticket-header">
                           <span className="saas-ticket-token" style={{ color: '#16A34A' }}>
                             #{order.token || order.id}
@@ -1729,7 +1759,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             </span>
                           </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                     {localOrders.filter(o => o.status === 'ready').length === 0 && (
                       <div style={{ textAlign: 'center', padding: '32px 16px', color: '#94A3B8', fontSize: '13px' }}>
@@ -1827,17 +1857,18 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             <button
                               onClick={() => handleToggleItemAvailability(item.id, item.available)}
                               style={{
-                                border: 'none',
+                                border: item.available ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
                                 background: item.available ? '#DCFCE7' : '#F1F5F9',
                                 color: item.available ? '#166534' : '#64748B',
                                 padding: '4px 10px',
                                 borderRadius: '12px',
                                 fontSize: '12px',
-                                fontWeight: 700,
-                                cursor: 'pointer'
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
                               }}
                             >
-                              {item.available ? 'In Stock' : 'Sold Out'}
+                              {item.available ? 'Mark Unavailable' : 'Mark Available'}
                             </button>
                           </td>
                           <td style={{ textAlign: 'right' }}>
@@ -2332,112 +2363,77 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         </div>
       )}
 
-      {/* ── ADD / EDIT ITEM MODAL ── */}
-      {showAddItemModal && (
-        <div className="saas-modal-backdrop" onClick={() => { setShowAddItemModal(false); setEditingItem(null) }}>
-          <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
-            <div className="saas-modal-header">
-              <h3 className="saas-modal-title">{editingItem ? 'Edit Menu Item' : 'Add Menu Item'}</h3>
-              <button className="saas-modal-close" onClick={() => { setShowAddItemModal(false); setEditingItem(null) }}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveNewItem} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Masala Dosa"
-                  value={newItemForm.name}
-                  onChange={e => setNewItemForm(prev => ({ ...prev, name: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={newItemForm.price}
-                    onChange={e => setNewItemForm(prev => ({ ...prev, price: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Category
-                  </label>
-                  <select
-                    value={newItemForm.category}
-                    onChange={e => setNewItemForm(prev => ({ ...prev, category: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  >
-                    <option value="snacks">Snacks</option>
-                    <option value="meals">Meals</option>
-                    <option value="beverages">Beverages</option>
-                    <option value="desserts">Desserts</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Dietary Type
-                  </label>
-                  <select
-                    value={newItemForm.is_veg ? 'veg' : 'non-veg'}
-                    onChange={e => setNewItemForm(prev => ({ ...prev, is_veg: e.target.value === 'veg' }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  >
-                    <option value="veg">Vegetarian</option>
-                    <option value="non-veg">Non-Vegetarian</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Initial Stock Count
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={newItemForm.stock_qty}
-                    onChange={e => setNewItemForm(prev => ({ ...prev, stock_qty: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  className="saas-btn saas-btn-secondary"
-                  onClick={() => { setShowAddItemModal(false); setEditingItem(null) }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="saas-btn saas-btn-primary"
-                >
-                  {editingItem ? 'Update Item' : 'Save Item'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Shared MenuItemFormDialog with react-hook-form and Zod validation */}
+      <MenuItemFormDialog
+        isOpen={showAddItemModal}
+        onClose={() => {
+          setShowAddItemModal(false)
+          setEditingItem(null)
+        }}
+        initialData={editingItem}
+        onSave={async (formData: any) => {
+          if (editingItem) {
+            setMenuItems(prev => prev.map(i => i.id === editingItem.id ? {
+              ...i,
+              name: formData.name,
+              price: Number(formData.price),
+              category: formData.category,
+              is_veg: formData.is_veg,
+              stock_qty: Number(formData.stock_qty),
+              image_url: formData.image_url
+            } : i))
+            try {
+              await supabase
+                .from('menu_items')
+                .update({
+                  name: formData.name,
+                  price: Number(formData.price),
+                  category: formData.category,
+                  is_veg: formData.is_veg,
+                  stock_qty: Number(formData.stock_qty),
+                  image_url: formData.image_url
+                })
+                .eq('id', editingItem.id)
+            } catch (err) {
+              console.error('Error updating item:', err)
+            }
+          } else {
+            const newItem: MenuItem = {
+              id: Date.now(),
+              outlet_id: activeOutletId,
+              name: formData.name,
+              price: Number(formData.price),
+              category: formData.category,
+              is_veg: formData.is_veg,
+              stock_qty: Number(formData.stock_qty),
+              available: true,
+              image_url: formData.image_url
+            }
+            setMenuItems(prev => [newItem, ...prev])
+            try {
+              const { data, error } = await supabase
+                .from('menu_items')
+                .insert({
+                  outlet_id: activeOutletId,
+                  name: formData.name,
+                  price: Number(formData.price),
+                  category: formData.category,
+                  is_veg: formData.is_veg,
+                  stock_qty: Number(formData.stock_qty),
+                  available: true,
+                  image_url: formData.image_url
+                })
+                .select()
+                .single()
+              if (!error && data) {
+                setMenuItems(prev => prev.map(i => i.id === newItem.id ? (data as MenuItem) : i))
+              }
+            } catch (err) {
+              console.error('Error inserting item:', err)
+            }
+          }
+        }}
+      />
     </div>
   )
 }
