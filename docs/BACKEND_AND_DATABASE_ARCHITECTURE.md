@@ -179,7 +179,7 @@ Every tool in the V Foods backend is selected for high concurrency, low latency,
 
 ---
 
-## 4. Database Architecture (Supabase / PostgreSQL)
+## 4. Database Architecture & Table Structure Reference (Supabase / PostgreSQL)
 
 The V Foods database is hosted on Supabase and powered by PostgreSQL. It uses relational schemas, constraints, atomic stored procedures, and Row-Level Security (RLS) to enforce data integrity and tenant isolation.
 
@@ -224,164 +224,752 @@ The V Foods database is hosted on Supabase and powered by PostgreSQL. It uses re
 
 ---
 
-### 4.2 Comprehensive Table Specifications
+### 4.2 Comprehensive Table Structure Reference (All 23 Tables)
+
+Below is the complete, schema-accurate specification for every table in the V Foods database, including its SQL DDL definition, detailed column data dictionary, constraints, indexes, and Row-Level Security (RLS) policies.
+
+---
 
 #### 1. `outlets`
-Stores all dining facilities, canteens, cafes, and event stalls across the campus.
-- `id` (`text`, Primary Key): Machine identifier (e.g., `'main-canteen'`, `'gazebo-c1'`).
-- `name` (`text`, NOT NULL): Human-readable display name.
-- `location` (`text`, NOT NULL): Physical campus building or zone.
-- `is_event` (`boolean`, DEFAULT `false`): Flags temporary festival food stalls.
-- `is_open` (`boolean`, DEFAULT `true`): Live operational switch.
+Stores all dining facilities, campus canteens, cafes, food courts, and festival food stalls.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.outlets (
+  id         text        PRIMARY KEY,
+  name       text        NOT NULL,
+  location   text        NOT NULL,
+  is_event   boolean     NOT NULL DEFAULT false,
+  is_open    boolean     NOT NULL DEFAULT true
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `text` | NO | None | `PRIMARY KEY` | Machine-readable outlet identifier (e.g. `'main-canteen'`, `'gazebo-c1'`, `'tech-cafe'`). |
+| `name` | `text` | NO | None | None | Human-readable public display name shown to users. |
+| `location` | `text` | NO | None | None | Physical campus location (e.g. `'Central Food Court, Ground Floor'`). |
+| `is_event` | `boolean` | NO | `false` | None | Flag indicating whether this outlet is a temporary festival/event food stall. |
+| `is_open` | `boolean` | NO | `true` | None | Operational toggle; when `false`, checkout is blocked immediately. |
+
+- **Indexes**: Primary key index on `id`.
+- **RLS Policy**: Publicly readable by all users (`anon`, `authenticated`). Writable only by Super Admins.
+
+---
 
 #### 2. `menu_items`
-Holds all dishes, drinks, and meals available across outlets.
-- `id` (`bigint`, Identity PK): Unique food item identifier.
-- `outlet_id` (`text`, FK `outlets.id` ON DELETE CASCADE): Outlet ownership.
-- `name` (`text`, NOT NULL): Item title.
-- `price` (`int`, CHECK `price > 0`): Base price in Indian Rupees (INR).
-- `available` (`boolean`, DEFAULT `true`): Immediate stock availability toggle.
-- `is_veg` (`boolean`, DEFAULT `true`): Dietary badge.
-- `category` (`text`, DEFAULT `'General'`): Grouping category (e.g., `'Meals'`, `'Snacks'`).
-- `available_from` / `available_to` (`time`, NULL): Time window restrictions.
-- `stock_qty` (`int`, NULL): Remaining portion count. `NULL` denotes unlimited.
-- `reserved_qty` (`int`, DEFAULT `0`): Portions locked during pending checkouts.
+Holds all dishes, drinks, and meals available for purchase across outlets.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.menu_items (
+  id               bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  outlet_id        text        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  name             text        NOT NULL,
+  price            int         NOT NULL CHECK (price > 0),
+  available        boolean     NOT NULL DEFAULT true,
+  is_veg           boolean     NOT NULL DEFAULT true,
+  category         text        NOT NULL DEFAULT 'General',
+  available_from   time        NULL,
+  available_to     time        NULL,
+  stock_qty        int         NULL CHECK (stock_qty IS NULL OR stock_qty >= 0),
+  reserved_qty     int         NOT NULL DEFAULT 0 CHECK (reserved_qty >= 0)
+);
+CREATE INDEX IF NOT EXISTS idx_menu_items_outlet ON menu_items(outlet_id);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Unique autoincrementing food item ID. |
+| `outlet_id` | `text` | NO | None | `FK -> outlets(id) ON DELETE CASCADE` | The outlet that produces and sells this item. |
+| `name` | `text` | NO | None | None | Name of the dish or drink (e.g. `'Paneer Butter Masala Roll'`). |
+| `price` | `int` | NO | None | `CHECK (price > 0)` | Base unit price in Indian Rupees (INR). |
+| `available` | `boolean` | NO | `true` | None | Immediate stock toggle; flips to `false` when sold out. |
+| `is_veg` | `boolean` | NO | `true` | None | Dietary flag (true for vegetarian, false for non-vegetarian). |
+| `category` | `text` | NO | `'General'` | None | Menu category for tabbed browsing (e.g. `'Breakfast'`, `'Beverages'`). |
+| `available_from` | `time` | YES | `NULL` | None | Optional daily time restriction window start (e.g. `08:00:00`). |
+| `available_to` | `time` | YES | `NULL` | None | Optional daily time restriction window end (e.g. `11:30:00`). |
+| `stock_qty` | `int` | YES | `NULL` | `CHECK (stock_qty IS NULL OR stock_qty >= 0)` | Remaining portions available today; `NULL` means unlimited. |
+| `reserved_qty` | `int` | NO | `0` | `CHECK (reserved_qty >= 0)` | Portions temporarily held during active payment sessions. |
+
+- **Indexes**: `idx_menu_items_outlet` on `outlet_id`.
+- **RLS Policy**: Publicly readable. Writable by Shop Admins and Staff belonging to the same `outlet_id`.
+
+---
 
 #### 3. `profiles`
-User accounts extending Supabase's native `auth.users` authentication table.
-- `id` (`uuid`, PK, FK `auth.users.id` ON DELETE CASCADE): User identity.
-- `full_name` (`text`, DEFAULT `''`): User's legal name.
-- `role` (`user_role` ENUM): Role authorization (`'customer'`, `'staff'`, `'shop_admin'`, `'super_admin'`, `'admin'`).
-- `cust_type` (`cust_type` ENUM): Campus user classification (`'student'`, `'faculty'`, `'visitor'`).
-- `outlet_id` (`text`, NULL, FK `outlets.id`): Outlet assignment for staff and shop owners.
-- `phone` (`text`, NULL): Normalized phone number for notifications.
-- `created_at` (`timestamptz`, DEFAULT `now()`).
+User profiles extending Supabase's native `auth.users` authentication table.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id             uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name      text        NOT NULL DEFAULT '',
+  role           user_role   NOT NULL DEFAULT 'customer',
+  cust_type      cust_type   NOT NULL DEFAULT 'student',
+  outlet_id      text        NULL REFERENCES outlets(id) ON DELETE SET NULL,
+  phone          text        NULL,
+  referral_code  text        NULL UNIQUE,
+  added_by       uuid        NULL REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `uuid` | NO | None | `PK, FK -> auth.users(id) ON DELETE CASCADE` | Maps 1:1 with Supabase Auth credentials. |
+| `full_name` | `text` | NO | `''` | None | User's full legal name. |
+| `role` | `user_role` ENUM | NO | `'customer'` | Enum: `customer`, `staff`, `shop_admin`, `super_admin`, `admin` | System permission tier for role-based access control. |
+| `cust_type` | `cust_type` ENUM | NO | `'student'` | Enum: `student`, `faculty`, `visitor` | Campus classification for reporting. |
+| `outlet_id` | `text` | YES | `NULL` | `FK -> outlets(id) ON DELETE SET NULL` | Assigned food stall for staff and shop owners. |
+| `phone` | `text` | YES | `NULL` | None | Mobile phone number used for SMS/WhatsApp pickup alerts. |
+| `referral_code` | `text` | YES | `NULL` | `UNIQUE` | Unique referral token assigned to users to invite friends. |
+| `added_by` | `uuid` | YES | `NULL` | `FK -> profiles(id)` | Administrator ID who created or invited this user. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Account creation timestamp. |
+
+- **RLS Policy**: Users can read and update their own profile (`id = auth.uid()`). Super Admins can view all.
+
+---
 
 #### 4. `wallets`
 Prepaid digital campus wallet balances.
-- `user_id` (`uuid`, PK, FK `profiles.id` ON DELETE CASCADE): Wallet owner.
-- `balance` (`int`, DEFAULT `0`, CHECK `balance >= 0`): Stored balance in INR. Cannot be negative.
-- `updated_at` (`timestamptz`, DEFAULT `now()`).
+
+```sql
+CREATE TABLE IF NOT EXISTS public.wallets (
+  user_id     uuid        PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  balance     int         NOT NULL DEFAULT 0 CHECK (balance >= 0),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `user_id` | `uuid` | NO | None | `PK, FK -> profiles(id) ON DELETE CASCADE` | Wallet owner identifier. |
+| `balance` | `int` | NO | `0` | `CHECK (balance >= 0)` | Available stored value balance in INR. Cannot be negative. |
+| `updated_at` | `timestamptz` | NO | `now()` | None | Timestamp of last credit or debit operation. |
+
+- **RLS Policy**: Users can SELECT only their own wallet (`user_id = auth.uid()`). Direct client INSERT/UPDATE is strictly forbidden; balance changes must execute through server RPCs.
+
+---
 
 #### 5. `wallet_txns`
-Immutable double-entry transaction ledger tracking every balance change.
-- `id` (`bigint`, Identity PK): Ledger transaction ID.
-- `user_id` (`uuid`, FK `profiles.id` ON DELETE CASCADE): Wallet owner.
-- `amount` (`int`): Change in INR. Positive for credits/top-ups, negative for purchases.
-- `kind` (`text`, CHECK in `'topup'`, `'order'`, `'refund'`, `'admin_credit'`): Transaction type.
-- `ref` (`text`, UNIQUE): Idempotency key (e.g. `'paytm:TXN9876'`, `'order:1042'`).
-- `note` (`text`, NULL): Audit explanation.
-- `created_at` (`timestamptz`, DEFAULT `now()`).
+Immutable audit ledger tracking every balance change.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.wallet_txns (
+  id          bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id     uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  amount      int         NOT NULL,
+  kind        text        NOT NULL CHECK (kind IN ('topup','order','refund','admin_credit','referral_bonus')),
+  ref         text        NOT NULL UNIQUE,
+  note        text        NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_wallet_txns_user ON wallet_txns(user_id, created_at DESC);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Global unique transaction identifier. |
+| `user_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE CASCADE` | User account whose balance was adjusted. |
+| `amount` | `int` | NO | None | None | Value change in INR (positive for credits, negative for debits). |
+| `kind` | `text` | NO | None | `CHECK (kind IN (...))` | Nature of transaction: `'topup'`, `'order'`, `'refund'`, etc. |
+| `ref` | `text` | NO | None | `UNIQUE` | Idempotency key (e.g. `'paytm:TXN102'`, `'order:450'`). |
+| `note` | `text` | YES | `NULL` | None | Human-readable explanation for receipts and statements. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Transaction execution timestamp. |
+
+- **Indexes**: `idx_wallet_txns_user` on `(user_id, created_at DESC)`.
+- **RLS Policy**: Users can read only their own transactions. Append-only; `UPDATE` and `DELETE` are disabled.
+
+---
 
 #### 6. `orders`
-Master record for every meal placed on the platform.
-- `id` (`bigint`, Identity PK): Global order identifier.
-- `user_id` (`uuid`, FK `profiles.id` ON DELETE RESTRICT): Purchasing user.
-- `outlet_id` (`text`, FK `outlets.id` ON DELETE RESTRICT): Fulfilling outlet.
-- `token` (`text`, NULL): 3-digit daily counter pickup code (e.g. `'142'`).
-- `status` (`order_status` ENUM): Current state (`'payment_pending'`, `'placed'`, `'preparing'`, `'ready'`, `'collected'`, `'cancelled'`).
-- `payment_method` (`payment_method` ENUM): Payment channel (`'wallet'`, `'gateway'`).
-- `shop_payout` (`int`, CHECK `shop_payout > 0`): Net subtotal for food items.
-- `total` (`int`, CHECK `total > 0`): Final user bill including convenience fees.
-- `my_profit` (`int`, GENERATED ALWAYS AS `(shop_payout * 5 / 100)` STORED): Platform fee.
-- `payment_id` (`bigint`, NULL, FK `payments.id`): Associated payment record.
-- `cancel_reason` (`text`, NULL): Reason recorded if cancelled.
-- `expires_at` (`timestamptz`, NULL): Automatic cancellation deadline for pending payments.
-- `created_at` / `updated_at` (`timestamptz`, DEFAULT `now()`).
+Master operational record for every food and beverage order.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.orders (
+  id              bigint          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id         uuid            NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  outlet_id       text            NOT NULL REFERENCES outlets(id) ON DELETE RESTRICT,
+  token           text            NULL,
+  status          order_status    NOT NULL DEFAULT 'payment_pending',
+  payment_method  payment_method  NOT NULL DEFAULT 'wallet',
+  shop_payout     int             NOT NULL CHECK (shop_payout > 0),
+  total           int             NOT NULL CHECK (total > 0),
+  my_profit       int             GENERATED ALWAYS AS (shop_payout * 5 / 100) STORED,
+  payment_id      bigint          NULL REFERENCES payments(id) ON DELETE SET NULL,
+  pickup_slot_id  uuid            NULL REFERENCES pickup_slots(id) ON DELETE SET NULL,
+  cancel_reason   text            NULL,
+  expires_at      timestamptz     NULL,
+  created_at      timestamptz     NOT NULL DEFAULT now(),
+  updated_at      timestamptz     NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_orders_user    ON orders(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_outlet  ON orders(outlet_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Global unique order ID. |
+| `user_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE RESTRICT` | User who placed the order. |
+| `outlet_id` | `text` | NO | None | `FK -> outlets(id) ON DELETE RESTRICT` | Food stall fulfilling the order. |
+| `token` | `text` | YES | `NULL` | None | 3-digit pickup code (e.g. `'142'`) issued upon confirmed payment. |
+| `status` | `order_status` ENUM | NO | `'payment_pending'` | Enum: `payment_pending`, `placed`, `preparing`, `ready`, `collected`, `cancelled` | Live lifecycle state of the order. |
+| `payment_method` | `payment_method` ENUM | NO | `'wallet'` | Enum: `wallet`, `gateway` | Payment mechanism used. |
+| `shop_payout` | `int` | NO | None | `CHECK (shop_payout > 0)` | Net food item subtotal due to the shop. |
+| `total` | `int` | NO | None | `CHECK (total > 0)` | Final amount billed to user (items + convenience fees). |
+| `my_profit` | `int` | NO | Stored Gen | `(shop_payout * 5 / 100)` | 5% platform fee stored automatically. |
+| `payment_id` | `bigint` | YES | `NULL` | `FK -> payments(id)` | Foreign key linking to the underlying gateway payment. |
+| `pickup_slot_id`| `uuid` | YES | `NULL` | `FK -> pickup_slots(id)` | Scheduled pickup time window if pre-ordered. |
+| `cancel_reason` | `text` | YES | `NULL` | None | Explanatory note if rejected or cancelled. |
+| `expires_at` | `timestamptz` | YES | `NULL` | None | Automatic cancellation timestamp for pending gateway checkouts. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Order creation timestamp. |
+| `updated_at` | `timestamptz` | NO | `now()` | None | Last status update timestamp. |
+
+- **RLS Policy**: Users view their own orders (`user_id = auth.uid()`). Kitchen staff view only orders for their own `outlet_id`. Super Admins view all.
+
+---
 
 #### 7. `order_items`
 Individual line items inside an order with frozen price snapshots.
-- `order_id` (`bigint`, FK `orders.id` ON DELETE CASCADE).
-- `item_id` (`bigint`, FK `menu_items.id` ON DELETE RESTRICT).
-- `name` (`text`): Frozen item title at time of purchase.
-- `price` (`int`): Frozen unit price at time of purchase.
-- `qty` (`int`, CHECK `qty > 0`): Ordered quantity.
-- Primary Key: `(order_id, item_id)`.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.order_items (
+  order_id  bigint  NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  item_id   bigint  NOT NULL REFERENCES menu_items(id) ON DELETE RESTRICT,
+  name      text    NOT NULL,
+  price     int     NOT NULL,
+  qty       int     NOT NULL CHECK (qty > 0),
+  PRIMARY KEY (order_id, item_id)
+);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `order_id` | `bigint` | NO | None | `PK (composite), FK -> orders(id) ON DELETE CASCADE` | Parent order reference. |
+| `item_id` | `bigint` | NO | None | `PK (composite), FK -> menu_items(id) ON DELETE RESTRICT` | Referenced dish from menu. |
+| `name` | `text` | NO | None | None | Frozen dish title snapshot at the time order was placed. |
+| `price` | `int` | NO | None | None | Frozen unit price in INR at purchase time. |
+| `qty` | `int` | NO | None | `CHECK (qty > 0)` | Number of portions ordered. |
+
+- **RLS Policy**: Inherits access rules from parent `orders` table.
+
+---
 
 #### 8. `payments`
-Unified ledger of all payment transactions across both top-ups and direct order checkouts.
-- `id` (`bigint`, Identity PK): Unified payment ID.
-- `user_id` (`uuid`, FK `profiles.id` ON DELETE RESTRICT).
-- `order_id` (`bigint`, NULL, FK `orders.id` ON DELETE SET NULL).
-- `wallet_txn_id` (`bigint`, NULL, FK `wallet_txns.id` ON DELETE SET NULL).
-- `amount` (`numeric`, CHECK `amount > 0`): Total amount processed.
-- `payment_purpose` (`text`, CHECK `'ORDER'`, `'WALLET_TOPUP'`).
-- `payment_method` (`text`, CHECK `'UPI_ID'`, `'UPI_APP'`, `'UPI_QR'`, `'DEBIT_CARD'`, `'CREDIT_CARD'`, `'WALLET'`).
-- `status` (`text`, DEFAULT `'PENDING'`, CHECK `'PENDING'`, `'SUCCESS'`, `'FAILED'`, `'CANCELLED'`, `'REFUNDED'`).
-- `paytm_order_id` (`text`, NULL): Merchant order reference sent to gateway.
-- `paytm_txn_id` (`text`, NULL, UNIQUE): Bank transaction ID used as idempotency key.
-- `paid_at` (`timestamptz`, NULL): Completion timestamp.
-- `failure_reason` (`text`, NULL): Gateway error response if unsuccessful.
+Unified ledger of all payment attempts across both Wallet Top-Up and Direct Order Checkout.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.payments (
+  id                bigint          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id           uuid            NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  order_id          bigint          NULL REFERENCES orders(id) ON DELETE SET NULL,
+  wallet_txn_id     bigint          NULL REFERENCES wallet_txns(id) ON DELETE SET NULL,
+  amount            numeric         NOT NULL CHECK (amount > 0),
+  payment_purpose   text            NOT NULL CHECK (payment_purpose IN ('ORDER', 'WALLET_TOPUP')),
+  payment_method    text            NOT NULL CHECK (payment_method IN ('UPI_ID', 'UPI_APP', 'UPI_QR', 'DEBIT_CARD', 'CREDIT_CARD', 'WALLET')),
+  status            text            NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED', 'CANCELLED', 'REFUNDED')),
+  paytm_order_id    text            NULL,
+  paytm_txn_id      text            NULL UNIQUE,
+  payment_reference text            NULL,
+  paid_at           timestamptz     NULL,
+  failure_reason    text            NULL,
+  created_at        timestamptz     NOT NULL DEFAULT now(),
+  updated_at        timestamptz     NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Global payment ledger identifier. |
+| `user_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE RESTRICT` | Payer user account. |
+| `order_id` | `bigint` | YES | `NULL` | `FK -> orders(id) ON DELETE SET NULL` | Target order ID (NULL for wallet top-up). |
+| `wallet_txn_id` | `bigint` | YES | `NULL` | `FK -> wallet_txns(id) ON DELETE SET NULL` | Linked wallet ledger entry. |
+| `amount` | `numeric` | NO | None | `CHECK (amount > 0)` | Total monetary transaction amount in INR. |
+| `payment_purpose`| `text` | NO | None | `CHECK in ('ORDER', 'WALLET_TOPUP')` | Business purpose of payment. |
+| `payment_method` | `text` | NO | None | `CHECK in ('UPI_APP', 'DEBIT_CARD', ...)` | Payment rail used by customer. |
+| `status` | `text` | NO | `'PENDING'` | `CHECK in ('PENDING', 'SUCCESS', ...)` | Bank reconciliation status. |
+| `paytm_order_id` | `text` | YES | `NULL` | None | Merchant transaction reference sent to gateway. |
+| `paytm_txn_id` | `text` | YES | `NULL` | `UNIQUE` | Bank transaction ID returned in verified webhook; acts as idempotency key. |
+| `payment_reference`| `text` | YES | `NULL` | None | Internal tracking reference string. |
+| `paid_at` | `timestamptz` | YES | `NULL` | None | Timestamp when verified as SUCCESS. |
+| `failure_reason` | `text` | YES | `NULL` | None | Detailed gateway error message if failed. |
+| `created_at` / `updated_at` | `timestamptz` | NO | `now()` | None | Audit timestamps. |
+
+- **RLS Policy**: Users view only their own payments. Staff view payments linked to orders at their outlet. Super Admins view all.
+
+---
 
 #### 9. `outlet_paytm_accounts`
-Per-shop recipient sub-accounts for automated revenue disbursement.
-- `outlet_id` (`text`, PK, FK `outlets.id` ON DELETE CASCADE).
-- `paytm_account_id` (`text`, NOT NULL): Shop owner's registered gateway merchant ID.
-- `onboarding_status` (`text`, DEFAULT `'PENDING'`, CHECK `'PENDING'`, `'ACTIVE'`, `'REJECTED'`).
-- `settlement_enabled` (`boolean`, DEFAULT `false`).
-- `shop_split_percentage` (`numeric`, DEFAULT `90`, CHECK `BETWEEN 0 AND 100`).
+Per-shop recipient sub-accounts with outlet-configurable split shares.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.outlet_paytm_accounts (
+  outlet_id               text            PRIMARY KEY REFERENCES outlets(id) ON DELETE CASCADE,
+  paytm_account_id        text            NOT NULL,
+  onboarding_status       text            NOT NULL DEFAULT 'PENDING' CHECK (onboarding_status IN ('PENDING', 'ACTIVE', 'REJECTED')),
+  settlement_enabled      boolean         NOT NULL DEFAULT false,
+  shop_split_percentage   numeric         NOT NULL DEFAULT 90 CHECK (shop_split_percentage >= 0 AND shop_split_percentage <= 100),
+  created_at              timestamptz     NOT NULL DEFAULT now(),
+  updated_at              timestamptz     NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `outlet_id` | `text` | NO | None | `PK, FK -> outlets(id) ON DELETE CASCADE` | Target food outlet. |
+| `paytm_account_id` | `text` | NO | None | None | Registered Paytm Merchant sub-account ID. |
+| `onboarding_status`| `text` | NO | `'PENDING'` | `CHECK in ('PENDING', 'ACTIVE', 'REJECTED')` | Gateway KYC and onboarding approval status. |
+| `settlement_enabled`| `boolean` | NO | `false` | None | Master disbursement toggle. |
+| `shop_split_percentage`| `numeric`| NO | `90` | `CHECK (0 <= shop_split_percentage <= 100)` | Negotiated shop percentage (default 90%). |
+| `created_at` / `updated_at` | `timestamptz` | NO | `now()` | None | Audit timestamps. |
+
+- **Triggers**: Validated by `trg_validate_outlet_split` guaranteeing $Shop\% + Platform\% + College\% = 100\%$.
+- **RLS Policy**: Shop Admins can inspect their own outlet's account. Super Admins manage all.
+
+---
 
 #### 10. `platform_settlement_account`
-Master settlement account for the V Foods operating company (singleton row `id = 1`).
-- `id` (`int`, PK, CHECK `id = 1`).
-- `paytm_account_id` (`text`, NOT NULL): Company settlement merchant ID.
-- `platform_split_percentage` (`numeric`, DEFAULT `5`, CHECK `BETWEEN 0 AND 100`).
+Startup platform settlement account (singleton row `id = 1`).
+
+```sql
+CREATE TABLE IF NOT EXISTS public.platform_settlement_account (
+  id                          int             PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  paytm_account_id            text            NOT NULL,
+  settlement_enabled          boolean         NOT NULL DEFAULT false,
+  platform_split_percentage   numeric         NOT NULL DEFAULT 5 CHECK (platform_split_percentage >= 0 AND platform_split_percentage <= 100),
+  created_at                  timestamptz     NOT NULL DEFAULT now(),
+  updated_at                  timestamptz     NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `int` | NO | `1` | `PK, CHECK (id = 1)` | Singleton identifier enforcing exactly one row. |
+| `paytm_account_id` | `text` | NO | None | None | V Foods company settlement merchant ID. |
+| `settlement_enabled`| `boolean`| NO | `false` | None | Platform disbursement switch. |
+| `platform_split_percentage`| `numeric`| NO | `5` | `CHECK (0 <= pct <= 100)` | Fixed platform fee percentage (**5%**). |
+| `created_at` / `updated_at` | `timestamptz` | NO | `now()` | None | Audit timestamps. |
+
+- **RLS Policy**: Restricted exclusively to Super Admins.
+
+---
 
 #### 11. `college_settlement_accounts`
-University institution settlement account for host campus royalties.
-- `id` (`bigint`, Identity PK).
-- `campus_name` (`text`, NOT NULL): Campus title (e.g. `'VIT Chennai'`).
-- `paytm_account_id` (`text`, NOT NULL): Institutional account ID.
-- `is_active` (`boolean`, DEFAULT `true`): Enforced singleton via unique partial index.
-- `college_split_percentage` (`numeric`, DEFAULT `5`, CHECK `BETWEEN 0 AND 100`).
+Campus university institution settlement accounts (one active row per campus).
+
+```sql
+CREATE TABLE IF NOT EXISTS public.college_settlement_accounts (
+  id                          bigint          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  campus_name                 text            NOT NULL,
+  paytm_account_id            text            NOT NULL,
+  onboarding_status           text            NOT NULL DEFAULT 'PENDING' CHECK (onboarding_status IN ('PENDING', 'ACTIVE', 'REJECTED')),
+  settlement_enabled          boolean         NOT NULL DEFAULT false,
+  is_active                   boolean         NOT NULL DEFAULT true,
+  college_split_percentage    numeric         NOT NULL DEFAULT 5 CHECK (college_split_percentage >= 0 AND college_split_percentage <= 100),
+  created_at                  timestamptz     NOT NULL DEFAULT now(),
+  updated_at                  timestamptz     NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_college_single_active ON college_settlement_accounts(is_active) WHERE is_active = true;
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Unique campus settlement record ID. |
+| `campus_name` | `text` | NO | None | None | Host institution name (e.g. `'VIT Chennai'`). |
+| `paytm_account_id` | `text` | NO | None | None | University banking settlement merchant ID. |
+| `onboarding_status`| `text` | NO | `'PENDING'` | `CHECK in ('PENDING', 'ACTIVE', 'REJECTED')` | Institutional KYC status. |
+| `settlement_enabled`| `boolean`| NO | `false` | None | University disbursement switch. |
+| `is_active` | `boolean` | NO | `true` | None | Active campus flag. |
+| `college_split_percentage`| `numeric`| NO | `5` | `CHECK (0 <= pct <= 100)` | University campus royalty percentage (**5%**). |
+| `created_at` / `updated_at` | `timestamptz` | NO | `now()` | None | Audit timestamps. |
+
+- **Indexes**: Unique partial index `idx_college_single_active` enforces that only one campus row is active at a time.
+- **RLS Policy**: Restricted exclusively to Super Admins.
+
+---
 
 #### 12. `payment_splits`
-Individual accounting splits generated for every completed meal.
-- `id` (`bigint`, Identity PK).
-- `payment_id` (`bigint`, FK `payments.id` ON DELETE CASCADE).
-- `recipient_type` (`text`, CHECK `'SHOP'`, `'PLATFORM'`, `'COLLEGE'`).
-- `outlet_paytm_account_id` (`text`, NULL, FK `outlet_paytm_accounts.outlet_id`).
-- `platform_account_id` (`int`, NULL, FK `platform_settlement_account.id`).
-- `college_account_id` (`bigint`, NULL, FK `college_settlement_accounts.id`).
-- `split_amount` (`numeric`, CHECK `split_amount >= 0`).
-- `split_percentage` (`numeric`, CHECK `BETWEEN 0 AND 100`).
-- `settlement_status` (`text`, DEFAULT `'PENDING'`, CHECK `'PENDING'`, `'SETTLED'`, `'FAILED'`).
-- `settlement_reference` (`text`, NULL): Bank disbursement reference code.
+Individual settlement payouts computed for every completed meal.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.payment_splits (
+  id                          bigint          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  payment_id                  bigint          NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+  recipient_type              text            NOT NULL CHECK (recipient_type IN ('SHOP', 'PLATFORM', 'COLLEGE')),
+  outlet_paytm_account_id     text            NULL REFERENCES outlet_paytm_accounts(outlet_id) ON DELETE RESTRICT,
+  platform_account_id         int             NULL REFERENCES platform_settlement_account(id) ON DELETE RESTRICT,
+  college_account_id          bigint          NULL REFERENCES college_settlement_accounts(id) ON DELETE RESTRICT,
+  split_amount                numeric         NOT NULL CHECK (split_amount >= 0),
+  split_percentage            numeric         NULL CHECK (split_percentage IS NULL OR (split_percentage >= 0 AND split_percentage <= 100)),
+  settlement_status           text            NOT NULL DEFAULT 'PENDING' CHECK (settlement_status IN ('PENDING', 'SETTLED', 'FAILED')),
+  settlement_reference        text            NULL,
+  settled_at                  timestamptz     NULL,
+  created_at                  timestamptz     NOT NULL DEFAULT now(),
+  CONSTRAINT chk_split_recipient_account CHECK (
+    (recipient_type = 'SHOP' AND outlet_paytm_account_id IS NOT NULL AND platform_account_id IS NULL AND college_account_id IS NULL) OR
+    (recipient_type = 'PLATFORM' AND platform_account_id IS NOT NULL AND outlet_paytm_account_id IS NULL AND college_account_id IS NULL) OR
+    (recipient_type = 'COLLEGE' AND college_account_id IS NOT NULL AND outlet_paytm_account_id IS NULL AND platform_account_id IS NULL)
+  )
+);
+CREATE INDEX IF NOT EXISTS idx_payment_splits_payment_id ON payment_splits(payment_id);
+CREATE INDEX IF NOT EXISTS idx_payment_splits_recipient ON payment_splits(recipient_type);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Unique split payout identifier. |
+| `payment_id` | `bigint` | NO | None | `FK -> payments(id) ON DELETE CASCADE` | Source payment being disbursed. |
+| `recipient_type` | `text` | NO | None | `CHECK in ('SHOP', 'PLATFORM', 'COLLEGE')` | Category of recipient receiving the share. |
+| `outlet_paytm_account_id`| `text` | YES | `NULL` | `FK -> outlet_paytm_accounts(outlet_id)` | Populated only when `recipient_type = 'SHOP'`. |
+| `platform_account_id`| `int` | YES | `NULL` | `FK -> platform_settlement_account(id)` | Populated only when `recipient_type = 'PLATFORM'`. |
+| `college_account_id` | `bigint` | YES | `NULL` | `FK -> college_settlement_accounts(id)` | Populated only when `recipient_type = 'COLLEGE'`. |
+| `split_amount` | `numeric` | NO | None | `CHECK (split_amount >= 0)` | Disbursed amount in INR. |
+| `split_percentage` | `numeric` | YES | `NULL` | `CHECK (0 <= split_percentage <= 100)` | Applicable percentage share applied. |
+| `settlement_status`| `text` | NO | `'PENDING'` | `CHECK in ('PENDING', 'SETTLED', 'FAILED')`| Bank disbursement status. |
+| `settlement_reference`| `text` | YES | `NULL` | None | Paytm disbursement UTR/reference code. |
+| `settled_at` | `timestamptz` | YES | `NULL` | None | Disbursement timestamp. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Creation timestamp. |
+
+- **RLS Policy**: Shop Admins can view only their own outlet's `'SHOP'` split rows. Super Admins view all. Users have zero access.
+
+---
 
 #### 13. `refunds`
 Audit log of processed and pending customer refunds.
-- `id` (`bigint`, Identity PK).
-- `payment_id` (`bigint`, FK `payments.id` ON DELETE RESTRICT).
-- `order_id` (`bigint`, NULL, FK `orders.id`).
-- `refund_type` (`text`, CHECK `'ORDER_REFUND'`, `'WALLET_TOPUP_REFUND'`, `'SPLIT_REFUND'`).
-- `amount` (`numeric`, CHECK `amount > 0`).
-- `status` (`text`, DEFAULT `'PENDING'`, CHECK `'PENDING'`, `'SUCCESS'`, `'FAILED'`).
-- `paytm_refund_id` (`text`, NULL).
 
-#### 14. `audit_logs`
-Forensic security ledger recording administrative and operational adjustments.
-- `id` (`bigint`, Identity PK).
-- `user_id` (`uuid`, FK `profiles.id`).
-- `action` (`text`, NOT NULL): Action identifier (e.g. `'PRICE_CHANGE'`, `'STOCK_OVERRIDE'`).
-- `entity_type` (`text`, NOT NULL): Target entity (`'menu_item'`, `'outlet'`).
-- `entity_id` (`text`, NOT NULL).
-- `details` (`jsonb`): State diff containing before and after values.
-- `created_at` (`timestamptz`, DEFAULT `now()`).
+```sql
+CREATE TABLE IF NOT EXISTS public.refunds (
+  id                bigint          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  payment_id        bigint          NOT NULL REFERENCES payments(id) ON DELETE RESTRICT,
+  order_id          bigint          NULL REFERENCES orders(id) ON DELETE SET NULL,
+  wallet_txn_id     bigint          NULL REFERENCES wallet_txns(id) ON DELETE SET NULL,
+  refund_type       text            NOT NULL CHECK (refund_type IN ('ORDER_REFUND', 'WALLET_TOPUP_REFUND', 'SPLIT_REFUND')),
+  amount            numeric         NOT NULL CHECK (amount > 0),
+  status            text            NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED')),
+  paytm_refund_id   text            NULL,
+  reason            text            NULL,
+  created_at        timestamptz     NOT NULL DEFAULT now(),
+  processed_at      timestamptz     NULL
+);
+```
 
-#### 15. `invites`
-Cryptographically generated single-use codes for onboarding kitchen staff and shop managers.
-- `id` (`bigint`, Identity PK).
-- `code` (`text`, UNIQUE, NOT NULL): 8-character uppercase hex token.
-- `role` (`text`, CHECK in `'staff'`, `'shop_admin'`).
-- `outlet_id` (`text`, FK `outlets.id`).
-- `status` (`text`, DEFAULT `'pending'`, CHECK in `'pending'`, `'accepted'`, `'revoked'`).
-- `invited_by` (`uuid`, FK `profiles.id`).
-- `accepted_by` (`uuid`, NULL, FK `profiles.id`).
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Unique refund record ID. |
+| `payment_id` | `bigint` | NO | None | `FK -> payments(id) ON DELETE RESTRICT` | Source payment being refunded. |
+| `order_id` | `bigint` | YES | `NULL` | `FK -> orders(id) ON DELETE SET NULL` | Linked order ID if an order was cancelled. |
+| `wallet_txn_id` | `bigint` | YES | `NULL` | `FK -> wallet_txns(id) ON DELETE SET NULL` | Linked wallet debit if refunding a top-up. |
+| `refund_type` | `text` | NO | None | `CHECK in ('ORDER_REFUND', ...)` | Reason and path of refund. |
+| `amount` | `numeric` | NO | None | `CHECK (amount > 0)` | Refunded amount in INR. |
+| `status` | `text` | NO | `'PENDING'` | `CHECK in ('PENDING', 'SUCCESS', 'FAILED')`| Gateway refund progress status. |
+| `paytm_refund_id`| `text` | YES | `NULL` | None | Gateway refund transaction reference. |
+| `reason` | `text` | YES | `NULL` | None | Administrative or operational reason. |
+| `created_at` / `processed_at` | `timestamptz` | YES/NO | `now()` / `NULL` | None | Timestamps. |
 
-#### 16. `settings`
-Global system configuration parameters.
-- `key` (`text`, PK): Parameter key (e.g. `'event_mode_enabled'`).
-- `value` (`jsonb`): Stored configuration payload.
+- **RLS Policy**: Users view their own refunds. Staff view refunds for orders at their shop. Super Admins view all.
+
+---
+
+#### 14. `item_ratings`
+Customer ratings and reviews for individual menu items.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.item_ratings (
+  id         bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_id   bigint      NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  item_id    bigint      NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  user_id    uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  rating     smallint    NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment    text        NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT uq_order_item_user_rating UNIQUE (order_id, item_id, user_id)
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Rating record identifier. |
+| `order_id` | `bigint` | NO | None | `FK -> orders(id) ON DELETE CASCADE` | Source order confirming item was ordered. |
+| `item_id` | `bigint` | NO | None | `FK -> menu_items(id) ON DELETE CASCADE` | Dish being evaluated. |
+| `user_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE CASCADE` | User submitting the review. |
+| `rating` | `smallint` | NO | None | `CHECK (rating BETWEEN 1 AND 5)` | 1-to-5 star quality score. |
+| `comment` | `text` | YES | `NULL` | None | Optional user feedback comment. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Timestamp when rating was submitted. |
+
+- **Triggers**: Enforced by `trg_check_item_rating_order_status` requiring `order.status = 'collected'` before a review can be submitted.
+- **RLS Policy**: Read access is public. Insert access restricted to order owner.
+
+---
+
+#### 15. `loyalty_progress`
+Tracks order completion streaks and automated loyalty reward milestones.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.loyalty_progress (
+  user_id             uuid        PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  completed_orders    int         NOT NULL DEFAULT 0 CHECK (completed_orders >= 0),
+  free_items_earned   int         NOT NULL DEFAULT 0 CHECK (free_items_earned >= 0),
+  free_items_redeemed int         NOT NULL DEFAULT 0 CHECK (free_items_redeemed >= 0),
+  updated_at          timestamptz NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `user_id` | `uuid` | NO | None | `PK, FK -> profiles(id) ON DELETE CASCADE` | User account tracking loyalty. |
+| `completed_orders` | `int` | NO | `0` | `CHECK (completed_orders >= 0)` | Cumulative count of orders marked `'collected'`. |
+| `free_items_earned` | `int` | NO | `0` | `CHECK (free_items_earned >= 0)` | Free items earned (1 every 10 completed orders). |
+| `free_items_redeemed`| `int` | NO | `0` | `CHECK (free_items_redeemed >= 0)` | Free items redeemed by user. |
+| `updated_at` | `timestamptz` | NO | `now()` | None | Timestamp of last order completion. |
+
+- **Triggers**: Automatically updated by `trg_increment_loyalty` whenever an order transitions to `'collected'`.
+- **RLS Policy**: Users can read only their own loyalty progress (`user_id = auth.uid()`).
+
+---
+
+#### 16. `referrals`
+Tracks user referrals and automated ₹30 wallet bonuses upon first completed order.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_id     uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  referred_id     uuid        NOT NULL UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
+  status          text        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+  reward_credited bool        NOT NULL DEFAULT false,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `uuid` | NO | `gen_random_uuid()` | `PRIMARY KEY` | Unique referral relationship ID. |
+| `referrer_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE CASCADE` | User who shared their referral code. |
+| `referred_id` | `uuid` | NO | None | `UNIQUE, FK -> profiles(id) ON DELETE CASCADE` | New user who registered with the referral code. |
+| `status` | `text` | NO | `'pending'` | `CHECK in ('pending', 'completed')` | State of referral. |
+| `reward_credited`| `bool` | NO | `false` | None | Flag preventing double payout of referral bonuses. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Timestamp when referral was linked. |
+
+- **Triggers**: Managed by `trg_reward_referral`; credits ₹30 to both wallets when the new user completes their first order.
+- **RLS Policy**: Users view referrals where they are either the referrer or referred.
+
+---
+
+#### 17. `pickup_slots`
+Scheduled pickup time windows for pacing counter rush traffic.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.pickup_slots (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  outlet_id       text        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  slot_time       timestamptz NOT NULL,
+  max_orders      int         NOT NULL DEFAULT 15 CHECK (max_orders > 0),
+  current_orders  int         NOT NULL DEFAULT 0 CHECK (current_orders >= 0),
+  CONSTRAINT uq_outlet_slot_time UNIQUE (outlet_id, slot_time)
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `uuid` | NO | `gen_random_uuid()` | `PRIMARY KEY` | Pickup slot ID. |
+| `outlet_id` | `text` | NO | None | `FK -> outlets(id) ON DELETE CASCADE` | Outlet offering the slot. |
+| `slot_time` | `timestamptz` | NO | None | None | Exact scheduled pickup time (e.g. `12:30 PM`). |
+| `max_orders` | `int` | NO | `15` | `CHECK (max_orders > 0)` | Maximum orders allowed in this slot. |
+| `current_orders` | `int` | NO | `0` | `CHECK (current_orders >= 0)` | Booked order count. |
+
+- **RLS Policy**: Publicly readable. Managed by Shop Admins and Staff.
+
+---
+
+#### 18. `coupons`
+Promotional discount codes with usage limits and date windows.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.coupons (
+  code            text        PRIMARY KEY,
+  discount_type   text        NOT NULL CHECK (discount_type IN ('flat', 'percent')),
+  discount_value  numeric     NOT NULL CHECK (discount_value > 0),
+  min_order_value int         NULL CHECK (min_order_value IS NULL OR min_order_value > 0),
+  max_uses        int         NULL CHECK (max_uses IS NULL OR max_uses > 0),
+  used_count      int         NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+  outlet_id       text        NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  valid_from      timestamptz NOT NULL DEFAULT now(),
+  valid_to        timestamptz NOT NULL DEFAULT (now() + interval '30 days'),
+  active          bool        NOT NULL DEFAULT true
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `code` | `text` | NO | None | `PRIMARY KEY` | Uppercase coupon voucher code (e.g. `'CAMPUS50'`). |
+| `discount_type` | `text` | NO | None | `CHECK in ('flat', 'percent')` | Discount mode (flat rupees or percentage off). |
+| `discount_value` | `numeric` | NO | None | `CHECK (discount_value > 0)` | Discount amount or percentage value. |
+| `min_order_value`| `int` | YES | `NULL` | `CHECK (min_order_value > 0)` | Minimum item subtotal required to apply. |
+| `max_uses` | `int` | YES | `NULL` | `CHECK (max_uses > 0)` | Total redemptions allowed across platform. |
+| `used_count` | `int` | NO | `0` | `CHECK (used_count >= 0)` | Count of orders that have redeemed this coupon. |
+| `outlet_id` | `text` | YES | `NULL` | `FK -> outlets(id)` | Restricts coupon to one stall (`NULL` = platform-wide). |
+| `valid_from` / `valid_to` | `timestamptz` | NO | `now()` / `+30 days` | None | Promotional active validity window. |
+| `active` | `bool` | NO | `true` | None | Emergency kill switch to disable coupon. |
+
+- **RLS Policy**: Anyone can view active coupons (`active = true`). Managed by Admins.
+
+---
+
+#### 19. `coupon_redemptions`
+Audit log of individual coupon usages per order.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.coupon_redemptions (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  coupon_code text        NOT NULL REFERENCES coupons(code) ON DELETE CASCADE,
+  user_id     uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  order_id    bigint      NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `uuid` | NO | `gen_random_uuid()` | `PRIMARY KEY` | Unique redemption ID. |
+| `coupon_code` | `text` | NO | None | `FK -> coupons(code) ON DELETE CASCADE` | Coupon applied. |
+| `user_id` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE CASCADE` | User who claimed discount. |
+| `order_id` | `bigint` | NO | None | `FK -> orders(id) ON DELETE CASCADE` | Order receiving discount. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Timestamp of redemption. |
+
+- **RLS Policy**: Users view their own redemptions. Admins view all.
+
+---
+
+#### 20. `stock_adjustments`
+Forensic inventory audit table tracking manual and automatic stock modifications.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.stock_adjustments (
+  id           bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  outlet_id    text        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  item_id      bigint      NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  adjusted_by  uuid        NULL REFERENCES profiles(id) ON DELETE SET NULL,
+  qty_change   int         NOT NULL,
+  previous_qty int         NULL,
+  new_qty      int         NULL,
+  reason       text        NOT NULL CHECK (reason IN ('manual_adjustment', 'order_decrement', 'counter_pos', '86_sold_out', 'restock')),
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_stock_adj_outlet_created ON stock_adjustments(outlet_id, created_at DESC);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `bigint` | NO | Identity | `PRIMARY KEY` | Stock adjustment record identifier. |
+| `outlet_id` | `text` | NO | None | `FK -> outlets(id) ON DELETE CASCADE` | Outlet where inventory changed. |
+| `item_id` | `bigint` | NO | None | `FK -> menu_items(id) ON DELETE CASCADE` | Food item whose quantity changed. |
+| `adjusted_by` | `uuid` | YES | `NULL` | `FK -> profiles(id) ON DELETE SET NULL` | Staff member who authorized the change. |
+| `qty_change` | `int` | NO | None | None | Portions added or subtracted. |
+| `previous_qty`| `int` | YES | `NULL` | None | Stock level before adjustment. |
+| `new_qty` | `int` | YES | `NULL` | None | Stock level after adjustment. |
+| `reason` | `text` | NO | None | `CHECK in ('manual_adjustment', ...)` | Reason for modification. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Timestamp when adjustment took place. |
+
+- **RLS Policy**: Staff view adjustments for their own outlet. Super Admins view all.
+
+---
+
+#### 21. `invites`
+Cryptographically generated single-use codes for onboarding kitchen staff and shop managers safely.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.invites (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  code        text        UNIQUE NOT NULL,
+  email       text        NULL,
+  phone       text        NULL,
+  role        user_role   NOT NULL CHECK (role IN ('staff', 'shop_admin')),
+  outlet_id   text        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  invited_by  uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  expires_at  timestamptz NOT NULL DEFAULT (now() + interval '7 days'),
+  status      text        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'revoked', 'expired')),
+  accepted_by uuid        NULL REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_invites_code ON invites(code);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `uuid` | NO | `gen_random_uuid()` | `PRIMARY KEY` | Unique invite token record ID. |
+| `code` | `text` | NO | None | `UNIQUE` | 8-character uppercase hex token shared with the new hire. |
+| `email` | `text` | YES | `NULL` | None | Optional intended email address. |
+| `phone` | `text` | YES | `NULL` | None | Optional intended mobile number. |
+| `role` | `user_role` | NO | None | `CHECK in ('staff', 'shop_admin')` | Target role being granted upon acceptance. |
+| `outlet_id` | `text` | NO | None | `FK -> outlets(id) ON DELETE CASCADE` | Assigned food stall. |
+| `invited_by` | `uuid` | NO | None | `FK -> profiles(id) ON DELETE CASCADE` | Manager who generated the invite. |
+| `expires_at` | `timestamptz` | NO | `+7 days` | None | Expiration deadline for redemption. |
+| `status` | `text` | NO | `'pending'` | `CHECK in ('pending', 'accepted', ...)` | Lifecycle status of invitation. |
+| `accepted_by`| `uuid` | YES | `NULL` | `FK -> profiles(id) ON DELETE SET NULL` | User profile that redeemed this invite. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Creation timestamp. |
+
+- **RLS Policy**: Shop Admins manage invites for their own outlet. Super Admins view all.
+
+---
+
+#### 22. `audit_logs`
+Immutable forensic audit trail recording security events and operational overrides.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id    uuid        NULL REFERENCES public.profiles(id) ON DELETE SET NULL,
+  actor_name  text        NOT NULL DEFAULT 'System',
+  actor_role  text        NOT NULL DEFAULT 'user',
+  category    text        NOT NULL,
+  action      text        NOT NULL,
+  details     text        NOT NULL,
+  metadata    jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  ip_address  text        NULL,
+  status      text        NOT NULL DEFAULT 'SUCCESS',
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_category ON public.audit_logs (category);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `uuid` | NO | `gen_random_uuid()` | `PRIMARY KEY` | Global unique audit record ID. |
+| `actor_id` | `uuid` | YES | `NULL` | `FK -> profiles(id) ON DELETE SET NULL` | User who initiated the action. |
+| `actor_name` | `text` | NO | `'System'` | None | Display name of the actor. |
+| `actor_role` | `text` | NO | `'user'` | None | Role level at the time of execution. |
+| `category` | `text` | NO | None | None | Event group: `'OUTLET'`, `'MENU'`, `'ORDER'`, `'WALLET'`, `'SECURITY'`. |
+| `action` | `text` | NO | None | None | Action taken: `'PRICE_CHANGE'`, `'OVERRIDE_STATUS'`, `'TOGGLE'`. |
+| `details` | `text` | NO | None | None | Human-readable explanation of change. |
+| `metadata` | `jsonb` | NO | `'{}'::jsonb` | None | State diff containing before and after property values. |
+| `ip_address` | `text` | YES | `NULL` | None | Client IP address for security traceability. |
+| `status` | `text` | NO | `'SUCCESS'` | None | Execution outcome. |
+| `created_at` | `timestamptz` | NO | `now()` | None | Exact timestamp of event. |
+
+- **RLS Policy**: Readable strictly by Super Admins (`role IN ('super_admin', 'admin')`). Append-only; `UPDATE` and `DELETE` permissions are revoked.
+
+---
+
+#### 23. `settings`
+Singleton master configuration controls.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.settings (
+  id           int     PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  event_mode   boolean NOT NULL DEFAULT false
+);
+```
+
+| Column Name | Data Type | Nullable? | Default Value | Constraints / Key | Description & Purpose |
+|---|---|---|---|---|---|
+| `id` | `int` | NO | `1` | `PK, CHECK (id = 1)` | Singleton identifier enforcing exactly one row. |
+| `event_mode` | `boolean` | NO | `false` | None | Platform-wide festival mode switch; when `true`, event food stalls are highlighted. |
+
+- **RLS Policy**: Publicly readable. Writable strictly by Super Admins.
 
 ---
 
