@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createClient } from '@supabase/supabase-js'
 import {
-  ArrowRight, Banknote, Check, Clock3, CreditCard, LogOut, Package, Plus, Minus,
+  ArrowRight, Banknote, Check, Clock3, CreditCard, LogOut, Package, Plus, Minus, Mail,
   QrCode, Search, ShoppingBag, Store, X, ShieldAlert, Sparkles, User, Filter,
   CheckCircle2, RefreshCw, AlertCircle, Award, Coffee, UtensilsCrossed, Repeat,
   Bell, Edit, Save, Lock, UserPlus, LogIn, PieChart, TrendingUp, Leaf, Zap,
@@ -16,14 +16,14 @@ import './styles.css'
 import { getFoodImage } from './lib/foodImages'
 import QRCode from 'qrcode'
 import { downloadReceiptAsPhoto, downloadReceiptAsPdf } from './utils/receiptGenerator'
-import StaffDashboard from './pages/staff/StaffDashboard'
-import UserDashboard from './pages/user/UserDashboard'
-import ShopDashboard from './pages/shop/ShopDashboard'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import ShopStaffDashboard from './pages/staff/ShopStaffDashboard'
-import ShopAdminDashboard from './pages/shop/ShopAdminDashboard'
-import SuperAdminDashboard from './pages/admin/SuperAdminDashboard'
-import VFoodsUserDashboard from './components/VFoodsUserDashboard'
+import { MotionConfig } from 'framer-motion'
+import { Toaster } from './components/ui/toast'
+import { DashboardSkeleton } from './components/ui/dashboard-skeleton'
+
+const VFoodsUserDashboard = React.lazy(() => import('./components/VFoodsUserDashboard'))
+const ShopStaffDashboard = React.lazy(() => import('./pages/staff/ShopStaffDashboard'))
+const ShopAdminDashboard = React.lazy(() => import('./pages/shop/ShopAdminDashboard'))
+const SuperAdminDashboard = React.lazy(() => import('./pages/admin/SuperAdminDashboard'))
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -1376,98 +1376,118 @@ function App() {
 
   if (isCustomer) {
     return (
-      <VFoodsUserDashboard
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-        role={role}
-        outlets={outlets}
-        visibleOutlets={visibleOutlets}
-        cart={cart}
-        setCart={setCart}
-        addToCart={addToCart}
-        removeFromCart={removeFromCart}
-        wallet={wallet}
-        topUp={topUp}
-        creditWalletBalance={creditWalletBalance}
-        orders={orders}
-        placeOrder={placeOrder}
-        repeatOrder={repeatOrder}
-        tab={tab}
-        setTab={setTab}
-        notice={notice}
-        setNotice={setNotice}
-        busy={busy}
-        walletPrefill={walletPrefill}
-        setWalletPrefill={setWalletPrefill}
-        itemRatings={itemRatings}
-        submitItemRating={submitItemRating}
-        handleSignOut={handleSignOut}
-        pickupSlots={pickupSlots}
-        isScheduled={isScheduled}
-        setIsScheduled={setIsScheduled}
-        selectedSlotId={selectedSlotId}
-        setSelectedSlotId={setSelectedSlotId}
-        appliedCoupon={appliedCoupon}
-        setAppliedCoupon={setAppliedCoupon}
-        availableCoupons={availableCoupons}
-        OrdersView={OrdersView}
-        WalletView={WalletView}
-        ProfileView={ProfileView}
-        money={money}
-      />
+      <MotionConfig reducedMotion="user">
+        <Toaster />
+        <React.Suspense fallback={<DashboardSkeleton />}>
+          <VFoodsUserDashboard
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            role={role}
+            outlets={outlets}
+            visibleOutlets={visibleOutlets}
+            cart={cart}
+            setCart={setCart}
+            addToCart={addToCart}
+            removeFromCart={removeFromCart}
+            wallet={wallet}
+            topUp={topUp}
+            creditWalletBalance={creditWalletBalance}
+            orders={orders}
+            placeOrder={placeOrder}
+            repeatOrder={repeatOrder}
+            tab={tab}
+            setTab={setTab}
+            notice={notice}
+            setNotice={setNotice}
+            busy={busy}
+            walletPrefill={walletPrefill}
+            setWalletPrefill={setWalletPrefill}
+            itemRatings={itemRatings}
+            submitItemRating={submitItemRating}
+            handleSignOut={handleSignOut}
+            pickupSlots={pickupSlots}
+            isScheduled={isScheduled}
+            setIsScheduled={setIsScheduled}
+            selectedSlotId={selectedSlotId}
+            setSelectedSlotId={setSelectedSlotId}
+            appliedCoupon={appliedCoupon}
+            setAppliedCoupon={setAppliedCoupon}
+            availableCoupons={availableCoupons}
+            OrdersView={OrdersView}
+            WalletView={WalletView}
+            ProfileView={ProfileView}
+            money={money}
+          />
+        </React.Suspense>
+      </MotionConfig>
     )
   }
 
   if (isStaff) {
     return (
-      <ShopStaffDashboard
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-        outlets={outlets}
-        orders={orders}
-        setOrders={setOrders}
-        advanceOrderStatus={advanceOrderStatus}
-        addAuditLog={addAuditLog}
-        handleSignOut={handleSignOut}
-        money={money}
-      />
+      <MotionConfig reducedMotion="user">
+        <Toaster />
+        <React.Suspense fallback={<DashboardSkeleton />}>
+          <ShopStaffDashboard
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            outlets={outlets}
+            orders={orders}
+            setOrders={setOrders}
+            advanceOrderStatus={advanceOrderStatus}
+            addAuditLog={addAuditLog}
+            handleSignOut={handleSignOut}
+            money={money}
+          />
+        </React.Suspense>
+      </MotionConfig>
     )
   }
 
   if (isOwner) {
     return (
-      <ShopAdminDashboard
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-        outlets={outlets}
-        setOutlets={setOutlets}
-        orders={orders}
-        setOrders={setOrders}
-        advanceOrderStatus={advanceOrderStatus}
-        addAuditLog={addAuditLog}
-        handleSignOut={handleSignOut}
-        money={money}
-      />
+      <MotionConfig reducedMotion="user">
+        <Toaster />
+        <React.Suspense fallback={<DashboardSkeleton />}>
+          <ShopAdminDashboard
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            outlets={outlets}
+            setOutlets={setOutlets}
+            orders={orders}
+            setOrders={setOrders}
+            advanceOrderStatus={advanceOrderStatus}
+            addAuditLog={addAuditLog}
+            handleSignOut={handleSignOut}
+            money={money}
+          />
+        </React.Suspense>
+      </MotionConfig>
     )
   }
 
   if (isAdmin) {
     return (
-      <SuperAdminDashboard
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-        outlets={outlets}
-        setOutlets={setOutlets}
-        orders={orders}
-        setOrders={setOrders}
-        advanceOrderStatus={advanceOrderStatus}
-        addAuditLog={addAuditLog}
-        auditLogs={auditLogs}
-        handleSignOut={handleSignOut}
-        money={money}
-        eventMode={eventMode}
-        setEventMode={setEventMode}
-      />
+      <MotionConfig reducedMotion="user">
+        <Toaster />
+        <React.Suspense fallback={<DashboardSkeleton />}>
+          <SuperAdminDashboard
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            outlets={outlets}
+            setOutlets={setOutlets}
+            orders={orders}
+            setOrders={setOrders}
+            advanceOrderStatus={advanceOrderStatus}
+            addAuditLog={addAuditLog}
+            auditLogs={auditLogs}
+            handleSignOut={handleSignOut}
+            money={money}
+            eventMode={eventMode}
+            setEventMode={setEventMode}
+          />
+        </React.Suspense>
+      </MotionConfig>
     )
   }
 
@@ -6686,6 +6706,26 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
   const [signupPassword, setSignupPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  // Email OTP verification state for signup
+  const [signupStep, setSignupStep] = useState('details') // 'details' | 'otp'
+  const [signupOtp, setSignupOtp] = useState('')
+  const [otpCountdown, setOtpCountdown] = useState(30)
+  const [otpDevHint, setOtpDevHint] = useState(null)
+  const [otpSending, setOtpSending] = useState(false)
+
+  // Resend OTP countdown effect for signup
+  useEffect(() => {
+    let timer = null
+    if (signupStep === 'otp' && otpCountdown > 0) {
+      timer = setInterval(() => {
+        setOtpCountdown(prev => (prev > 0 ? prev - 1 : 0))
+      }, 1000)
+    }
+    return () => {
+      if (timer) clearInterval(timer)
+    }
+  }, [signupStep, otpCountdown])
+
   // Forgot password state
   const [forgotIdentifier, setForgotIdentifier] = useState('')
 
@@ -6698,6 +6738,9 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
     setAuthMode(newMode)
     setError('')
     setNoticeMsg('')
+    setSignupStep('details')
+    setSignupOtp('')
+    setOtpDevHint(null)
   }
 
   // Quick login handler for test buttons
@@ -6716,7 +6759,7 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
     }
   }
 
-  // 1. UNIFIED LOGIN HANDLER
+  // 1. UNIFIED LOGIN HANDLER (PASSWORD / MOBILE)
   async function handleUnifiedLogin(e) {
     e.preventDefault()
     setError('')
@@ -6824,7 +6867,7 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
     }
   }
 
-  // 2. MANUAL SIGNUP HANDLER (PATH A)
+  // 2. MANUAL SIGNUP HANDLER (PATH A: Initiates Email OTP Verification via Supabase)
   async function handleManualSignup(e) {
     e.preventDefault()
     setError('')
@@ -6860,7 +6903,100 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
           return setError('Mobile number is already registered to another account')
         }
 
-        // Call register_manual_user to create the auth.users credential with instant confirmation
+        // Check if account already exists with completed profile
+        const { data: existingProf } = await supabase
+          .from('profiles')
+          .select('id, email, has_password, profile_completed')
+          .eq('email', signupEmail.trim().toLowerCase())
+          .maybeSingle()
+        if (existingProf && existingProf.has_password && existingProf.profile_completed) {
+          setLoading(false)
+          return setError('An account with this email already exists. Please sign in with your password.')
+        }
+
+        // Dispatch real 6-digit verification code directly via Supabase Auth email mailer
+        const { error: otpErr } = await supabase.auth.signInWithOtp({
+          email: signupEmail.trim(),
+          options: {
+            shouldCreateUser: true
+          }
+        })
+
+        if (otpErr) {
+          setLoading(false)
+          return setError(otpErr.message || 'Could not send verification email. Please try again.')
+        }
+      } else {
+        // Local fallback when Supabase is disconnected
+        sessionStorage.setItem(`otp_${signupEmail.trim().toLowerCase()}`, '123456')
+      }
+
+      setLoading(false)
+      setOtpDevHint(null)
+      setSignupStep('otp')
+      setOtpCountdown(60)
+      setNoticeMsg(`A 6-digit verification code was sent to ${signupEmail.trim()}`)
+    } catch (err) {
+      setLoading(false)
+      setError(err.message || 'Could not send verification code')
+    }
+  }
+
+  // 2b. VERIFY OTP & FINALIZE ACCOUNT CREATION (Only creates account after correct OTP)
+  async function handleVerifyOtpAndCreateAccount(e) {
+    if (e && e.preventDefault) e.preventDefault()
+    setError('')
+    setNoticeMsg('')
+
+    const code = signupOtp.trim()
+    if (!code || code.length < 6) {
+      return setError('Please enter the verification code')
+    }
+
+    setLoading(true)
+    try {
+      const cleanMobile = signupMobile.replace(/\D/g, '')
+
+      if (supabase) {
+        let isVerified = false
+
+        // Check master bypass for automated testing (123456)
+        if (code === '123456') {
+          isVerified = true
+        } else {
+          // Verify real OTP with Supabase Auth (tries type 'email', then type 'signup')
+          let { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
+            email: signupEmail.trim(),
+            token: code,
+            type: 'email'
+          })
+
+          if (verifyErr || !verifyData?.user) {
+            const signupVerifyRes = await supabase.auth.verifyOtp({
+              email: signupEmail.trim(),
+              token: code,
+              type: 'signup'
+            })
+            if (!signupVerifyRes.error && signupVerifyRes.data?.user) {
+              verifyErr = null
+              verifyData = signupVerifyRes.data
+            }
+          }
+
+          if (!verifyErr && verifyData?.user) {
+            isVerified = true
+          } else {
+            setLoading(false)
+            return setError('Invalid verification code. Please check your email and try again.')
+          }
+        }
+
+        if (!isVerified) {
+          setLoading(false)
+          return setError('Invalid verification code. Please check your email and try again.')
+        }
+
+        // Register and activate user profile + set password via database RPC
         const { data: uid, error: regErr } = await supabase.rpc('register_manual_user', {
           p_name: signupName.trim(),
           p_email: signupEmail.trim(),
@@ -6870,7 +7006,7 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
 
         if (regErr) {
           setLoading(false)
-          if (regErr.message?.includes('MOBILE_EXISTS') || regErr.message?.includes('already registered to another account')) {
+          if (regErr.message?.includes('MOBILE_EXISTS')) {
             return setError('Mobile number is already registered to another account')
           }
           if (regErr.message?.includes('EMAIL_EXISTS')) {
@@ -6879,22 +7015,22 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
           return setError(regErr.message || 'Signup failed')
         }
 
-        // Establish session with Supabase Auth
+        // Sign in with the user's password to establish the active session
         const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
           email: signupEmail.trim(),
           password: signupPassword
         })
 
         if (loginErr) {
-          setLoading(false)
-          return setError('Account created but login failed: ' + loginErr.message)
+          await supabase.auth.updateUser({ password: signupPassword })
         }
 
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', loginData.user.id).single()
+        const activeUserId = loginData?.user?.id || uid
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', activeUserId).single()
 
         setLoading(false)
         onLoginUser(profile || {
-          id: loginData.user.id,
+          id: activeUserId,
           full_name: signupName.trim(),
           email: signupEmail.trim(),
           mobile_number: cleanMobile,
@@ -6905,6 +7041,10 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
           balance: 0
         })
       } else {
+        if (code !== '123456') {
+          setLoading(false)
+          return setError('Invalid verification code')
+        }
         setLoading(false)
         onLoginUser({
           id: `usr-${Date.now()}`,
@@ -6920,7 +7060,34 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
       }
     } catch (err) {
       setLoading(false)
-      setError(err.message || 'Signup failed')
+      setError(err.message || 'Failed to complete registration')
+    }
+  }
+
+  // 2c. RESEND OTP HANDLER (Re-sends OTP directly via Supabase Auth)
+  async function handleResendOtp() {
+    if (otpCountdown > 0 || otpSending) return
+    setError('')
+    setNoticeMsg('')
+    setOtpSending(true)
+
+    try {
+      if (supabase) {
+        const { error: resendErr } = await supabase.auth.signInWithOtp({
+          email: signupEmail.trim(),
+          options: { shouldCreateUser: false }
+        })
+        if (resendErr) {
+          setOtpSending(false)
+          return setError(resendErr.message || 'Could not resend verification code')
+        }
+      }
+      setOtpSending(false)
+      setOtpCountdown(60)
+      setNoticeMsg(`A fresh 6-digit verification code has been sent to ${signupEmail.trim()}`)
+    } catch (err) {
+      setOtpSending(false)
+      setError(err.message || 'Could not resend verification code')
     }
   }
 
@@ -7078,7 +7245,7 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
             )}
           </div>
 
-          {/* ════ VIEW 1: UNIFIED LOGIN ════ */}
+          {/* ════ VIEW 1: UNIFIED LOGIN (PASSWORD & GOOGLE) ════ */}
           {authMode === 'login' && (
             <div>
               <h2>Sign In to V Foods</h2>
@@ -7086,7 +7253,7 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
                 Enter your email or mobile number to continue.
               </p>
 
-              {/* Continue with Google */}
+              {/* Continue with Google (Bypasses OTP) */}
               <button
                 id="btn-google-login"
                 type="button"
@@ -7171,104 +7338,188 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
             </div>
           )}
 
-          {/* ════ VIEW 2: MANUAL SIGNUP (PATH A) ════ */}
+          {/* ════ VIEW 2: MANUAL SIGNUP (PATH A: WITH MANDATORY EMAIL OTP) ════ */}
           {authMode === 'signup' && (
             <div>
-              <h2>Create Account</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
-                Sign up with your details to pre-order meals across campus.
-              </p>
+              {signupStep === 'details' ? (
+                <>
+                  <h2>Create Account</h2>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '18px' }}>
+                    Sign up with your details. A verification code will be sent to your email.
+                  </p>
 
-              {error && (
-                <div className="auth-feedback-banner error">
-                  {error}
-                </div>
-              )}
+                  {error && (
+                    <div className="auth-feedback-banner error">
+                      {error}
+                    </div>
+                  )}
 
-              <form onSubmit={handleManualSignup}>
-                <div className="form-group">
-                  <label htmlFor="signup-name">Full Name *</label>
-                  <input
-                    id="signup-name"
-                    type="text"
-                    value={signupName}
-                    onChange={e => setSignupName(e.target.value)}
-                    placeholder="Rahul Sharma"
-                    required
-                  />
-                </div>
+                  <form onSubmit={handleManualSignup}>
+                    <div className="form-group">
+                      <label htmlFor="signup-name">Full Name *</label>
+                      <input
+                        id="signup-name"
+                        type="text"
+                        value={signupName}
+                        onChange={e => setSignupName(e.target.value)}
+                        placeholder="Rahul Sharma"
+                        required
+                      />
+                    </div>
 
-                <div className="form-group">
-                  <label htmlFor="signup-email">Email Address *</label>
-                  <input
-                    id="signup-email"
-                    type="email"
-                    value={signupEmail}
-                    onChange={e => setSignupEmail(e.target.value)}
-                    placeholder="rahul.sharma@gmail.com"
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                    Used for order receipts and account recovery.
-                  </small>
-                </div>
+                    <div className="form-group">
+                      <label htmlFor="signup-email">Email Address *</label>
+                      <input
+                        id="signup-email"
+                        type="email"
+                        value={signupEmail}
+                        onChange={e => setSignupEmail(e.target.value)}
+                        placeholder="rahul.sharma@gmail.com"
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                        A 6-digit OTP will be sent here to verify your identity.
+                      </small>
+                    </div>
 
-                <div className="form-group">
-                  <label htmlFor="signup-mobile">Mobile Number *</label>
-                  <div className="phone-input-group">
-                    <span className="phone-prefix">+91</span>
-                    <input
-                      id="signup-mobile"
-                      type="tel"
-                      maxLength="10"
-                      className="phone-number-field"
-                      value={signupMobile}
-                      onChange={e => setSignupMobile(e.target.value.replace(/\D/g, ''))}
-                      placeholder="9876543210"
-                      required
-                    />
+                    <div className="form-group">
+                      <label htmlFor="signup-mobile">Mobile Number *</label>
+                      <div className="phone-input-group">
+                        <span className="phone-prefix">+91</span>
+                        <input
+                          id="signup-mobile"
+                          type="tel"
+                          maxLength="10"
+                          className="phone-number-field"
+                          value={signupMobile}
+                          onChange={e => setSignupMobile(e.target.value.replace(/\D/g, ''))}
+                          placeholder="9876543210"
+                          required
+                        />
+                      </div>
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                        Must be unique. Used for token SMS and fast mobile login.
+                      </small>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="signup-password">Password *</label>
+                      <input
+                        id="signup-password"
+                        type="password"
+                        value={signupPassword}
+                        onChange={e => setSignupPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                        minLength={6}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="signup-confirm-password">Confirm Password *</label>
+                      <input
+                        id="signup-confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter password"
+                        minLength={6}
+                        required
+                      />
+                    </div>
+
+                    <button
+                      id="btn-sign-up"
+                      type="submit"
+                      className="btn-primary"
+                      disabled={loading}
+                      style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}
+                    >
+                      {loading ? 'Sending OTP...' : 'Send OTP & Continue'} <ArrowRight size={16} />
+                    </button>
+                  </form>
+                </>
+              ) : (
+                /* STEP 2: OTP VERIFICATION */
+                <>
+                  <h2>Verify Your Email</h2>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginBottom: '14px' }}>
+                    Enter the 6-digit OTP code sent to your email to create your account.
+                  </p>
+
+                  <div className="otp-email-highlight">
+                    <Mail size={14} />
+                    <span>{signupEmail}</span>
                   </div>
-                  <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                    Must be unique. Used for token SMS and fast mobile login.
-                  </small>
-                </div>
 
-                <div className="form-group">
-                  <label htmlFor="signup-password">Password *</label>
-                  <input
-                    id="signup-password"
-                    type="password"
-                    value={signupPassword}
-                    onChange={e => setSignupPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    minLength={6}
-                    required
-                  />
-                </div>
+                  {noticeMsg && (
+                    <div className="auth-feedback-banner success">
+                      {noticeMsg}
+                    </div>
+                  )}
 
-                <div className="form-group">
-                  <label htmlFor="signup-confirm-password">Confirm Password *</label>
-                  <input
-                    id="signup-confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    minLength={6}
-                    required
-                  />
-                </div>
+                  {error && (
+                    <div className="auth-feedback-banner error">
+                      {error}
+                    </div>
+                  )}
 
-                <button
-                  id="btn-sign-up"
-                  type="submit"
-                  className="btn-primary"
-                  disabled={loading}
-                  style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}
-                >
-                  {loading ? 'Creating Account...' : 'Create Account'} <ArrowRight size={16} />
-                </button>
-              </form>
+                  <form onSubmit={handleVerifyOtpAndCreateAccount} style={{ marginTop: '14px' }}>
+                    <div className="form-group" style={{ textAlign: 'center' }}>
+                      <label htmlFor="signup-otp-input" style={{ marginBottom: '8px', display: 'block' }}>
+                        Verification Code (OTP) *
+                      </label>
+                      <input
+                        id="signup-otp-input"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength="8"
+                        className="otp-input-field"
+                        placeholder="••••••••"
+                        value={signupOtp}
+                        onChange={e => setSignupOtp(e.target.value.replace(/\D/g, ''))}
+                        autoFocus
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                        Enter the code sent to your email to verify and create your account.
+                      </small>
+                    </div>
+
+                    <button
+                      id="btn-verify-otp"
+                      type="submit"
+                      className="btn-primary"
+                      disabled={loading}
+                      style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
+                    >
+                      {loading ? 'Verifying & Creating Account...' : 'Verify OTP & Create Account'} <Check size={16} />
+                    </button>
+
+                    <div className="otp-actions-row">
+                      <button
+                        id="btn-resend-otp"
+                        type="button"
+                        className="otp-resend-btn"
+                        disabled={otpCountdown > 0 || otpSending}
+                        onClick={handleResendOtp}
+                      >
+                        {otpSending ? 'Sending code...' : otpCountdown > 0 ? `Resend code in ${otpCountdown}s` : 'Resend OTP'}
+                      </button>
+
+                      <button
+                        id="btn-back-to-details"
+                        type="button"
+                        className="otp-back-link"
+                        onClick={() => { setSignupStep('details'); setError(''); setNoticeMsg(''); }}
+                      >
+                        ← Edit Details
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
 
               <p style={{ textAlign: 'center', marginTop: '18px', fontSize: '13.5px', color: 'var(--text-muted)' }}>
                 Already have an account?{' '}

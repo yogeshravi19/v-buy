@@ -68,12 +68,33 @@ async (page) => {
     await page.locator('#signup-confirm-password').fill(test1User.password);
 
     await page.locator('#btn-sign-up').click();
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(2000);
+
+    // Verify Email OTP verification screen appeared
+    const otpInput = page.locator('#signup-otp-input');
+    const isOtpScreenVisible = await otpInput.isVisible();
+    log(`Email OTP verification step appeared: ${isOtpScreenVisible}`);
+
+    if (isOtpScreenVisible) {
+      // Test invalid OTP rejection
+      log('Submitting incorrect OTP "000000" to verify protection...');
+      await otpInput.fill('000000');
+      await page.locator('#btn-verify-otp').click();
+      await page.waitForTimeout(1000);
+      let errText = await page.textContent('body');
+      log(`Incorrect OTP rejected properly: ${errText.includes('Invalid')}`);
+
+      // Now submit valid OTP code
+      log('Submitting valid verification code (123456)...');
+      await otpInput.fill('123456');
+      await page.locator('#btn-verify-otp').click();
+      await page.waitForTimeout(2500);
+    }
 
     // Verify user reached the dashboard
     let bodyText = await page.textContent('body');
     const signedUpReachedDashboard = bodyText.includes('Campus Food Courts') || bodyText.includes('Pre-Order Cart') || bodyText.includes('Browse Outlets');
-    log(`Manual signup dashboard reached: ${signedUpReachedDashboard}`);
+    log(`Manual signup dashboard reached after OTP: ${signedUpReachedDashboard}`);
 
     if (signedUpReachedDashboard) {
       // 1b. Log out

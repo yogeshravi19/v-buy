@@ -58,7 +58,7 @@ flowchart TB
     subgraph API["APPLICATION BACKEND (FastAPI / Python 3.11)"]
         direction TB
         F1["FastAPI Core Engine"]
-        F2["PhonePe Webhook Verifier"]
+        F2["Paytm Webhook Verifier"]
         F3["HMAC-SHA256 Token QR Engine"]
         F4["Background Task Scheduler"]
     end
@@ -72,7 +72,7 @@ flowchart TB
     end
 
     subgraph Gateways["EXTERNAL SERVICE GATEWAYS"]
-        PhonePe["PhonePe Payment Gateway<br/>(UPI, NetBanking, Cards)"]
+        Paytm["Paytm Payment Gateway<br/>(UPI, NetBanking, Cards)"]
         MSG91["MSG91 Notification Gateway<br/>(WhatsApp & SMS Alerts)"]
     end
 
@@ -85,10 +85,11 @@ flowchart TB
     Postgres --- RPC
     Postgres -->|Live Database Changes| Realtime
     Realtime -.->|Instant UI Updates| Clients
-    API -->|Initiate Payment| PhonePe
-    PhonePe -->|Webhook Verification| API
+    API -->|Initiate Payment| Paytm
+    Paytm -->|Webhook Verification| API
     API -->|Order Ready / OTP| MSG91
     MSG91 -.->|SMS / WhatsApp| C1
+
 ```
 
 ---
@@ -134,13 +135,13 @@ flowchart TD
     %% Option 1: Campus Wallet
     Choice -->|Option 1: Prepaid Wallet| Wallet["V FOODS Campus Wallet"]
     Wallet -->|If Balance Sufficient| WPay["1-Tap Atomic Wallet Debit (< 20ms)"]
-    Wallet -->|If Low Balance| WTop["1-Tap Top-Up Deficit via PhonePe / UPI"]
+    Wallet -->|If Low Balance| WTop["1-Tap Top-Up Deficit via Paytm / UPI"]
     WTop --> WPay
     WPay --> OrderSuccess["Order Confirmed + Token (#4826) -> Kitchen KDS"]
 
     %% Option 2: Instant Gateway
     Choice -->|Option 2: Instant Gateway| Gateway["Instant Payment Gateway"]
-    Gateway --> UPIOptions["PhonePe UPI / Paytm UPI / GPay / Cards"]
+    Gateway --> UPIOptions["Paytm UPI / GPay / PhonePe / Cards"]
     UPIOptions --> BankAuth["Direct Bank Authorization via Gateway"]
     BankAuth --> OrderSuccess
 ```
@@ -151,9 +152,10 @@ flowchart TD
 | **Best For** | Daily meals, regular students, 10-minute rush breaks | Visitors, first-time students, direct bank payers |
 | **Speed** | **Under 20 milliseconds (Fastest)** | 5–15 seconds (Standard UPI app authorization) |
 | **Prerequisites** | Pre-loaded wallet balance (rechargeable anytime) | None; works with zero prior balance |
-| **Providers** | Internal wallet float (recharged via PhonePe/UPI) | PhonePe, Paytm, Google Pay, BHIM, Cards |
+| **Providers** | Internal wallet float (recharged via Paytm / UPI) | Paytm PG, Google Pay, PhonePe, BHIM, Cards |
 | **Network Reliability** | Works seamlessly even with spotty campus signals | Requires active mobile internet to authorize UPI |
 | **Deficit Support** | Auto-calculated deficit top-up (+ ₹X & Pay) | Not needed — charges exact order total directly |
+
 
 ---
 
@@ -232,6 +234,7 @@ V FOODS is deployed using automated continuous deployment on **Render.com**:
   - Automatically rebuilds on git pushes to `main`.
 - **Backend API (`vfoods-api`)**:
   - Python 3.11 FastAPI service deployed in the Singapore region (`uvicorn main:app`).
-  - Connects to Supabase PostgreSQL via connection pooling and verifies PhonePe webhook signatures.
+  - Connects to Supabase PostgreSQL via connection pooling and verifies Paytm webhook signatures.
 - **Database (`Supabase Cloud`)**:
   - Hosted PostgreSQL 15 instance with automatic failover, WAL replication, and real-time subscription hubs.
+

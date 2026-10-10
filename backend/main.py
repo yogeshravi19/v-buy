@@ -1007,3 +1007,9 @@ try:
     app.include_router(init_media_router(sb, require_staff))
 except Exception as e:
     logger.warning(f"Could not load media router: {e}")
+
+try:
+    from routers.auth import init_auth_router
+    app.include_router(init_auth_router(sb))
+except Exception as e:
+    logger.warning(f"Could not load auth router: {e}")

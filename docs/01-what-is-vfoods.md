@@ -43,7 +43,8 @@ Commercial apps like Swiggy or Zomato are built for home deliveries over miles. 
 
 ## Summary of the Core Idea
 
-1. **Load Wallet Once**: Students top up their wallet in advance using PhonePe UPI.
+1. **Load Wallet Once**: Students top up their wallet in advance using Paytm UPI, Google Pay, PhonePe, or cards.
 2. **Pre-Order Before Arriving**: Students order from their phone during or right after class.
 3. **Kitchen Prepares in Advance**: Cooks assemble the dish while the student walks to the canteen.
 4. **Instant Handover**: Student presents a digital token or QR code at the counter, collects the meal, and avoids the queue entirely.
+

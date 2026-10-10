@@ -21,10 +21,12 @@ Here are the real tables active inside V FOODS's database, with a simple explana
 - **college_settlement_accounts**: Holds the host university's active campus Paytm account and institutional split percentage (5%).
 - **payment_splits**: Records the exact three-way revenue distribution (Shop, Platform, College) generated automatically on every meal order.
 - **refunds**: Holds full audit records of customer refunds across orders, wallet top-ups, and split rollbacks.
+- **audit_logs**: Holds an immutable forensic audit log recording all staff menu price changes, inventory adjustments, and administrative overrides.
 - **invites**: Holds special single-use invite codes used by administrators to add new shop owners and kitchen staff members safely.
 - **settings**: Holds campus-wide master controls, such as turning on festival mode to feature special event food stalls.
 
 > *For the complete relational schema, full column definitions, and constraint specifications, see the technical reference in [DATABASE.md](DATABASE.md).*
+
 
 
 ---

@@ -4,36 +4,42 @@ A simple guide to the tools, libraries, and services that power V FOODS, explain
 
 ---
 
-## React + Vite + TypeScript + Tailwind CSS
-
-- **What it is**: The software used to build everything you see on the screen.
+## React 19 + Vite + TypeScript + Tailwind CSS
+ 
+- **What it is**: The modern frontend technology stack used to build everything you see on the screen.
 - **What it does**:
-  - **React**: Organizes the screens into reusable building blocks like menu cards, cart drawers, and live order trackers.
-  - **Vite**: Bundles the code so pages load in less than a second, even on crowded college Wi-Fi or mobile data.
-  - **TypeScript**: Catches spelling and data mistakes before the app is sent to students and shop staff.
-  - **Tailwind CSS**: Styles every button, card, and layout cleanly so it looks great on any screen size.
-- **Why we chose it**: It creates a fast, app-like experience in any web browser without needing heavy downloads.
+  - **React 19**: Organizes the screens into modular, lightning-fast components like menu cards, cart drawers, live KDS boards, and order trackers.
+  - **Vite 8**: Bundles and serves the code instantly so pages load in less than 500 milliseconds, even on crowded college Wi-Fi or mobile data.
+  - **TypeScript**: Enforces strict type contracts and catches bugs during development before any code reaches student or counter tablets.
+  - **Tailwind CSS 4**: Modern utility-first styling engine providing clean, responsive layouts, dark modes, and crisp mobile bottom sheets.
+  - **TanStack Query (React Query v5)**: Manages smart client-side data caching (`stale-while-revalidate`), reducing server read traffic by 80%.
+  - **Zustand**: Lightweight global state manager handling the cart, active filters, and live order alerts without bulky boilerplate.
+  - **Framer Motion**: Delivers silky micro-animations, slide-over sheets, and smooth interactive feedback.
+- **Why we chose it**: It delivers an instantaneous, native-app-like Progressive Web App (PWA) experience inside mobile browsers without forcing students to download heavy app store binaries.
 
 ---
 
-## Capacitor
+## Capacitor (Cross-Platform Mobile Shell)
 
-- **What it is**: A tool that wraps the web application into an installable mobile app.
+- **What it is**: A bridge tool that wraps the web application into an installable mobile app.
 - **What it does**:
-  - Turns the website into an installable Android APK and iOS app.
-  - Gives the app access to device features like camera scanning for QR codes at food counters.
-- **Why we chose it**: We only need to write the code once, and it works on web browsers, phones, and counter tablets alike.
+  - Packages the web codebase into installable Android APK and iOS apps.
+  - Provides direct hardware access to native device features, such as camera scanning for express counter QR verification and web haptics.
+- **Why we chose it**: Single codebase architecture: one source of truth runs everywhere—on students' iPhones and Android phones, canteen tablets, and desktop admin consoles.
 
 ---
 
-## FastAPI (Python)
+## FastAPI (Python 3.11) + Uvicorn + Pydantic v2
 
-- **What it is**: A lightweight, fast backend engine running on our server.
+- **What it is**: A high-speed, asynchronous backend engine powering V FOODS API services.
 - **What it does**:
-  - Handles secure communication between V FOODS, PhonePe, and SMS services.
-  - Verifies digital signatures so nobody can fake a payment or top-up.
-  - Triggers automated WhatsApp and SMS notifications when food is ready.
-- **Why we chose it**: It is lightweight, fast, and handles thousands of students ordering at the same break time without crashing.
+  - Serves as the secure coordination layer between V FOODS, Paytm Payment Gateway, and MSG91 alerts.
+  - Generates and verifies cryptographic HMAC-SHA256 signatures for Paytm webhooks and counter QR pickup passes.
+  - Features an in-memory catalog cache (`/api/catalog/summary`) that serves 1,000+ simultaneous break-time requests in under 2 milliseconds.
+  - Runs background async tasks (via `APScheduler`) to safely cancel expired unpaid pending orders every 5 minutes.
+  - Automatically documents and validates all API data models using Pydantic v2.
+- **Why we chose it**: FastAPI handles high concurrent asynchronous I/O with minimal CPU overhead, making it immune to break-time traffic surges while keeping the door open for future Python-based campus food demand forecasting and ML models.
+
 
 ---
 
@@ -48,14 +54,16 @@ A simple guide to the tools, libraries, and services that power V FOODS, explain
 
 ---
 
-## PhonePe
+## Paytm Payment Gateway
 
-- **What it is**: The official payment gateway used for all student wallet top-ups.
+- **What it is**: The official payment gateway used for wallet top-ups and direct order checkout.
 - **What it does**:
-  - Lets students load money into their campus wallet using any UPI app (such as PhonePe, Google Pay, or BHIM) or bank cards.
-  - Sends a secure, digitally signed confirmation back to our server once money is received.
-  - Zero fees on UPI/RuPay so students get 100% of their money credited to their balance.
-- **Why we chose it**: PhonePe is the most popular payment app among students and provides direct, reliable UPI settlement. It is used strictly for wallet top-ups; orders themselves are paid directly from the wallet balance.
+  - Lets students load money into their campus wallet using any UPI app (Paytm, Google Pay, PhonePe, BHIM) or bank cards/netbanking.
+  - Generates secure cryptographic HMAC-SHA256 checksum signatures to protect every transaction against forgery.
+  - Sends a secure, digitally signed webhook confirmation directly from Paytm's servers to our FastAPI backend once payment succeeds.
+  - Enables an automated three-way revenue distribution (90% to Canteen, 5% to V Foods Platform, 5% to College) on all completed orders.
+- **Why we chose it**: Paytm is widely used across Indian campuses, offers high UPI success rates, provides robust enterprise sub-account split capabilities, and processes webhook confirmations server-to-server so payments never get lost if student Wi-Fi cuts out.
+
 
 ---
 

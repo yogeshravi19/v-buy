@@ -19,7 +19,7 @@ Before starting, make sure you have the following installed on your computer:
 V FOODS connects to three cloud services. To run the full system with live data, you will need credentials from each:
 
 1. **Supabase Project**: Provides the PostgreSQL database, authentication, Row-Level Security, and Realtime WebSocket events.
-2. **PhonePe Merchant Sandbox**: Provides test payment gateway credentials (`MERCHANT_ID`, `SALT_KEY`, and `SALT_INDEX`) for testing wallet top-ups without spending real money.
+2. **Paytm Merchant Credentials**: Provides sandbox/staging gateway credentials (`PAYTM_MID`, `PAYTM_MERCHANT_KEY`, `PAYTM_WEBSITE`, `PAYTM_CHANNEL_ID`, `PAYTM_INDUSTRY_TYPE_ID`) for testing wallet top-ups and direct order checkout with mock UPI/Cards.
 3. **MSG91 Account (Optional in Local Dev)**: Provides SMS and WhatsApp messaging APIs for order ready notifications. If left blank, the app logs notifications to the console instead of sending live SMS.
 
 ---
@@ -42,15 +42,18 @@ Create a file named `.env` inside the `backend/` directory with these variable n
 
 - `SUPABASE_URL`: The web address of your Supabase project.
 - `SUPABASE_SERVICE_ROLE_KEY`: The private service role key from Supabase (used by the backend for admin operations).
-- `PHONEPE_MERCHANT_ID`: Your PhonePe merchant ID code.
-- `PHONEPE_SALT_KEY`: The private cryptographic salt key provided by PhonePe for signing requests.
-- `PHONEPE_SALT_INDEX`: The salt index number assigned by PhonePe (usually `1`).
-- `PHONEPE_BASE_URL`: The API URL for PhonePe (sandbox: `https://api-preprod.phonepe.com/apis/pg-sandbox`).
-- `WEBHOOK_BASE_URL`: The address where PhonePe sends payment confirmations (e.g. a local tunnel address or public server URL).
+- `PAYTM_MID`: Your Paytm Merchant ID (use staging MID for testing).
+- `PAYTM_MERCHANT_KEY`: The private cryptographic AES/HMAC merchant key provided by Paytm.
+- `PAYTM_WEBSITE`: `WEBSTAGING` (for test mode) or `DEFAULT` (for production).
+- `PAYTM_CHANNEL_ID`: `WAP` (for mobile web checkout) or `WEB`.
+- `PAYTM_INDUSTRY_TYPE_ID`: `Retail`.
+- `PAYTM_ENV`: `STAGE` (for sandbox testing) or `PROD` (for live).
+- `WEBHOOK_BASE_URL`: The public HTTPS address where Paytm sends webhook callbacks (e.g. Ngrok tunnel or cloud host URL).
 - `FRONTEND_URL`: The address of the frontend app (e.g. `http://localhost:5173`).
-- `MSG91_AUTH_KEY`: Your MSG91 authorization key for messaging.
-- `MSG91_WHATSAPP_NUM`: The verified WhatsApp sender number registered on MSG91.
-- `QR_SECRET`: A random secret passphrase used to generate secure QR codes for order collection.
+- `MSG91_AUTH_KEY`: Your MSG91 authorization key for messaging (optional in dev).
+- `MSG91_WHATSAPP_INTEGRATED_NUMBER`: The verified WhatsApp sender number registered on MSG91.
+- `QR_SECRET`: A random secret passphrase used to generate secure HMAC-signed QR codes for order collection.
+
 
 ---
 

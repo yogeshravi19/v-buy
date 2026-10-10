@@ -31,13 +31,29 @@
   --text-subtle:  #64748B;
   --text-on-dark: #FFFFFF;
 
-  /* Borders & Shadows */
-  --border-color: #E2E8F0;
-  --border-dark:  #334155;
-  --shadow-sm:    0 1px 3px rgba(11,25,44,0.05);
-  --shadow-md:    0 4px 14px -2px rgba(11,25,44,0.08), 0 2px 6px -1px rgba(11,25,44,0.04);
-  --shadow-lg:    0 10px 25px -5px rgba(11,25,44,0.15);
-  --shadow-blue:  0 8px 24px rgba(30,64,175,0.2);
+  /* Semantic Tokens */
+  --surface:           #FFFFFF;
+  --surface-raised:    #F8FAFC;
+  --text-primary:      #0F172A;
+  --text-muted:        #475569;
+  --accent:            #1E40AF;
+  --accent-hover:      #1D4ED8;
+  --accent-active:     #0B192C;
+  --success:           #059669;
+  --warning:           #D97706;
+  --danger:            #DC2626;
+
+  /* Radius Scale */
+  --radius-card:       18px;
+  --radius-btn:        11px;
+  --radius-chip:       9999px;
+
+  /* Unified Soft Shadows */
+  --shadow-soft:       0 2px 10px -2px rgba(15,23,42,0.06), 0 1px 3px -1px rgba(15,23,42,0.04);
+  --shadow-float:      0 12px 28px -4px rgba(15,23,42,0.1), 0 4px 10px -2px rgba(15,23,42,0.05);
+  --shadow-sm:         var(--shadow-soft);
+  --shadow-md:         var(--shadow-soft);
+  --shadow-lg:         var(--shadow-float);
 
   /* Status badges — exact V FOODS values */
   --badge-placed-bg:    #FEF3C7;
@@ -68,6 +84,12 @@
   --r-lg:  16px;
   --r-xl:  20px;
   --r-2xl: 28px;
+}
+
+/* ── Tabular Numerals (prevents price, balance, and count digit jitter) ── */
+.tabular-nums, .font-mono, [data-tabular], .money-amount, .token-val, .price, .stat-pill strong, .price-display, .total-price {
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
 }
 
 /* ── Reset & Accessibility ──────────────────────────────────────────────── */
@@ -1472,6 +1494,88 @@ body::before {
   font-size: 12px;
   color: #1E40AF;
   line-height: 1.4;
+}
+
+.otp-box-card {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 18px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.otp-email-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #EFF6FF;
+  color: #1E40AF;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin: 6px 0 14px 0;
+  word-break: break-all;
+}
+.otp-input-field {
+  width: 100% !important;
+  max-width: 280px;
+  letter-spacing: 8px;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  text-align: center;
+  padding: 10px 12px !important;
+  font-family: monospace;
+  background: #FFFFFF !important;
+  border: 2px solid var(--blue-primary) !important;
+  border-radius: 10px !important;
+  margin: 0 auto 12px auto;
+  display: block;
+}
+.otp-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 12.5px;
+}
+.otp-resend-btn {
+  background: none;
+  border: none;
+  color: var(--blue-primary);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.otp-resend-btn:disabled {
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+.otp-back-link {
+  color: #64748B;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+}
+.otp-back-link:hover {
+  color: #0F172A;
+  text-decoration: underline;
+}
+.otp-sandbox-hint {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #FEF3C7;
+  border: 1px dashed #F59E0B;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #92400E;
+  text-align: center;
+  font-weight: 600;
 }
 
 
