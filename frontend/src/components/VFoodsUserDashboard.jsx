@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import useEmblaCarousel from 'embla-carousel-react'
 import {
   Search, X, ArrowLeft, Store, ShoppingBag, Clock, User, CreditCard,
   ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle,
@@ -10,8 +12,10 @@ import { getFoodImage } from '../lib/foodImages'
 import { supabase } from '../lib/supabase'
 import SpotlightSearch from './SpotlightSearch'
 import LiveOrderTracker from './LiveOrderTracker'
-import ItemDetailBottomSheet from './ItemDetailBottomSheet'
-import { triggerHaptic } from '../hooks/useWebHaptics'
+import { ItemDetailBottomSheet } from './ItemDetailBottomSheet'
+import { EmptyState } from './ui/empty-state'
+import { lightHaptic, mediumHaptic } from '../lib/haptics'
+import { motionDurations, motionEasings, getSlideVariants, fadeInUp } from '../lib/motion'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTHENTIC VIT CHENNAI FOOD COURTS (V FOODS User Dashboard)
@@ -125,6 +129,13 @@ export default function VFoodsUserDashboard({
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false)
   const [selectedDetailItem, setSelectedDetailItem] = useState(null)
   const [selectedDetailOutlet, setSelectedDetailOutlet] = useState(null)
+
+  // Motion & Carousel enhancements
+  const [cartBadgeBump, setCartBadgeBump] = useState(false)
+  const [prevTab, setPrevTab] = useState(tab || 'browse')
+  const [emblaRef] = useEmblaCarousel({ dragFree: true, containScroll: 'trimSnaps' })
+  const tabOrder = useMemo(() => ({ browse: 0, home: 0, cart: 1, orders: 2, wallet: 3, profile: 4 }), [])
+  const tabDirection = (tabOrder[tab] ?? 0) >= (tabOrder[prevTab] ?? 0) ? 1 : -1
 
   // Header Profile Dropdown & Edit Profile State
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -389,12 +400,19 @@ export default function VFoodsUserDashboard({
     const cartItem = (cart.items || []).find(ci => ci.id === item.id)
     const qty = cartItem ? cartItem.qty : 0
     return (
-      <div key={item.id} className="vfoods-dish-card">
-        <div className="vfoods-dish-img-wrap">
+      <div
+        key={item.id}
+        className="vfoods-dish-card cursor-pointer group transition-all"
+        onClick={() => {
+          setSelectedDetailItem(item)
+          setSelectedDetailOutlet(item.outlet)
+        }}
+      >
+        <div className="vfoods-dish-img-wrap overflow-hidden rounded-[14px]">
           <img
             src={getItemImageUrl(item)}
             alt={item.name}
-            className="vfoods-dish-img"
+            className="vfoods-dish-img transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
           />
           <div style={{
@@ -468,15 +486,29 @@ export default function VFoodsUserDashboard({
             </div>
           </div>
           <div className="vfoods-dish-bottom">
-            <span className="vfoods-dish-price">{money(item.price)}</span>
+            <span className="vfoods-dish-price font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(item.price)}</span>
             {qty > 0 ? (
-              <div className="vfoods-dish-qty-stepper">
-                <button onClick={() => removeFromCart(item.id)}>-</button>
-                <span>{qty}</span>
-                <button onClick={() => addToCart(item.outlet, item)}>+</button>
+              <div className="vfoods-dish-qty-stepper" onClick={e => e.stopPropagation()}>
+                <button onClick={() => { lightHaptic(); removeFromCart(item.id); }}>-</button>
+                <span className="font-mono">{qty}</span>
+                <button onClick={() => {
+                  lightHaptic();
+                  setCartBadgeBump(true);
+                  setTimeout(() => setCartBadgeBump(false), 300);
+                  addToCart(item.outlet, item);
+                }}>+</button>
               </div>
             ) : (
-              <button className="vfoods-dish-add-btn" onClick={() => addToCart(item.outlet, item)}>
+              <button
+                className="vfoods-dish-add-btn transition-transform active:scale-95"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  lightHaptic()
+                  setCartBadgeBump(true)
+                  setTimeout(() => setCartBadgeBump(false), 300)
+                  addToCart(item.outlet, item)
+                }}
+              >
                 + ADD
               </button>
             )}
@@ -655,11 +687,12 @@ export default function VFoodsUserDashboard({
                 </div>
 
                 {!searchResults.length ? (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
-                    <Utensils size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
-                    <p style={{ fontSize: '13px', fontWeight: 600 }}>No dishes found for "{searchQuery}"</p>
-                    <p style={{ fontSize: '11px' }}>Try searching "Dosa", "Biryani", or "Noodles"</p>
-                  </div>
+                  <EmptyState
+                    icon={Utensils}
+                    title={`No dishes found for "${searchQuery}"`}
+                    description="Try searching for Dosa, Biryani, Noodles, or Coffee."
+                    className="my-6"
+                  />
                 ) : (
                   <div className="vfoods-dish-grid-3">
                     {searchResults.map((item, idx) => renderDishCard(item, idx < 3))}
@@ -1397,7 +1430,12 @@ export default function VFoodsUserDashboard({
         <nav className="vfoods-bottom-nav">
           <button
             className={`vfoods-nav-tab ${(tab === 'browse' || tab === 'home') ? 'active' : ''}`}
-            onClick={() => { setSelectedFoodCourt(null); setTab('browse') }}
+            onClick={() => {
+              setPrevTab(tab)
+              setSelectedFoodCourt(null)
+              setTab('browse')
+              lightHaptic()
+            }}
           >
             <Store size={18} />
             <span className="vfoods-nav-tab-label">Home</span>
@@ -1405,18 +1443,32 @@ export default function VFoodsUserDashboard({
 
           <button
             className={`vfoods-nav-tab ${tab === 'cart' ? 'active' : ''}`}
-            onClick={() => setTab('cart')}
+            onClick={() => {
+              setPrevTab(tab)
+              setTab('cart')
+              lightHaptic()
+            }}
           >
             <ShoppingBag size={18} />
             <span className="vfoods-nav-tab-label">Cart</span>
             {cartQty > 0 && (
-              <span className="vfoods-nav-badge">{cartQty}</span>
+              <motion.span
+                className="vfoods-nav-badge"
+                animate={{ scale: cartBadgeBump ? [1, 1.35, 1] : 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                {cartQty}
+              </motion.span>
             )}
           </button>
 
           <button
             className={`vfoods-nav-tab ${tab === 'orders' ? 'active' : ''}`}
-            onClick={() => setTab('orders')}
+            onClick={() => {
+              setPrevTab(tab)
+              setTab('orders')
+              lightHaptic()
+            }}
           >
             <Clock size={18} />
             <span className="vfoods-nav-tab-label">Orders</span>
