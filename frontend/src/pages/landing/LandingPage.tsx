@@ -8,12 +8,12 @@ import {
 
 interface LandingPageProps {
   onLaunchApp: () => void
-  onQuickLogin?: (role: 'student' | 'staff' | 'shop_admin' | 'super_admin') => void
+  onQuickLogin?: (role: 'user' | 'staff' | 'shop_admin' | 'super_admin') => void
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLogin }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [activeRoleTab, setActiveRoleTab] = useState<'student' | 'staff' | 'shop' | 'admin'>('student')
+  const [activeRoleTab, setActiveRoleTab] = useState<'user' | 'staff' | 'shop' | 'admin'>('user')
   const [activeFaq, setActiveFaq] = useState<number | null>(null)
 
   // Interactive Live Demo Simulator
@@ -171,7 +171,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {[
-              { role: 'student', label: 'User', icon: ShoppingBag, color: 'hover:border-blue-500 hover:text-blue-400' },
+              { role: 'user', label: 'User', icon: ShoppingBag, color: 'hover:border-blue-500 hover:text-blue-400' },
               { role: 'staff', label: 'Canteen Staff', icon: UtensilsCrossed, color: 'hover:border-amber-500 hover:text-amber-400' },
               { role: 'shop_admin', label: 'Shop Owner', icon: Store, color: 'hover:border-emerald-500 hover:text-emerald-400' },
               { role: 'super_admin', label: 'Admin', icon: ShieldCheck, color: 'hover:border-purple-500 hover:text-purple-400' },
@@ -228,7 +228,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           {/* Simple Tab Pills */}
           <div className="flex flex-wrap justify-center gap-2 mt-6">
             {[
-              { id: 'student', label: '1. Users', icon: ShoppingBag },
+              { id: 'user', label: '1. Users', icon: ShoppingBag },
               { id: 'staff', label: '2. Kitchen Staff', icon: UtensilsCrossed },
               { id: 'shop', label: '3. Canteen Owners', icon: Store },
               { id: 'admin', label: '4. Campus Admins', icon: ShieldCheck }
@@ -249,8 +249,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
           </div>
         </div>
 
-        {/* Tab 1: Student */}
-        {activeRoleTab === 'student' && (
+        {/* Tab 1: User */}
+        {activeRoleTab === 'user' && (
           <div className="grid md:grid-cols-2 gap-8 items-center bg-[#101522] border border-slate-800 rounded-2xl p-6 sm:p-8">
             <div>
               <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block mb-2">For Users</span>
@@ -542,7 +542,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchApp, onQuickLo
 
             {/* 3 Synchronized Screen Cards */}
             <div className="grid sm:grid-cols-3 gap-4 mt-5">
-              {/* Screen 1: Student */}
+              {/* Screen 1: User */}
               <div className="bg-[#0B0E17] border border-blue-500/30 rounded-xl p-4 text-xs">
                 <div className="flex justify-between items-center pb-2.5 border-b border-slate-800 mb-2.5">
                   <span className="font-bold text-blue-400 flex items-center gap-1.5">

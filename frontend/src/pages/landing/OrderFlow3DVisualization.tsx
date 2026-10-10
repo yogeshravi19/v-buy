@@ -26,12 +26,12 @@ export interface OrderFlowStep {
 const FLOW_STEPS: OrderFlowStep[] = [
   {
     id: 1,
-    title: 'Student Submits Order',
-    source: 'Student Mobile Web / PWA',
+    title: 'User Submits Order',
+    source: 'User Mobile Web / PWA',
     target: 'FastAPI Backend Gateway',
     protocol: 'HTTPS / POST (JSON)',
     latency: '35ms',
-    description: 'Student confirms cart and taps "Pay from Wallet" or "Instant UPI". Device encrypts user session and transmits order payload with items, canteen ID, and pickup window.',
+    description: 'User confirms cart and taps "Pay from Wallet" or "Instant UPI". Device encrypts user session and transmits order payload with items, canteen ID, and pickup window.',
     technicalDetails: {
       endpoint: 'POST /api/orders/place_order_wallet',
       security: 'Bearer JWT (Supabase Auth) + Client Device Timestamp',
@@ -59,7 +59,7 @@ const FLOW_STEPS: OrderFlowStep[] = [
     target: 'PostgreSQL Database Engine',
     protocol: 'ACID Stored Procedure (RPC)',
     latency: '22ms',
-    description: 'PostgreSQL executes an atomic transaction: decrements available stock, debits the student campus wallet, generates a unique 4-digit pickup token, and inserts records into orders and order_items.',
+    description: 'PostgreSQL executes an atomic transaction: decrements available stock, debits the user campus wallet, generates a unique 4-digit pickup token, and inserts records into orders and order_items.',
     technicalDetails: {
       sql: 'BEGIN; UPDATE profiles SET balance = balance - :total; INSERT INTO orders (...); COMMIT;',
       security: 'PostgreSQL Row Level Security (RLS) enforces tenant outlet isolation',
@@ -110,12 +110,12 @@ const FLOW_STEPS: OrderFlowStep[] = [
   },
   {
     id: 7,
-    title: 'Order Ready Notification to Student',
+    title: 'Order Ready Notification to User',
     source: 'Realtime WebSocket Bus',
-    target: 'Student Mobile Web / PWA',
+    target: 'User Mobile Web / PWA',
     protocol: 'WSS Broadcast + Web Push',
     latency: '40ms',
-    description: 'The ready event streams back to the student smartphone. The UI dynamically changes from amber (Preparing) to vibrant green (Ready), rendering an HMAC-signed QR pickup pass and 4-digit token.',
+    description: 'The ready event streams back to the user smartphone. The UI dynamically changes from amber (Preparing) to vibrant green (Ready), rendering an HMAC-signed QR pickup pass and 4-digit token.',
     technicalDetails: {
       event: 'postgres_changes status == "ready"',
       security: 'HMAC-SHA256(QR_SECRET, "CB1." + order.id + "." + token)',
@@ -125,11 +125,11 @@ const FLOW_STEPS: OrderFlowStep[] = [
   {
     id: 8,
     title: 'Counter Pickup & QR Handover',
-    source: 'Student Mobile Web / PWA',
+    source: 'User Mobile Web / PWA',
     target: 'Express Pickup Bay & Scanner',
     protocol: 'Optical 2D QR Scan / Token Verification',
     latency: 'Instant (Physical)',
-    description: 'Student walks to Counter Bay 2 and presents the QR pass. Staff scans the code with the KDS camera or enters the 4-digit token. Order status moves to "Collected" and ledger archives.',
+    description: 'User walks to Counter Bay 2 and presents the QR pass. Staff scans the code with the KDS camera or enters the 4-digit token. Order status moves to "Collected" and ledger archives.',
     technicalDetails: {
       security: 'Single-use cryptographic signature verification prevents screenshot reuse',
       sql: 'UPDATE orders SET status = "collected" WHERE id = :id AND token = :token',
@@ -174,8 +174,8 @@ export const OrderFlow3DVisualization: React.FC = () => {
   // System Nodes definition for 3D coordinate space
   const nodes = useMemo(() => [
     {
-      id: 'student',
-      label: 'Student Device',
+      id: 'user',
+      label: 'User Device',
       sub: 'Mobile Web / PWA',
       color: 0x2563EB, // Royal Blue
       accentHex: '#2563EB',
@@ -376,13 +376,13 @@ export const OrderFlow3DVisualization: React.FC = () => {
 
     // Construct 3D Connection Conduit Pipes between nodes
     const conduitConnections = [
-      { from: 0, to: 1 }, // Student -> FastAPI
+      { from: 0, to: 1 }, // User -> FastAPI
       { from: 1, to: 2 }, // FastAPI -> PostgreSQL
       { from: 2, to: 3 }, // PostgreSQL -> Realtime
       { from: 3, to: 4 }, // Realtime -> Staff KDS
       { from: 4, to: 5 }, // Staff KDS -> Pickup Bay
-      { from: 3, to: 0 }, // Realtime -> Student
-      { from: 0, to: 5 }, // Student -> Pickup Bay
+      { from: 3, to: 0 }, // Realtime -> User
+      { from: 0, to: 5 }, // User -> Pickup Bay
     ]
 
     const pipeCurves: THREE.CatmullRomCurve3[] = []
@@ -432,14 +432,14 @@ export const OrderFlow3DVisualization: React.FC = () => {
 
     // Map each step in FLOW_STEPS to a specific conduit curve
     const stepToPipeMap: { [stepIdx: number]: number } = {
-      0: 0, // Step 1: Student -> FastAPI (pipe 0)
+      0: 0, // Step 1: User -> FastAPI (pipe 0)
       1: 1, // Step 2: FastAPI -> PostgreSQL (pipe 1)
       2: 1, // Step 3: PostgreSQL internal/write
       3: 2, // Step 4: PostgreSQL -> Realtime (pipe 2)
       4: 3, // Step 5: Realtime -> Staff KDS (pipe 3)
       5: 4, // Step 6: Staff KDS -> Status Ready (pipe 4)
-      6: 5, // Step 7: Realtime -> Student Notify (pipe 5)
-      7: 6, // Step 8: Student -> Pickup Bay (pipe 6)
+      6: 5, // Step 7: Realtime -> User Notify (pipe 5)
+      7: 6, // Step 8: User -> Pickup Bay (pipe 6)
     }
 
     // Animation Loop
@@ -562,7 +562,7 @@ export const OrderFlow3DVisualization: React.FC = () => {
           What Happens in the System After You Order?
         </h2>
         <p className="text-slate-600 text-sm sm:text-base mt-2">
-          Watch live data packets flow from a student's phone through the FastAPI gateway, Supabase PostgreSQL, Realtime WebSockets, and the Kitchen KDS terminal in under 150 milliseconds.
+          Watch live data packets flow from a user's phone through the FastAPI gateway, Supabase PostgreSQL, Realtime WebSockets, and the Kitchen KDS terminal in under 150 milliseconds.
         </p>
       </div>
 

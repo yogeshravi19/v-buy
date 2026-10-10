@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 
 export const InteractiveMockups: React.FC = () => {
-  // Student Phone interactive state
+  // User Phone interactive state
   const [phoneStep, setPhoneStep] = useState<'menu' | 'slot' | 'pay' | 'pass'>('menu')
   const [cartCount, setCartCount] = useState(2)
   const [vegOnly, setVegOnly] = useState(false)
@@ -44,12 +44,12 @@ export const InteractiveMockups: React.FC = () => {
           Two Unified Apps. Zero Friction.
         </h3>
         <p className="text-slate-600 text-sm sm:text-base mt-2">
-          Click around below to experience the student ordering flow and the canteen staff kitchen display screen in real time.
+          Click around below to experience the user ordering flow and the canteen staff kitchen display screen in real time.
         </p>
       </div>
 
       <div className="grid lg:grid-cols-12 gap-8 items-start">
-        {/* LEFT: Student Phone Simulator (5 cols) */}
+        {/* LEFT: User Phone Simulator (5 cols) */}
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 flex flex-col items-center">
           <div className="w-full flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
@@ -385,7 +385,7 @@ export const InteractiveMockups: React.FC = () => {
             {tabletTab === 'menu' && (
               <div className="space-y-3">
                 <p className="text-xs text-slate-600">
-                  Tap to instantly toggle dishes "In Stock" or "86 Sold Out". Changes reflect across all student mobile devices in under 200ms.
+                  Tap to instantly toggle dishes "In Stock" or "86 Sold Out". Changes reflect across all user mobile devices in under 200ms.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {menuItems.map((item, idx) => (

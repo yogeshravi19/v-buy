@@ -116,3 +116,20 @@ A simple guide to the tools, libraries, and services that power V FOODS, explain
   - Lets the AI inspect exact colors, spacing, and component designs straight from the design team.
   - Helps make sure the built screens match the approved mockups accurately.
 - **Why we chose it**: It ensures visual consistency and high design fidelity across all screens.
+
+---
+
+## UI, Animation & Design System Tools
+
+- **framer-motion**: Fluid transitions and physics-based spring animations for sheets, dialogs, ticket card transitions, and tab switching.
+- **sonner**: Lightweight, stackable toast notification system for calm, non-intrusive feedback.
+- **vaul**: Smooth mobile bottom drawer sheets for cart preview, food item detail, and quick actions.
+- **@radix-ui primitives**: Unstyled, accessible UI components (Dialog, Tabs, DropdownMenu, Tooltip, Switch, Select) customized to V Foods brand tokens.
+- **class-variance-authority, clsx, tailwind-merge**: Utility tools to build predictable, type-safe component style variants without conflicting CSS classes.
+- **@fontsource-variable/plus-jakarta-sans**: Self-hosted variable geometric sans font with tabular numerals so balances, prices, and tokens never jitter.
+- **@capacitor/haptics**: Tactile feedback on mobile device taps with graceful fallback to `navigator.vibrate` on web browsers.
+- **embla-carousel-react**: Smooth, physics-based carousel for category chips and featured dishes on the user screen.
+- **@tanstack/react-table**: Headless, sortable, filterable, and paginated data tables for admin and staff views.
+- **recharts**: SVG charting library styled with quiet gridlines and calm Royal Blue and Emerald palette.
+- **react-hook-form + zod**: High-performance form state management and strict schema validation for adding and editing menu items.
+- **date-fns**: Lightweight date formatting for order stamps and sales telemetry.

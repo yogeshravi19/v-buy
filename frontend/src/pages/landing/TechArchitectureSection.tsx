@@ -109,7 +109,7 @@ export const TechArchitectureSection: React.FC = () => {
     {
       id: 'high-traffic',
       title: 'High-Traffic Engine & Query Cache',
-      badge: 'TanStack Query v5 • 2,500+ Students',
+      badge: 'TanStack Query v5 • 2,500+ Users',
       icon: Layers,
       summary: 'Stale-While-Revalidate caching and in-memory FastAPI catalog routing designed for 1,000+ simultaneous break-hour orders.',
       points: [

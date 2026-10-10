@@ -88,7 +88,7 @@ const SCHEMA_TABLES: SchemaTable[] = [
       { name: 'id', type: 'uuid', isPrimary: true, description: 'References auth.users.id from Supabase Auth' },
       { name: 'email', type: 'varchar(255)', description: 'University or personal email address' },
       { name: 'full_name', type: 'varchar(120)', description: 'User or staff display name' },
-      { name: 'role', type: 'user_role_enum', description: "'student' | 'staff' | 'shop_admin' | 'super_admin'" },
+      { name: 'role', type: 'user_role_enum', description: "'user' | 'staff' | 'shop_admin' | 'super_admin'" },
       { name: 'outlet_id', type: 'uuid', isForeign: true, description: 'Assigned canteen for staff and shop_admin' },
       { name: 'loyalty_streak', type: 'integer', description: 'Consecutive daily ordering streak count' },
       { name: 'referral_code', type: 'varchar(20)', description: 'Personal invite code for campus referral bonuses' },
@@ -114,7 +114,7 @@ const SCHEMA_TABLES: SchemaTable[] = [
     id: 'features',
     name: 'public.coupons & group_carts',
     badge: 'Discounts • Peer Ordering',
-    summary: 'Campus event promo codes, multi-student group ordering rooms, and post-order item review ratings.',
+    summary: 'Campus event promo codes, multi-user group ordering rooms, and post-order item review ratings.',
     rlsPolicy: 'Group cart members have collaborative access to shared room codes; coupon validation occurs atomically at checkout.',
     realtime: true,
     fields: [
@@ -122,7 +122,7 @@ const SCHEMA_TABLES: SchemaTable[] = [
       { name: 'discount_value', type: 'numeric(10,2)', description: 'Flat INR amount or percentage discount' },
       { name: 'group_cart_code', type: 'varchar(10)', description: '6-digit peer room code for shared canteen carts' },
       { name: 'host_student_id', type: 'uuid', isForeign: true, description: 'References profiles.id (room creator)' },
-      { name: 'item_ratings', type: 'integer (1-5)', description: 'Verified post-meal student review scores' },
+      { name: 'item_ratings', type: 'integer (1-5)', description: 'Verified post-meal user review scores' },
     ]
   }
 ]
@@ -268,7 +268,7 @@ export const DatabaseSchemaArchitecture: React.FC = () => {
           <div>
             <h5 className="text-sm font-bold text-slate-900 mb-1">Sub-Second Status Sync</h5>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Staff clicking "Accept" or "Mark Ready" publishes status transitions straight to the student's active order tracking view.
+              Staff clicking "Accept" or "Mark Ready" publishes status transitions straight to the user's active order tracking view.
             </p>
           </div>
         </div>
