@@ -42,6 +42,10 @@ import {
   Eye
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { toast } from 'sonner'
+import { DataTable } from '../../components/ui/data-table'
+import { OutletComparisonChart, OutletHierarchyTree } from '../../components/admin/OutletHierarchyAndComparison'
+import { StatusBadge } from '../../components/ui/status-badge'
 
 export interface PlatformOrder {
   id: number
@@ -471,6 +475,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
     setOutletList(prev => prev.map(o => o.id === outletId ? { ...o, is_open: nextState } : o))
     if (setGlobalOutlets) setGlobalOutlets(prev => prev.map(o => o.id === outletId ? { ...o, is_open: nextState } : o))
+    toast.success(`Outlet ${target.name} forced ${nextState ? 'OPEN' : 'CLOSED'}`)
     if (addAuditLog) {
       addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'OUTLET', 'OVERRIDE_STATUS', `Forced outlet ${target.name} to ${nextState ? 'OPEN' : 'CLOSED'}`)
     }
@@ -493,6 +498,85 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     setOutletFormError(null)
     setShowAddOutletModal(true)
   }
+
+  const outletColumns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Outlet Name',
+      cell: ({ row }: any) => (
+        <div>
+          <div className="font-semibold text-slate-900">{row.original.name}</div>
+          <div className="text-[11px] text-slate-500">{row.original.location}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ row }: any) => (
+        <span className="font-mono text-xs text-slate-500">{row.original.id}</span>
+      )
+    },
+    {
+      accessorKey: 'is_event',
+      header: 'Type',
+      cell: ({ row }: any) => (
+        <span className="text-xs text-slate-600">
+          {row.original.is_event ? 'Event stall' : 'Regular'}
+        </span>
+      )
+    },
+    {
+      id: 'volume',
+      header: "Today's Volume",
+      cell: ({ row }: any) => {
+        const outletOrders = orders.filter(o => o.outlet_id === row.original.id)
+        const volume = outletOrders.reduce((s, o) => s + (o.total || 0), 0)
+        return (
+          <div>
+            <div className="font-bold text-slate-900 tabular-nums">{money(volume)}</div>
+            <div className="text-[11px] text-slate-500">{outletOrders.length} orders</div>
+          </div>
+        )
+      }
+    },
+    {
+      accessorKey: 'is_open',
+      header: 'Kitchen State',
+      cell: ({ row }: any) => (
+        <StatusBadge variant={row.original.is_open ? 'success' : 'neutral'}>
+          {row.original.is_open ? 'OPEN' : 'CLOSED'}
+        </StatusBadge>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'Master Override',
+      cell: ({ row }: any) => {
+        const outlet = row.original
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1"
+              onClick={() => openEditOutletModal(outlet)}
+              title="Edit outlet details"
+            >
+              <Edit size={12} />
+              <span>Edit</span>
+            </button>
+            <button
+              type="button"
+              className={`saas-btn saas-btn-sm ${outlet.is_open ? 'saas-btn-danger' : 'saas-btn-success'}`}
+              onClick={() => handleToggleOutlet(outlet.id)}
+            >
+              {outlet.is_open ? 'Force Close' : 'Force Open'}
+            </button>
+          </div>
+        )
+      }
+    }
+  ], [orders, money])
 
   // Create or Edit an outlet in the database
   const handleSaveOutlet = async (e: React.FormEvent) => {
@@ -574,7 +658,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const next = !eventMode
     setEventMode(next)
     if (setPropEventMode) setPropEventMode(next)
-    setNotice(next ? 'Festival and Event Mode enabled. 20 Riviera food stalls are now visible to campus students.' : 'Event Mode disabled. Standard dining outlets active.')
+    setNotice(next ? 'Festival and Event Mode enabled. 20 Riviera food stalls are now visible to users.' : 'Event Mode disabled. Standard dining outlets active.')
     setTimeout(() => setNotice(null), 5000)
     if (addAuditLog) {
       addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'SYSTEM', 'EVENT_MODE_TOGGLE', `Global festival mode set to ${next}`)
@@ -1184,7 +1268,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               TAB 3: OUTLETS
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'outlets' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlets & Canteen Master Registry</h3>
@@ -1203,68 +1287,20 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </div>
               )}
 
-              <div className="saas-card">
-                <div className="saas-table-container">
-                  <table className="saas-table">
-                    <thead>
-                      <tr>
-                        <th>Outlet Name</th>
-                        <th>ID</th>
-                        <th>Location</th>
-                        <th>Type</th>
-                        <th>Today's Volume</th>
-                        <th>Kitchen State</th>
-                        <th style={{ textAlign: 'right' }}>Master Override</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {outletsLoading && (
-                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>Loading outlets...</td></tr>
-                      )}
-                      {!outletsLoading && !outletsError && outletList.length === 0 && (
-                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>No outlets yet. Use Create New Outlet to add one.</td></tr>
-                      )}
-                      {outletList.map(outlet => {
-                        const outletOrders = orders.filter(o => o.outlet_id === outlet.id)
-                        const volume = outletOrders.reduce((s, o) => s + (o.total || 0), 0)
-                        return (
-                        <tr key={outlet.id}>
-                          <td style={{ fontWeight: 700 }}>{outlet.name}</td>
-                          <td style={{ fontFamily: 'monospace', fontSize: '12px', color: '#64748B' }}>{outlet.id}</td>
-                          <td style={{ fontSize: '12.5px', color: '#64748B' }}>{outlet.location}</td>
-                          <td style={{ fontSize: '12.5px' }}>{outlet.is_event ? 'Event stall' : 'Regular'}</td>
-                          <td style={{ fontWeight: 700 }}>{money(volume)} ({outletOrders.length} ords)</td>
-                          <td>
-                            <span className={`saas-badge ${outlet.is_open ? 'saas-badge-success' : 'saas-badge-danger'}`}>
-                              {outlet.is_open ? 'OPEN' : 'CLOSED'}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <button
-                                className="saas-btn saas-btn-sm saas-btn-secondary"
-                                onClick={() => openEditOutletModal(outlet)}
-                                title="Edit outlet details"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                <Edit size={12} />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                className={`saas-btn saas-btn-sm ${outlet.is_open ? 'saas-btn-danger' : 'saas-btn-success'}`}
-                                onClick={() => handleToggleOutlet(outlet.id)}
-                              >
-                                {outlet.is_open ? 'Force Close' : 'Force Open'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+              {/* Cross-Outlet Turnover Comparison Chart */}
+              <OutletComparisonChart outlets={outletList} orders={orders} money={money} />
+
+              {/* TanStack React Table with sorting, filtering, and pagination */}
+              <div className="saas-card p-4">
+                <DataTable
+                  columns={outletColumns}
+                  data={outletList}
+                  searchPlaceholder="Filter outlets by name, ID or location..."
+                />
               </div>
+
+              {/* Role Hierarchy Tree: Outlet -> Shop Admin -> Shop Staff */}
+              <OutletHierarchyTree outlets={outletList} users={usersList} />
             </div>
           )}
 
@@ -1282,7 +1318,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                         className={`saas-btn saas-btn-sm ${userRoleFilter === role ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
                         onClick={() => setUserRoleFilter(role)}
                       >
-                        {role === 'all' ? 'All Users' : role.replace('_', ' ').toUpperCase()}
+                        {role === 'all' ? 'All Users' : role === 'student' ? 'User' : role === 'staff' ? 'Shop Staff' : role === 'shop_admin' ? 'Shop Admin' : 'Super Admin'}
                       </button>
                     ))}
                   </div>
