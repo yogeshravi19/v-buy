@@ -103,7 +103,7 @@ Food orders placed by students/customers.
 - `user_id` (uuid, FK `profiles.id` ON DELETE RESTRICT).
 - `outlet_id` (text, FK `outlets.id` ON DELETE RESTRICT).
 - `token` (text, NULL): 3-digit daily counter pickup code.
-- `status` (order_status ENUM: `'payment_pending'`, `'placed'`, `'preparing'`, `'ready'`, `'collected'`, `'cancelled'`).
+- `status` (order_status ENUM: `'awaiting_payment'`, `'paid'`, `'confirmed'`, `'placed'`, `'preparing'`, `'ready'`, `'collected'`, `'cancelled'`, `'expired'`).
 - `payment_method` (payment_method ENUM: `'wallet'`, `'gateway'`).
 - `shop_payout` (int, CHECK shop_payout > 0): Raw subtotal for items.
 - `total` (int, CHECK total > 0): Student bill (`ceil(shop_payout * 1.05)`).
@@ -113,7 +113,7 @@ Food orders placed by students/customers.
 - `group_id` (uuid, NULL).
 - `is_group_payer` (boolean, DEFAULT false).
 - `cancel_reason` (text, NULL).
-- `expires_at` (timestamptz, NULL): Expiration for pending gateway orders.
+- `expires_at` (timestamptz, NULL): Expiration for pending gateway orders (default 10 minutes).
 - `created_at` (timestamptz, DEFAULT now()).
 - `updated_at` (timestamptz, DEFAULT now()).
 
@@ -204,16 +204,17 @@ Individual settlement payouts computed for every completed order.
   ```
 
 #### `refunds`
-Audit log of processed and pending customer refunds.
+Audit log of processed and pending customer refunds and split reversals.
 - `id` (bigint, GENERATED ALWAYS AS IDENTITY PK).
 - `payment_id` (bigint, FK `payments.id` ON DELETE RESTRICT).
 - `order_id` (bigint, NULL FK `orders.id` ON DELETE SET NULL).
 - `wallet_txn_id` (bigint, NULL FK `wallet_txns.id` ON DELETE SET NULL).
+- `refund_ref` (text, NOT NULL UNIQUE): Deterministic idempotency reference (e.g. `'refund-<payment_id>'`).
 - `refund_type` (text, CHECK `'ORDER_REFUND'`, `'WALLET_TOPUP_REFUND'`, `'SPLIT_REFUND'`).
 - `amount` (numeric, CHECK amount > 0).
 - `status` (text, DEFAULT 'PENDING' CHECK `'PENDING'`, `'SUCCESS'`, `'FAILED'`).
-- `paytm_refund_id` (text, NULL).
-- `reason` (text, NULL).
+- `paytm_refund_id` (text, NULL): Paytm gateway refund identifier.
+- `reason` (text, NULL): Reason for refund (e.g. `'Item sold out'`, `'Customer cancellation'`).
 - `created_at` (timestamptz, DEFAULT now()).
 - `processed_at` (timestamptz, NULL).
 
@@ -227,7 +228,7 @@ Audit log of processed and pending customer refunds.
 4. **Idempotent DB Procedure**: The backend invokes `verify_and_record_payment()` in PostgreSQL. If the transaction was already processed, it returns immediately without duplicating work.
 5. **Path Execution**:
    - For `WALLET_TOPUP`: Credits the user's wallet via `credit_wallet()` and links `wallet_txns.id`. Top-ups are never split.
-   - For `ORDER`: Marks the order `placed`, issues the 3-digit token, decrements stock, and calls `calculate_order_split()` to record the 3 split rows.
+   - For `ORDER`: Marks the order `confirmed`, issues the 3-digit token, decrements stock, and calls `calculate_order_split()` to record the 3 split rows.
 6. **Network Reliability**: Because confirmation occurs server-to-server, if a student closes their browser or their battery dies right after paying in UPI, confirmation is unaffected.
 
 ---
@@ -258,3 +259,62 @@ Audit log of processed and pending customer refunds.
   - `outlet_paytm_accounts`: Shop Admins view and manage only their outlet's row. Super Admins manage all.
   - `platform_settlement_account` & `college_settlement_accounts`: Restricted exclusively to Super Admins.
   - `refunds`: Users view own refunds; staff view outlet-scoped order refunds; Super Admins view all.
+
+---
+
+## 6. Payment Reliability, Reconciliation & Refunds (Migration 013)
+
+### 6.1 Payment Lifecycles by Scenario
+
+- **Failed Payment Case**:
+  - Payment fails on Paytm (`TXN_FAILURE`).
+  - Database updates `payments.status` to `FAILED` with error text.
+  - Linked order transitions from `awaiting_payment` to `expired`.
+  - Zero refunds created; no tokens assigned; items remain available for other students.
+
+- **Pending Payment Case**:
+  - Payment initiated; order set to `awaiting_payment`; payment row set to `PENDING`.
+  - Stays hidden from kitchen queue and shop staff until payment confirmed.
+  - If payment remains uncompleted after 10 minutes, database cleanup procedure `expire_stale_awaiting_orders(10)` automatically sets order to `expired`.
+
+- **Succeeded Payment but Order Unfulfillable**:
+  - Paytm payment succeeds (`TXN_SUCCESS`), but food item became unavailable or outlet closed.
+  - Procedure `verify_and_record_payment()` intercepts fulfillment failure and returns status `'refund_needed'`.
+  - Order status set to `cancelled` with `cancel_reason`.
+  - Order never enters kitchen queue.
+  - Deterministic automatic refund row inserted into `refunds` with `refund_ref = 'refund-<payment_id>'`.
+  - Backend dispatches refund request to Paytm Refund API.
+
+### 6.2 Reconciliation Mechanisms
+
+- **Background Periodic Worker**:
+  - Managed via `pg_cron` schedule executing `expire_stale_awaiting_orders(10)` every 2 minutes.
+  - Backend endpoint `POST /admin/payments/reconcile` queries Paytm Transaction Status API for payments stuck in `PENDING` > 5 minutes.
+  - Resolves transactions idempotently: confirms valid orders, fails abandoned ones, and auto-refunds unfulfillable ones.
+
+- **User Self-Healing Status Check**:
+  - Endpoint `POST /order/{order_id}/check-payment-status` invoked when student reopens app or taps "Check payment status".
+  - Queries Paytm gateway directly and updates database without trusting client device state.
+
+### 6.3 Refund Processing & Split Settlement
+
+- **Deterministic Unique Key**:
+  - Constraint `UNIQUE (refund_ref)` prevents duplicate refund execution on retries or concurrent webhook calls.
+- **Refund Destinations**:
+  - Direct gateway orders -> Refunded to original bank/UPI account via Paytm.
+  - Wallet-funded orders -> Refunded immediately back to campus wallet via `credit_wallet(..., kind='refund')`.
+- **Split Settlement Reversals**:
+  - In three-way splits, order cancellation records `SPLIT_REFUND` rows for Shop, Platform, and College shares, and sets pending settlement payouts to `FAILED` to prevent disbursement.
+
+### 6.4 What the User Experiences
+
+- **Checkout & Payment**:
+  - Pay button disabled once clicked; pending order session reused on retries to prevent duplicate charges.
+- **Confirmation Screen**:
+  - Displays *"Payment received, confirming your order"* with animated indicator while polling gateway.
+  - If verification exceeds 10 seconds, displays reassurance banner with order reference guaranteeing automated refund if order cannot be fulfilled.
+- **Order History Banner**:
+  - Clear plain-text status updates:
+    - *"Refund sent to your bank or wallet on [Date]"*
+    - *"Refund started: In progress with Paytm"*
+    - *"Refund failed - please contact support"*
