@@ -47,6 +47,7 @@ import { toast } from '../../components/ui/toast'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
+import PaymentsNeedingAttention from '../../components/admin/PaymentsNeedingAttention'
 
 export interface OrderItem {
   item_id?: number
@@ -2307,6 +2308,8 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'settlements' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <PaymentsNeedingAttention outletId={currentOutlet?.id} />
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Daily Bank Settlements</h3>

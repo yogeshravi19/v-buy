@@ -3745,6 +3745,32 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
         </div>
       </div>
 
+      {/* ── Refund & Payment Status Banner ── */}
+      {(order.refund || order.refund_status || isCancelled || order.status === 'awaiting_payment') && (
+        <div style={{ marginTop: '10px', marginBottom: '10px', padding: '10px 14px', borderRadius: '12px', fontSize: '12px', background: isCancelled ? '#FEF2F2' : '#F0FDF4', border: isCancelled ? '1px solid #FECACA' : '1px solid #BBF7D0' }}>
+          {order.refund?.status === 'SUCCESS' || order.refund_status === 'SUCCESS' ? (
+            <div style={{ color: '#166534', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={14} />
+              <span>Refund sent to your {order.payment_method === 'wallet' ? 'wallet' : 'bank'} on {new Date(order.refund?.processed_at || order.updated_at || Date.now()).toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' })}.</span>
+            </div>
+          ) : order.refund?.status === 'PENDING' || order.refund_status === 'PENDING' ? (
+            <div style={{ color: '#B45309', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clock size={14} />
+              <span>Refund started: In progress with Paytm banking gateway.</span>
+            </div>
+          ) : isCancelled ? (
+            <div style={{ color: '#991B1B', fontWeight: 600 }}>
+              Order cancelled {order.cancel_reason ? `· ${order.cancel_reason}` : ''}
+              {order.payment_method === 'gateway' && ' · If amount was debited, automated refund has been initiated to original source.'}
+            </div>
+          ) : order.status === 'awaiting_payment' ? (
+            <div style={{ color: '#854D0E', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Awaiting payment confirmation. If paid, confirmation completes automatically.</span>
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {/* ── Feature 6: Visual Order Stepper ── */}
       {!isCancelled && <OrderStepper status={order.status} order={order} />}
 

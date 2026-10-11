@@ -123,7 +123,10 @@ export default function VFoodsUserDashboard({
   const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false)
   const [selectedGatewayApp, setSelectedGatewayApp] = useState('phonepe') // 'phonepe' | 'paytm' | 'gpay' | 'upi'
   const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
-  const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
+  const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'verifying' | 'taking_long' | 'refunded' | 'success'
+  const [pendingSession, setPendingSession] = useState(null)
+  const [gatewayMessage, setGatewayMessage] = useState('')
+  const [isVerifyingStatus, setIsVerifyingStatus] = useState(false)
 
   // Spotlight & Detail Bottom Sheet State
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false)
@@ -227,53 +230,98 @@ export default function VFoodsUserDashboard({
       const activeOutletId = cart.outletId || (cart.items && cart.items[0]?.outlet_id) || 'g1'
       const formattedItems = (cart.items || []).map(i => ({ item_id: i.id, qty: i.qty }))
 
-      // Call Paytm Order Session backend
-      const resp = await fetch(`${API}/order/checkout/paytm-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          outlet_id: activeOutletId,
-          items: formattedItems,
-          payment_method: 'UPI_APP'
-        })
-      })
-
-      if (resp.ok) {
-        const data = await resp.json()
-        setGatewayStep('success')
-        setTimeout(() => {
-          setIsGatewayProcessing(false)
-          setIsGatewayModalOpen(false)
-          setGatewayStep('select')
-          placeOrder('gateway', {
-            provider: providerLabels[selectedGatewayApp] || 'Paytm UPI',
-            txnId: data.paytm_order_id,
-            orderId: data.order_id,
-            token: data.token
+      // Reuse existing pending session if matching, preventing double payments
+      let sessionData = pendingSession
+      if (!sessionData) {
+        const resp = await fetch(`${API}/order/checkout/paytm-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            outlet_id: activeOutletId,
+            items: formattedItems,
+            payment_method: 'UPI_APP'
           })
-        }, 600)
-        return
-      }
-    } catch (e) {
-      console.warn('Paytm backend session fallback:', e)
-    }
-
-    // Seamless fallback for local dev/offline sandbox
-    setTimeout(() => {
-      setGatewayStep('success')
-      setTimeout(() => {
-        setIsGatewayProcessing(false)
-        setIsGatewayModalOpen(false)
-        setGatewayStep('select')
-        placeOrder('instant_gateway', {
-          provider: providerLabels[selectedGatewayApp] || 'PhonePe / Paytm UPI',
-          txnId: 'UPI-' + Date.now().toString().slice(-8)
         })
-      }, 700)
-    }, 1000)
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}))
+          throw new Error(err.detail || 'Could not initiate checkout session')
+        }
+        sessionData = await resp.json()
+        setPendingSession(sessionData)
+      }
+
+      // Transition to "Payment received, confirming your order"
+      setGatewayStep('verifying')
+      setGatewayMessage('Payment received, confirming your order with kitchen...')
+
+      // Automatic status polling loop (asks backend directly, never trusts browser report)
+      let pollCount = 0
+      const pollInterval = setInterval(async () => {
+        pollCount++
+        try {
+          const checkResp = await fetch(`${API}/order/${sessionData.order_id}/check-payment-status`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          })
+          if (checkResp.ok) {
+            const checkData = await checkResp.json()
+            if (['confirmed', 'placed', 'preparing', 'ready', 'collected'].includes(checkData.order_status)) {
+              clearInterval(pollInterval)
+              setGatewayStep('success')
+              setTimeout(() => {
+                setIsGatewayProcessing(false)
+                setIsGatewayModalOpen(false)
+                setGatewayStep('select')
+                setPendingSession(null)
+                placeOrder('gateway', {
+                  provider: providerLabels[selectedGatewayApp] || 'Paytm UPI',
+                  txnId: sessionData.paytm_order_id,
+                  orderId: sessionData.order_id,
+                  token: checkData.token || sessionData.token
+                })
+              }, 700)
+              return
+            } else if (checkData.payment_status === 'REFUNDED' || checkData.order_status === 'cancelled') {
+              clearInterval(pollInterval)
+              setGatewayStep('refunded')
+              setGatewayMessage(checkData.cancel_reason || 'Order could not be fulfilled. Money has been refunded automatically to your payment source.')
+              setIsGatewayProcessing(false)
+              setPendingSession(null)
+              return
+            }
+          }
+        } catch (pollErr) {
+          console.warn('Payment status poll retry:', pollErr)
+        }
+
+        // After 10s (4 polls), show plain message with reference and auto-refund guarantee
+        if (pollCount >= 4) {
+          setGatewayStep('taking_long')
+          setGatewayMessage(
+            `Confirmation is taking a moment. Order #${sessionData.order_id} (Ref: ${sessionData.paytm_order_id}). If your payment was debited and your order does not complete, your money will be refunded automatically to your original payment source.`
+          )
+        }
+
+        // Cap auto-polling at 30 seconds
+        if (pollCount >= 12) {
+          clearInterval(pollInterval)
+          setIsGatewayProcessing(false)
+        }
+      }, 2500)
+
+    } catch (e) {
+      console.warn('Paytm backend session error:', e)
+      setIsGatewayProcessing(false)
+      setGatewayStep('select')
+      setGatewayMessage(e.message || 'Payment initiation failed. Please try again.')
+    }
   }
 
   // Cart totals
@@ -1351,6 +1399,106 @@ export default function VFoodsUserDashboard({
                 </div>
               )}
 
+              {/* Verifying Step */}
+              {gatewayStep === 'verifying' && (
+                <div style={{ textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '42px', height: '42px', border: '3px solid #E2E8F0', borderTopColor: '#059669', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <div style={{ fontWeight: 800, fontSize: '15px', color: '#0F172A' }}>
+                    Payment received, confirming your order...
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748B', maxWidth: '320px' }}>
+                    Directly verifying status with Paytm. Please do not close this window.
+                  </div>
+                  {pendingSession && (
+                    <div style={{ fontSize: '11px', background: '#F1F5F9', padding: '6px 12px', borderRadius: '8px', color: '#475569', fontWeight: 600 }}>
+                      Order Ref: #{pendingSession.order_id} · Gateway: {pendingSession.paytm_order_id}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Taking Long Step */}
+              {gatewayStep === 'taking_long' && (
+                <div style={{ textAlign: 'center', padding: '16px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clock size={24} />
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '15px', color: '#0F172A' }}>
+                    Confirmation Taking a Moment
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#475569', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '12px', lineHeight: '1.5', textAlign: 'left' }}>
+                    {gatewayMessage}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '6px' }}>
+                    <button
+                      className="vfoods-pay-btn-gateway"
+                      style={{ flex: 1, padding: '10px', fontSize: '12px' }}
+                      onClick={async () => {
+                        setIsVerifyingStatus(true)
+                        if (pendingSession) {
+                          const token = (await supabase?.auth?.getSession())?.data?.session?.access_token
+                          try {
+                            const res = await fetch(`${API}/order/${pendingSession.order_id}/check-payment-status`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+                            })
+                            if (res.ok) {
+                              const d = await res.json()
+                              if (['confirmed', 'placed', 'ready', 'preparing', 'collected'].includes(d.order_status)) {
+                                setGatewayStep('success')
+                                setTimeout(() => {
+                                  setIsGatewayModalOpen(false)
+                                  setGatewayStep('select')
+                                  setPendingSession(null)
+                                  placeOrder('gateway', { provider: 'Paytm UPI', txnId: pendingSession.paytm_order_id, orderId: pendingSession.order_id, token: d.token })
+                                }, 700)
+                              } else if (d.payment_status === 'REFUNDED' || d.order_status === 'cancelled') {
+                                setGatewayStep('refunded')
+                                setGatewayMessage('Order could not be fulfilled. Money has been refunded automatically to your payment source.')
+                              }
+                            }
+                          } catch (e) {
+                            console.warn('Manual check error:', e)
+                          }
+                        }
+                        setIsVerifyingStatus(false)
+                      }}
+                      disabled={isVerifyingStatus}
+                    >
+                      <RefreshCw size={14} className={isVerifyingStatus ? 'animate-spin' : ''} /> Check Payment Status
+                    </button>
+                    <button
+                      onClick={() => setIsGatewayModalOpen(false)}
+                      style={{ background: '#F1F5F9', border: 'none', borderRadius: '12px', padding: '10px 14px', fontSize: '12px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Refunded step */}
+              {gatewayStep === 'refunded' && (
+                <div style={{ textAlign: 'center', padding: '16px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AlertCircle size={24} />
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '15px', color: '#991B1B' }}>
+                    Automatic Refund Initiated
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#475569', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '12px', lineHeight: '1.5', textAlign: 'left' }}>
+                    {gatewayMessage}
+                  </div>
+                  <button
+                    onClick={() => { setIsGatewayModalOpen(false); setGatewayStep('select'); setPendingSession(null); }}
+                    className="vfoods-pay-btn-gateway"
+                    style={{ width: '100%', marginTop: '6px' }}
+                  >
+                    Return to Menu
+                  </button>
+                </div>
+              )}
+
               {/* Success confirmation */}
               {gatewayStep === 'success' && (
                 <div style={{ textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -1358,10 +1506,10 @@ export default function VFoodsUserDashboard({
                     <CheckCircle2 size={24} />
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '15px', color: '#166534' }}>
-                    Payment Approved by Bank!
+                    Payment Approved & Order Confirmed!
                   </div>
                   <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                    Generating kitchen order ticket and pickup token...
+                    Ticket queued in kitchen. Opening Live Order Tracker...
                   </div>
                 </div>
               )}

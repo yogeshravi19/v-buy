@@ -46,6 +46,7 @@ import { toast } from 'sonner'
 import { DataTable } from '../../components/ui/data-table'
 import { OutletComparisonChart, OutletHierarchyTree } from '../../components/admin/OutletHierarchyAndComparison'
 import { StatusBadge } from '../../components/ui/status-badge'
+import PaymentsNeedingAttention from '../../components/admin/PaymentsNeedingAttention'
 
 export interface PlatformOrder {
   id: number
@@ -1482,6 +1483,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'payments' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <PaymentsNeedingAttention />
+
               <div className="saas-kpi-grid">
                 <div className="saas-kpi-card">
                   <div className="saas-kpi-header">

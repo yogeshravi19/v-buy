@@ -13,7 +13,7 @@ V FOODS FastAPI Backend
 from __future__ import annotations
 
 import os, hashlib, hmac, base64, json, time, logging, secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import lru_cache
 from typing import Optional, List, Dict, Any
 
@@ -41,6 +41,7 @@ logger = logging.getLogger("vfoods")
 SUPABASE_URL              = os.getenv("SUPABASE_URL", "https://wahftohnwfoepuszvzrx.supabase.co")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "PLACEHOLDER_SERVICE_KEY")
 SUPABASE_JWT_SECRET       = os.getenv("SUPABASE_JWT_SECRET", "")
+RECONCILIATION_SECRET     = os.getenv("RECONCILIATION_SECRET") or os.getenv("SUPABASE_SECRET_KEY") or "vfoods-reconcile-secret-internal"
 
 PHONEPE_MERCHANT_ID = os.getenv("PHONEPE_MERCHANT_ID", "MOCK_MERCHANT")
 PHONEPE_SALT_KEY    = os.getenv("PHONEPE_SALT_KEY", "mock_salt_key")
@@ -373,6 +374,228 @@ def _paytm_verify_checksum(params: dict, key: str, checksum: str) -> bool:
         return False
     expected = _paytm_generate_checksum(params, key)
     return hmac.compare_digest(expected, checksum)
+
+
+def _record_split_refunds(payment_id: int, total_refund_amount: float):
+    """
+    Paytm deducts refunds from pending settlements.
+    Records SPLIT_REFUND ledger entries reversing each recipient's share proportionally,
+    and updates pending payment_splits.
+    """
+    try:
+        splits_res = sb.from_("payment_splits").select("*").eq("payment_id", payment_id).execute()
+        splits = splits_res.data or []
+        for split in splits:
+            split_pct = split.get("split_percentage") or 0
+            split_amount = round((float(total_refund_amount) * float(split_pct)) / 100.0, 2)
+            split_ref = f"split-refund-{split['id']}"
+            try:
+                sb.from_("refunds").insert({
+                    "payment_id": payment_id,
+                    "order_id": None,
+                    "refund_ref": split_ref,
+                    "refund_type": "SPLIT_REFUND",
+                    "amount": split_amount,
+                    "status": "SUCCESS",
+                    "reason": f"Split reversal for recipient {split['recipient_type']}"
+                }).execute()
+            except Exception as e:
+                logger.warning(f"Split refund insert note for split {split['id']}: {e}")
+
+            if split.get("settlement_status") == "PENDING":
+                sb.from_("payment_splits").update({
+                    "settlement_status": "FAILED",
+                    "settlement_reference": f"Clawed back via refund payment-{payment_id}"
+                }).eq("id", split["id"]).execute()
+    except Exception as e:
+        logger.error(f"Failed to record split refunds for payment {payment_id}: {e}")
+
+
+async def _paytm_check_transaction_status(paytm_order_id: str) -> dict:
+    """
+    Calls Paytm Transaction Status API (/v3/order/status).
+    Returns dict with resultStatus ('TXN_SUCCESS', 'TXN_FAILURE', 'PENDING'), txnId, resultMsg.
+    """
+    body_dict = {
+        "mid": PAYTM_MID,
+        "orderId": paytm_order_id
+    }
+    checksum = _paytm_generate_checksum(body_dict, PAYTM_MERCHANT_KEY)
+    req_payload = {
+        "head": {"signature": checksum},
+        "body": body_dict
+    }
+
+    if os.getenv("TEST_MODE") == "1" or PAYTM_MID.startswith("MOCK_"):
+        # Deterministic sandbox/test mock fallback when offline or in tests
+        is_success = "SUCCESS" in paytm_order_id or "ORDER" in paytm_order_id or "TOPUP" in paytm_order_id
+        is_fail = "FAIL" in paytm_order_id
+        return {
+            "resultStatus": "TXN_SUCCESS" if is_success and not is_fail else ("TXN_FAILURE" if is_fail else "PENDING"),
+            "txnId": f"TXN_{paytm_order_id}",
+            "resultMsg": "Mock transaction status response"
+        }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{PAYTM_BASE_URL}/v3/order/status",
+                json=req_payload,
+                headers={"Content-Type": "application/json"}
+            )
+            data = resp.json()
+            body = data.get("body", {})
+            result_info = body.get("resultInfo", {})
+            return {
+                "resultStatus": result_info.get("resultStatus", "PENDING"),
+                "txnId": body.get("txnId") or body.get("bankTxnId"),
+                "resultMsg": result_info.get("resultMsg", "")
+            }
+    except Exception as e:
+        logger.error(f"Paytm status check network error for {paytm_order_id}: {e}")
+        return {"resultStatus": "PENDING", "txnId": None, "resultMsg": str(e)}
+
+
+async def _paytm_initiate_refund(payment_id: int, amount: float, reason: str, order_id: Optional[int] = None) -> dict:
+    """
+    Deterministic Paytm refund initiating procedure (one refund per payment, refund-<payment_id>).
+    Idempotent: Re-triggering returns the existing refund without duplicating.
+    Records in refunds table (ORDER_REFUND) and marks payment REFUNDED upon success.
+    """
+    refund_ref = f"refund-{payment_id}"
+
+    # 1. Check if refund already exists in refunds table
+    existing = sb.from_("refunds").select("*").eq("refund_ref", refund_ref).execute()
+    if existing.data and len(existing.data) > 0:
+        row = existing.data[0]
+        if row["status"] == "SUCCESS":
+            return row
+
+    # 2. Fetch payment details
+    pay_row = sb.from_("payments").select("*").eq("id", payment_id).single().execute().data
+    if not pay_row:
+        raise HTTPException(404, f"Payment {payment_id} not found")
+
+    resolved_order_id = order_id or pay_row.get("order_id")
+    paytm_order_id = pay_row.get("paytm_order_id")
+    paytm_txn_id = pay_row.get("paytm_txn_id")
+
+    # 3. Insert or update initial PENDING refund record
+    try:
+        sb.rpc("record_refund", {
+            "p_payment_id": payment_id,
+            "p_refund_ref": refund_ref,
+            "p_refund_type": "ORDER_REFUND",
+            "p_amount": float(amount),
+            "p_status": "PENDING",
+            "p_order_id": resolved_order_id,
+            "p_paytm_refund_id": None,
+            "p_reason": reason
+        }).execute()
+    except Exception as e:
+        logger.error(f"Failed to record initial refund row: {e}")
+
+    # 4. Call Paytm Refund API
+    body_dict = {
+        "mid": PAYTM_MID,
+        "txnType": "REFUND",
+        "orderId": paytm_order_id or f"ORD-PAY-{payment_id}",
+        "txnId": paytm_txn_id or f"TXN-PAY-{payment_id}",
+        "refId": refund_ref,
+        "refundAmount": str(amount)
+    }
+    checksum = _paytm_generate_checksum(body_dict, PAYTM_MERCHANT_KEY)
+    req_payload = {
+        "head": {"clientId": "C11", "signature": checksum},
+        "body": body_dict
+    }
+
+    refund_status = "PENDING"
+    paytm_refund_id = None
+    resp_msg = ""
+
+    if os.getenv("TEST_MODE") == "1" or PAYTM_MID.startswith("MOCK_"):
+        refund_status = "SUCCESS"
+        paytm_refund_id = f"PAYTM_REF_{refund_ref}"
+        resp_msg = "Mock refund success"
+    else:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    f"{PAYTM_BASE_URL}/refund/apply",
+                    json=req_payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                res_json = resp.json()
+                body = res_json.get("body", {})
+                result_info = body.get("resultInfo", {})
+                res_code = result_info.get("resultStatus", "")
+                paytm_refund_id = body.get("refundId")
+                resp_msg = result_info.get("resultMsg", "")
+
+                if res_code in ("TXN_SUCCESS", "SUCCESS"):
+                    refund_status = "SUCCESS"
+                elif res_code in ("TXN_FAILURE", "FAILURE"):
+                    refund_status = "FAILED"
+                else:
+                    refund_status = "PENDING"
+        except Exception as e:
+            logger.error(f"Paytm refund request error: {e}")
+            resp_msg = str(e)
+
+    # 5. Persist final or pending refund status
+    rec_res = sb.rpc("record_refund", {
+        "p_payment_id": payment_id,
+        "p_refund_ref": refund_ref,
+        "p_refund_type": "ORDER_REFUND",
+        "p_amount": float(amount),
+        "p_status": refund_status,
+        "p_order_id": resolved_order_id,
+        "p_paytm_refund_id": paytm_refund_id,
+        "p_reason": f"{reason} | {resp_msg}"
+    }).execute()
+
+    # 6. If refund succeeded, record split refund rows
+    if refund_status == "SUCCESS":
+        _record_split_refunds(payment_id, float(amount))
+
+    return rec_res.data or {"status": refund_status, "refund_ref": refund_ref}
+
+
+async def _paytm_check_refund_status(paytm_order_id: str, refund_ref: str) -> dict:
+    """Queries Paytm's Refund Status API (/v2/refund/status) and updates status."""
+    body_dict = {
+        "mid": PAYTM_MID,
+        "orderId": paytm_order_id,
+        "refId": refund_ref
+    }
+    checksum = _paytm_generate_checksum(body_dict, PAYTM_MERCHANT_KEY)
+    req_payload = {
+        "head": {"clientId": "C11", "signature": checksum},
+        "body": body_dict
+    }
+
+    if os.getenv("TEST_MODE") == "1" or PAYTM_MID.startswith("MOCK_"):
+        return {"resultStatus": "TXN_SUCCESS", "refundId": f"PAYTM_REF_{refund_ref}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{PAYTM_BASE_URL}/v2/refund/status",
+                json=req_payload,
+                headers={"Content-Type": "application/json"}
+            )
+            data = resp.json().get("body", {})
+            res_info = data.get("resultInfo", {})
+            return {
+                "resultStatus": res_info.get("resultStatus", "PENDING"),
+                "refundId": data.get("refundId"),
+                "resultMsg": res_info.get("resultMsg", "")
+            }
+    except Exception as e:
+        logger.error(f"Paytm refund status check error for {refund_ref}: {e}")
+        return {"resultStatus": "PENDING", "refundId": None, "resultMsg": str(e)}
+
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -746,10 +969,11 @@ async def paytm_order_session(
 ):
     """
     Direct Order Payment via Paytm Gateway:
-    Creates an order in 'payment_pending' status and an associated payment record.
-    On verified webhook callback, the order is confirmed, stock decremented, and the
-    three-way split (Shop, Platform, College) is calculated and recorded.
-    Guarantees idempotency via X-Idempotency-Key and assigns sequential daily tokens per outlet.
+    1. Creates order with status 'awaiting_payment' before redirecting to Paytm.
+    2. Persists cart items into order_items.
+    3. Sets 10-minute expiry window.
+    4. Links to PENDING payments record.
+    5. Does NOT reduce stock or show in kitchen queue until payment is verified.
     """
     if not check_rate_limit(f"checkout:{user['id']}", limit=20, window_seconds=60):
         raise HTTPException(429, "Too many checkout attempts. Please wait a moment.")
@@ -760,33 +984,52 @@ async def paytm_order_session(
             logger.info(f"Returning cached checkout response for idempotency key: {x_idempotency_key}")
             return cached
 
+    # Verify menu items and compute total
     item_subtotal = 0
+    resolved_items = []
     for item in req.items:
-        item_row = sb.from_("menu_items").select("name,price").eq("id", item.item_id).single().execute().data
+        item_row = sb.from_("menu_items").select("id,name,price,available,stock_qty,outlet_id").eq("id", item.item_id).single().execute().data
         if not item_row:
             raise HTTPException(400, f"Item {item.item_id} not found")
+        if item_row.get("outlet_id") != req.outlet_id:
+            raise HTTPException(400, f"Item {item.item_id} does not belong to outlet {req.outlet_id}")
+        if not item_row.get("available", True):
+            raise HTTPException(400, f"Item '{item_row['name']}' is currently unavailable")
         item_subtotal += item_row["price"] * item.qty
+        resolved_items.append((item, item_row))
 
     convenience_fee = round(item_subtotal * 0.07, 2)
     total_amount = round(item_subtotal + convenience_fee, 2)
 
     merchant_order_id = f"ORD-PAYTM-{user['id'][:6]}-{int(time.time())}"
     token = await _get_next_outlet_token(req.outlet_id)
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat()
 
-    # 1. Create order in payment_pending
+    # 1. Create order in awaiting_payment (never appears in staff queue, does not reduce stock)
     order_insert = sb.from_("orders").insert({
         "user_id": user["id"],
         "outlet_id": req.outlet_id,
         "token": token,
-        "status": "payment_pending",
+        "status": "awaiting_payment",
         "payment_method": "gateway",
         "total": total_amount,
-        "shop_payout": item_subtotal
+        "shop_payout": item_subtotal,
+        "expires_at": expires_at
     }).execute()
 
     if not order_insert.data:
         raise HTTPException(500, "Failed to persist pending order in database")
     order_id = order_insert.data[0]["id"]
+
+    # Persist order items so fulfillment and stock checking are verifiable
+    for item, item_row in resolved_items:
+        sb.from_("order_items").insert({
+            "order_id": order_id,
+            "item_id": item.item_id,
+            "name": item_row["name"],
+            "price": item_row["price"],
+            "qty": item.qty
+        }).execute()
 
     # 2. Insert pending payment record
     pay_insert = sb.from_("payments").insert({
@@ -827,6 +1070,8 @@ async def paytm_order_session(
         "token": token,
         "amount": total_amount,
         "payment_id": payment_id,
+        "status": "awaiting_payment",
+        "expires_at": expires_at,
         "paytm_params": paytm_params,
         "gateway_url": f"{PAYTM_BASE_URL}/theia/processTransaction"
     }
@@ -834,15 +1079,15 @@ async def paytm_order_session(
     _save_idempotent_response(x_idempotency_key, response_payload)
     return response_payload
 
+
 @app.post("/webhooks/paytm")
 async def paytm_webhook(request: Request, bg: BackgroundTasks):
     """
     Paytm Webhook Callback Endpoint.
     1. Rejects untrusted / invalid checksum signatures with HTTP 400.
     2. Maps payload parameters and calls verify_and_record_payment().
-    3. Handles both WALLET_TOPUP (credits wallet) and ORDER (finalizes order + calculates 3-way split).
-    4. Guarantees idempotency on duplicate paytm_txn_id retries.
-    5. Raises HTTP 500 on database failure so Paytm initiates automatic retry schedule.
+    3. If payment succeeds but order cannot be fulfilled (sold out / closed), triggers automatic refund!
+    4. Handles both WALLET_TOPUP and ORDER flows idempotently.
     """
     content_type = request.headers.get("content-type", "")
     if "application/json" in content_type:
@@ -892,10 +1137,18 @@ async def paytm_webhook(request: Request, bg: BackgroundTasks):
     except Exception as e:
         logger.error(f"Database verify_and_record_payment failed: {e}")
         if SUPABASE_SERVICE_ROLE_KEY == DUMMY_KEY or os.getenv("TEST_MODE") == "1":
-            # In mock / test fallback environments without live Supabase
             result_data = {"status": status.lower(), "paytm_txn_id": paytm_txn_id}
         else:
             raise HTTPException(500, f"Database transaction failed during webhook verification: {e}")
+
+    # Check for automatic refund trigger (paid but cannot fulfill)
+    if result_data.get("status") == "refund_needed":
+        logger.warning(f"Order cannot be fulfilled for payment {result_data.get('payment_id')}: initiating automatic refund")
+        refund_amount = float(result_data.get("amount") or 0)
+        payment_id = result_data.get("payment_id")
+        reason = result_data.get("reason", "Order cannot be fulfilled — stock unavailable or outlet closed")
+        if payment_id and refund_amount > 0:
+            bg.add_task(_paytm_initiate_refund, payment_id, refund_amount, reason, result_data.get("order_id"))
 
     if status == "SUCCESS":
         purpose = result_data.get("purpose")
@@ -913,10 +1166,469 @@ async def paytm_webhook(request: Request, bg: BackgroundTasks):
     })
 
 
+@app.post("/webhooks/paytm/refund")
+async def paytm_refund_webhook(request: Request):
+    """
+    Paytm Refund Webhook Endpoint.
+    1. Rejects invalid checksum signatures with HTTP 400.
+    2. Idempotently updates the refunds table for ACCEPT, SUCCESS, and FAILURE events.
+    3. Records SPLIT_REFUND reversals and marks payments row REFUNDED upon SUCCESS.
+    """
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+        params = body.get("body", body)
+        checksum = body.get("head", {}).get("signature") or params.get("CHECKSUMHASH")
+    else:
+        form_data = await request.form()
+        params = dict(form_data)
+        checksum = params.pop("CHECKSUMHASH", None)
+
+    if not checksum or not _paytm_verify_checksum(params, PAYTM_MERCHANT_KEY, checksum):
+        logger.warning("Paytm refund webhook: Checksum verification failed")
+        raise HTTPException(400, "Invalid Paytm checksum signature")
+
+    logger.info(f"Paytm refund webhook verified: {params.get('REFID') or params.get('REFUNDID')}")
+
+    paytm_refund_id = params.get("REFUNDID") or params.get("refundId")
+    ref_id = params.get("REFID") or params.get("refId")
+    order_id = params.get("ORDERID") or params.get("orderId")
+    result_status = params.get("STATUS") or params.get("resultStatus", "")
+    amount = float(params.get("REFUNDAMOUNT") or params.get("refundAmount") or 0)
+    resp_msg = params.get("RESPMSG") or params.get("resultMsg") or ""
+
+    status = "SUCCESS" if result_status in ("TXN_SUCCESS", "SUCCESS") else ("FAILED" if result_status in ("TXN_FAILURE", "FAILURE") else "PENDING")
+
+    # Locate refund record
+    refund_row = None
+    if ref_id:
+        r_data = sb.from_("refunds").select("*").eq("refund_ref", ref_id).execute().data
+        if r_data:
+            refund_row = r_data[0]
+
+    if not refund_row and order_id:
+        p_data = sb.from_("payments").select("*").eq("paytm_order_id", order_id).execute().data
+        if p_data:
+            payment_id = p_data[0]["id"]
+            ref_id = ref_id or f"refund-{payment_id}"
+
+    if refund_row:
+        payment_id = refund_row["payment_id"]
+        ref_id = refund_row["refund_ref"]
+        amount = amount or float(refund_row["amount"])
+    elif not ref_id:
+        return JSONResponse({"status": "ignored", "reason": "No matching refund reference"})
+
+    sb.rpc("record_refund", {
+        "p_payment_id": payment_id,
+        "p_refund_ref": ref_id,
+        "p_refund_type": "ORDER_REFUND",
+        "p_amount": amount,
+        "p_status": status,
+        "p_order_id": None,
+        "p_paytm_refund_id": paytm_refund_id,
+        "p_reason": resp_msg
+    }).execute()
+
+    if status == "SUCCESS":
+        _record_split_refunds(payment_id, amount)
+
+    return JSONResponse({
+        "status": "SUCCESS",
+        "message": "Refund webhook processed idempotently",
+        "refund_status": status
+    })
+
+
+@app.post("/admin/payments/reconcile")
+async def reconcile_pending_payments(
+    request: Request,
+    bg: BackgroundTasks,
+    x_reconciliation_key: Optional[str] = Header(None)
+):
+    """
+    Scheduled Reconciliation Job.
+    1. Protected with secret token (X-Reconciliation-Key or Authorization Bearer).
+    2. Rate-limited to prevent abuse.
+    3. Finds payments in PENDING older than 2 minutes and checks Paytm transaction status.
+    4. Automatically resolves via idempotent verify_and_record_payment().
+    5. Triggers automated refunds if order cannot be fulfilled.
+    6. Expires stale orders older than 10 minutes.
+    7. Never returns sensitive payment credentials.
+    """
+    if not check_rate_limit("reconcile:job", limit=15, window_seconds=60):
+        raise HTTPException(429, "Too many reconciliation requests. Rate limit exceeded.")
+
+    auth_header = request.headers.get("Authorization", "")
+    token = x_reconciliation_key or (auth_header.split(" ")[1] if "Bearer " in auth_header else "")
+    if not token or (token != RECONCILIATION_SECRET and token != SUPABASE_SERVICE_ROLE_KEY):
+        raise HTTPException(401, "Invalid or missing reconciliation secret token")
+
+    # Fetch PENDING payments
+    pending_payments = sb.from_("payments").select("id,user_id,order_id,amount,payment_method,paytm_order_id,created_at").eq("status", "PENDING").execute().data or []
+
+    two_mins_ago = time.time() - 120
+    processed_count = 0
+    confirmed_count = 0
+    failed_count = 0
+    pending_count = 0
+    refunded_count = 0
+
+    for pay in pending_payments:
+        created_ts = datetime.fromisoformat(pay["created_at"].replace("Z", "+00:00")).timestamp() if pay.get("created_at") else 0
+        if created_ts >= two_mins_ago:
+            # Leave recent payments alone (allow in-flight webhook)
+            pending_count += 1
+            continue
+
+        paytm_order_id = pay.get("paytm_order_id")
+        if not paytm_order_id:
+            continue
+
+        processed_count += 1
+        status_info = await _paytm_check_transaction_status(paytm_order_id)
+        res_status = status_info.get("resultStatus")
+
+        if res_status in ("TXN_SUCCESS", "SUCCESS"):
+            try:
+                rpc_res = sb.rpc("verify_and_record_payment", {
+                    "p_paytm_txn_id": status_info.get("txnId") or paytm_order_id,
+                    "p_status": "SUCCESS",
+                    "p_paytm_order_id": paytm_order_id,
+                    "p_payment_reference": f"paytm:{status_info.get('txnId')}",
+                    "p_failure_reason": None,
+                    "p_payment_method": pay.get("payment_method", "UPI_APP")
+                }).execute()
+                res_data = rpc_res.data or {}
+
+                if res_data.get("status") == "refund_needed":
+                    refunded_count += 1
+                    bg.add_task(
+                        _paytm_initiate_refund,
+                        pay["id"],
+                        float(pay["amount"]),
+                        res_data.get("reason", "Order cannot be fulfilled"),
+                        pay.get("order_id")
+                    )
+                else:
+                    confirmed_count += 1
+            except Exception as e:
+                logger.error(f"Reconciliation error resolving payment {pay['id']}: {e}")
+
+        elif res_status in ("TXN_FAILURE", "FAILURE"):
+            failed_count += 1
+            try:
+                sb.rpc("verify_and_record_payment", {
+                    "p_paytm_txn_id": status_info.get("txnId"),
+                    "p_status": "FAILED",
+                    "p_paytm_order_id": paytm_order_id,
+                    "p_failure_reason": status_info.get("resultMsg", "Payment failed on Paytm gateway")
+                }).execute()
+            except Exception as e:
+                logger.error(f"Reconciliation error marking failure on payment {pay['id']}: {e}")
+
+        else:
+            pending_count += 1
+
+    # Run expiration for stale unpaid orders
+    expired_count = 0
+    try:
+        exp_res = sb.rpc("expire_stale_awaiting_orders", {"p_older_than_minutes": 10}).execute()
+        expired_count = exp_res.data or 0
+    except Exception as e:
+        logger.warning(f"expire_stale_awaiting_orders procedure note: {e}")
+
+    return {
+        "status": "ok",
+        "processed_count": processed_count,
+        "confirmed_count": confirmed_count,
+        "failed_count": failed_count,
+        "pending_count": pending_count,
+        "refunded_count": refunded_count,
+        "expired_orders_count": expired_count
+    }
+
+
+@app.post("/order/{order_id}/check-payment-status")
+async def check_order_payment_status(order_id: int, user=Depends(get_current_user)):
+    """
+    Called when a user returns to the app or taps 'Check payment status'.
+    Asks Paytm directly and never trusts what the browser reports.
+    """
+    if not check_rate_limit(f"status_check:{user['id']}", limit=30, window_seconds=60):
+        raise HTTPException(429, "Too many status checks. Please wait a few seconds.")
+
+    order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order["user_id"] != user["id"] and user.get("role") not in ("super_admin", "admin", "shop_admin"):
+        raise HTTPException(403, "Forbidden")
+
+    # If order is already confirmed / placed
+    if order["status"] in ("confirmed", "placed", "preparing", "ready", "collected"):
+        return {
+            "order_id": order_id,
+            "order_status": order["status"],
+            "token": order.get("token"),
+            "payment_status": "SUCCESS",
+            "message": "Order is confirmed and active in kitchen queue."
+        }
+
+    # Find associated payment
+    pay_row = None
+    if order.get("payment_id"):
+        pay_row = sb.from_("payments").select("*").eq("id", order["payment_id"]).single().execute().data
+    if not pay_row:
+        pay_rows = sb.from_("payments").select("*").eq("order_id", order_id).order("id", desc=True).limit(1).execute().data
+        if pay_rows:
+            pay_row = pay_rows[0]
+
+    if not pay_row:
+        return {
+            "order_id": order_id,
+            "order_status": order["status"],
+            "payment_status": "UNKNOWN",
+            "message": "No payment record found for this order."
+        }
+
+    # If payment is still PENDING, ask Paytm directly
+    if pay_row["status"] == "PENDING" and pay_row.get("paytm_order_id"):
+        status_info = await _paytm_check_transaction_status(pay_row["paytm_order_id"])
+        res_status = status_info.get("resultStatus")
+
+        if res_status in ("TXN_SUCCESS", "SUCCESS"):
+            rpc_res = sb.rpc("verify_and_record_payment", {
+                "p_paytm_txn_id": status_info.get("txnId") or pay_row["paytm_order_id"],
+                "p_status": "SUCCESS",
+                "p_paytm_order_id": pay_row["paytm_order_id"],
+                "p_payment_reference": f"paytm:{status_info.get('txnId')}",
+                "p_failure_reason": None,
+                "p_payment_method": pay_row.get("payment_method", "UPI_APP")
+            }).execute()
+            data = rpc_res.data or {}
+
+            if data.get("status") == "refund_needed":
+                await _paytm_initiate_refund(
+                    pay_row["id"],
+                    float(pay_row["amount"]),
+                    data.get("reason", "Order cannot be fulfilled"),
+                    order_id
+                )
+        elif res_status in ("TXN_FAILURE", "FAILURE"):
+            sb.rpc("verify_and_record_payment", {
+                "p_paytm_txn_id": status_info.get("txnId"),
+                "p_status": "FAILED",
+                "p_paytm_order_id": pay_row["paytm_order_id"],
+                "p_failure_reason": status_info.get("resultMsg", "Payment failed on Paytm")
+            }).execute()
+
+        # Re-fetch fresh records
+        order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data or order
+        pay_row = sb.from_("payments").select("*").eq("id", pay_row["id"]).single().execute().data or pay_row
+
+    return {
+        "order_id": order_id,
+        "order_status": order["status"],
+        "token": order.get("token"),
+        "payment_status": pay_row["status"],
+        "payment_id": pay_row["id"],
+        "cancel_reason": order.get("cancel_reason"),
+        "message": "Payment verified" if pay_row["status"] == "SUCCESS" else ("Payment pending" if pay_row["status"] == "PENDING" else "Payment failed or refunded")
+    }
+
+
+@app.post("/admin/refunds/reconcile")
+async def reconcile_stuck_refunds(request: Request, x_reconciliation_key: Optional[str] = Header(None)):
+    """Resolves refunds stuck in PENDING older than 5 minutes through Paytm's Refund Status API."""
+    auth_header = request.headers.get("Authorization", "")
+    token = x_reconciliation_key or (auth_header.split(" ")[1] if "Bearer " in auth_header else "")
+    if not token or (token != RECONCILIATION_SECRET and token != SUPABASE_SERVICE_ROLE_KEY):
+        raise HTTPException(401, "Invalid or missing reconciliation secret token")
+
+    stuck_refunds = sb.from_("refunds").select("*, payments(paytm_order_id)").eq("status", "PENDING").execute().data or []
+    resolved_count = 0
+
+    for ref in stuck_refunds:
+        paytm_order_id = ref.get("payments", {}).get("paytm_order_id") if ref.get("payments") else None
+        if not paytm_order_id:
+            continue
+        res = await _paytm_check_refund_status(paytm_order_id, ref["refund_ref"])
+        res_status = res.get("resultStatus")
+        if res_status in ("TXN_SUCCESS", "SUCCESS"):
+            sb.rpc("record_refund", {
+                "p_payment_id": ref["payment_id"],
+                "p_refund_ref": ref["refund_ref"],
+                "p_refund_type": ref["refund_type"],
+                "p_amount": float(ref["amount"]),
+                "p_status": "SUCCESS",
+                "p_paytm_refund_id": res.get("refundId"),
+                "p_reason": "Reconciled via Refund Status API"
+            }).execute()
+            _record_split_refunds(ref["payment_id"], float(ref["amount"]))
+            resolved_count += 1
+        elif res_status in ("TXN_FAILURE", "FAILURE"):
+            sb.rpc("record_refund", {
+                "p_payment_id": ref["payment_id"],
+                "p_refund_ref": ref["refund_ref"],
+                "p_refund_type": ref["refund_type"],
+                "p_amount": float(ref["amount"]),
+                "p_status": "FAILED",
+                "p_paytm_refund_id": res.get("refundId"),
+                "p_reason": res.get("resultMsg", "Refund failed on Paytm")
+            }).execute()
+            resolved_count += 1
+
+    return {"status": "ok", "stuck_refunds_checked": len(stuck_refunds), "resolved_count": resolved_count}
+
+
+@app.post("/order/{order_id}/user-cancel")
+async def user_cancel_order(order_id: int, request: Request, bg: BackgroundTasks, user=Depends(get_current_user)):
+    """
+    Customer cancels order before preparation starts (allowed when status is 'awaiting_payment', 'placed', or 'confirmed').
+    Wallet orders refund back to wallet instantly.
+    Direct Paytm orders refund through Paytm Refund API.
+    """
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    reason = body.get("reason", "Cancelled by user before preparation")
+
+    order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order["user_id"] != user["id"]:
+        raise HTTPException(403, "Forbidden")
+    if order["status"] not in ("awaiting_payment", "payment_pending", "placed", "confirmed"):
+        raise HTTPException(400, f"Cannot cancel order once in status '{order['status']}'. Kitchen has begun preparation.")
+
+    sb.from_("orders").update({
+        "status": "cancelled",
+        "cancel_reason": reason,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }).eq("id", order_id).execute()
+
+    refund_info = None
+    if order["payment_method"] == "wallet":
+        sb.rpc("credit_wallet", {
+            "p_user_id": user["id"],
+            "p_amount": order["total"],
+            "p_kind": "refund",
+            "p_ref": f"refund:order:{order_id}",
+            "p_note": f"Refund for cancelled order #{order_id}: {reason}"
+        }).execute()
+        refund_info = {"type": "wallet", "amount": order["total"], "status": "credited"}
+    else:
+        pay_rows = sb.from_("payments").select("*").eq("order_id", order_id).execute().data
+        if pay_rows and pay_rows[0]["status"] == "SUCCESS":
+            refund_res = await _paytm_initiate_refund(pay_rows[0]["id"], float(pay_rows[0]["amount"]), reason, order_id)
+            refund_info = {
+                "type": "paytm_gateway",
+                "amount": pay_rows[0]["amount"],
+                "status": refund_res.get("status", "PENDING"),
+                "refund_ref": refund_res.get("refund_ref")
+            }
+
+    return {"order_id": order_id, "status": "cancelled", "refund": refund_info}
+
+
+@app.get("/admin/payments/attention")
+async def get_payments_needing_attention(user=Depends(get_current_user)):
+    """
+    Super Admin / Shop Admin visibility into payments needing attention:
+    - Payments in PENDING older than 5 minutes
+    - Payments in SUCCESS without a confirmed order
+    - Refunds in PENDING or FAILED
+    Super Admin sees all outlets; Shop Admin sees only their own outlet.
+    """
+    role = user.get("role")
+    outlet_id = user.get("outlet_id")
+
+    if not role or role not in ("super_admin", "admin", "shop_admin"):
+        pr = sb.from_("profiles").select("role,outlet_id").eq("id", user["id"]).single().execute().data
+        if pr:
+            role = pr.get("role")
+            outlet_id = pr.get("outlet_id")
+
+    if role not in ("super_admin", "admin", "shop_admin"):
+        raise HTTPException(403, "Access restricted to Super Admin and Shop Admin")
+
+    is_super = role in ("super_admin", "admin")
+    five_mins_ago = time.time() - 300
+
+    payments_res = sb.from_("payments").select("id,user_id,order_id,amount,payment_purpose,payment_method,status,paytm_order_id,created_at").execute().data or []
+    pending_stuck = []
+    success_unconfirmed = []
+
+    for p in payments_res:
+        created_ts = datetime.fromisoformat(p["created_at"].replace("Z", "+00:00")).timestamp() if p.get("created_at") else 0
+        order_row = None
+        if p.get("order_id"):
+            ord_res = sb.from_("orders").select("outlet_id,status").eq("id", p["order_id"]).single().execute().data
+            order_row = ord_res
+
+        # Outlet filtering for shop admin
+        if not is_super and order_row and order_row.get("outlet_id") != outlet_id:
+            continue
+
+        if p["status"] == "PENDING" and created_ts < five_mins_ago:
+            pending_stuck.append({
+                "payment_id": p["id"],
+                "order_id": p.get("order_id"),
+                "amount": p["amount"],
+                "paytm_order_id": p.get("paytm_order_id"),
+                "created_at": p["created_at"],
+                "reason": "Payment pending > 5 minutes without webhook resolution"
+            })
+        elif p["status"] == "SUCCESS" and p.get("order_id"):
+            if order_row and order_row.get("status") not in ("confirmed", "placed", "preparing", "ready", "collected"):
+                success_unconfirmed.append({
+                    "payment_id": p["id"],
+                    "order_id": p["order_id"],
+                    "amount": p["amount"],
+                    "order_status": order_row.get("status"),
+                    "created_at": p["created_at"],
+                    "reason": f"Payment SUCCESS but order status is {order_row.get('status')}"
+                })
+
+    refunds_res = sb.from_("refunds").select("id,payment_id,order_id,refund_ref,refund_type,amount,status,reason,created_at").in_("status", ["PENDING", "FAILED"]).execute().data or []
+    needing_attention_refunds = []
+
+    for r in refunds_res:
+        order_outlet = None
+        if r.get("order_id"):
+            ord_res = sb.from_("orders").select("outlet_id").eq("id", r["order_id"]).single().execute().data
+            order_outlet = ord_res.get("outlet_id") if ord_res else None
+
+        if not is_super and order_outlet and order_outlet != outlet_id:
+            continue
+
+        needing_attention_refunds.append({
+            "refund_id": r["id"],
+            "payment_id": r["payment_id"],
+            "order_id": r.get("order_id"),
+            "refund_ref": r["refund_ref"],
+            "amount": r["amount"],
+            "status": r["status"],
+            "reason": r.get("reason"),
+            "created_at": r["created_at"]
+        })
+
+    return {
+        "role": role,
+        "outlet_id": outlet_id if not is_super else "all",
+        "pending_payments_stuck": pending_stuck,
+        "success_payments_unconfirmed": success_unconfirmed,
+        "refunds_needing_attention": needing_attention_refunds,
+        "total_items": len(pending_stuck) + len(success_unconfirmed) + len(needing_attention_refunds)
+    }
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Staff endpoints
 # ──────────────────────────────────────────────────────────────────────────────
-STATUS_TRANSITIONS = {"placed": "preparing", "preparing": "ready"}
+STATUS_TRANSITIONS = {"placed": "preparing", "confirmed": "preparing", "preparing": "ready"}
 
 @app.post("/staff/order/{order_id}/advance")
 async def advance_order(order_id: int, bg: BackgroundTasks, user=Depends(require_staff)):
@@ -937,6 +1649,7 @@ async def advance_order(order_id: int, bg: BackgroundTasks, user=Depends(require
 
     return {"order_id": order_id, "status": next_status}
 
+
 @app.post("/staff/order/{order_id}/cancel")
 async def cancel_order(order_id: int, request: Request, bg: BackgroundTasks, user=Depends(require_staff)):
     body = await request.json()
@@ -950,8 +1663,13 @@ async def cancel_order(order_id: int, request: Request, bg: BackgroundTasks, use
     if order["status"] in ("collected", "cancelled"):
         raise HTTPException(400, "Cannot cancel at this stage")
 
-    sb.from_("orders").update({"status": "cancelled", "cancel_reason": reason}).eq("id", order_id).execute()
+    sb.from_("orders").update({
+        "status": "cancelled",
+        "cancel_reason": reason,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }).eq("id", order_id).execute()
 
+    refund_info = None
     # Refund if wallet order
     if order["payment_method"] == "wallet":
         sb.rpc("credit_wallet", {
@@ -961,10 +1679,21 @@ async def cancel_order(order_id: int, request: Request, bg: BackgroundTasks, use
             "p_ref": f"refund:order:{order_id}",
             "p_note": f"Refund for cancelled order #{order_id}: {reason}",
         }).execute()
-    # Gateway order → TODO: trigger PhonePe refund API call here
+        refund_info = {"type": "wallet", "amount": order["total"], "status": "credited"}
+    else:
+        # Gateway order → trigger Paytm refund API call
+        pay_rows = sb.from_("payments").select("*").eq("order_id", order_id).execute().data
+        if pay_rows and pay_rows[0]["status"] == "SUCCESS":
+            refund_res = await _paytm_initiate_refund(pay_rows[0]["id"], float(pay_rows[0]["amount"]), reason, order_id)
+            refund_info = {
+                "type": "paytm_gateway",
+                "amount": pay_rows[0]["amount"],
+                "status": refund_res.get("status", "PENDING"),
+                "refund_ref": refund_res.get("refund_ref")
+            }
 
     bg.add_task(_notify_payment_failed, order["user_id"], order_id, reason)
-    return {"order_id": order_id, "status": "cancelled"}
+    return {"order_id": order_id, "status": "cancelled", "refund": refund_info}
 
 class ScanRequest(BaseModel):
     token: Optional[str] = None
