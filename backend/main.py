@@ -1134,6 +1134,8 @@ async def paytm_webhook(request: Request, bg: BackgroundTasks):
             "p_payment_method": payment_method
         }).execute()
         result_data = rpc_res.data or {}
+        if isinstance(result_data, list) and len(result_data) > 0:
+            result_data = result_data[0]
     except Exception as e:
         logger.error(f"Database verify_and_record_payment failed: {e}")
         if SUPABASE_SERVICE_ROLE_KEY == DUMMY_KEY or os.getenv("TEST_MODE") == "1":
@@ -1159,11 +1161,32 @@ async def paytm_webhook(request: Request, bg: BackgroundTasks):
         elif purpose == "ORDER" and result_data.get("order_id"):
             bg.add_task(_notify_order_placed, result_data.get("user_id", ""), result_data["order_id"], result_data.get("token"))
 
+    # Audit incoming webhook safely without secrets
+    try:
+        sb.from_("webhook_events").insert({
+            "event_type": "PAYMENT_NOTIFICATION",
+            "gateway": "paytm",
+            "gateway_order_id": paytm_order_id,
+            "gateway_txn_id": paytm_txn_id,
+            "order_id": result_data.get("order_id"),
+            "payment_id": result_data.get("payment_id"),
+            "payload_summary": {
+                "status": result_status,
+                "payment_method": payment_method,
+                "resp_msg": resp_msg
+            },
+            "signature_valid": True,
+            "processed_status": "SUCCESS" if status == "SUCCESS" else ("REFUND_NEEDED" if result_data.get("status") == "refund_needed" else "FAILED")
+        }).execute()
+    except Exception as audit_err:
+        logger.debug(f"Webhook audit note: {audit_err}")
+
     return JSONResponse({
         "status": "SUCCESS",
         "message": "Paytm webhook processed successfully",
         "data": result_data
     })
+
 
 
 @app.post("/webhooks/paytm/refund")
@@ -1233,11 +1256,31 @@ async def paytm_refund_webhook(request: Request):
     if status == "SUCCESS":
         _record_split_refunds(payment_id, amount)
 
+    # Audit incoming refund webhook safely
+    try:
+        sb.from_("webhook_events").insert({
+            "event_type": "REFUND_NOTIFICATION",
+            "gateway": "paytm",
+            "gateway_order_id": order_id,
+            "refund_ref": ref_id,
+            "payment_id": payment_id,
+            "payload_summary": {
+                "status": result_status,
+                "refund_amount": amount,
+                "resp_msg": resp_msg
+            },
+            "signature_valid": True,
+            "processed_status": status
+        }).execute()
+    except Exception as audit_err:
+        logger.debug(f"Refund webhook audit note: {audit_err}")
+
     return JSONResponse({
         "status": "SUCCESS",
         "message": "Refund webhook processed idempotently",
         "refund_status": status
     })
+
 
 
 @app.post("/admin/payments/reconcile")
@@ -1349,30 +1392,38 @@ async def reconcile_pending_payments(
     }
 
 
+_check_status_last_called: Dict[str, float] = {}
+CHECK_STATUS_COOLDOWN_SECONDS = 10.0
+
+
 @app.post("/order/{order_id}/check-payment-status")
 async def check_order_payment_status(order_id: int, user=Depends(get_current_user)):
     """
     Called when a user returns to the app or taps 'Check payment status'.
     Asks Paytm directly and never trusts what the browser reports.
+    Includes rate-limiting with cooldown, refund tracking, and reconciliation auditing.
     """
     if not check_rate_limit(f"status_check:{user['id']}", limit=30, window_seconds=60):
         raise HTTPException(429, "Too many status checks. Please wait a few seconds.")
+
+    # Per-order cooldown to avoid spamming payment gateway
+    cache_key = f"{user['id']}:{order_id}"
+    now_ts = time.time()
+    last_called = _check_status_last_called.get(cache_key, 0)
+    cooldown_remaining = 0
+    if now_ts - last_called < CHECK_STATUS_COOLDOWN_SECONDS:
+        cooldown_remaining = max(1, int(CHECK_STATUS_COOLDOWN_SECONDS - (now_ts - last_called)))
+        raise HTTPException(
+            429,
+            f"Please wait {cooldown_remaining} seconds before checking payment status again."
+        )
+    _check_status_last_called[cache_key] = now_ts
 
     order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data
     if not order:
         raise HTTPException(404, "Order not found")
     if order["user_id"] != user["id"] and user.get("role") not in ("super_admin", "admin", "shop_admin"):
         raise HTTPException(403, "Forbidden")
-
-    # If order is already confirmed / placed
-    if order["status"] in ("confirmed", "placed", "preparing", "ready", "collected"):
-        return {
-            "order_id": order_id,
-            "order_status": order["status"],
-            "token": order.get("token"),
-            "payment_status": "SUCCESS",
-            "message": "Order is confirmed and active in kitchen queue."
-        }
 
     # Find associated payment
     pay_row = None
@@ -1383,11 +1434,41 @@ async def check_order_payment_status(order_id: int, user=Depends(get_current_use
         if pay_rows:
             pay_row = pay_rows[0]
 
+    # If in cooldown, return cached state with notice
+    if cooldown_remaining > 0:
+        ref_row = None
+        if pay_row:
+            ref_res = sb.from_("refunds").select("*").eq("payment_id", pay_row["id"]).limit(1).execute().data
+            if ref_res:
+                ref_row = ref_res[0]
+        return {
+            "order_id": order_id,
+            "order_status": order["status"],
+            "token": order.get("token"),
+            "payment_status": pay_row["status"] if pay_row else "PENDING",
+            "refund_status": ref_row.get("status") if ref_row else "REFUND_NOT_REQUIRED",
+            "refund_ref": ref_row.get("refund_ref") if ref_row else None,
+            "cooldown_remaining": cooldown_remaining,
+            "message": f"Status checked recently. Please wait {cooldown_remaining}s before re-checking."
+        }
+
+    # If order is already confirmed / placed
+    if order["status"] in ("confirmed", "placed", "preparing", "ready", "collected"):
+        return {
+            "order_id": order_id,
+            "order_status": order["status"],
+            "token": order.get("token"),
+            "payment_status": "SUCCESS",
+            "refund_status": "REFUND_NOT_REQUIRED",
+            "message": "Order is confirmed and active in kitchen queue."
+        }
+
     if not pay_row:
         return {
             "order_id": order_id,
             "order_status": order["status"],
             "payment_status": "UNKNOWN",
+            "refund_status": "REFUND_NOT_REQUIRED",
             "message": "No payment record found for this order."
         }
 
@@ -1426,15 +1507,64 @@ async def check_order_payment_status(order_id: int, user=Depends(get_current_use
         order = sb.from_("orders").select("*").eq("id", order_id).single().execute().data or order
         pay_row = sb.from_("payments").select("*").eq("id", pay_row["id"]).single().execute().data or pay_row
 
+    # Check for refund record
+    ref_row = None
+    if pay_row:
+        ref_res = sb.from_("refunds").select("*").eq("payment_id", pay_row["id"]).limit(1).execute().data
+        if ref_res:
+            ref_row = ref_res[0]
+
+    # Audit to reconciliation_records safely
+    try:
+        sb.from_("reconciliation_records").insert({
+            "payment_id": pay_row["id"] if pay_row else None,
+            "order_id": order_id,
+            "reconciliation_type": "PAYMENT",
+            "local_status": pay_row["status"] if pay_row else "UNKNOWN",
+            "gateway_status": res_status if 'res_status' in locals() else None,
+            "discrepancy_detected": True if ('res_status' in locals() and res_status and res_status != pay_row["status"]) else False,
+            "action_taken": "CONFIRMED_ORDER" if order["status"] in ("confirmed", "placed") else ("INITIATED_REFUND" if ref_row else "STATUS_VERIFIED"),
+            "reconciled_by": "user_check_status",
+            "notes": f"Checked by user {user.get('id')}"
+        }).execute()
+    except Exception as e:
+        logger.debug(f"reconciliation_records audit note: {e}")
+
+    # Map explicit refund states
+    if ref_row:
+        raw_r_status = (ref_row.get("status") or "").upper()
+        if raw_r_status in ("SUCCESS", "COMPLETED"):
+            refund_state = "REFUND_SUCCESS"
+        elif raw_r_status in ("PENDING", "ACCEPTED"):
+            refund_state = "REFUND_INITIATED"
+        elif raw_r_status == "PROCESSING":
+            refund_state = "REFUND_PROCESSING"
+        elif raw_r_status in ("FAILED", "FAILURE"):
+            refund_state = "REFUND_FAILED"
+        else:
+            refund_state = "REFUND_UNKNOWN"
+    else:
+        refund_state = "REFUND_NOT_REQUIRED" if pay_row and pay_row.get("status") != "REFUNDED" else "REFUND_PENDING"
+
     return {
         "order_id": order_id,
         "order_status": order["status"],
         "token": order.get("token"),
-        "payment_status": pay_row["status"],
-        "payment_id": pay_row["id"],
+        "payment_status": pay_row["status"] if pay_row else "UNKNOWN",
+        "payment_id": pay_row["id"] if pay_row else None,
+        "paytm_txn_id": pay_row.get("paytm_txn_id") if pay_row else None,
+        "refund_status": refund_state,
+        "refund_ref": ref_row.get("refund_ref") if ref_row else None,
+        "refund_amount": float(ref_row.get("amount") or 0) if ref_row else 0.0,
         "cancel_reason": order.get("cancel_reason"),
-        "message": "Payment verified" if pay_row["status"] == "SUCCESS" else ("Payment pending" if pay_row["status"] == "PENDING" else "Payment failed or refunded")
+        "message": (
+            "Payment verified and order confirmed" if pay_row and pay_row["status"] == "SUCCESS" and order["status"] in ("confirmed", "placed")
+            else ("Refund initiated to original payment source" if ref_row
+            else ("Payment pending at gateway" if pay_row and pay_row["status"] == "PENDING"
+            else "Payment failed or cancelled"))
+        )
     }
+
 
 
 @app.post("/admin/refunds/reconcile")
@@ -1891,3 +2021,10 @@ try:
     app.include_router(init_auth_router(sb))
 except Exception as e:
     logger.warning(f"Could not load auth router: {e}")
+
+try:
+    from routers.payment_tracking import init_payment_tracking_router
+    app.include_router(init_payment_tracking_router(sb, get_current_user, require_staff))
+except Exception as e:
+    logger.warning(f"Could not load payment tracking router: {e}")
+
