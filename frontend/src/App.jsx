@@ -4207,36 +4207,10 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
         </button>
       </div>
 
-      {/* Full Modal for Payments, Refund Tracking & FAQ */}
+      {/* Polished Modal for Payments, Refund Tracking & FAQ */}
       {showRefundsModal && (
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
-          }}
-          onClick={() => setShowRefundsModal(false)}
-        >
-          <div 
-            style={{
-              backgroundColor: '#0F172A',
-              color: '#FFF',
-              borderRadius: '20px',
-              maxWidth: '680px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+        <div className="ios-modal-overlay" onClick={() => setShowRefundsModal(false)} style={{ zIndex: 9999 }}>
+          <div className="payment-modal-card" onClick={e => e.stopPropagation()}>
             <PaymentsAndRefundsTab onClose={() => setShowRefundsModal(false)} />
           </div>
         </div>

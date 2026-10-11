@@ -1,21 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ReceiptText,
+  Receipt,
   AlertCircle,
   CheckCircle2,
   Clock,
   RefreshCw,
   HelpCircle,
-  ShieldCheck,
-  ArrowUpRight,
   ChevronDown,
   ChevronUp,
   XCircle,
-  Store,
   CreditCard,
-  Smartphone,
-  Wallet
+  X,
+  ArrowRight,
+  ShieldCheck,
+  ChevronRight,
+  Info
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
@@ -44,7 +43,8 @@ export function PaymentsAndRefundsTab({ onClose }: { onClose?: () => void } = {}
   const [loading, setLoading] = useState(true)
   const [checkingOrderId, setCheckingOrderId] = useState<number | null>(null)
   const [cooldowns, setCooldowns] = useState<Record<number, number>>({})
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState<'all' | 'unresolved' | 'faq'>('all')
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(0)
   const [selectedRecord, setSelectedRecord] = useState<PaymentRefundRecord | null>(null)
 
   const loadPaymentsAndRefunds = useCallback(async () => {
@@ -98,46 +98,51 @@ export function PaymentsAndRefundsTab({ onClose }: { onClose?: () => void } = {}
         setCooldowns(prev => ({ ...prev, [orderId]: data.cooldown_remaining }))
         toast(data.message || `Please wait ${data.cooldown_remaining}s before checking again.`)
       } else {
+        toast.success(data.message || `Payment verified: ${data.order_status}`)
         setCooldowns(prev => ({ ...prev, [orderId]: 10 }))
-        toast.success(data.message || 'Status verified from gateway')
       }
-
-      // Refresh list to update state
       await loadPaymentsAndRefunds()
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || err.message || 'Failed to check payment status')
+      if (err.response?.status === 429) {
+        const detail = err.response.data?.detail || ''
+        const match = detail.match(/(\d+)\s*seconds/)
+        const secs = match ? parseInt(match[1], 10) : 10
+        setCooldowns(prev => ({ ...prev, [orderId]: secs }))
+        toast(detail || `Rate limited. Please wait ${secs}s.`)
+      } else {
+        toast.error(err.response?.data?.detail || 'Could not verify status with gateway.')
+      }
     } finally {
       setCheckingOrderId(null)
     }
   }
 
   const unresolvedRecords = records.filter(r => r.is_unresolved)
-  const resolvedRecords = records.filter(r => !r.is_unresolved)
 
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case 'SUCCESS':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' }}>
             <CheckCircle2 size={11} /> Paid
           </span>
         )
       case 'PENDING':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#FFFBEB', color: '#D97706', border: '1px solid #FDE68A' }}>
             <Clock size={11} /> Pending
           </span>
         )
       case 'REFUNDED':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
             <RefreshCw size={11} /> Refunded
           </span>
         )
       case 'FAILED':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
             <XCircle size={11} /> Failed
           </span>
         )
@@ -148,24 +153,23 @@ export function PaymentsAndRefundsTab({ onClose }: { onClose?: () => void } = {}
     switch (status) {
       case 'REFUND_SUCCESS':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' }}>
             <CheckCircle2 size={11} /> Refund Successful
           </span>
         )
-      case 'REFUND_INITIATED':
       case 'REFUND_PROCESSING':
+      case 'REFUND_INITIATED':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <Clock size={11} /> Refund Processing
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+            <RefreshCw size={11} className="animate-spin" /> Refund in Progress
           </span>
         )
       case 'REFUND_FAILED':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
-            <AlertCircle size={11} /> Refund Failed
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+            <XCircle size={11} /> Refund Failed
           </span>
         )
-      case 'REFUND_NOT_REQUIRED':
       default:
         return null
     }
@@ -174,48 +178,64 @@ export function PaymentsAndRefundsTab({ onClose }: { onClose?: () => void } = {}
   const faqs = [
     {
       q: 'My payment was debited but my order was not confirmed. What should I do?',
-      a: 'Your payment may have reached the payment gateway even if the order confirmation was interrupted. V Foods will verify the payment status with the payment gateway and update the order accordingly. If the order cannot be fulfilled after successful payment verification, the applicable refund process will be initiated.'
+      a: 'If money was debited from your bank or Paytm wallet but your token was not issued, click "Check Status" above. Our backend will query Paytm in real time. If the gateway confirms payment, your food order token is issued instantly. If unconfirmed or out of stock, an automatic 100% refund is initiated.'
     },
     {
       q: 'How can I check my payment status?',
-      a: 'Open the affected order or use the Check Status button in this section. V Foods will verify the latest payment status directly with the gateway and update your order state.'
+      a: 'Locate your transaction in the history list and click "Check Status". The system securely queries Paytm gateway servers directly and synchronizes your order and refund state.'
     },
     {
       q: 'How can I check my refund?',
-      a: 'Open the affected order or check this Payments & Refunds section to view the latest refund status and available refund reference.'
+      a: 'All initiated, processing, and completed refunds appear directly in your Payment & Refund History with their unique Refund Reference ID.'
     },
     {
       q: 'What if my refund is still not visible in my bank account?',
-      a: 'If the refund remains unresolved after the expected processing period, use the Contact Outlet option and provide your Order ID and payment/refund reference.'
+      a: 'Once Paytm marks a refund successful, bank settlement completes within 2–4 business hours for UPI and 1–3 business days for cards. If unresolved, present your Order ID and Paytm Reference at the canteen counter.'
     },
     {
       q: 'Can I receive a refund if the order cannot be fulfilled?',
-      a: 'If payment has been successfully received and V Foods cannot fulfil the order (due to outlet closure or items being sold out), the system will follow the configured refund process.'
+      a: 'Yes. If your payment is received and the outlet cannot fulfill your order (due to kitchen closure or stock running out), a 100% full refund is automatically issued.'
     },
     {
       q: 'Will I be charged twice if I retry payment?',
-      a: 'The system must verify the previous payment status before creating or confirming another payment attempt to prevent duplicate debits.'
+      a: 'No. The system strictly verifies prior payment state before creating or confirming another payment attempt, preventing duplicate debits.'
     }
   ]
 
   return (
-    <div className="space-y-6 pb-20 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <ReceiptText className="w-5 h-5 text-orange-400" />
-            Payments &amp; Refunds
-          </h2>
-          <p className="text-xs text-white/50">
-            Trace payments, verify gateway status, and monitor refunds
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', color: '#0F172A', background: '#FFFFFF' }}>
+      {/* ── Polished Modal Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '16px', borderBottom: '1px solid #F1F5F9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: '#EFF6FF', color: '#2563EB', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <Receipt size={22} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#0F172A', letterSpacing: '-0.2px' }}>
+              Payments &amp; Refunds
+            </h2>
+            <p style={{ fontSize: '12.5px', color: '#64748B', margin: '3px 0 0' }}>
+              Real-time payment tracking, gateway status &amp; refund FAQs
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             onClick={loadPaymentsAndRefunds}
             disabled={loading}
-            className="btn-icon btn-sm"
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              background: '#F8FAFC',
+              display: 'grid',
+              placeItems: 'center',
+              cursor: 'pointer',
+              color: '#64748B',
+              transition: 'background 0.15s ease'
+            }}
             title="Refresh payment records"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
@@ -223,317 +243,461 @@ export function PaymentsAndRefundsTab({ onClose }: { onClose?: () => void } = {}
           {onClose && (
             <button
               onClick={onClose}
-              className="btn-icon btn-sm"
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                border: 'none',
+                background: '#F1F5F9',
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                color: '#64748B',
+                transition: 'background 0.15s ease'
+              }}
               title="Close"
             >
-              <XCircle size={16} />
+              <X size={16} />
             </button>
           )}
         </div>
       </div>
 
-      {/* ── Active Payment / Refund Issues ── */}
-      {unresolvedRecords.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-            <AlertCircle size={14} />
+      {/* ── Segmented Navigation Filter ── */}
+      <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
+        <button
+          onClick={() => setActiveTab('all')}
+          style={{
+            flex: 1,
+            padding: '7px 12px',
+            borderRadius: '9px',
+            border: 'none',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: activeTab === 'all' ? '#FFFFFF' : 'transparent',
+            color: activeTab === 'all' ? '#0F172A' : '#64748B',
+            boxShadow: activeTab === 'all' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          All Payments ({records.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('unresolved')}
+          style={{
+            flex: 1,
+            padding: '7px 12px',
+            borderRadius: '9px',
+            border: 'none',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: activeTab === 'unresolved' ? '#FFFFFF' : 'transparent',
+            color: activeTab === 'unresolved' ? '#0F172A' : '#64748B',
+            boxShadow: activeTab === 'unresolved' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <span>Issues</span>
+          {unresolvedRecords.length > 0 && (
+            <span style={{ background: '#FEF3C7', color: '#B45309', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 800 }}>
+              {unresolvedRecords.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('faq')}
+          style={{
+            flex: 1,
+            padding: '7px 12px',
+            borderRadius: '9px',
+            border: 'none',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: activeTab === 'faq' ? '#FFFFFF' : 'transparent',
+            color: activeTab === 'faq' ? '#0F172A' : '#64748B',
+            boxShadow: activeTab === 'faq' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          Help &amp; FAQs
+        </button>
+      </div>
+
+      {/* ── Active Issues Banner (Prominently displayed) ── */}
+      {unresolvedRecords.length > 0 && activeTab !== 'faq' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#D97706', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <AlertCircle size={15} />
             <span>Active Issues Requiring Attention ({unresolvedRecords.length})</span>
           </div>
 
-          {unresolvedRecords.map(item => (
-            <motion.div
-              key={item.payment_id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card p-4 border border-amber-500/30 bg-amber-500/5 space-y-3 rounded-xl"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-white text-sm">
-                      {item.order_id ? `Order #${item.order_id}` : `Payment #${item.payment_id}`}
-                    </span>
-                    {getPaymentStatusBadge(item.payment_status)}
-                    {getRefundStatusBadge(item.refund_status)}
-                  </div>
-                  <p className="text-xs text-white/40 mt-1">
-                    {new Date(item.order_date).toLocaleString('en-IN', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
-                    })}
-                  </p>
-                </div>
-                <span className="text-base font-bold text-white">₹{item.amount.toFixed(2)}</span>
-              </div>
+          {unresolvedRecords.map(item => {
+            const isChecking = checkingOrderId === item.order_id
+            const cooldownLeft = item.order_id ? cooldowns[item.order_id] || 0 : 0
 
-              {/* Status explanation */}
-              <div className="bg-white/5 p-2.5 rounded-lg text-xs space-y-1">
-                <p className="text-amber-200/90 font-medium">{item.next_action}</p>
-                {item.refund_ref && (
-                  <p className="text-white/40 font-mono text-[11px]">
-                    Refund Ref: <span className="text-white/80">{item.refund_ref}</span>
-                  </p>
-                )}
-                {item.paytm_txn_ref && (
-                  <p className="text-white/40 font-mono text-[11px]">
-                    Gateway Ref: <span className="text-white/80">{item.paytm_txn_ref}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Contextual Actions */}
-              <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
-                {item.order_id && (
-                  <button
-                    onClick={() => handleCheckStatus(item.order_id!)}
-                    disabled={checkingOrderId === item.order_id || (cooldowns[item.order_id!] || 0) > 0}
-                    className="btn-primary btn-sm px-3 text-xs flex items-center gap-1.5"
-                  >
-                    <RefreshCw
-                      size={13}
-                      className={checkingOrderId === item.order_id ? 'animate-spin' : ''}
-                    />
-                    <span>
-                      {cooldowns[item.order_id!] && cooldowns[item.order_id!] > 0
-                        ? `Wait ${cooldowns[item.order_id!]}s`
-                        : 'Check Status'}
-                    </span>
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setSelectedRecord(item)}
-                  className="btn-ghost btn-sm text-xs text-white/70 hover:text-white"
-                >
-                  View Details
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Payment & Refund History ── */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <Clock className="w-4 h-4 text-white/40" />
-          Payment &amp; Refund History
-        </h3>
-
-        {loading ? (
-          <div className="card p-8 text-center text-white/40 text-xs">
-            <RefreshCw size={20} className="animate-spin mx-auto mb-2 text-white/30" />
-            Loading transaction records...
-          </div>
-        ) : records.length === 0 ? (
-          <div className="card p-8 text-center text-white/40 text-xs rounded-xl">
-            No payments or refund records found.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {records.map(r => (
-              <div
-                key={r.payment_id}
-                onClick={() => setSelectedRecord(r)}
-                className="card p-3.5 hover:bg-white/5 transition-colors cursor-pointer border border-white/5 rounded-xl flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                    {r.payment_method === 'wallet' ? (
-                      <Wallet size={16} className="text-cyan-400" />
-                    ) : r.payment_method.includes('CARD') ? (
-                      <CreditCard size={16} className="text-purple-400" />
-                    ) : (
-                      <Smartphone size={16} className="text-emerald-400" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-white text-xs truncate">
-                        {r.order_id ? `Order #${r.order_id}` : `Payment #${r.payment_id}`}
-                      </span>
-                      {getPaymentStatusBadge(r.payment_status)}
-                      {getRefundStatusBadge(r.refund_status)}
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5 truncate">
-                      {new Date(r.order_date).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short'
-                      })}{' '}
-                      &bull; {r.payment_method}
-                      {r.paytm_txn_ref ? ` &bull; ${r.paytm_txn_ref}` : ''}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right flex-shrink-0">
-                  <span className="font-bold text-white text-sm">₹{r.amount.toFixed(2)}</span>
-                  {r.refund_amount > 0 && (
-                    <p className="text-[10px] text-sky-400 mt-0.5">
-                      Refunded: ₹{r.refund_amount.toFixed(2)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Contextual FAQ Section ── */}
-      <div className="space-y-3 pt-4 border-t border-white/10">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-orange-400" />
-          Frequently Asked Questions
-        </h3>
-
-        <div className="space-y-2">
-          {faqs.map((faq, idx) => {
-            const isExpanded = expandedFaq === idx
             return (
               <div
-                key={idx}
-                className="card p-3 border border-white/5 bg-surface-900 rounded-xl overflow-hidden"
+                key={item.payment_id}
+                style={{
+                  background: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '14px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  boxShadow: '0 2px 8px -2px rgba(245, 158, 11, 0.08)'
+                }}
               >
-                <button
-                  onClick={() => setExpandedFaq(isExpanded ? null : idx)}
-                  className="w-full flex items-center justify-between text-left gap-2"
-                >
-                  <span className="text-xs font-semibold text-white/90">{faq.q}</span>
-                  {isExpanded ? (
-                    <ChevronUp size={14} className="text-white/40 flex-shrink-0" />
-                  ) : (
-                    <ChevronDown size={14} className="text-white/40 flex-shrink-0" />
-                  )}
-                </button>
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="text-xs text-white/60 pt-2.5 leading-relaxed"
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 800, color: '#92400E' }}>
+                        {item.order_id ? `Order #${item.order_id}` : `Payment #${item.payment_id}`}
+                      </span>
+                      {item.token && (
+                        <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '2px 7px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700 }}>
+                          Token #{item.token}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#B45309', margin: '4px 0 0', lineHeight: 1.4 }}>
+                      {item.next_action}
+                    </p>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 900, color: '#0F172A' }}>
+                      ₹{item.amount.toFixed(2)}
+                    </div>
+                    <div style={{ marginTop: '3px' }}>
+                      {getPaymentStatusBadge(item.payment_status)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #FEF3C7', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '11.5px', color: '#92400E' }}>
+                    {item.paytm_txn_ref && (
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>Ref: {item.paytm_txn_ref} · </span>
+                    )}
+                    <span>{new Date(item.order_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+
+                  {item.order_id && (
+                    <button
+                      onClick={() => handleCheckStatus(item.order_id!)}
+                      disabled={isChecking || cooldownLeft > 0}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: '9px',
+                        background: '#2563EB',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: isChecking || cooldownLeft > 0 ? 'not-allowed' : 'pointer',
+                        opacity: isChecking || cooldownLeft > 0 ? 0.6 : 1,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
+                      }}
                     >
-                      {faq.a}
-                    </motion.div>
+                      <RefreshCw size={13} className={isChecking ? 'animate-spin' : ''} />
+                      <span>{cooldownLeft > 0 ? `Wait ${cooldownLeft}s` : 'Verify Status'}</span>
+                    </button>
                   )}
-                </AnimatePresence>
+                </div>
               </div>
             )
           })}
         </div>
-      </div>
+      )}
 
-      {/* ── Detailed Record Modal ── */}
-      <AnimatePresence>
-        {selectedRecord && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      {/* ── Transaction History (Shown in 'all' or 'unresolved' tab) ── */}
+      {activeTab !== 'faq' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <Clock size={14} />
+              <span>{activeTab === 'unresolved' ? 'Unresolved Transactions' : 'Payment & Refund History'}</span>
+            </div>
+            <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+              {records.length} {records.length === 1 ? 'transaction' : 'transactions'}
+            </span>
+          </div>
+
+          {loading ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: '#64748B', fontSize: '12.5px', background: '#F8FAFC', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
+              <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 10px', color: '#2563EB' }} />
+              <div>Loading payment records from database...</div>
+            </div>
+          ) : (activeTab === 'unresolved' ? unresolvedRecords : records).length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '16px', color: '#64748B' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#ECFDF5', color: '#10B981', display: 'grid', placeItems: 'center', margin: '0 auto 10px' }}>
+                <ShieldCheck size={24} />
+              </div>
+              <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '14px' }}>
+                {activeTab === 'unresolved' ? 'No Active Payment Issues' : 'No Payment Records Found'}
+              </div>
+              <p style={{ margin: '6px auto 0', fontSize: '12px', maxWidth: '340px', color: '#64748B', lineHeight: 1.4 }}>
+                {activeTab === 'unresolved'
+                  ? 'All your past canteen transactions are fully confirmed or settled.'
+                  : 'Your completed food orders, payment receipts and refund tracking will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
+              {(activeTab === 'unresolved' ? unresolvedRecords : records).map(r => (
+                <div
+                  key={r.payment_id}
+                  onClick={() => setSelectedRecord(r)}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>
+                        {r.order_id ? `Order #${r.order_id}` : `Txn #${r.payment_id}`}
+                      </span>
+                      {r.token && (
+                        <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '1px 6px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>
+                          Token #{r.token}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '11.5px', color: '#94A3B8' }}>
+                        · {new Date(r.order_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                      {getPaymentStatusBadge(r.payment_status)}
+                      {getRefundStatusBadge(r.refund_status)}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                        ₹{r.amount.toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        {r.payment_method}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} style={{ color: '#94A3B8' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Frequently Asked Questions (FAQ) ── */}
+      {(activeTab === 'all' || activeTab === 'faq') && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: activeTab === 'all' ? '12px' : '0', borderTop: activeTab === 'all' ? '1px solid #F1F5F9' : 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <HelpCircle size={14} />
+            <span>Frequently Asked Questions &amp; Help</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {faqs.map((faq, idx) => {
+              const isOpen = expandedFaq === idx
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '12px',
+                    background: isOpen ? '#F8FAFC' : '#FFFFFF',
+                    borderLeft: isOpen ? '3px solid #2563EB' : '1px solid #E2E8F0',
+                    overflow: 'hidden',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedFaq(isOpen ? null : idx)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', paddingRight: '12px', lineHeight: 1.4 }}>
+                      {faq.q}
+                    </span>
+                    {isOpen ? <ChevronUp size={16} color="#2563EB" /> : <ChevronDown size={16} color="#64748B" />}
+                  </button>
+
+                  {isOpen && (
+                    <div style={{ padding: '0 16px 14px', fontSize: '12px', color: '#475569', lineHeight: 1.6 }}>
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Transaction Details Modal ── */}
+      {selectedRecord && (
+        <div
+          className="ios-modal-overlay"
+          style={{ zIndex: 10000 }}
+          onClick={() => setSelectedRecord(null)}
+        >
+          <div
+            className="payment-modal-card modal-enter"
+            style={{ maxWidth: '460px', padding: '22px' }}
+            onClick={e => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 10 }}
-              className="card max-w-sm w-full p-5 space-y-4 bg-surface-900 border border-white/10 rounded-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #F1F5F9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EFF6FF', color: '#2563EB', display: 'grid', placeItems: 'center' }}>
+                  <Receipt size={18} />
+                </div>
                 <div>
-                  <h4 className="font-bold text-white text-sm">Transaction Details</h4>
-                  <p className="text-[11px] text-white/40">
-                    {selectedRecord.order_id
-                      ? `Order #${selectedRecord.order_id}`
-                      : `Payment #${selectedRecord.payment_id}`}
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                    {selectedRecord.order_id ? `Order #${selectedRecord.order_id}` : `Payment #${selectedRecord.payment_id}`}
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: '#64748B' }}>
+                    {new Date(selectedRecord.order_date).toLocaleString('en-IN')}
                   </p>
                 </div>
+              </div>
+              <button
+                onClick={() => setSelectedRecord(null)}
+                style={{ background: '#F1F5F9', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#64748B' }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                <span style={{ color: '#64748B' }}>Amount Debited:</span>
+                <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '14px' }}>₹{selectedRecord.amount.toFixed(2)}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                <span style={{ color: '#64748B' }}>Payment Gateway:</span>
+                <span style={{ fontWeight: 600, color: '#0F172A' }}>{selectedRecord.payment_method}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                <span style={{ color: '#64748B' }}>Payment Status:</span>
+                <div>{getPaymentStatusBadge(selectedRecord.payment_status)}</div>
+              </div>
+
+              {selectedRecord.token && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                  <span style={{ color: '#64748B' }}>Pickup Token:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1D4ED8' }}>Token #{selectedRecord.token}</span>
+                </div>
+              )}
+
+              {selectedRecord.refund_status && selectedRecord.refund_status !== 'REFUND_NOT_REQUIRED' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                  <span style={{ color: '#64748B' }}>Refund Status:</span>
+                  <div>{getRefundStatusBadge(selectedRecord.refund_status)}</div>
+                </div>
+              )}
+
+              {selectedRecord.paytm_txn_ref && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                  <span style={{ color: '#64748B' }}>Paytm Txn Ref:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0F172A' }}>{selectedRecord.paytm_txn_ref}</span>
+                </div>
+              )}
+
+              {selectedRecord.refund_ref && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F8FAFC' }}>
+                  <span style={{ color: '#64748B' }}>Refund Ref:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0F172A' }}>{selectedRecord.refund_ref}</span>
+                </div>
+              )}
+
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '10px', border: '1px solid #E2E8F0', marginTop: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Resolution &amp; Next Action:</div>
+                <div style={{ fontSize: '12px', color: '#0F172A', marginTop: '4px', lineHeight: 1.4 }}>{selectedRecord.next_action}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              {selectedRecord.order_id && (
                 <button
-                  onClick={() => setSelectedRecord(null)}
-                  className="btn-icon btn-sm text-white/50 hover:text-white"
+                  onClick={() => {
+                    handleCheckStatus(selectedRecord.order_id!)
+                    setSelectedRecord(null)
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '10px',
+                    background: '#2563EB',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
+                  }}
                 >
-                  <XCircle size={18} />
+                  Verify Status
                 </button>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-white/50">Amount:</span>
-                  <span className="font-bold text-white">₹{selectedRecord.amount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-white/50">Payment Status:</span>
-                  <span>{getPaymentStatusBadge(selectedRecord.payment_status)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-white/50">Order Status:</span>
-                  <span className="text-white capitalize">{selectedRecord.order_status}</span>
-                </div>
-                {selectedRecord.token && (
-                  <div className="flex justify-between py-1 border-b border-white/5">
-                    <span className="text-white/50">Pickup Token:</span>
-                    <span className="font-bold text-orange-400">#{selectedRecord.token}</span>
-                  </div>
-                )}
-                {selectedRecord.refund_status !== 'REFUND_NOT_REQUIRED' && (
-                  <div className="flex justify-between py-1 border-b border-white/5">
-                    <span className="text-white/50">Refund Status:</span>
-                    <span>{getRefundStatusBadge(selectedRecord.refund_status)}</span>
-                  </div>
-                )}
-                {selectedRecord.refund_ref && (
-                  <div className="flex justify-between py-1 border-b border-white/5">
-                    <span className="text-white/50">Refund Reference:</span>
-                    <span className="font-mono text-white/80">{selectedRecord.refund_ref}</span>
-                  </div>
-                )}
-                {selectedRecord.paytm_txn_ref && (
-                  <div className="flex justify-between py-1 border-b border-white/5">
-                    <span className="text-white/50">Gateway Reference:</span>
-                    <span className="font-mono text-white/80">{selectedRecord.paytm_txn_ref}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-white/50">Date &amp; Time:</span>
-                  <span className="text-white/80">
-                    {new Date(selectedRecord.order_date).toLocaleString('en-IN', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
-                    })}
-                  </span>
-                </div>
-              </div>
-
-              {/* Status explanation */}
-              <div className="p-2.5 rounded-lg bg-white/5 text-xs text-white/70">
-                <span className="font-semibold text-white">Guidance: </span>
-                {selectedRecord.next_action}
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 pt-2">
-                {selectedRecord.order_id && (
-                  <button
-                    onClick={() => {
-                      handleCheckStatus(selectedRecord.order_id!)
-                      setSelectedRecord(null)
-                    }}
-                    className="btn-primary btn-sm flex-1 text-xs"
-                  >
-                    Check Status
-                  </button>
-                )}
-                <button
-                  onClick={() => setSelectedRecord(null)}
-                  className="btn-secondary btn-sm flex-1 text-xs"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )}
+              <button
+                onClick={() => setSelectedRecord(null)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '10px',
+                  background: '#F1F5F9',
+                  color: '#475569',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
