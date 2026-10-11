@@ -6,12 +6,15 @@ import {
   Wallet, ShoppingBag, History, LogOut, Plus, Minus, Search,
   Leaf, X, ChevronRight, ArrowUpRight, ArrowDownLeft, Loader2,
   Store, CheckCircle2, AlertCircle, Star, Clock, Flame,
-  ChefHat, Bell, UtensilsCrossed, Tag, AlertTriangle, Smartphone, Zap
+  ChefHat, Bell, UtensilsCrossed, Tag, AlertTriangle, Smartphone, Zap,
+  ReceiptText
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import QRCode from 'qrcode'
 import { getFoodImage } from '../../lib/foodImages'
+import { PaymentsAndRefundsTab } from '../../components/customer/PaymentsAndRefundsTab'
+
 
 // ─── Spring & Transition configs ─────────────────────────────────────────────
 const spring = { type: 'spring', stiffness: 400, damping: 30 }
@@ -867,7 +870,7 @@ function OrdersTab() {
 
 // ─── Customer Dashboard Root ──────────────────────────────────────────────────
 export default function CustomerDashboard() {
-  const [tab, setTab] = useState<'wallet' | 'menu' | 'orders'>('menu')
+  const [tab, setTab] = useState<'wallet' | 'menu' | 'orders' | 'payments'>('menu')
   const [showCart, setShowCart] = useState(false)
   const { signOut, profile } = useAuthStore()
   const { items } = useCartStore()
@@ -922,15 +925,17 @@ export default function CustomerDashboard() {
           {tab === 'wallet' && <WalletTab key="wallet" />}
           {tab === 'menu'   && <MenuTab key="menu" />}
           {tab === 'orders' && <OrdersTab key="orders" />}
+          {tab === 'payments' && <PaymentsAndRefundsTab key="payments" />}
         </AnimatePresence>
       </main>
 
       {/* Bottom nav */}
       <nav className="bottom-nav">
         {([
-          ['menu',   Store,   'Menu'],
-          ['wallet', Wallet,  'Wallet'],
-          ['orders', History, 'Orders'],
+          ['menu',     Store,       'Menu'],
+          ['wallet',   Wallet,      'Wallet'],
+          ['orders',   History,     'Orders'],
+          ['payments', ReceiptText, 'Refunds'],
         ] as const).map(([id, Icon, label]) => (
           <motion.button whileTap={{ scale: 0.88 }}
             key={id} id={`nav-${id}`}
@@ -948,3 +953,4 @@ export default function CustomerDashboard() {
     </div>
   )
 }
+

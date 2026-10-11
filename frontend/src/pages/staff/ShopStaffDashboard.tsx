@@ -42,6 +42,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../components/ui/sound-toggle'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
+import { StaffPaymentIssues } from '../../components/staff/StaffPaymentIssues'
 import { supabase } from '../../lib/supabase'
 
 export interface OrderItem {
@@ -136,8 +137,8 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   money = (v: number) => `₹${Number(v || 0).toLocaleString('en-IN')}`,
   forcedOutletId
 }) => {
-  // Active Sidebar Nav Tab (Staff's 7 mandatory sections)
-  type StaffTab = 'overview' | 'live-orders' | 'kds' | 'stock' | 'pickup-queue' | 'pos' | 'shift-billing'
+  // Active Sidebar Nav Tab
+  type StaffTab = 'overview' | 'live-orders' | 'kds' | 'stock' | 'pickup-queue' | 'pos' | 'shift-billing' | 'payment-issues'
   const [activeTab, setActiveTab] = useState<StaffTab>('overview')
 
   // Outlet context
@@ -847,6 +848,16 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               <span>Shift Billing</span>
             </div>
           </button>
+
+          <button
+            className={`saas-nav-btn ${activeTab === 'payment-issues' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('payment-issues'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <CreditCard size={16} />
+              <span>Payment Issues</span>
+            </div>
+          </button>
         </nav>
 
         {/* Sidebar Footer User Info */}
@@ -890,6 +901,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 {activeTab === 'pickup-queue' && 'Pickup & Token Queue'}
                 {activeTab === 'pos' && 'Counter POS Terminal'}
                 {activeTab === 'shift-billing' && 'Shift Billing & Reconciliation'}
+                {activeTab === 'payment-issues' && 'Operational Payment Issues'}
               </span>
             </div>
           </div>
@@ -2288,6 +2300,13 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════
+              TAB 8: PAYMENT ISSUES
+              ══════════════════════════════════════════════════════════ */}
+          {activeTab === 'payment-issues' && (
+            <StaffPaymentIssues outletId={activeOutletId} onOrderUpdated={loadData} />
           )}
         </div>
       </main>
