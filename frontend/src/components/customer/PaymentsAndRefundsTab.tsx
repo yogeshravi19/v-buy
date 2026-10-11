@@ -39,7 +39,7 @@ interface PaymentRefundRecord {
   next_action: string
 }
 
-export function PaymentsAndRefundsTab() {
+export function PaymentsAndRefundsTab({ onClose }: { onClose?: () => void } = {}) {
   const [records, setRecords] = useState<PaymentRefundRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [checkingOrderId, setCheckingOrderId] = useState<number | null>(null)
@@ -211,14 +211,25 @@ export function PaymentsAndRefundsTab() {
             Trace payments, verify gateway status, and monitor refunds
           </p>
         </div>
-        <button
-          onClick={loadPaymentsAndRefunds}
-          disabled={loading}
-          className="btn-icon btn-sm"
-          title="Refresh payment records"
-        >
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadPaymentsAndRefunds}
+            disabled={loading}
+            className="btn-icon btn-sm"
+            title="Refresh payment records"
+          >
+            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="btn-icon btn-sm"
+              title="Close"
+            >
+              <XCircle size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Active Payment / Refund Issues ── */}
@@ -526,3 +537,5 @@ export function PaymentsAndRefundsTab() {
     </div>
   )
 }
+
+export default PaymentsAndRefundsTab

@@ -19,6 +19,7 @@ import { downloadReceiptAsPhoto, downloadReceiptAsPdf } from './utils/receiptGen
 import { MotionConfig } from 'framer-motion'
 import { Toaster } from './components/ui/toast'
 import { DashboardSkeleton } from './components/ui/dashboard-skeleton'
+import { PaymentsAndRefundsTab } from './components/customer/PaymentsAndRefundsTab'
 
 const VFoodsUserDashboard = React.lazy(() => import('./components/VFoodsUserDashboard'))
 const ShopStaffDashboard = React.lazy(() => import('./pages/staff/ShopStaffDashboard'))
@@ -3990,6 +3991,7 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
 // PROFILE VIEW (USER DASHBOARD)
 // ─────────────────────────────────────────────────────────────────────────────
 function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNotice }) {
+  const [showRefundsModal, setShowRefundsModal] = useState(false)
   const activeOrdersCount = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
   const totalOrdersCount = orders.length
 
@@ -4171,12 +4173,74 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
         </div>
       </div>
 
+      {/* Payments, Refunds & FAQ Card */}
+      <div className="profile-section-card">
+        <div className="profile-section-header">
+          <CreditCard size={16} /> Payments & Refunds
+        </div>
+
+        <div className="profile-info-row" style={{ cursor: 'pointer' }} onClick={() => setShowRefundsModal(true)}>
+          <div className="profile-info-left">
+            <div className="profile-icon-pill" style={{ color: '#2563EB', background: '#EFF6FF' }}>
+              <Receipt size={18} />
+            </div>
+            <div>
+              <div className="profile-info-title">Payment Help, Refund Tracking & FAQ</div>
+              <div className="profile-info-desc">Money debited without order? Check status, view refunds & FAQs</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="profile-info-badge"
+            style={{ color: '#2563EB', background: '#EFF6FF', borderColor: '#BFDBFE', fontWeight: 700, cursor: 'pointer' }}
+            onClick={(e) => { e.stopPropagation(); setShowRefundsModal(true); }}
+          >
+            Refunds & FAQ →
+          </button>
+        </div>
+      </div>
+
       {/* Sign Out Card */}
       <div className="profile-section-card" style={{ padding: '16px 20px' }}>
         <button className="profile-logout-btn" onClick={onSignOut}>
           <LogOut size={18} /> Sign Out of V FOODS Account
         </button>
       </div>
+
+      {/* Full Modal for Payments, Refund Tracking & FAQ */}
+      {showRefundsModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={() => setShowRefundsModal(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: '#0F172A',
+              color: '#FFF',
+              borderRadius: '20px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <PaymentsAndRefundsTab onClose={() => setShowRefundsModal(false)} />
+          </div>
+        </div>
+      )}
     </section>
   )
 }
