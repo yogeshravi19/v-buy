@@ -318,3 +318,72 @@ Audit log of processed and pending customer refunds and split reversals.
     - *"Refund sent to your bank or wallet on [Date]"*
     - *"Refund started: In progress with Paytm"*
     - *"Refund failed - please contact support"*
+
+---
+
+## 7. Migration 014: Webhook & Reconciliation Audit Schema
+
+### 7.1 `webhook_events` Table
+Audits every incoming Paytm Server-to-Server (S2S) Payment and Refund webhook with signature verification flags and payload digests:
+- `id` (bigserial, PK)
+- `received_at` (timestamptz, DEFAULT now())
+- `event_type` (text, NOT NULL): `'PAYMENT_NOTIFICATION'`, `'REFUND_NOTIFICATION'`
+- `gateway` (text, DEFAULT 'paytm')
+- `gateway_order_id` (text, INDEXED): e.g. `'ORD-1048-...'`
+- `gateway_txn_id` (text, INDEXED): e.g. `'PTM998877665544'`
+- `refund_ref` (text): e.g. `'refund-501'`
+- `payment_id` (bigint, FK -> `payments.id`)
+- `payload_summary` (jsonb): Clean summary (status, amount, resp_code, resp_msg). NEVER stores merchant keys or secrets.
+- `signature_valid` (boolean, NOT NULL)
+- `processed_status` (text, NOT NULL): `'SUCCESS'`, `'FAILED'`, `'DUPLICATE'`, `'REFUND_NEEDED'`
+- `is_duplicate` (boolean, DEFAULT false)
+- `error_message` (text)
+
+### 7.2 `reconciliation_records` Table
+Audits all manual status checks, automated reconciliation runs, and discrepancy resolutions:
+- `id` (bigserial, PK)
+- `reconciled_at` (timestamptz, DEFAULT now())
+- `source` (text, NOT NULL): `'USER_MANUAL_CHECK'`, `'STAFF_COUNTER_CHECK'`, `'SCHEDULED_JOB'`, `'ADMIN_TRIGGER'`
+- `order_id` (bigint, FK -> `orders.id`)
+- `payment_id` (bigint, FK -> `payments.id`)
+- `previous_payment_status` (text)
+- `gateway_reported_status` (text)
+- `resolved_status` (text, NOT NULL)
+- `discrepancy_detected` (boolean, DEFAULT false)
+- `action_taken` (text): e.g. `'ORDER_CONFIRMED_ATOMIC'`, `'AUTOMATIC_REFUND_TRIGGERED'`, `'STATUS_CONSISTENT'`
+- `actor_id` (text)
+- `actor_role` (text)
+- `details` (jsonb)
+
+---
+
+## 8. Role-Based Database Access Control (RLS Matrix)
+
+| Entity / Table | User Role | Shop Staff Role | Shop Admin Role | Super Admin Role |
+| :--- | :--- | :--- | :--- | :--- |
+| **`orders`** | Read own orders (`user_id = auth.uid()`) | Read/Update orders for permitted `outlet_id` | Read all outlet orders & analytics | Full Read/Write across all outlets |
+| **`payments`** | Read own payments (`user_id = auth.uid()`) | Operational visibility via backend only (masked) | Read outlet payment ledger | Full Read across all payments |
+| **`refunds`** | Read own refunds linked to own payments | Operational visibility via backend only (masked) | Read outlet refunds & failure logs | Full Read across all refunds |
+| **`webhook_events`** | No Direct Access | No Direct Access | Read webhook events for permitted outlet | Full Audit Read across all events |
+| **`reconciliation_records`**| Read own order check audits | Read audits for permitted outlet | Read outlet reconciliation logs | Full Audit Read across all runs |
+| **`wallets` & `wallet_txns`**| Read own balance & wallet ledger | No Direct Access | No Direct Access | Read-only ledger audit |
+
+---
+
+## 9. Implementation Status: Actual vs. Future Architecture
+
+### ACTUAL V FOODS IMPLEMENTATION (Verified in Codebase & Database)
+- Pessimistic row-level locking on inventory (`SELECT FOR UPDATE`) in `verify_and_record_payment()`.
+- Deterministic refund reference `refId = refund-{payment_id}` with unique constraint in `public.refunds`.
+- Cryptographic HMAC-SHA256 signature generation and verification using Paytm official checksum rules.
+- Rate-limited `POST /order/{order_id}/check-payment-status` with 10s per-order cooldown and 429 status.
+- Dedicated user-facing Payments & Refunds tab with 7 explicit refund states, contextual actions, and FAQ.
+- Outlet-isolated operational payment issues tab on Shop Staff Console.
+- Filterable reconciliation ledger and daily accounting summaries on Shop Admin and Super Admin.
+- Webhook audit log in `public.webhook_events` and reconciliation audit log in `public.reconciliation_records`.
+
+### RECOMMENDED / FUTURE DESIGN (Post-MVP Enhancements)
+- Multi-region read replica database routing for campus scale > 50,000 active students.
+- Webhook Dead Letter Queue (DLQ) via Redis / RabbitMQ for automated retries if database is temporarily unavailable during maintenance.
+- Direct Bank Settlement Webhook integration (Paytm Disbursal API) to automate T+1 NEFT UTR tracking directly into `settlements` table.
+

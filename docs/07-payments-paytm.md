@@ -282,3 +282,31 @@ All refunds follow strict idempotency and deterministic accounting:
     - Payments in `SUCCESS` whose orders remain unconfirmed.
     - Refunds stuck in `PENDING` or `FAILED`.
   - Shop Admins see this view strictly scoped to their assigned outlet.
+
+---
+
+## 13. Payments & Refunds User Center & Contextual FAQ
+
+Accessible directly from the User Account/Profile screen (`CustomerDashboard.tsx`), the **Payments & Refunds** section connects the user to live gateway states without generic "Contact Paytm" dead-ends:
+
+1. **Active Discrepancies Banner**:
+   - Highlighted whenever an unresolved transaction is detected (e.g., payment debited but order awaiting confirmation, or pending refund).
+   - Shows live countdown timer (10s cooldown) and **Check Status** button calling FastAPI `/order/{id}/check-payment-status`.
+2. **Payment & Refund History**:
+   - Clear distinction between **Payment Status** (`SUCCESS`, `PENDING`, `FAILED`) and **Order Status** (`placed`, `preparing`, `cancelled`, etc.).
+   - Full refund tracking badges displaying current state machine stage (`REFUND_INITIATED`, `REFUND_PROCESSING`, `REFUND_SUCCESS`, `REFUND_FAILED`).
+   - Transaction details modal showing masked gateway references (e.g., `...77665544`) and exact failure reasons.
+3. **Safe Wording Contextual FAQ**:
+   - Answers critical student dining questions without making unauthorized bank SLA promises (e.g., explains gateway S2S verification, automatic refunds on kitchen stockouts, and when to show Order ID at the counter).
+
+---
+
+## 14. Role-Based Accounting & Reconciliation Permissions
+
+| Role | Operational Scope | Permitted Actions | Sensitive Data Protection |
+| :--- | :--- | :--- | :--- |
+| **User** | Own orders and payments (`auth.uid() = user_id`) | Trigger rate-limited status verification, view refund reference, view order receipts. | Cannot view webhook logs, internal DB keys, or other users' payments. |
+| **Shop Staff** | Permitted outlet orders | Operational issue lookup by Order ID / Token, trigger backend gateway status check if customer presents debited bank SMS at counter. | Cannot view merchant secrets, checksum hashes, platform commission splits, or other outlets' orders. Cannot manually force payment success. |
+| **Shop Admin** | Permitted outlet payments, refunds, and daily totals | Filter ledger by date and status, view daily gross revenue, net payout, and total refunded. View outlet discrepancy list. | Restricted strictly to permitted outlet. Cannot modify global settlement credentials. |
+| **Super Admin** | Platform-wide global visibility | Access global accounting metrics, run manual or scheduled reconciliation jobs, inspect S2S webhook audit logs (`webhook_events`), view multi-outlet audit trails. | Authoritative administrative oversight. System never logs plaintext secret merchant keys. |
+
