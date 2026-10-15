@@ -62,4 +62,5 @@ Desktop.ini
 # OAuth Client Secrets & Keys
 client_secret*.json
 credentials*.json
-
+# Supabase CLI temp files
+supabase/.temp/
