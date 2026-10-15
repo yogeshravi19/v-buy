@@ -42,6 +42,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../components/ui/sound-toggle'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
+import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
 import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
 
@@ -70,6 +71,8 @@ export interface Order {
   updated_at?: string
   order_items?: OrderItem[]
   pickup_slot_label?: string
+  order_source?: string
+  payment_mode?: string
 }
 
 export interface MenuItem {
@@ -243,7 +246,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       const { data: ords, error: ordErr } = await supabase
         .from('orders')
         .select(`
-          id, user_id, outlet_id, token, status, payment_method, total, shop_payout,
+          id, user_id, outlet_id, token, order_number, status, payment_method, order_source, payment_mode, customer_name, total, shop_payout,
           created_at, updated_at,
           order_items (item_id, name, price, qty)
         `)
@@ -257,9 +260,12 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         const formatted: Order[] = ords.map((o: any) => ({
           id: o.id,
           user_id: o.user_id,
-          customer_name: `Customer #${o.id % 900 + 100}`,
+          customer_name: o.customer_name || `Customer #${o.id % 900 + 100}`,
           outlet_id: o.outlet_id,
           token: o.token || String(o.id % 900 + 100),
+          order_number: o.order_number,
+          order_source: o.order_source || 'APP',
+          payment_mode: o.payment_mode,
           status: o.status || 'placed',
           payment_method: o.payment_method || 'Online UPI',
           payment_status: 'paid',
@@ -2020,180 +2026,17 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               TAB 6: POS COUNTER
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'pos' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
-              {/* Left Column: Menu Items to Add */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="saas-card" style={{ padding: '14px 18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>Walk-In Item Selector</h3>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Click any item to add to register</span>
-                  </div>
-                </div>
-
-                {posSuccessNotice && (
-                  <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', color: '#166534', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700 }}>
-                    {posSuccessNotice}
-                  </div>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
-                  {menuItems.filter(i => i.available).map(item => {
-                    const inCartQty = posCart[item.id] || 0
-                    return (
-                      <div
-                        key={item.id}
-                        className="saas-card"
-                        style={{
-                          padding: '14px',
-                          cursor: 'pointer',
-                          border: inCartQty > 0 ? '2px solid #1E40AF' : '1px solid #E2E8F0',
-                          transition: 'all 0.15s ease'
-                        }}
-                        onClick={() => setPosCart(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }))}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <span style={{
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            padding: '1px 5px',
-                            borderRadius: '3px',
-                            background: item.is_veg ? '#DCFCE7' : '#FEE2E2',
-                            color: item.is_veg ? '#166534' : '#991B1B'
-                          }}>
-                            {item.is_veg ? 'VEG' : 'NON-VEG'}
-                          </span>
-                          {inCartQty > 0 && (
-                            <span style={{ background: '#1E40AF', color: '#FFF', fontSize: '11px', fontWeight: 800, padding: '1px 6px', borderRadius: '10px' }}>
-                              {inCartQty} in cart
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '13.5px', fontWeight: 700, margin: '8px 0 4px', color: '#0F172A' }}>
-                          {item.name}
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                          <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E40AF' }}>
-                            {money(item.price)}
-                          </span>
-                          <span style={{ fontSize: '11px', color: '#64748B' }}>
-                            Stock: {item.stock_qty ?? 10}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Right Column: POS Order Cart & Checkout */}
-              <div className="saas-card" style={{ padding: '18px', height: 'fit-content' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 12px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
-                  Current Order Punch
-                </h3>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '11.5px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                    Customer Name / Token Ref (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Walk-in user..."
-                    value={posCustomerName}
-                    onChange={e => setPosCustomerName(e.target.value)}
-                    style={{ width: '100%', padding: '6px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-
-                {/* Cart Items List */}
-                <div style={{ minHeight: '140px', maxHeight: '240px', overflowY: 'auto', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
-                  {Object.keys(posCart).map(idStr => {
-                    const id = Number(idStr)
-                    const item = menuItems.find(m => m.id === id)
-                    const qty = posCart[id]
-                    if (qty <= 0) return null
-                    return (
-                      <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{item?.name}</div>
-                          <div style={{ fontSize: '11px', color: '#64748B' }}>{money(item?.price || 0)} each</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <button
-                            className="saas-btn saas-btn-secondary saas-btn-sm"
-                            style={{ padding: '2px 6px' }}
-                            onClick={() => setPosCart(prev => {
-                              const next = { ...prev }
-                              if (next[id] > 1) next[id] -= 1
-                              else delete next[id]
-                              return next
-                            })}
-                          >
-                            <Minus size={10} />
-                          </button>
-                          <span style={{ fontSize: '13px', fontWeight: 700 }}>{qty}</span>
-                          <button
-                            className="saas-btn saas-btn-secondary saas-btn-sm"
-                            style={{ padding: '2px 6px' }}
-                            onClick={() => setPosCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))}
-                          >
-                            <Plus size={10} />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                  {Object.keys(posCart).length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '30px 0', color: '#94A3B8', fontSize: '12.5px' }}>
-                      Register is empty. Tap items to add.
-                    </div>
-                  )}
-                </div>
-
-                {/* Subtotal & Mode */}
-                <div style={{ padding: '12px 0', borderBottom: '1px solid #E2E8F0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 800 }}>
-                    <span>Total Amount</span>
-                    <span style={{ color: '#1E40AF' }}>
-                      {money(
-                        Object.keys(posCart).reduce((sum, id) => {
-                          const item = menuItems.find(m => m.id === Number(id))
-                          return sum + (item?.price || 0) * (posCart[Number(id)] || 0)
-                        }, 0)
-                      )}
-                    </span>
-                  </div>
-
-                  <div style={{ marginTop: '12px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '6px' }}>
-                      Payment Method Received
-                    </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
-                      {(['upi', 'cash', 'wallet'] as const).map(mode => (
-                        <button
-                          key={mode}
-                          type="button"
-                          className={`saas-btn saas-btn-sm ${posPaymentMode === mode ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
-                          style={{ justifyContent: 'center', textTransform: 'uppercase', fontSize: '11px' }}
-                          onClick={() => setPosPaymentMode(mode)}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Punch Order Button */}
-                <button
-                  className="saas-btn saas-btn-success"
-                  style={{ width: '100%', marginTop: '14px', justifyContent: 'center', padding: '10px' }}
-                  disabled={Object.keys(posCart).length === 0}
-                  onClick={handlePunchPosOrder}
-                >
-                  <ReceiptText size={16} />
-                  <span>Print & Punch Order</span>
-                </button>
-              </div>
+            <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }}>
+              <PosCounterScreen
+                outletId={activeOutletId}
+                outletName={currentOutlet.name}
+                userRole="staff"
+                onOrderCreated={(newOrd) => {
+                  loadData()
+                  setBannerNotice(`Counter order ${formatOrderNumber(newOrd)} punched!`)
+                  setTimeout(() => setBannerNotice(null), 3500)
+                }}
+              />
             </div>
           )}
 

@@ -47,6 +47,7 @@ import { DataTable } from '../../components/ui/data-table'
 import { ShopAnalyticsChart } from '../../components/analytics/ShopAnalyticsChart'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { MenuAuditLogModal } from '../../components/forms/MenuAuditLogModal'
+import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
 import { toast } from '../../components/ui/toast'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
@@ -77,6 +78,8 @@ export interface Order {
   created_at: string
   updated_at?: string
   order_items?: OrderItem[]
+  order_source?: string
+  payment_mode?: string
 }
 
 export interface MenuItem {
@@ -536,10 +539,10 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     }
   ], [money])
 
-  // POS State
-  const [posCart, setPosCart] = useState<{ [id: number]: number }>({})
-  const [posCustomerName, setPosCustomerName] = useState('')
-  const [posPaymentMode, setPosPaymentMode] = useState<'upi' | 'cash' | 'wallet'>('upi')
+  // End-of-Day (EOD) Reconciliation State
+  const [eodFilterDate, setEodFilterDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [eodDateRangeMode, setEodDateRangeMode] = useState<'single' | 'range'>('single')
+  const [eodEndDate, setEodEndDate] = useState(() => new Date().toISOString().split('T')[0])
 
   // Fetch outlet data
   const loadData = useCallback(async () => {
@@ -549,7 +552,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       const { data: ords } = await supabase
         .from('orders')
         .select(`
-          id, user_id, outlet_id, token, status, payment_method, total, shop_payout,
+          id, user_id, outlet_id, token, order_number, status, payment_method, order_source, payment_mode, customer_name, total, shop_payout,
           created_at, updated_at,
           order_items (item_id, name, price, qty)
         `)
@@ -562,10 +565,12 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           ords.map((o: any) => ({
             id: o.id,
             user_id: o.user_id,
-            customer_name: `User #${o.id % 900 + 100}`,
+            customer_name: o.customer_name || `User #${o.id % 900 + 100}`,
             outlet_id: o.outlet_id,
             token: o.token || o.order_number,
             order_number: o.order_number || o.token,
+            order_source: o.order_source || 'APP',
+            payment_mode: o.payment_mode,
             status: o.status || 'placed',
             payment_method: o.payment_method || 'Online UPI',
             payment_status: 'paid',
@@ -1028,12 +1033,74 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     URL.revokeObjectURL(url)
   }
 
-  // Calculated Metrics
-  const totalRevenue = localOrders
-    .filter(o => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + (o.total || 0), 0)
-  const platformFee = Math.round(totalRevenue * 0.05)
-  const netEarnings = totalRevenue - platformFee
+  // Calculated Metrics: Strict separation of App Orders vs POS Counter Orders
+  const appOrders = useMemo(() => {
+    return localOrders.filter(o => o.status !== 'cancelled' && (o.order_source === 'APP' || !o.order_source))
+  }, [localOrders])
+
+  const posOrders = useMemo(() => {
+    return localOrders.filter(o => o.status !== 'cancelled' && o.order_source === 'POS')
+  }, [localOrders])
+
+  const appRevenue = useMemo(() => appOrders.reduce((sum, o) => sum + (o.total || 0), 0), [appOrders])
+  const posRevenue = useMemo(() => posOrders.reduce((sum, o) => sum + (o.total || 0), 0), [posOrders])
+  const totalRevenue = appRevenue + posRevenue
+
+  // Platform profit and settlement figures strictly count ONLY Paytm-paid app orders:
+  const platformFee = Math.round(appRevenue * 0.05)
+  const netEarnings = (appRevenue - platformFee) + posRevenue
+
+  // Counter breakdown by payment mode
+  const posCashTotal = useMemo(() => {
+    return posOrders.filter(o => o.payment_mode === 'CASH' || o.payment_method?.includes('cash')).reduce((sum, o) => sum + (o.total || 0), 0)
+  }, [posOrders])
+
+  const posUpiTotal = useMemo(() => {
+    return posOrders.filter(o => o.payment_mode === 'UPI_COUNTER' || o.payment_method?.includes('upi')).reduce((sum, o) => sum + (o.total || 0), 0)
+  }, [posOrders])
+
+  const posCardTotal = useMemo(() => {
+    return posOrders.filter(o => o.payment_mode === 'CARD_COUNTER' || o.payment_method?.includes('card')).reduce((sum, o) => sum + (o.total || 0), 0)
+  }, [posOrders])
+
+  const posOtherTotal = useMemo(() => {
+    return posOrders.filter(o => o.payment_mode === 'OTHER' || (!['CASH', 'UPI_COUNTER', 'CARD_COUNTER'].includes(o.payment_mode || '') && !o.payment_method?.includes('cash') && !o.payment_method?.includes('upi') && !o.payment_method?.includes('card'))).reduce((sum, o) => sum + (o.total || 0), 0)
+  }, [posOrders])
+
+  // End-of-Day Filtered Sets
+  const eodScopedOrders = useMemo(() => {
+    return localOrders.filter(o => {
+      if (o.status === 'cancelled') return false
+      const d = (o.created_at || '').split('T')[0]
+      if (eodDateRangeMode === 'single') {
+        return d === eodFilterDate
+      }
+      return d >= eodFilterDate && d <= eodEndDate
+    })
+  }, [localOrders, eodFilterDate, eodEndDate, eodDateRangeMode])
+
+  const eodAppOrders = useMemo(() => eodScopedOrders.filter(o => o.order_source !== 'POS'), [eodScopedOrders])
+  const eodPosOrders = useMemo(() => eodScopedOrders.filter(o => o.order_source === 'POS'), [eodScopedOrders])
+
+  const eodAppGross = useMemo(() => eodAppOrders.reduce((sum, o) => sum + (o.total || 0), 0), [eodAppOrders])
+  const eodAppPlatformFee = Math.round(eodAppGross * 0.05)
+  const eodAppNet = eodAppGross - eodAppPlatformFee
+
+  const eodPosGross = useMemo(() => eodPosOrders.reduce((sum, o) => sum + (o.total || 0), 0), [eodPosOrders])
+  const eodDayTotal = eodAppGross + eodPosGross
+
+  const eodPosCashOrders = useMemo(() => eodPosOrders.filter(o => o.payment_mode === 'CASH' || o.payment_method?.toLowerCase().includes('cash')), [eodPosOrders])
+  const eodPosCashTotal = useMemo(() => eodPosCashOrders.reduce((sum, o) => sum + (o.total || 0), 0), [eodPosCashOrders])
+
+  const eodPosUpiOrders = useMemo(() => eodPosOrders.filter(o => o.payment_mode === 'UPI_COUNTER' || o.payment_method?.toLowerCase().includes('upi')), [eodPosOrders])
+  const eodPosUpiTotal = useMemo(() => eodPosUpiOrders.reduce((sum, o) => sum + (o.total || 0), 0), [eodPosUpiOrders])
+
+  const eodPosCardOrders = useMemo(() => eodPosOrders.filter(o => o.payment_mode === 'CARD_COUNTER' || o.payment_method?.toLowerCase().includes('card')), [eodPosOrders])
+  const eodPosCardTotal = useMemo(() => eodPosCardOrders.reduce((sum, o) => sum + (o.total || 0), 0), [eodPosCardOrders])
+
+  const eodPosOtherOrders = useMemo(() => eodPosOrders.filter(o => o.payment_mode === 'OTHER' || (!['CASH', 'UPI_COUNTER', 'CARD_COUNTER'].includes(o.payment_mode || '') && !o.payment_method?.toLowerCase().includes('cash') && !o.payment_method?.toLowerCase().includes('upi') && !o.payment_method?.toLowerCase().includes('card'))), [eodPosOrders])
+  const eodPosOtherTotal = useMemo(() => eodPosOtherOrders.reduce((sum, o) => sum + (o.total || 0), 0), [eodPosOtherOrders])
+
   const activeKitchenCount = localOrders.filter(o => o.status === 'placed' || o.status === 'preparing').length
   const completedCount = localOrders.filter(o => o.status === 'collected').length
   const lowStockCount = menuItems.filter(i => (i.stock_qty ?? 10) <= 5).length
@@ -2119,139 +2186,15 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               TAB 6: POS COUNTER
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'pos' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
-              <div>
-                <div className="saas-card" style={{ padding: '14px 18px', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Manager Walk-In Register</h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Tap any item to punch walk-in counter sales</p>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
-                  {menuItems.filter(i => i.available).map(item => {
-                    const inCart = posCart[item.id] || 0
-                    return (
-                      <div
-                        key={item.id}
-                        className="saas-card"
-                        style={{
-                          padding: '14px',
-                          cursor: 'pointer',
-                          border: inCart > 0 ? '2px solid #1E40AF' : '1px solid #E2E8F0'
-                        }}
-                        onClick={() => setPosCart(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }))}
-                      >
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{item.name}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                          <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E40AF' }}>{money(item.price)}</span>
-                          {inCart > 0 && (
-                            <span style={{ background: '#1E40AF', color: '#FFF', fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '10px' }}>
-                              ×{inCart}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* POS Cart Sidebar */}
-              <div className="saas-card" style={{ padding: '18px', height: 'fit-content' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 12px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
-                  Walk-in Order Cart
-                </h4>
-
-                <input
-                  type="text"
-                  placeholder="Customer Name / Roll (Optional)"
-                  value={posCustomerName}
-                  onChange={e => setPosCustomerName(e.target.value)}
-                  style={{ width: '100%', padding: '6px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '12px' }}
-                />
-
-                <div style={{ minHeight: '120px', maxHeight: '220px', overflowY: 'auto', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
-                  {Object.keys(posCart).map(idStr => {
-                    const id = Number(idStr)
-                    const item = menuItems.find(m => m.id === id)
-                    const qty = posCart[id]
-                    if (qty <= 0) return null
-                    return (
-                      <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600 }}>{item?.name}</div>
-                          <div style={{ fontSize: '11px', color: '#64748B' }}>{money(item?.price || 0)}</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <button
-                            className="saas-btn saas-btn-secondary saas-btn-sm"
-                            style={{ padding: '2px 6px' }}
-                            onClick={() => setPosCart(prev => {
-                              const next = { ...prev }
-                              if (next[id] > 1) next[id] -= 1
-                              else delete next[id]
-                              return next
-                            })}
-                          >
-                            -
-                          </button>
-                          <span style={{ fontSize: '13px', fontWeight: 700 }}>{qty}</span>
-                          <button
-                            className="saas-btn saas-btn-secondary saas-btn-sm"
-                            style={{ padding: '2px 6px' }}
-                            onClick={() => setPosCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                  {Object.keys(posCart).length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '24px 0', color: '#94A3B8', fontSize: '12.5px' }}>
-                      Tap items on the left to add.
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ padding: '12px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 800 }}>
-                    <span>Total Amount</span>
-                    <span style={{ color: '#1E40AF' }}>
-                      {money(
-                        Object.keys(posCart).reduce((sum, id) => {
-                          const item = menuItems.find(m => m.id === Number(id))
-                          return sum + (item?.price || 0) * (posCart[Number(id)] || 0)
-                        }, 0)
-                      )}
-                    </span>
-                  </div>
-
-                  <div style={{ marginTop: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
-                      {(['upi', 'cash', 'wallet'] as const).map(mode => (
-                        <button
-                          key={mode}
-                          type="button"
-                          className={`saas-btn saas-btn-sm ${posPaymentMode === mode ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
-                          style={{ justifyContent: 'center', textTransform: 'uppercase', fontSize: '11px' }}
-                          onClick={() => setPosPaymentMode(mode)}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  className="saas-btn saas-btn-success"
-                  style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
-                  disabled={Object.keys(posCart).length === 0}
-                  onClick={handlePunchPosOrder}
-                >
-                  Punch Walk-In Order
-                </button>
-              </div>
+            <div style={{ height: 'calc(100vh - 120px)', minHeight: '620px', display: 'flex', flexDirection: 'column' }}>
+              <PosCounterScreen
+                outletId={activeOutletId}
+                outletName={currentOutlet?.name || 'Main Canteen'}
+                userRole="shop_admin"
+                onOrderCreated={() => {
+                  loadData()
+                }}
+              />
             </div>
           )}
 
@@ -2392,26 +2335,146 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               {/* Recharts Analytics Charts (Royal Blue & Emerald) */}
               <ShopAnalyticsChart totalRevenue={totalRevenue} />
 
-              {/* Payment Methods Breakdown */}
+              {/* End-of-Day (EOD) Reconciliation: App vs Counter POS */}
               <div className="saas-card" style={{ padding: '20px' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 14px' }}>Revenue by Payment Channel</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-                  <div style={{ padding: '14px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Online UPI (QR / Apps)</span>
-                    <div style={{ fontSize: '18px', fontWeight: 800, margin: '4px 0' }}>{money(Math.round(totalRevenue * 0.72))}</div>
-                    <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 700 }}>72% share</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                      End-of-Day Reconciliation & Register Audit
+                    </h4>
+                    <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+                      Audit separate revenue streams: Paytm/online app orders vs counter cash/POS
+                    </p>
                   </div>
 
-                  <div style={{ padding: '14px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>User Meal Wallet</span>
-                    <div style={{ fontSize: '18px', fontWeight: 800, margin: '4px 0' }}>{money(Math.round(totalRevenue * 0.20))}</div>
-                    <span style={{ fontSize: '11px', color: '#3B82F6', fontWeight: 700 }}>20% share</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', background: '#F1F5F9', padding: '2px', borderRadius: '6px' }}>
+                      <button
+                        type="button"
+                        className={`saas-btn saas-btn-sm ${eodDateRangeMode === 'single' ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                        style={{ fontSize: '11px', padding: '4px 8px' }}
+                        onClick={() => setEodDateRangeMode('single')}
+                      >
+                        Single Day
+                      </button>
+                      <button
+                        type="button"
+                        className={`saas-btn saas-btn-sm ${eodDateRangeMode === 'range' ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                        style={{ fontSize: '11px', padding: '4px 8px' }}
+                        onClick={() => setEodDateRangeMode('range')}
+                      >
+                        Date Range
+                      </button>
+                    </div>
+
+                    <input
+                      type="date"
+                      value={eodFilterDate}
+                      onChange={e => setEodFilterDate(e.target.value)}
+                      style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+
+                    {eodDateRangeMode === 'range' && (
+                      <>
+                        <span style={{ fontSize: '12px', color: '#64748B' }}>to</span>
+                        <input
+                          type="date"
+                          value={eodEndDate}
+                          onChange={e => setEodEndDate(e.target.value)}
+                          style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Day Overview Summary */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+                  <div style={{ padding: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Total Period Gross</span>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#1E40AF', marginTop: '4px' }}>
+                      {money(eodDayTotal)}
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#64748B' }}>
+                      {eodScopedOrders.length} total orders completed
+                    </span>
                   </div>
 
-                  <div style={{ padding: '14px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Counter Cash / POS</span>
-                    <div style={{ fontSize: '18px', fontWeight: 800, margin: '4px 0' }}>{money(Math.round(totalRevenue * 0.08))}</div>
-                    <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 700 }}>8% share</span>
+                  <div style={{ padding: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Mobile App Orders (Online)</span>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                      {money(eodAppGross)}
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#D97706', fontWeight: 700 }}>
+                      - {money(eodAppPlatformFee)} (5% fee) = {money(eodAppNet)} net
+                    </span>
+                  </div>
+
+                  <div style={{ padding: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Counter POS (Zero Fee)</span>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#16A34A', marginTop: '4px' }}>
+                      {money(eodPosGross)}
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 700 }}>
+                      100% direct franchise retained
+                    </span>
+                  </div>
+                </div>
+
+                {/* POS Counter Payment Mode Breakdown */}
+                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 800, color: '#334155', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Counter POS Payment Modes Breakdown ({eodPosOrders.length} tickets)
+                  </h5>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                    <div style={{ padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', background: '#FFFFFF' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 700 }}>Cash in Hand</span>
+                        <span style={{ fontSize: '11px', background: '#F1F5F9', padding: '1px 6px', borderRadius: '10px' }}>
+                          {eodPosCashOrders.length}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                        {money(eodPosCashTotal)}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', background: '#FFFFFF' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 700 }}>Counter UPI</span>
+                        <span style={{ fontSize: '11px', background: '#F1F5F9', padding: '1px 6px', borderRadius: '10px' }}>
+                          {eodPosUpiOrders.length}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                        {money(eodPosUpiTotal)}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', background: '#FFFFFF' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 700 }}>Counter Card POS</span>
+                        <span style={{ fontSize: '11px', background: '#F1F5F9', padding: '1px 6px', borderRadius: '10px' }}>
+                          {eodPosCardOrders.length}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                        {money(eodPosCardTotal)}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', background: '#FFFFFF' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 700 }}>Other Counter</span>
+                        <span style={{ fontSize: '11px', background: '#F1F5F9', padding: '1px 6px', borderRadius: '10px' }}>
+                          {eodPosOtherOrders.length}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                        {money(eodPosOtherTotal)}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
