@@ -106,7 +106,7 @@ export async function generateReceiptCanvas(order) {
 
   ctx.fillStyle = '#16A34A'
   ctx.font = 'bold 11px system-ui, -apple-system, sans-serif'
-  ctx.fillText(`✓ Verified Paid (${paymentMethod})`, width / 2, tokenBoxY + 76)
+  ctx.fillText(`Verified Paid (${paymentMethod})`, width / 2, tokenBoxY + 76)
 
   // 4. Order Metadata Details
   let curY = 214

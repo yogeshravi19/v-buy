@@ -80,7 +80,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
                     onChange={e => setFormData({ ...formData, role: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-500"
                   >
-                    <option value="student">User / Customer</option>
+                    <option value="student">User</option>
                     <option value="vendor">Canteen Owner</option>
                     <option value="faculty">Faculty / Staff</option>
                     <option value="admin">University Admin</option>
