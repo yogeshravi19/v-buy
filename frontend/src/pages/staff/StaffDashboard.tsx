@@ -1563,10 +1563,10 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+              className="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[min(90vh,90dvh)] rounded-3xl p-6 shadow-2xl relative flex flex-col overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                     <QrCode className="h-5 w-5" strokeWidth={2} />
@@ -1584,7 +1584,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 </button>
               </div>
 
-              {/* Mode Toggle: OTP Digit Boxes vs QR Viewfinder */}
+              {/* Scrollable Verification Body */}
+              <div className="flex-1 overflow-y-auto overscroll-contain pr-1">
+                {/* Mode Toggle: OTP Digit Boxes vs QR Viewfinder */}
               <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 mb-4">
                 <button
                   onClick={() => setVerifyMode('code')}
@@ -1737,13 +1739,15 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
 
-              {/* Action Button: Verify and Hand Over */}
+            {/* Action Button: Verify and Hand Over */}
+            <div className="shrink-0 pt-3 border-t border-slate-800/80 mt-2">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleVerifyCollect()}
                 disabled={isVerifying || !verifyTokenInput.trim()}
-                className="w-full mt-4 min-h-[52px] py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition-all border border-emerald-500/30"
+                className="w-full min-h-[48px] py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition-all border border-emerald-500/30"
               >
                 {isVerifying ? (
                   <RefreshCw className="h-5 w-5 animate-spin" strokeWidth={2.5} />
@@ -1752,7 +1756,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 )}
                 <span>Verify Token & Hand Over</span>
               </motion.button>
-            </motion.div>
+            </div>
+          </motion.div>
           </div>
         )}
       </AnimatePresence>
@@ -1765,9 +1770,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl"
+              className="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[min(90vh,90dvh)] rounded-3xl p-6 shadow-2xl flex flex-col overflow-hidden"
             >
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4 shrink-0">
                 <h3 className="font-black text-base text-white">
                   {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
                 </h3>
@@ -1776,7 +1781,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-3.5">
+              <div className="flex-1 overflow-y-auto overscroll-contain pr-1 space-y-3.5">
                 <div>
                   <label className="text-xs font-bold text-slate-300 block mb-1">Item Name</label>
                   <input
@@ -1864,10 +1869,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
+              </div>
 
+              <div className="shrink-0 pt-3 border-t border-slate-800/80 mt-2">
                 <button
                   onClick={handleSaveMenuItem}
-                  className="w-full mt-3 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-950/40"
+                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-950/40"
                 >
                   {editingItem ? 'Save Changes' : 'Add to Menu'}
                 </button>

@@ -2173,57 +2173,59 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleSaveOutlet} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label htmlFor="outlet-name" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Outlet Name
-                </label>
-                <input
-                  id="outlet-name"
-                  type="text"
-                  required
-                  minLength={3}
-                  maxLength={80}
-                  placeholder="e.g. Food Street Grill"
-                  value={outletForm.name}
-                  onChange={e => setOutletForm(prev => ({ ...prev, name: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                />
-              </div>
-              <div>
-                <label htmlFor="outlet-location" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Location
-                </label>
-                <input
-                  id="outlet-location"
-                  type="text"
-                  required
-                  list="outlet-location-options"
-                  placeholder="e.g. North Square"
-                  value={outletForm.location}
-                  onChange={e => setOutletForm(prev => ({ ...prev, location: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                />
-                <datalist id="outlet-location-options">
-                  {Array.from(new Set(outletList.map(o => o.location))).map(loc => <option key={loc} value={loc} />)}
-                </datalist>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#334155' }}>
-                <input
-                  type="checkbox"
-                  checked={outletForm.is_event}
-                  onChange={e => setOutletForm(prev => ({ ...prev, is_event: e.target.checked }))}
-                />
-                Event stall (open only during event mode)
-              </label>
-
-              {outletFormError && (
-                <div role="alert" style={{ padding: '8px 10px', borderRadius: '6px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: '12.5px' }}>
-                  {outletFormError}
+            <form onSubmit={handleSaveOutlet} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label htmlFor="outlet-name" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Outlet Name
+                  </label>
+                  <input
+                    id="outlet-name"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={80}
+                    placeholder="e.g. Food Street Grill"
+                    value={outletForm.name}
+                    onChange={e => setOutletForm(prev => ({ ...prev, name: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  />
                 </div>
-              )}
+                <div>
+                  <label htmlFor="outlet-location" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Location
+                  </label>
+                  <input
+                    id="outlet-location"
+                    type="text"
+                    required
+                    list="outlet-location-options"
+                    placeholder="e.g. North Square"
+                    value={outletForm.location}
+                    onChange={e => setOutletForm(prev => ({ ...prev, location: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  />
+                  <datalist id="outlet-location-options">
+                    {Array.from(new Set(outletList.map(o => o.location))).map(loc => <option key={loc} value={loc} />)}
+                  </datalist>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#334155' }}>
+                  <input
+                    type="checkbox"
+                    checked={outletForm.is_event}
+                    onChange={e => setOutletForm(prev => ({ ...prev, is_event: e.target.checked }))}
+                  />
+                  Event stall (open only during event mode)
+                </label>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                {outletFormError && (
+                  <div role="alert" style={{ padding: '8px 10px', borderRadius: '6px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: '12.5px' }}>
+                    {outletFormError}
+                  </div>
+                )}
+              </div>
+
+              <div className="saas-modal-footer">
                 <button type="button" className="saas-btn saas-btn-secondary" onClick={() => { setShowAddOutletModal(false); setEditingOutlet(null) }} disabled={savingOutlet}>
                   Cancel
                 </button>
@@ -2246,76 +2248,78 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleSaveCoupon} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Coupon Code
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. FESTIVAL30"
-                  value={couponForm.code}
-                  onChange={e => setCouponForm(prev => ({ ...prev, code: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', textTransform: 'uppercase' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <form onSubmit={handleSaveCoupon} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Discount Type
-                  </label>
-                  <select
-                    value={couponForm.discount_type}
-                    onChange={e => setCouponForm(prev => ({ ...prev, discount_type: e.target.value as any }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  >
-                    <option value="percent">Percentage (%)</option>
-                    <option value="flat">Flat Amount (₹)</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Discount Value
+                    Coupon Code
                   </label>
                   <input
-                    type="number"
-                    min="1"
+                    type="text"
                     required
-                    value={couponForm.discount_value}
-                    onChange={e => setCouponForm(prev => ({ ...prev, discount_value: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    placeholder="e.g. FESTIVAL30"
+                    value={couponForm.code}
+                    onChange={e => setCouponForm(prev => ({ ...prev, code: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', textTransform: 'uppercase' }}
                   />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Discount Type
+                    </label>
+                    <select
+                      value={couponForm.discount_type}
+                      onChange={e => setCouponForm(prev => ({ ...prev, discount_type: e.target.value as any }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    >
+                      <option value="percent">Percentage (%)</option>
+                      <option value="flat">Flat Amount (₹)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Discount Value
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={couponForm.discount_value}
+                      onChange={e => setCouponForm(prev => ({ ...prev, discount_value: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Min Order Value (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={couponForm.min_order}
+                      onChange={e => setCouponForm(prev => ({ ...prev, min_order: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Max Usage Limit
+                    </label>
+                    <input
+                      type="number"
+                      value={couponForm.max_uses}
+                      onChange={e => setCouponForm(prev => ({ ...prev, max_uses: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Min Order Value (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={couponForm.min_order}
-                    onChange={e => setCouponForm(prev => ({ ...prev, min_order: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Max Usage Limit
-                  </label>
-                  <input
-                    type="number"
-                    value={couponForm.max_uses}
-                    onChange={e => setCouponForm(prev => ({ ...prev, max_uses: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <div className="saas-modal-footer">
                 <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowAddCouponModal(false)}>
                   Cancel
                 </button>
@@ -2341,7 +2345,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 <X size={16} />
               </button>
             </div>
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12.5px' }}>
                 <div>
                   <div style={{ color: '#64748B', fontSize: '11px', fontWeight: 600 }}>EVENT ID</div>
@@ -2384,12 +2388,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   {JSON.stringify(selectedAuditLog.metadata || {}, null, 2)}
                 </pre>
               </div>
+            </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px' }}>
-                <button className="saas-btn saas-btn-secondary" onClick={() => setSelectedAuditLog(null)}>
-                  Close
-                </button>
-              </div>
+            <div className="saas-modal-footer">
+              <button className="saas-btn saas-btn-secondary" onClick={() => setSelectedAuditLog(null)}>
+                Close
+              </button>
             </div>
           </div>
         </div>

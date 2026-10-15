@@ -1480,7 +1480,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl"
+              className="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-10 w-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
@@ -1528,7 +1528,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
       {/* ── INVITE SHOP ADMIN MODAL ── */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-black text-base text-white">Invite Shop Admin</h3>
               <button onClick={() => setShowInviteModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
@@ -1606,7 +1606,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
       {/* ── CREATE PLATFORM COUPON MODAL ── */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-black text-base text-white">Create Platform Coupon</h3>
               <button onClick={() => setShowCouponModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">

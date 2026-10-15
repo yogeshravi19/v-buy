@@ -60,7 +60,7 @@ export function MenuAuditLogModal({ isOpen, onClose, outletId }: MenuAuditLogMod
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-auto max-h-[85vh] flex flex-col"
+        className="w-full max-w-[min(672px,calc(100vw-24px))] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-auto max-h-[min(88vh,88dvh)] flex flex-col overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

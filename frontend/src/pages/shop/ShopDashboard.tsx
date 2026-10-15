@@ -1715,8 +1715,8 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       {/* ── ADD/EDIT MENU ITEM MODAL ── */}
       {showItemModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[min(90vh,90dvh)] rounded-3xl p-6 shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4 shrink-0">
               <h3 className="font-black text-base text-white">
                 {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
               </h3>
@@ -1725,7 +1725,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
               </button>
             </div>
 
-            <div className="space-y-3.5">
+            <div className="flex-1 overflow-y-auto overscroll-contain pr-1 space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">Item Name</label>
                 <input
@@ -1817,10 +1817,12 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
                   />
                 </div>
               </div>
+            </div>
 
+            <div className="shrink-0 pt-3 border-t border-slate-800/80 mt-2">
               <button
                 onClick={handleSaveMenuItem}
-                className="w-full mt-3 py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs transition-all shadow-lg shadow-orange-950/40"
+                className="w-full py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs transition-all shadow-lg shadow-orange-950/40"
               >
                 Save Menu Item
               </button>
@@ -1832,7 +1834,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       {/* ── INVITE STAFF MODAL ── */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-black text-base text-white">Invite Staff Account</h3>
               <button onClick={() => setShowInviteModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
@@ -1898,7 +1900,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       {/* ── CREATE OUTLET COUPON MODAL ── */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-black text-base text-white">Create Outlet Coupon</h3>
               <button onClick={() => setShowCouponModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
@@ -1965,7 +1967,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       {/* ── SCAN TO COLLECT MODAL ── */}
       {showScanModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-black text-base text-white">Scan-to-Collect Order</h3>
               <button onClick={() => setShowScanModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
@@ -2010,7 +2012,7 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
       {/* ── EDIT STAFF MODAL ── */}
       {showEditStaffModal && editingStaff && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-bold text-base text-white">Edit Staff Details</h3>
               <button onClick={() => setShowEditStaffModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">

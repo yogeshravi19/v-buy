@@ -2820,52 +2820,54 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleSaveStaff} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh Kumar"
-                  value={staffForm.full_name}
-                  onChange={e => setStaffForm(prev => ({ ...prev, full_name: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                />
+            <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Kumar"
+                    value={staffForm.full_name}
+                    onChange={e => setStaffForm(prev => ({ ...prev, full_name: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Mobile Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 9876541004"
+                    value={staffForm.phone}
+                    onChange={e => setStaffForm(prev => ({ ...prev, phone: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Role Assignment
+                  </label>
+                  <select
+                    value={staffForm.role}
+                    onChange={e => setStaffForm(prev => ({ ...prev, role: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  >
+                    <option value="Counter Cashier">Counter Cashier</option>
+                    <option value="Kitchen Lead">Kitchen Lead</option>
+                    <option value="Prep Cook">Prep Cook</option>
+                    <option value="Delivery Dispatcher">Delivery Dispatcher</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Mobile Phone Number
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="e.g. 9876541004"
-                  value={staffForm.phone}
-                  onChange={e => setStaffForm(prev => ({ ...prev, phone: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Role Assignment
-                </label>
-                <select
-                  value={staffForm.role}
-                  onChange={e => setStaffForm(prev => ({ ...prev, role: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
-                >
-                  <option value="Counter Cashier">Counter Cashier</option>
-                  <option value="Kitchen Lead">Kitchen Lead</option>
-                  <option value="Prep Cook">Prep Cook</option>
-                  <option value="Delivery Dispatcher">Delivery Dispatcher</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <div className="saas-modal-footer">
                 <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowAddStaffModal(false)}>
                   Cancel
                 </button>

@@ -281,7 +281,7 @@ export function MenuItemFormDialog({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4 overflow-y-auto flex-1">
+        <form id="menu-item-form" onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4 overflow-y-auto flex-1">
           {/* Duplicate Name Warning */}
           {isDuplicateName && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 animate-in fade-in">
@@ -614,36 +614,37 @@ export function MenuItemFormDialog({
               <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
             </label>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={isSubmitting || isUploading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting || isUploading}
-              className="bg-blue-700 hover:bg-blue-800 text-white"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader2 size={13} className="animate-spin" />
-                  Saving...
-                </span>
-              ) : isEditing ? (
-                'Update Item'
-              ) : (
-                'Add Item'
-              )}
-            </Button>
-          </div>
         </form>
+
+        {/* Pinned Footer Actions */}
+        <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-slate-100 bg-slate-50 shrink-0">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting || isUploading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="menu-item-form"
+            variant="primary"
+            disabled={isSubmitting || isUploading}
+            className="bg-blue-700 hover:bg-blue-800 text-white"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 size={13} className="animate-spin" />
+                Saving...
+              </span>
+            ) : isEditing ? (
+              'Update Item'
+            ) : (
+              'Add Item'
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -28,7 +28,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-left">
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain shadow-2xl relative text-left">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 cursor-pointer"

@@ -10,7 +10,7 @@ export function Sheet({ open, onOpenChange, children, trigger, title, descriptio
         <Drawer.Overlay className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 transition-opacity" />
         <Drawer.Content
           className={cn(
-            'bg-white fixed bottom-0 left-0 right-0 z-50 mt-24 flex flex-col rounded-t-[24px] border-t border-[#E2E8F0] max-h-[90vh] shadow-[0_-8px_30px_rgba(15,23,42,0.12)] focus:outline-none',
+            'bg-white fixed bottom-0 left-0 right-0 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 flex flex-col rounded-t-[28px] border-t sm:border-x border-[#E2E8F0] max-h-[90vh] sm:max-h-[85vh] shadow-[0_-12px_36px_rgba(15,23,42,0.16)] focus:outline-none',
             className
           )}
         >

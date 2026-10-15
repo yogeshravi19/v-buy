@@ -645,16 +645,16 @@ function CartSheet({ onClose }: { onClose: () => void }) {
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col justify-end"
+        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <motion.div
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
           transition={{ ...spring }}
-          className="bg-surface-900 rounded-t-3xl border-t border-white/10 p-5 max-h-[90vh] overflow-y-auto scrollbar-thin"
+          className="bg-surface-900 rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/10 p-5 w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-y-auto overscroll-contain scrollbar-thin"
         >
           {/* Handle bar */}
-          <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
+          <div className="sm:hidden w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
 
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><ShoppingBag size={18} className="text-brand-400" /> Your Cart</h2>

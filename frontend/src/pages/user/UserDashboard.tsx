@@ -1769,7 +1769,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl"
+              className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl"
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
                 <h3 className="font-extrabold text-base text-white flex items-center gap-2">
@@ -1828,7 +1828,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl text-center"
+              className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl text-center"
             >
               <div className="flex justify-between items-center mb-3">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
@@ -1883,7 +1883,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl"
+              className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl"
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
                 <h3 className="font-extrabold text-base text-white">Rate Your Dining Experience</h3>

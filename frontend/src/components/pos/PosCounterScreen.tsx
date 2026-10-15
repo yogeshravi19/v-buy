@@ -887,7 +887,7 @@ export function PosCounterScreen({
             </div>
 
             {/* Mobile Checkout Footer */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
+            <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <div className="grid grid-cols-4 gap-1.5">
                 {(['CASH', 'UPI_COUNTER', 'CARD_COUNTER', 'OTHER'] as const).map(mode => (
                   <button

@@ -50,7 +50,7 @@ export function PosPrintReceipt({ order, isOpen, onClose }: PosPrintReceiptProps
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col"
+        className="w-full max-w-[min(480px,calc(100vw-24px))] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[min(90vh,90dvh)] flex flex-col overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Controls (Hidden during print) */}
