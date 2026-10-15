@@ -944,6 +944,24 @@ function App() {
       return setNotice(`Insufficient balance (${money(wallet.balance)}). Top up ${money(studentDebit - wallet.balance)} or use Instant Payment Gateway (PhonePe/Paytm).`)
     }
 
+    // Validate live price integrity before placing order
+    const currentOutlet = outlets.find(o => o.id === cart.outlet.id)
+    if (currentOutlet && currentOutlet.menu_items) {
+      let priceChanged = false
+      const updatedCartItems = cart.items.map(ci => {
+        const fresh = currentOutlet.menu_items.find(m => m.id === ci.id)
+        if (fresh && fresh.price !== ci.price) {
+          priceChanged = true
+          return { ...ci, price: fresh.price }
+        }
+        return ci
+      })
+      if (priceChanged) {
+        setCart(c => ({ ...c, items: updatedCartItems }))
+        return setNotice('Item prices have been updated. Please review the updated cart total before confirming.')
+      }
+    }
+
     // Feature 7: Validate scheduled pickup slot
     if (isScheduled && selectedSlotId) {
       const slot = pickupSlots.find(s => s.id === selectedSlotId)

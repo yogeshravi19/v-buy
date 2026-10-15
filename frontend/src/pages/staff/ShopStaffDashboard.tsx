@@ -2377,6 +2377,8 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
           setShowAddItemModal(false)
           setEditingItem(null)
         }}
+        existingItems={menuItems}
+        outletId={activeOutletId}
         initialData={editingItem}
         onSave={async (formData: any) => {
           if (editingItem) {
@@ -2386,23 +2388,33 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               price: Number(formData.price),
               category: formData.category,
               is_veg: formData.is_veg,
+              description: formData.description,
+              available_from: formData.available_from,
+              available_to: formData.available_to,
               stock_qty: Number(formData.stock_qty),
+              available: formData.available,
               image_url: formData.image_url
             } : i))
             try {
-              await supabase
+              const { error } = await supabase
                 .from('menu_items')
                 .update({
                   name: formData.name,
                   price: Number(formData.price),
                   category: formData.category,
                   is_veg: formData.is_veg,
+                  description: formData.description || null,
+                  available_from: formData.available_from || null,
+                  available_to: formData.available_to || null,
                   stock_qty: Number(formData.stock_qty),
-                  image_url: formData.image_url
+                  available: formData.available ?? true,
+                  image_url: formData.image_url || null
                 })
                 .eq('id', editingItem.id)
+              if (error) throw error
             } catch (err) {
               console.error('Error updating item:', err)
+              throw err
             }
           } else {
             const newItem: MenuItem = {
@@ -2412,8 +2424,11 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               price: Number(formData.price),
               category: formData.category,
               is_veg: formData.is_veg,
+              description: formData.description,
+              available_from: formData.available_from,
+              available_to: formData.available_to,
               stock_qty: Number(formData.stock_qty),
-              available: true,
+              available: formData.available ?? true,
               image_url: formData.image_url
             }
             setMenuItems(prev => [newItem, ...prev])
@@ -2426,17 +2441,22 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                   price: Number(formData.price),
                   category: formData.category,
                   is_veg: formData.is_veg,
+                  description: formData.description || null,
+                  available_from: formData.available_from || null,
+                  available_to: formData.available_to || null,
                   stock_qty: Number(formData.stock_qty),
-                  available: true,
-                  image_url: formData.image_url
+                  available: formData.available ?? true,
+                  image_url: formData.image_url || null
                 })
                 .select()
                 .single()
-              if (!error && data) {
+              if (error) throw error
+              if (data) {
                 setMenuItems(prev => prev.map(i => i.id === newItem.id ? (data as MenuItem) : i))
               }
             } catch (err) {
               console.error('Error inserting item:', err)
+              throw err
             }
           }
         }}

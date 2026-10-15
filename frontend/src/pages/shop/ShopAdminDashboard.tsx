@@ -37,12 +37,16 @@ import {
   FastForward,
   CheckCheck,
   Layers,
-  Menu
+  Menu,
+  Archive,
+  ArchiveRestore,
+  History
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DataTable } from '../../components/ui/data-table'
 import { ShopAnalyticsChart } from '../../components/analytics/ShopAnalyticsChart'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
+import { MenuAuditLogModal } from '../../components/forms/MenuAuditLogModal'
 import { toast } from '../../components/ui/toast'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
@@ -84,6 +88,12 @@ export interface MenuItem {
   is_veg: boolean
   category: string
   stock_qty: number | null
+  image_url?: string | null
+  description?: string | null
+  is_archived?: boolean
+  archived_at?: string | null
+  available_from?: string | null
+  available_to?: string | null
 }
 
 export interface StaffMember {
@@ -281,6 +291,8 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
 
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [staffToDelete, setStaffToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [showArchivedOnly, setShowArchivedOnly] = useState(false)
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false)
   const [staffForm, setStaffForm] = useState({
     full_name: '',
     phone: '',
@@ -290,9 +302,41 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   // TanStack Table Columns
   const menuTableColumns = useMemo(() => [
     {
+      accessorKey: 'image_url',
+      header: 'Photo',
+      cell: ({ row }: any) => {
+        const item = row.original
+        return (
+          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center shrink-0">
+            {item.image_url ? (
+              <img
+                src={item.image_url}
+                alt={item.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            ) : (
+              <span className="text-xs font-bold text-slate-500 uppercase">
+                {item.name ? item.name.charAt(0) : 'V'}
+              </span>
+            )}
+          </div>
+        )
+      }
+    },
+    {
       accessorKey: 'name',
       header: 'Item Name',
-      cell: ({ row }: any) => <div className="font-semibold text-slate-900">{row.original.name}</div>
+      cell: ({ row }: any) => (
+        <div>
+          <div className="font-semibold text-slate-900">{row.original.name}</div>
+          {row.original.description && (
+            <div className="text-[11px] text-slate-500 line-clamp-1 max-w-xs">{row.original.description}</div>
+          )}
+        </div>
+      )
     },
     {
       accessorKey: 'category',
@@ -337,31 +381,47 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
             row.original.available ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
           )}
         >
-          {row.original.available ? 'Mark Unavailable' : 'Mark Available'}
+          {row.original.available ? 'Available' : 'Unavailable'}
         </button>
       )
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }: any) => (
-        <div className="flex items-center gap-1.5 justify-end">
-          <button
-            onClick={() => openEditMenuModal(row.original)}
-            className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors"
-            title="Edit item"
-          >
-            <Edit size={13} />
-          </button>
-          <button
-            onClick={() => handleDeleteMenuItem(row.original.id, row.original.name)}
-            className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors"
-            title="Delete item"
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
-      )
+      cell: ({ row }: any) => {
+        const item = row.original
+        return (
+          <div className="flex items-center gap-1.5 justify-end">
+            {item.is_archived ? (
+              <button
+                onClick={() => handleRestoreMenuItem(item.id, item.name)}
+                className="px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 text-emerald-700 text-xs font-semibold transition-colors flex items-center gap-1"
+                title="Restore item to active menu"
+              >
+                <ArchiveRestore size={13} />
+                Restore
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => openEditMenuModal(item)}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors"
+                  title="Edit item"
+                >
+                  <Edit size={13} />
+                </button>
+                <button
+                  onClick={() => handleArchiveMenuItem(item.id, item.name)}
+                  className="p-1.5 rounded-lg border border-amber-200 hover:bg-amber-50 text-amber-700 transition-colors"
+                  title="Archive item"
+                >
+                  <Archive size={13} />
+                </button>
+              </>
+            )}
+          </div>
+        )
+      }
     }
   ], [money])
 
@@ -575,7 +635,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       // 2. Fetch Menu Items
       const { data: mData } = await supabase
         .from('menu_items')
-        .select('id, outlet_id, name, price, available, is_veg, category, stock_qty')
+        .select('id, outlet_id, name, price, available, is_veg, category, stock_qty, image_url, description, is_archived, archived_at, available_from, available_to')
         .eq('outlet_id', activeOutletId)
         .order('name', { ascending: true })
 
@@ -834,14 +894,38 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     }
   }
 
-  // Delete Menu Item
-  const handleDeleteMenuItem = async (itemId: number, name: string) => {
-    if (!window.confirm(`Delete "${name}" from outlet menu?`)) return
-    setMenuItems(prev => prev.filter(i => i.id !== itemId))
+  // Archive Menu Item (Shop Admin only - hides from users, preserves order history)
+  const handleArchiveMenuItem = async (itemId: number, name: string) => {
+    if (!window.confirm(`Archive "${name}"? It will be hidden from customer orders but preserved for all order history.`)) return
     try {
-      await supabase.from('menu_items').delete().eq('id', itemId)
-    } catch (e) {
-      console.error('Failed to delete item:', e)
+      const { error } = await supabase
+        .from('menu_items')
+        .update({ is_archived: true, archived_at: new Date().toISOString() })
+        .eq('id', itemId)
+      if (error) throw error
+      setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, is_archived: true } : i))
+      setNotice(`Archived "${name}".`)
+      setTimeout(() => setNotice(null), 3500)
+    } catch (e: any) {
+      console.error('Failed to archive item:', e)
+      alert(e.message || 'Failed to archive item')
+    }
+  }
+
+  // Restore Archived Menu Item
+  const handleRestoreMenuItem = async (itemId: number, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .update({ is_archived: false, archived_at: null })
+        .eq('id', itemId)
+      if (error) throw error
+      setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, is_archived: false } : i))
+      setNotice(`Restored "${name}" to active menu.`)
+      setTimeout(() => setNotice(null), 3500)
+    } catch (e: any) {
+      console.error('Failed to restore item:', e)
+      alert(e.message || 'Failed to restore item')
     }
   }
 
@@ -1917,18 +2001,47 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlet Menu Catalog</h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Manage prices, category categorization, and availability</p>
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Manage prices, categorization, live photo capture, and availability</p>
                 </div>
-                <button className="saas-btn saas-btn-primary" onClick={openAddMenuModal}>
-                  <Plus size={15} />
-                  <span>Add New Menu Item</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="saas-btn saas-btn-secondary"
+                    onClick={() => setShowAuditLogModal(true)}
+                  >
+                    <History size={14} />
+                    <span>Audit Log</span>
+                  </button>
+                  <button className="saas-btn saas-btn-primary" onClick={openAddMenuModal}>
+                    <Plus size={15} />
+                    <span>Add New Menu Item</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* View Filters: Active Items vs Archived Items */}
+              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' }}>
+                <button
+                  type="button"
+                  className={`saas-btn saas-btn-sm ${!showArchivedOnly ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                  onClick={() => setShowArchivedOnly(false)}
+                >
+                  Active Items ({menuItems.filter(i => !i.is_archived).length})
+                </button>
+                <button
+                  type="button"
+                  className={`saas-btn saas-btn-sm ${showArchivedOnly ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                  onClick={() => setShowArchivedOnly(true)}
+                >
+                  <Archive size={12} />
+                  Archived Items ({menuItems.filter(i => i.is_archived).length})
                 </button>
               </div>
 
               {/* TanStack Menu Catalog Table */}
               <DataTable
                 columns={menuTableColumns}
-                data={menuItems}
+                data={menuItems.filter(i => showArchivedOnly ? Boolean(i.is_archived) : !i.is_archived)}
                 searchPlaceholder="Search menu catalog by name or category..."
               />
             </div>
@@ -2477,6 +2590,8 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           setShowAddMenuModal(false)
           setEditingMenuItem(null)
         }}
+        existingItems={menuItems}
+        outletId={activeOutletId}
         initialData={editingMenuItem}
         onSave={async (formData: any) => {
           if (editingMenuItem) {
@@ -2486,23 +2601,33 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               price: Number(formData.price),
               category: formData.category,
               is_veg: formData.is_veg,
+              description: formData.description,
+              available_from: formData.available_from,
+              available_to: formData.available_to,
               stock_qty: Number(formData.stock_qty),
+              available: formData.available,
               image_url: formData.image_url
             } : i))
             try {
-              await supabase
+              const { error } = await supabase
                 .from('menu_items')
                 .update({
                   name: formData.name,
                   price: Number(formData.price),
                   category: formData.category,
                   is_veg: formData.is_veg,
+                  description: formData.description || null,
+                  available_from: formData.available_from || null,
+                  available_to: formData.available_to || null,
                   stock_qty: Number(formData.stock_qty),
-                  image_url: formData.image_url
+                  available: formData.available ?? true,
+                  image_url: formData.image_url || null
                 })
                 .eq('id', editingMenuItem.id)
+              if (error) throw error
             } catch (err) {
               console.error('Error updating menu item:', err)
+              throw err
             }
           } else {
             const newItem: MenuItem = {
@@ -2512,8 +2637,13 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               price: Number(formData.price),
               category: formData.category,
               is_veg: formData.is_veg,
+              description: formData.description,
+              available_from: formData.available_from,
+              available_to: formData.available_to,
               stock_qty: Number(formData.stock_qty),
-              available: true
+              available: formData.available ?? true,
+              image_url: formData.image_url,
+              is_archived: false
             }
             setMenuItems(prev => [newItem, ...prev])
             try {
@@ -2525,17 +2655,22 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                   price: Number(formData.price),
                   category: formData.category,
                   is_veg: formData.is_veg,
+                  description: formData.description || null,
+                  available_from: formData.available_from || null,
+                  available_to: formData.available_to || null,
                   stock_qty: Number(formData.stock_qty),
-                  available: true,
-                  image_url: formData.image_url
+                  available: formData.available ?? true,
+                  image_url: formData.image_url || null
                 })
                 .select()
                 .single()
-              if (!error && data) {
+              if (error) throw error
+              if (data) {
                 setMenuItems(prev => prev.map(i => i.id === newItem.id ? (data as MenuItem) : i))
               }
             } catch (err) {
               console.error('Error inserting menu item:', err)
+              throw err
             }
           }
         }}
@@ -2644,6 +2779,13 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Menu Audit Trail Log Modal */}
+      <MenuAuditLogModal
+        isOpen={showAuditLogModal}
+        onClose={() => setShowAuditLogModal(false)}
+        outletId={activeOutletId}
+      />
     </div>
   )
 }

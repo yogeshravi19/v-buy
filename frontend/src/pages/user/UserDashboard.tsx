@@ -504,6 +504,36 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
     setIsPlacingOrder(true)
     setCheckoutNotice(null)
 
+    // Verify live prices from database
+    try {
+      const itemIds = cartItems.map(i => i.item_id)
+      const { data: dbItems } = await supabase
+        .from('menu_items')
+        .select('id, name, price, available, is_archived')
+        .in('id', itemIds)
+
+      if (dbItems && dbItems.length > 0) {
+        let priceMismatch = false
+        const refreshed = cartItems.map(ci => {
+          const fresh = dbItems.find(d => d.id === ci.item_id)
+          if (fresh && fresh.price !== ci.price) {
+            priceMismatch = true
+            return { ...ci, price: fresh.price }
+          }
+          return ci
+        })
+
+        if (priceMismatch) {
+          setCartItems(refreshed)
+          setCheckoutNotice('One or more item prices have changed. Please review the updated total before confirming.')
+          setIsPlacingOrder(false)
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('Live price precheck fallback:', e)
+    }
+
     if (checkoutMethod === 'wallet' && walletBalance < finalPayable) {
       setCheckoutNotice(`Insufficient wallet balance (₹${walletBalance}). Please top-up or choose UPI.`)
       setIsPlacingOrder(false)
