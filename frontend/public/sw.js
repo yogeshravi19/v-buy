@@ -49,6 +49,18 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
 
+  // 0. LOCAL DEVELOPMENT & VITE DEV SERVER BYPASS
+  if (
+    url.hostname === 'localhost' ||
+    url.hostname === '127.0.0.1' ||
+    url.port === '5173' ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.includes('/node_modules/') ||
+    url.pathname.includes('/src/')
+  ) {
+    return; // Pass through straight to Vite dev server, never touch service worker cache
+  }
+
   // 1. STRICT NO-CACHE ZONE: Sensitive Financial & Auth operations
   const isStrictNoCache = (
     url.pathname.includes('/auth/v1/') ||

@@ -440,6 +440,8 @@ function App() {
     return true
   }
 
+  const [cart, setCart]               = useState({ outlet: null, items: [] })
+
   const getInitialUserTab = () => {
     const p = window.location.pathname.toLowerCase()
     if (p.startsWith('/orders')) return 'orders'
@@ -1372,10 +1374,10 @@ function App() {
   const role      = currentUser.role || 'user'
 
 
-  const isCustomer = role === 'user' || role === 'student' || role === 'customer'
-  const isStaff   = role === 'staff'
+  const isStaff   = role === 'staff' || role === 'shop_staff'
   const isOwner   = role === 'owner' || role === 'shop_admin'
   const isAdmin   = role === 'admin' || role === 'superadmin' || role === 'super_admin'
+  const isCustomer = !isStaff && !isOwner && !isAdmin
 
   // Route validation and role protection
   const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/'
