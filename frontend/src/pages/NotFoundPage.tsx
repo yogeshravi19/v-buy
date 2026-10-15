@@ -15,40 +15,114 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onGoHome }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl">
-        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-950/50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100 dark:border-blue-900/50">
-          <Compass size={32} />
+    <div style={{
+      minHeight: '100dvh',
+      backgroundColor: '#0B192C',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '16px',
+      color: '#F8FAFC',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '440px',
+        backgroundColor: '#0F172A',
+        border: '1px solid #1E293B',
+        borderRadius: '24px',
+        padding: '36px 28px',
+        textAlign: 'center',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)'
+      }}>
+        <div style={{
+          width: '60px',
+          height: '60px',
+          backgroundColor: 'rgba(37, 99, 235, 0.12)',
+          color: '#3B82F6',
+          borderRadius: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+          border: '1px solid rgba(59, 130, 246, 0.25)'
+        }}>
+          <Compass size={30} strokeWidth={2} />
         </div>
 
-        <span className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+        <span style={{
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '1.5px',
+          textTransform: 'uppercase',
+          color: '#60A5FA'
+        }}>
           404 Error
         </span>
 
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white mt-1 mb-2">
+        <h1 style={{
+          fontSize: '22px',
+          fontWeight: 800,
+          color: '#FFFFFF',
+          margin: '8px 0'
+        }}>
           Page Not Found
         </h1>
 
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+        <p style={{
+          fontSize: '13px',
+          color: '#94A3B8',
+          lineHeight: 1.6,
+          margin: '0 0 24px'
+        }}>
           The requested address does not exist or may have been moved. Return to your dashboard to continue.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div style={{ display: 'flex', gap: '12px' }}>
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-1.5"
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              backgroundColor: '#1E293B',
+              color: '#CBD5E1',
+              fontWeight: 700,
+              fontSize: '13px',
+              borderRadius: '12px',
+              border: '1px solid #334155',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft size={15} strokeWidth={2} />
             <span>Go Back</span>
           </button>
 
           <button
             type="button"
             onClick={handleHome}
-            className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-bold text-xs rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20"
+            style={{
+              flex: 1.2,
+              padding: '12px 16px',
+              backgroundColor: '#2563EB',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '13px',
+              borderRadius: '12px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)'
+            }}
           >
-            <Home size={14} />
+            <Home size={15} strokeWidth={2} />
             <span>Return to Dashboard</span>
           </button>
         </div>

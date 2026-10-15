@@ -647,7 +647,19 @@ function App() {
         setCurrentUser(p)
         loadUserWallet(userId)
         loadUserOrders(p)
-        if (p.role === 'staff' || p.role === 'admin' || p.role === 'shop_admin') setTab('ops')
+        if (p.role === 'staff' || p.role === 'shop_staff') {
+          if (!window.location.pathname.startsWith('/staff')) {
+            window.history.replaceState(null, '', '/staff')
+          }
+        } else if (p.role === 'shop_admin' || p.role === 'owner') {
+          if (!window.location.pathname.startsWith('/shop-admin')) {
+            window.history.replaceState(null, '', '/shop-admin')
+          }
+        } else if (p.role === 'admin' || p.role === 'superadmin' || p.role === 'super_admin') {
+          if (!window.location.pathname.startsWith('/admin')) {
+            window.history.replaceState(null, '', '/admin')
+          }
+        }
       } else {
         const { data: authData } = await supabase.auth.getUser()
         const user = authData?.user
@@ -1382,8 +1394,20 @@ function App() {
   // Route validation and role protection
   const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/'
 
+  // Route aliases: /ops or /pos redirect smoothly to staff/pos or appropriate dashboard
+  if (rawPath === '/ops' || rawPath === '/pos' || rawPath.startsWith('/ops/') || rawPath.startsWith('/pos/')) {
+    const dest = isStaff ? '/staff/pos' : isOwner ? '/shop-admin/pos' : isAdmin ? '/admin/pos' : '/staff/pos'
+    if (window.location.pathname !== dest) {
+      window.history.replaceState(null, '', dest)
+    }
+  }
+
   const isKnownRoute = (
     rawPath === '/' ||
+    rawPath === '/ops' ||
+    rawPath === '/pos' ||
+    rawPath.startsWith('/ops') ||
+    rawPath.startsWith('/pos') ||
     rawPath.startsWith('/browse') ||
     rawPath.startsWith('/orders') ||
     rawPath.startsWith('/wallet') ||
@@ -6814,6 +6838,15 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
   // Quick login handler for test buttons
   async function handleQuickLogin(userObj) {
     if (!userObj) return
+    if (userObj.role === 'staff' || userObj.role === 'shop_staff') {
+      window.history.replaceState(null, '', '/staff')
+    } else if (userObj.role === 'shop_admin' || userObj.role === 'owner') {
+      window.history.replaceState(null, '', '/shop-admin')
+    } else if (userObj.role === 'admin' || userObj.role === 'superadmin' || userObj.role === 'super_admin') {
+      window.history.replaceState(null, '', '/admin')
+    } else {
+      window.history.replaceState(null, '', '/')
+    }
     onLoginUser(userObj)
     if (supabase && userObj.email) {
       try {

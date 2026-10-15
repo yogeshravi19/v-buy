@@ -632,20 +632,6 @@ export default function VFoodsUserDashboard({
                     <span>My Orders {activeOrdersCount > 0 ? `(${activeOrdersCount} live)` : ''}</span>
                   </button>
 
-                  {isInstallable && (
-                    <button
-                      type="button"
-                      className="vfoods-profile-dd-item"
-                      onClick={() => {
-                        setProfileMenuOpen(false)
-                        if (promptInstall) promptInstall()
-                        else if (handleInstallClick) handleInstallClick()
-                      }}
-                    >
-                      <Download size={15} />
-                      <span>Install V Foods App</span>
-                    </button>
-                  )}
 
                   {pushSupported && (
                     <button
@@ -713,21 +699,6 @@ export default function VFoodsUserDashboard({
               )}
             </div>
 
-            {/* PWA Install Banner Card */}
-            {isInstallable && !installBannerDismissed && !searchQuery.trim() && (
-              <InstallBannerCard
-                onInstall={() => {
-                  if (promptInstall) promptInstall()
-                  else if (handleInstallClick) handleInstallClick()
-                }}
-                onDismiss={() => {
-                  setInstallBannerDismissed(true)
-                  try {
-                    localStorage.setItem('vfoods_pwa_dismissed', 'true')
-                  } catch {}
-                }}
-              />
-            )}
 
             {/* If search query active: Show search results */}
             {searchQuery.trim() ? (
