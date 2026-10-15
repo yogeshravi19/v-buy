@@ -39,8 +39,7 @@ import {
   Edit,
   ShieldAlert,
   FileText,
-  Eye,
-  Calculator
+  Eye
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
@@ -48,7 +47,6 @@ import { DataTable } from '../../components/ui/data-table'
 import { OutletComparisonChart, OutletHierarchyTree } from '../../components/admin/OutletHierarchyAndComparison'
 import { StatusBadge } from '../../components/ui/status-badge'
 import { formatOrderNumber } from '../../utils/orderNumber'
-import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
 
 export interface PlatformOrder {
   id: number
@@ -166,14 +164,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   eventMode: propEventMode = false,
   setEventMode: setPropEventMode
 }) => {
-  // Required 12 tabs strictly matching Super Admin specifications
+  // Super Admin specifications (Platform Governance & Oversight)
   type SuperTab =
     | 'overview'
     | 'campuses'
     | 'outlets'
     | 'users'
     | 'orders'
-    | 'counter-billing'
     | 'payments'
     | 'settlements'
     | 'analytics-reports'
@@ -183,7 +180,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   const parseSuperPath = (path: string): SuperTab => {
     const p = path.toLowerCase()
-    if (p.includes('/counter') || p.includes('/pos') || p.includes('/billing')) return 'counter-billing'
     if (p.includes('/campuses')) return 'campuses'
     if (p.includes('/outlets')) return 'outlets'
     if (p.includes('/users')) return 'users'
@@ -217,7 +213,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
-  const [counterOutletId, setCounterOutletId] = useState<string>('g1')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Global Festival / Event Mode
@@ -957,15 +952,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             )}
           </button>
 
-          <button
-            className={`saas-nav-btn ${activeTab === 'counter-billing' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('counter-billing'); setMobileMenuOpen(false); }}
-          >
-            <div className="saas-nav-item-left">
-              <Calculator size={15} />
-              <span>Counter POS</span>
-            </div>
-          </button>
+
 
           <button
             className={`saas-nav-btn ${activeTab === 'payments' ? 'active' : ''}`}
@@ -1073,7 +1060,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 {activeTab === 'outlets' && 'Outlets & Canteen Master Registry'}
                 {activeTab === 'users' && 'User Directory & Access Governance'}
                 {activeTab === 'orders' && 'Cross-Platform Global Orders Telemetry'}
-                {activeTab === 'counter-billing' && 'Counter POS Terminal & Walk-in Punch'}
                 {activeTab === 'payments' && 'Payment Gateways & Wallet Ledger'}
                 {activeTab === 'settlements' && 'Franchise Payout Clearinghouse'}
                 {activeTab === 'analytics-reports' && 'Cross-Campus Analytics & Reports'}
@@ -1541,41 +1527,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════
-              TAB: COUNTER BILLING (POS)
-              ══════════════════════════════════════════════════════════ */}
-          {activeTab === 'counter-billing' && (
-            <div style={{ height: 'calc(100vh - 120px)', minHeight: '640px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ background: '#FFF', padding: '12px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Store size={18} className="text-blue-600" />
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>Target Outlet:</span>
-                  <select
-                    value={counterOutletId}
-                    onChange={e => setCounterOutletId(e.target.value)}
-                    style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 600, borderRadius: '6px', border: '1px solid #CBD5E1', background: '#F8FAFC' }}
-                  >
-                    {outletList.map(ot => (
-                      <option key={ot.id} value={ot.id}>{ot.name} ({ot.id})</option>
-                    ))}
-                  </select>
-                </div>
-                <div style={{ fontSize: '12px', color: '#64748B' }}>
-                  Super Admin counter orders are recorded directly and logged to audit trail.
-                </div>
-              </div>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <PosCounterScreen
-                  outletId={counterOutletId}
-                  outletName={outletList.find(o => o.id === counterOutletId)?.name || 'Selected Outlet'}
-                  userRole="super_admin"
-                  onOrderCreated={() => {
-                    loadGlobalData()
-                  }}
-                />
-              </div>
-            </div>
-          )}
 
           {/* ══════════════════════════════════════════════════════════
               TAB 6: PAYMENTS

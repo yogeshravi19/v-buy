@@ -562,6 +562,80 @@ function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
+  // Live Menu Catalog Synchronizer — Keeps User Dashboard in 100% lockstep with Staff/Shop POS
+  const loadLiveMenuCatalog = useCallback(async () => {
+    if (!supabase) return
+    try {
+      const { data: dbItems, error: itemsErr } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('is_archived', false)
+        .order('id', { ascending: true })
+
+      if (itemsErr) {
+        console.warn('Live menu items fetch notice:', itemsErr.message)
+        return
+      }
+
+      if (dbItems && dbItems.length > 0) {
+        // Group items by outlet_id
+        const itemsByOutlet = new Map()
+        dbItems.forEach(item => {
+          const outId = item.outlet_id
+          if (!itemsByOutlet.has(outId)) itemsByOutlet.set(outId, [])
+          itemsByOutlet.get(outId).push({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price),
+            is_veg: Boolean(item.is_veg),
+            category: item.category || 'snacks',
+            available: Boolean(item.available),
+            stock_qty: item.stock_qty,
+            image_url: item.image_url,
+            description: item.description,
+            available_from: item.available_from,
+            available_to: item.available_to,
+            outlet_id: item.outlet_id
+          })
+        })
+
+        // Merge into outlets state
+        setOutlets(prevOutlets => {
+          return prevOutlets.map(outlet => {
+            const liveItems = itemsByOutlet.get(outlet.id)
+            if (liveItems && liveItems.length > 0) {
+              return {
+                ...outlet,
+                menu_items: liveItems
+              }
+            }
+            return outlet
+          })
+        })
+      }
+    } catch (err) {
+      console.warn('Live menu sync error:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadLiveMenuCatalog()
+
+    // Realtime Postgres subscription to menu_items changes
+    if (supabase) {
+      const menuChannel = supabase
+        .channel('vfoods-global-menu-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
+          loadLiveMenuCatalog()
+        })
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(menuChannel)
+      }
+    }
+  }, [loadLiveMenuCatalog])
+
   async function loadUserWallet(userId) {
     if (!supabase || !userId) return
     try {

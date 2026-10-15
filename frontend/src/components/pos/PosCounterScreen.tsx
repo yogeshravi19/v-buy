@@ -22,6 +22,7 @@ import {
 import { supabase } from '../../lib/supabase'
 import { PosPrintReceipt, type PosPrintOrder } from './PosPrintReceipt'
 import { formatOrderNumber } from '../../utils/orderNumber'
+import { getFoodImage } from '../../lib/foodImages'
 
 export interface PosMenuItem {
   id: number
@@ -522,25 +523,23 @@ export function PosCounterScreen({
                           : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-sm cursor-pointer active:scale-[0.98]'
                       }`}
                     >
-                      {/* Photo or Fallback First Letter Tile */}
+                      {/* Photo with Smart Food Image Fallback */}
                       <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-100 mb-2 flex items-center justify-center shrink-0">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none'
-                            }}
-                          />
-                        ) : (
-                          <div className="text-xl font-black text-slate-400 uppercase">
-                            {item.name ? item.name.charAt(0) : 'V'}
-                          </div>
-                        )}
+                        <img
+                          src={item.image_url || getFoodImage(item.name, item.category).url}
+                          alt={item.name}
+                          className="w-full h-full object-cover transition-transform duration-200"
+                          loading="lazy"
+                          onError={(e) => {
+                            const fallback = getFoodImage(item.name, item.category).url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop&q=80'
+                            if (e.currentTarget.src !== fallback) {
+                              e.currentTarget.src = fallback
+                            }
+                          }}
+                        />
 
                         {/* Dietary Badge */}
-                        <div className="absolute top-1.5 left-1.5">
+                        <div className="absolute top-1.5 left-1.5 z-10">
                           <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center bg-white ${item.is_veg ? 'border-emerald-600 text-emerald-600' : 'border-rose-600 text-rose-600'}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${item.is_veg ? 'bg-emerald-600' : 'bg-rose-600'}`} />
                           </span>

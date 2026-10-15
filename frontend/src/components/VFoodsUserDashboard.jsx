@@ -67,6 +67,7 @@ export const CAMPUS_FOOD_COURTS = [
 
 function getItemImageUrl(item) {
   if (!item) return ''
+  if (item.image_url) return item.image_url
   const img = getFoodImage(item.name, item.category)
   if (typeof img === 'string') return img
   return img?.url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop&q=80'

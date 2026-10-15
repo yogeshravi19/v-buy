@@ -46,6 +46,7 @@ import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
 import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
+import { getFoodImage } from '../../lib/foodImages'
 
 export interface OrderItem {
   item_id?: number
@@ -1859,8 +1860,30 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                       {menuItems.map(item => (
                         <tr key={item.id}>
                           <td>
-                            <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0F172A' }}>
-                              {item.name}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <img
+                                src={item.image_url || getFoodImage(item.name, item.category).url}
+                                alt={item.name}
+                                style={{
+                                  width: '36px',
+                                  height: '36px',
+                                  borderRadius: '8px',
+                                  objectFit: 'cover',
+                                  flexShrink: 0,
+                                  border: '1px solid #E2E8F0',
+                                  background: '#F8FAFC'
+                                }}
+                                loading="lazy"
+                                onError={(e) => {
+                                  const fallback = getFoodImage(item.name, item.category).url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop&q=80'
+                                  if (e.currentTarget.src !== fallback) {
+                                    e.currentTarget.src = fallback
+                                  }
+                                }}
+                              />
+                              <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0F172A' }}>
+                                {item.name}
+                              </div>
                             </div>
                           </td>
                           <td>

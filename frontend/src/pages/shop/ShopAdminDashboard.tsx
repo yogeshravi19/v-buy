@@ -53,6 +53,7 @@ import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
+import { getFoodImage } from '../../lib/foodImages'
 
 export interface OrderItem {
   item_id?: number
@@ -346,20 +347,18 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         const item = row.original
         return (
           <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center shrink-0">
-            {item.image_url ? (
-              <img
-                src={item.image_url}
-                alt={item.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-            ) : (
-              <span className="text-xs font-bold text-slate-500 uppercase">
-                {item.name ? item.name.charAt(0) : 'V'}
-              </span>
-            )}
+            <img
+              src={item.image_url || getFoodImage(item.name, item.category).url}
+              alt={item.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                const fallback = getFoodImage(item.name, item.category).url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop&q=80'
+                if (e.currentTarget.src !== fallback) {
+                  e.currentTarget.src = fallback
+                }
+              }}
+            />
           </div>
         )
       }
