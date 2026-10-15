@@ -56,64 +56,92 @@ export function MenuAuditLogModal({ isOpen, onClose, outletId }: MenuAuditLogMod
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-[2px] animate-in fade-in"
+      className="v-modal-overlay"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[min(672px,calc(100vw-24px))] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-auto max-h-[min(88vh,88dvh)] flex flex-col overscroll-contain"
+        className="v-modal-card"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-              <History size={16} />
+        <div className="v-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#EFF6FF',
+              color: '#1E40AF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <History size={18} />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
                 Menu Change Audit Log
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Outlet: <span className="font-semibold text-slate-700">{outletId}</span>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+                Outlet: <span style={{ fontWeight: 600, color: '#334155' }}>{outletId}</span>
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
               onClick={fetchLogs}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              style={{
+                padding: '6px',
+                borderRadius: '8px',
+                color: '#64748B',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer'
+              }}
               title="Refresh log"
             >
-              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748B',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3">
+        <div className="v-modal-body">
           {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
-              <Loader2 size={20} className="animate-spin text-blue-700" />
+            <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#64748B', fontSize: '13px' }}>
+              <Loader2 size={22} className="animate-spin" style={{ color: '#1E40AF' }} />
               <span>Loading audit trail...</span>
             </div>
           ) : error ? (
-            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs">
+            <div style={{ padding: '14px 18px', backgroundColor: '#FFF1F2', border: '1px solid #FECDD3', color: '#9F1239', borderRadius: '12px', fontSize: '12px' }}>
               {error}
             </div>
           ) : logs.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs">
+            <div style={{ padding: '48px 0', textAlign: 'center', color: '#94A3B8', fontSize: '13px' }}>
               No menu modifications recorded yet for this outlet.
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {logs.map((log) => {
                 const dateStr = new Date(log.changed_at).toLocaleString('en-IN', {
                   timeZone: 'Asia/Kolkata',
@@ -123,36 +151,47 @@ export function MenuAuditLogModal({ isOpen, onClose, outletId }: MenuAuditLogMod
                 return (
                   <div
                     key={log.id}
-                    className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: '1px solid #E2E8F0',
+                      backgroundColor: '#F8FAFC',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      fontSize: '12px'
+                    }}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 uppercase tracking-wider text-[10px] bg-slate-200/80 px-2 py-0.5 rounded">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '10.5px', backgroundColor: '#E2E8F0', padding: '2px 8px', borderRadius: '4px' }}>
                           {log.field_name}
                         </span>
-                        <span className="text-slate-400">•</span>
-                        <span className="font-semibold text-slate-700">
+                        <span style={{ color: '#94A3B8' }}>•</span>
+                        <span style={{ fontWeight: 600, color: '#334155' }}>
                           Item #{log.item_id ?? 'N/A'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap text-slate-600">
-                        <span className="line-through text-slate-400 max-w-[140px] truncate">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', color: '#475569' }}>
+                        <span style={{ textDecoration: 'line-through', color: '#94A3B8', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {log.old_value ?? 'None'}
                         </span>
-                        <ArrowRight size={12} className="text-slate-400 shrink-0" />
-                        <span className="font-semibold text-blue-700 max-w-[180px] truncate">
+                        <ArrowRight size={12} style={{ color: '#94A3B8', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, color: '#1E40AF', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {log.new_value ?? 'None'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center sm:flex-col sm:items-end justify-between text-[11px] text-slate-400 shrink-0">
-                      <span className="flex items-center gap-1">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '11px', color: '#64748B', flexShrink: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Clock size={11} />
                         {dateStr}
                       </span>
                       {log.changed_by && (
-                        <span className="font-mono text-[10px] text-slate-500 truncate max-w-[120px]">
+                        <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#64748B', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           By: {log.changed_by.slice(0, 8)}...
                         </span>
                       )}
@@ -165,11 +204,11 @@ export function MenuAuditLogModal({ isOpen, onClose, outletId }: MenuAuditLogMod
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end shrink-0">
+        <div className="v-modal-footer">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            className="v-btn-cancel"
           >
             Close
           </button>

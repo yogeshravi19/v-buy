@@ -249,43 +249,74 @@ export function MenuItemFormDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-[2px] animate-in fade-in duration-150 overflow-y-auto"
+      className="v-modal-overlay"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col"
+        className="v-modal-card"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-              <Utensils size={16} />
+        <div className="v-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              backgroundColor: '#EFF6FF',
+              color: '#1E40AF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Utensils size={20} />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
                 {isEditing ? 'Edit Menu Item' : 'Add New Menu Item'}
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Outlet: <span className="font-semibold text-slate-700">{outletId}</span>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+                Outlet: <span style={{ fontWeight: 600, color: '#334155' }}>{outletId}</span>
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#64748B',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer'
+            }}
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Scrollable Form Body */}
-        <form id="menu-item-form" onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4 overflow-y-auto flex-1">
+        <form id="menu-item-form" onSubmit={handleSubmit(onSubmit)} className="v-modal-body">
           {/* Duplicate Name Warning */}
           {isDuplicateName && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 animate-in fade-in">
-              <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+            <div style={{
+              padding: '12px 16px',
+              backgroundColor: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              fontSize: '12px',
+              color: '#92400E'
+            }}>
+              <AlertTriangle size={16} style={{ color: '#D97706', flexShrink: 0, marginTop: '2px' }} />
               <div>
                 <strong>Notice:</strong> An item named "{currentName.trim()}" already exists in this outlet. You may still save it, but ensure customers can distinguish them.
               </div>
@@ -293,8 +324,8 @@ export function MenuItemFormDialog({
           )}
 
           {/* Photo Section */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-700">
+          <div className="v-form-group">
+            <label className="v-form-label">
               Item Photo
             </label>
 
@@ -321,7 +352,18 @@ export function MenuItemFormDialog({
 
             {/* Photo Preview or Live Webcam */}
             {showWebcam ? (
-              <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 aspect-[4/3] flex flex-col items-center justify-center">
+              <div style={{
+                position: 'relative',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                backgroundColor: '#0F172A',
+                border: '1px solid #E2E8F0',
+                aspectRatio: '4 / 3',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
                 <Webcam
                   audio={false}
                   ref={webcamRef}
@@ -331,42 +373,107 @@ export function MenuItemFormDialog({
                     setWebcamError('Camera access denied or unavailable. Please choose from gallery.')
                     setShowWebcam(false)
                   }}
-                  className="w-full h-full object-cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
-                <div className="absolute bottom-3 inset-x-3 flex items-center justify-between gap-2 bg-slate-900/70 backdrop-blur-sm p-2 rounded-xl">
+                <div style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  left: '12px',
+                  right: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  padding: '8px 12px',
+                  borderRadius: '10px'
+                }}>
                   <button
                     type="button"
                     onClick={() => setShowWebcam(false)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold hover:bg-slate-700"
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#334155',
+                      color: '#F8FAFC',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleCaptureWebcam}
-                    className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 flex items-center gap-1.5"
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: '#1E40AF',
+                      color: '#FFFFFF',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
-                    <Camera size={13} />
+                    <Camera size={14} />
                     Capture Photo
                   </button>
                 </div>
               </div>
             ) : previewUrl ? (
-              <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-[4/3] flex items-center justify-center group">
+              <div style={{
+                position: 'relative',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid #E2E8F0',
+                backgroundColor: '#F8FAFC',
+                aspectRatio: '4 / 3',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
                 <img
                   src={previewUrl}
                   alt={currentName || 'Item photo preview'}
-                  className="w-full h-full object-cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={() => {
                     setPreviewUrl('')
                     setImageError('Unable to load photo preview.')
                   }}
                 />
-                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '8px'
+                }}>
                   <button
                     type="button"
                     onClick={handleTakePhotoClick}
-                    className="px-2.5 py-1.5 rounded-lg bg-white/95 text-slate-800 text-xs font-semibold shadow hover:bg-white flex items-center gap-1.5 transition-colors"
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#FFFFFF',
+                      color: '#0F172A',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
                     <RefreshCw size={12} />
                     Retake
@@ -374,7 +481,19 @@ export function MenuItemFormDialog({
                   <button
                     type="button"
                     onClick={() => galleryInputRef.current?.click()}
-                    className="px-2.5 py-1.5 rounded-lg bg-white/95 text-slate-800 text-xs font-semibold shadow hover:bg-white flex items-center gap-1.5 transition-colors"
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#FFFFFF',
+                      color: '#0F172A',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
                     <Upload size={12} />
                     Gallery
@@ -382,7 +501,19 @@ export function MenuItemFormDialog({
                   <button
                     type="button"
                     onClick={handleRemovePhoto}
-                    className="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-semibold shadow hover:bg-rose-700 flex items-center gap-1.5 transition-colors"
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#DC2626',
+                      color: '#FFFFFF',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
                     <Trash2 size={12} />
                     Remove
@@ -390,31 +521,75 @@ export function MenuItemFormDialog({
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-4 flex flex-col items-center justify-center text-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                  <Camera size={22} />
+              <div style={{
+                borderRadius: '12px',
+                border: '1.5px dashed #CBD5E1',
+                backgroundColor: '#F8FAFC',
+                padding: '20px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  backgroundColor: '#EFF6FF',
+                  color: '#1E40AF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Camera size={24} />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-800">Add Live Photo or Choose File</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Add Live Photo or Choose File</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '3px' }}>
                     Cropped to 4:3, resized to 1200px, compressed WebP &lt;200KB
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap justify-center">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                   <button
                     type="button"
                     onClick={handleTakePhotoClick}
-                    className="px-3 py-1.5 rounded-xl bg-blue-700 text-white text-xs font-semibold hover:bg-blue-800 transition-colors flex items-center gap-1.5 shadow-sm"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: '#1E40AF',
+                      color: '#FFFFFF',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
-                    <Camera size={13} />
+                    <Camera size={14} />
                     Take Photo
                   </button>
                   <button
                     type="button"
                     onClick={() => galleryInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center gap-1.5 shadow-sm"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
+                      color: '#334155',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
-                    <Upload size={13} />
+                    <Upload size={14} />
                     Choose from Gallery
                   </button>
                 </div>
@@ -423,12 +598,23 @@ export function MenuItemFormDialog({
 
             {/* Error or Notice messages */}
             {webcamError && (
-              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center justify-between gap-2">
+              <div style={{
+                padding: '10px 14px',
+                backgroundColor: '#FFF1F2',
+                border: '1px solid #FECDD3',
+                borderRadius: '10px',
+                fontSize: '12px',
+                color: '#9F1239',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px'
+              }}>
                 <span>{webcamError}</span>
                 <button
                   type="button"
                   onClick={() => galleryInputRef.current?.click()}
-                  className="font-semibold underline shrink-0"
+                  style={{ fontWeight: 600, textDecoration: 'underline', border: 'none', background: 'transparent', cursor: 'pointer', color: '#9F1239' }}
                 >
                   Open Gallery
                 </button>
@@ -436,23 +622,27 @@ export function MenuItemFormDialog({
             )}
 
             {imageError && (
-              <p className="text-xs text-rose-600 font-medium">{imageError}</p>
+              <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600, margin: '4px 0 0 0' }}>{imageError}</p>
             )}
 
             {/* Upload progress */}
             {isUploading && (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-[11px] text-slate-600">
-                  <span className="flex items-center gap-1.5">
-                    <Loader2 size={12} className="animate-spin text-blue-700" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Loader2 size={12} className="animate-spin" style={{ color: '#1E40AF' }} />
                     Processing and uploading image...
                   </span>
-                  <span className="font-bold">{uploadProgress}%</span>
+                  <span style={{ fontWeight: 700 }}>{uploadProgress}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div style={{ width: '100%', height: '6px', backgroundColor: '#F1F5F9', borderRadius: '999px', overflow: 'hidden' }}>
                   <div
-                    className="h-full bg-blue-700 transition-all duration-200"
-                    style={{ width: `${uploadProgress}%` }}
+                    style={{
+                      height: '100%',
+                      backgroundColor: '#1E40AF',
+                      transition: 'width 0.2s ease',
+                      width: `${uploadProgress}%`
+                    }}
                   />
                 </div>
               </div>
@@ -460,46 +650,47 @@ export function MenuItemFormDialog({
           </div>
 
           {/* Name */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Item Name <span className="text-rose-500">*</span>
+          <div className="v-form-group">
+            <label className="v-form-label">
+              Item Name <span style={{ color: '#DC2626' }}>*</span>
             </label>
             <input
               type="text"
               placeholder="e.g. Masala Dosa"
               {...register('name')}
-              className="w-full h-10 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+              className="v-form-input"
             />
             {errors.name && (
-              <p className="mt-1 text-xs text-rose-600">{errors.name.message}</p>
+              <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600, margin: '2px 0 0 0' }}>{errors.name.message}</p>
             )}
           </div>
 
           {/* Price & Category */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Price (₹) <span className="text-rose-500">*</span>
+          <div className="v-form-grid-2">
+            <div className="v-form-group">
+              <label className="v-form-label">
+                Price (₹) <span style={{ color: '#DC2626' }}>*</span>
               </label>
               <input
                 type="number"
                 step="1"
                 placeholder="20"
                 {...register('price')}
-                className="w-full h-10 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                className="v-form-input tabular-nums"
+                style={{ fontWeight: 600 }}
               />
               {errors.price && (
-                <p className="mt-1 text-xs text-rose-600">{errors.price.message}</p>
+                <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600, margin: '2px 0 0 0' }}>{errors.price.message}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Category <span className="text-rose-500">*</span>
+            <div className="v-form-group">
+              <label className="v-form-label">
+                Category <span style={{ color: '#DC2626' }}>*</span>
               </label>
               <select
                 {...register('category')}
-                className="w-full h-10 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                className="v-form-select"
               >
                 <option value="snacks">Snacks</option>
                 <option value="meals">Meals</option>
@@ -508,45 +699,47 @@ export function MenuItemFormDialog({
                 <option value="breakfast">Breakfast</option>
               </select>
               {errors.category && (
-                <p className="mt-1 text-xs text-rose-600">{errors.category.message}</p>
+                <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600, margin: '2px 0 0 0' }}>{errors.category.message}</p>
               )}
             </div>
           </div>
 
           {/* Dietary Type & Stock */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <div className="v-form-grid-2">
+            <div className="v-form-group">
+              <label className="v-form-label">
                 Dietary Preference
               </label>
-              <div className="flex gap-2">
-                <label className="flex-1 flex items-center justify-center gap-1.5 h-10 px-2 rounded-xl border border-slate-200 text-xs font-medium cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300 has-[:checked]:text-emerald-800 transition-colors">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                <label className={`v-dietary-pill ${watch('is_veg') === true ? 'active-veg' : ''}`}>
                   <input
                     type="radio"
                     value="true"
                     {...register('is_veg')}
                     checked={watch('is_veg') === true}
                     onChange={() => setValue('is_veg', true)}
-                    className="sr-only"
+                    style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
                   />
-                  <span>Veg</span>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '999px', backgroundColor: '#10B981', display: 'inline-block' }} />
+                  <span>Pure Veg</span>
                 </label>
-                <label className="flex-1 flex items-center justify-center gap-1.5 h-10 px-2 rounded-xl border border-slate-200 text-xs font-medium cursor-pointer has-[:checked]:bg-rose-50 has-[:checked]:border-rose-300 has-[:checked]:text-rose-800 transition-colors">
+                <label className={`v-dietary-pill ${watch('is_veg') === false ? 'active-nonveg' : ''}`}>
                   <input
                     type="radio"
                     value="false"
                     {...register('is_veg')}
                     checked={watch('is_veg') === false}
                     onChange={() => setValue('is_veg', false)}
-                    className="sr-only"
+                    style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
                   />
+                  <span style={{ width: '8px', height: '8px', borderRadius: '999px', backgroundColor: '#F43F5E', display: 'inline-block' }} />
                   <span>Non-Veg</span>
                 </label>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <div className="v-form-group">
+              <label className="v-form-label">
                 Current Stock Qty
               </label>
               <input
@@ -554,96 +747,125 @@ export function MenuItemFormDialog({
                 min="0"
                 step="1"
                 {...register('stock_qty')}
-                className="w-full h-10 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                className="v-form-input tabular-nums"
+                style={{ fontWeight: 600 }}
               />
               {errors.stock_qty && (
-                <p className="mt-1 text-xs text-rose-600">{errors.stock_qty.message}</p>
+                <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600, margin: '2px 0 0 0' }}>{errors.stock_qty.message}</p>
               )}
             </div>
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <div className="v-form-group">
+            <label className="v-form-label">
               Description (Optional)
             </label>
             <textarea
               rows={2}
               placeholder="Crispy, fresh, served with mint chutney..."
               {...register('description')}
-              className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors resize-none"
+              className="v-form-textarea"
+              style={{ resize: 'none' }}
             />
           </div>
 
           {/* Availability Window */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <div className="v-form-grid-2">
+            <div className="v-form-group">
+              <label className="v-form-label">
                 Available From (Optional)
               </label>
               <input
                 type="time"
                 {...register('available_from')}
-                className="w-full h-10 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                className="v-form-input"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <div className="v-form-group">
+              <label className="v-form-label">
                 Available To (Optional)
               </label>
               <input
                 type="time"
                 {...register('available_to')}
-                className="w-full h-10 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                className="v-form-input"
               />
             </div>
           </div>
 
           {/* Available Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 18px',
+            borderRadius: '12px',
+            backgroundColor: '#F8FAFC',
+            border: '1px solid #E2E8F0'
+          }}>
             <div>
-              <div className="text-xs font-bold text-slate-900">Active Availability</div>
-              <div className="text-[11px] text-slate-500">Enable item for ordering by users</div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Active Availability</div>
+              <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Enable item for ordering by campus customers</div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 {...register('available')}
-                className="sr-only peer"
+                style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
               />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              <div style={{
+                width: '46px',
+                height: '26px',
+                backgroundColor: watch('available') ? '#10B981' : '#CBD5E1',
+                borderRadius: '999px',
+                position: 'relative',
+                transition: 'background-color 0.2s ease'
+              }}>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '999px',
+                  position: 'absolute',
+                  top: '3px',
+                  left: watch('available') ? '23px' : '3px',
+                  transition: 'left 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }} />
+              </div>
             </label>
           </div>
         </form>
 
         {/* Pinned Footer Actions */}
-        <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-slate-100 bg-slate-50 shrink-0">
-          <Button
+        <div className="v-modal-footer">
+          <button
             type="button"
-            variant="secondary"
             onClick={onClose}
             disabled={isSubmitting || isUploading}
+            className="v-btn-cancel"
           >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             type="submit"
             form="menu-item-form"
-            variant="primary"
             disabled={isSubmitting || isUploading}
-            className="bg-blue-700 hover:bg-blue-800 text-white"
+            className="v-btn-submit"
           >
             {isSubmitting ? (
-              <span className="flex items-center gap-1.5">
-                <Loader2 size={13} className="animate-spin" />
+              <>
+                <Loader2 size={16} className="animate-spin" />
                 Saving...
-              </span>
-            ) : isEditing ? (
-              'Update Item'
+              </>
             ) : (
-              'Add Item'
+              <>
+                <CheckCircle2 size={16} />
+                {isEditing ? 'Update Menu Item' : 'Add to Menu'}
+              </>
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

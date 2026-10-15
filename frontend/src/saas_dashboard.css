@@ -1085,4 +1085,209 @@
   }
 }
 
+/* ================================================================
+   MODAL / POPUP DIALOG COMPONENT SYSTEM (PREMIUM & SPACIOUS)
+   ================================================================ */
+.v-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px 16px !important;
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  overflow-y: auto !important;
+}
+
+.v-modal-card {
+  width: 100% !important;
+  max-width: 680px !important;
+  background-color: #FFFFFF !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid #E2E8F0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: min(88vh, 88dvh) !important;
+  margin: auto !important;
+  overflow: hidden !important;
+  animation: vModalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes vModalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.v-modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 20px 24px !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  background-color: #FFFFFF !important;
+  flex-shrink: 0 !important;
+}
+
+.v-modal-body {
+  padding: 24px !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  background-color: #FFFFFF !important;
+}
+
+.v-modal-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  padding: 18px 24px !important;
+  border-top: 1px solid #E2E8F0 !important;
+  background-color: #F8FAFC !important;
+  flex-shrink: 0 !important;
+}
+
+.v-form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.v-form-label {
+  display: block !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #475569 !important;
+  margin-bottom: 4px !important;
+}
+
+.v-form-input, .v-form-select, .v-form-textarea {
+  width: 100% !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  border: 1px solid #CBD5E1 !important;
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+.v-form-input:focus, .v-form-select:focus, .v-form-textarea:focus {
+  border-color: #1E40AF !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12) !important;
+}
+
+.v-form-grid-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 540px) {
+  .v-form-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .v-modal-header {
+    padding: 16px 18px !important;
+  }
+  .v-modal-body {
+    padding: 18px !important;
+  }
+  .v-modal-footer {
+    padding: 14px 18px !important;
+  }
+}
+
+.v-dietary-pill {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  height: 42px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  border: 1px solid #CBD5E1 !important;
+  background: #F8FAFC !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+}
+
+.v-dietary-pill.active-veg {
+  background: #ECFDF5 !important;
+  border-color: #10B981 !important;
+  color: #065F46 !important;
+}
+
+.v-dietary-pill.active-nonveg {
+  background: #FFF1F2 !important;
+  border-color: #F43F5E !important;
+  color: #9F1239 !important;
+}
+
+.v-btn-cancel {
+  height: 42px !important;
+  padding: 0 20px !important;
+  border-radius: 10px !important;
+  border: 1px solid #CBD5E1 !important;
+  background-color: #FFFFFF !important;
+  color: #334155 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.v-btn-cancel:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.v-btn-submit {
+  height: 42px !important;
+  padding: 0 24px !important;
+  border-radius: 10px !important;
+  border: none !important;
+  background-color: #1E40AF !important;
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.25) !important;
+}
+
+.v-btn-submit:hover:not(:disabled) {
+  background-color: #1D4ED8 !important;
+}
+
+.v-btn-submit:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
 

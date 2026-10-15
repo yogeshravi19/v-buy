@@ -39,7 +39,8 @@ import {
   Edit,
   ShieldAlert,
   FileText,
-  Eye
+  Eye,
+  Calculator
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
