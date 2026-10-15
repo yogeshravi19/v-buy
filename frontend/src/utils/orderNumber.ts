@@ -47,3 +47,11 @@ export function getRawOrderNumber(
 ): string {
   return formatOrderNumber(order).replace(/^#/, '')
 }
+
+export function formatOrderQrToken(
+  outletId: string,
+  order: OrderIdentifierLike | string | number | null | undefined
+): string {
+  return `VFOOD:${outletId}:${getRawOrderNumber(order)}`
+}
+
