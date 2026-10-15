@@ -47,6 +47,7 @@ import { toast } from '../../components/ui/toast'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
+import { formatOrderNumber } from '../../utils/orderNumber'
 
 export interface OrderItem {
   item_id?: number
@@ -62,6 +63,7 @@ export interface Order {
   customer_name?: string
   outlet_id: string
   token: string | null
+  order_number?: string | null
   status: 'placed' | 'preparing' | 'ready' | 'collected' | 'cancelled'
   payment_method?: string
   payment_status?: string
@@ -502,7 +504,8 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
             user_id: o.user_id,
             customer_name: `User #${o.id % 900 + 100}`,
             outlet_id: o.outlet_id,
-            token: o.token || String(o.id % 900 + 100),
+            token: o.token || o.order_number,
+            order_number: o.order_number || o.token,
             status: o.status || 'placed',
             payment_method: o.payment_method || 'Online UPI',
             payment_status: 'paid',
@@ -618,7 +621,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `outlet_id=eq.${activeOutletId}` }, (payload: any) => {
         if (payload.eventType === 'INSERT') {
           loadData()
-          setBannerNotice(`New Order #${payload.new?.id} (Token #${payload.new?.token}) placed!`)
+          setBannerNotice(`New Order ${formatOrderNumber(payload.new)} placed!`)
           setTimeout(() => setBannerNotice(null), 4000)
         } else if (payload.eventType === 'UPDATE') {
           const updated = payload.new
@@ -1563,7 +1566,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                       <tbody>
                         {localOrders.slice(0, 5).map(o => (
                           <tr key={o.id}>
-                            <td style={{ fontWeight: 800, fontFamily: 'monospace' }}>#{o.token || o.id}</td>
+                            <td style={{ fontWeight: 800, fontFamily: 'monospace' }}>{formatOrderNumber(o)}</td>
                             <td style={{ fontSize: '12.5px', color: '#334155' }}>
                               {(o.order_items || []).map(i => `${i.name}×${i.qty}`).join(', ') || 'Walk-in'}
                             </td>
@@ -1787,7 +1790,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                     {localOrders.filter(o => o.status === 'placed').map(o => (
                       <div key={o.id} className="saas-ticket">
                         <div className="saas-ticket-header">
-                          <span className="saas-ticket-token">#{o.token || o.id}</span>
+                          <span className="saas-ticket-token">{formatOrderNumber(o)}</span>
                           <span className="saas-ticket-time">{formatElapsed(o.created_at)}</span>
                         </div>
                         <div className="saas-ticket-items">
@@ -1845,7 +1848,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                     {localOrders.filter(o => o.status === 'preparing').map(o => (
                       <div key={o.id} className="saas-ticket">
                         <div className="saas-ticket-header">
-                          <span className="saas-ticket-token">#{o.token || o.id}</span>
+                          <span className="saas-ticket-token">{formatOrderNumber(o)}</span>
                           <span className="saas-ticket-time">{formatElapsed(o.created_at)}</span>
                         </div>
                         <div className="saas-ticket-items">
@@ -1878,7 +1881,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                     {localOrders.filter(o => o.status === 'ready').map(o => (
                       <div key={o.id} className="saas-ticket">
                         <div className="saas-ticket-header">
-                          <span className="saas-ticket-token" style={{ color: '#16A34A' }}>#{o.token || o.id}</span>
+                          <span className="saas-ticket-token" style={{ color: '#16A34A' }}>{formatOrderNumber(o)}</span>
                           <span className="saas-ticket-time">{formatElapsed(o.created_at)}</span>
                         </div>
                         <div className="saas-ticket-items">

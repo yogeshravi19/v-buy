@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, ChefHat, Bell, CheckCircle2, QrCode, Sparkles } from 'lucide-react'
 import { triggerHaptic } from '../hooks/useWebHaptics'
+import { formatOrderNumber } from '../utils/orderNumber'
 
 export interface LiveOrderTrackerProps {
   order: {
@@ -62,11 +63,8 @@ export const LiveOrderTracker: React.FC<LiveOrderTrackerProps> = ({ order, onSho
           </span>
           <div className="flex items-center gap-2 mt-0.5">
             <h3 className="text-xl font-black text-slate-900 dark:text-white">
-              TOKEN #{order.token}
+              {formatOrderNumber(order)}
             </h3>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              #{order.id}
-            </span>
           </div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
             {order.outlet_name || 'Campus Canteen'}

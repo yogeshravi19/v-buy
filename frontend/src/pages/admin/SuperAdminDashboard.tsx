@@ -46,6 +46,7 @@ import { toast } from 'sonner'
 import { DataTable } from '../../components/ui/data-table'
 import { OutletComparisonChart, OutletHierarchyTree } from '../../components/admin/OutletHierarchyAndComparison'
 import { StatusBadge } from '../../components/ui/status-badge'
+import { formatOrderNumber } from '../../utils/orderNumber'
 
 export interface PlatformOrder {
   id: number
@@ -54,6 +55,7 @@ export interface PlatformOrder {
   outlet_id: string
   outlet_name?: string
   token: string | null
+  order_number?: string | null
   status: string
   payment_method?: string
   total: number
@@ -1448,9 +1450,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       {orders.map(order => (
                         <tr key={order.id}>
                           <td>
-                            <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0F172A' }}>
-                              #{order.token || order.id}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0F172A' }}>
+                                {formatOrderNumber(order)}
+                              </span>
+                              <span style={{ fontSize: '10px', color: '#94A3B8', fontFamily: 'monospace' }}>
+                                Ref: #{order.id}
+                              </span>
+                            </div>
                           </td>
                           <td style={{ fontWeight: 600 }}>{order.outlet_name}</td>
                           <td style={{ fontSize: '12px' }}>{order.customer_name}</td>

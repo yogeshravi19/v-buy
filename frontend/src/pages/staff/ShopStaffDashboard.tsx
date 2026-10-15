@@ -43,6 +43,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../components/ui/sound-toggle'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { supabase } from '../../lib/supabase'
+import { formatOrderNumber } from '../../utils/orderNumber'
 
 export interface OrderItem {
   item_id?: number
@@ -58,6 +59,7 @@ export interface Order {
   customer_name?: string
   outlet_id: string
   token: string | null
+  order_number?: string | null
   status: 'placed' | 'preparing' | 'ready' | 'collected' | 'cancelled'
   payment_method?: string
   payment_status?: string
@@ -621,18 +623,23 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
     }
   }
 
-  // Token Verification
+  // Order Number / Token Verification
   const handleVerifyPickup = async (e: React.FormEvent) => {
     e.preventDefault()
     const cleanToken = tokenInput.trim().toUpperCase()
     if (!cleanToken) return
+    const normInput = cleanToken.replace(/^#/, '')
 
     const match = localOrders.find(
-      o => (o.token === cleanToken || String(o.id) === cleanToken) && o.status !== 'collected'
+      o => {
+        const normNum = (o.order_number || o.token || '').replace(/^#/, '').toUpperCase()
+        return (normNum === normInput || String(o.id) === normInput) && o.status !== 'collected'
+      }
     )
 
     if (match) {
-      setVerifyStatus({ success: true, message: `Token #${match.token} Verified! Order Ready for Handover.` })
+      const displayNum = formatOrderNumber(match)
+      setVerifyStatus({ success: true, message: `Order ${displayNum} Verified! Order Ready for Handover.` })
       await handleAdvanceStatus(match.id, 'ready')
       setTimeout(() => {
         handleAdvanceStatus(match.id, 'ready') // Marks collected
@@ -641,7 +648,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         setShowVerifyModal(false)
       }, 1400)
     } else {
-      setVerifyStatus({ success: false, message: `No active order found for token #${cleanToken}` })
+      setVerifyStatus({ success: false, message: `No active order found for #${normInput}` })
     }
   }
 
@@ -1079,7 +1086,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                               borderRadius: '4px',
                               color: '#0F172A'
                             }}>
-                              #{order.token || order.id}
+                              {formatOrderNumber(order)}
                             </span>
                           </td>
                           <td>
@@ -1219,7 +1226,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                                 padding: '3px 8px',
                                 borderRadius: '4px'
                               }}>
-                                #{order.token || order.id}
+                                {formatOrderNumber(order)}
                               </span>
                             </div>
                           </td>
@@ -1435,7 +1442,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                         transition={{ duration: 0.2 }}
                       >
                         <div className="saas-ticket-header">
-                          <span className="saas-ticket-token">#{order.token || order.id}</span>
+                          <span className="saas-ticket-token">{formatOrderNumber(order)}</span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
 
@@ -1580,7 +1587,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                         transition={{ duration: 0.2 }}
                       >
                         <div className="saas-ticket-header">
-                          <span className="saas-ticket-token">#{order.token || order.id}</span>
+                          <span className="saas-ticket-token">{formatOrderNumber(order)}</span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
 
@@ -1704,7 +1711,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                       >
                         <div className="saas-ticket-header">
                           <span className="saas-ticket-token" style={{ color: '#16A34A' }}>
-                            #{order.token || order.id}
+                            {formatOrderNumber(order)}
                           </span>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
@@ -1952,7 +1959,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                       }}
                     >
                       <span style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'monospace', color: '#15803D' }}>
-                        #{order.token || order.id}
+                        {formatOrderNumber(order)}
                       </span>
                       <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>
                         {(order.order_items || []).length} items
@@ -1997,7 +2004,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                       }}
                     >
                       <span style={{ fontWeight: 800, fontSize: '16px', fontFamily: 'monospace', color: '#1D4ED8' }}>
-                        #{order.token || order.id}
+                        {formatOrderNumber(order)}
                       </span>
                       <span style={{ fontSize: '12px', color: '#64748B' }}>
                         {formatElapsed(order.created_at)}

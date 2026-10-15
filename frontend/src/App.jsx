@@ -16,6 +16,7 @@ import './styles.css'
 import { getFoodImage } from './lib/foodImages'
 import QRCode from 'qrcode'
 import { downloadReceiptAsPhoto, downloadReceiptAsPdf } from './utils/receiptGenerator'
+import { formatOrderNumber, getRawOrderNumber } from './utils/orderNumber'
 import { MotionConfig } from 'framer-motion'
 import { Toaster } from './components/ui/toast'
 import { DashboardSkeleton } from './components/ui/dashboard-skeleton'
@@ -2974,12 +2975,8 @@ function ReceiptModal({ order, onClose }) {
         </div>
 
         <div className="receipt-row">
-          <span>Order ID</span>
-          <strong>#{order.id}</strong>
-        </div>
-        <div className="receipt-row">
-          <span>Token Number</span>
-          <strong style={{ color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)', fontSize: '15px' }}>#{order.token}</strong>
+          <span>Order Number</span>
+          <strong style={{ color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)', fontSize: '16px' }}>{formatOrderNumber(order)}</strong>
         </div>
         <div className="receipt-row">
           <span>Outlet</span>
@@ -2996,10 +2993,10 @@ function ReceiptModal({ order, onClose }) {
 
         {/* Canteen Scannable QR Code on Receipt */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', margin: '14px 0', padding: '12px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-          <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={75} />
+          <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={75} />
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Pickup Pass & Verification</div>
-            <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)' }}>TOKEN #{order.token}</div>
+            <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--blue-primary)', fontFamily: 'var(--font-mono)' }}>{formatOrderNumber(order)}</div>
             <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12} strokeWidth={2} /> Verified e-Invoice</div>
           </div>
         </div>
@@ -3112,7 +3109,7 @@ function ReceiptModal({ order, onClose }) {
                     Download Receipt
                   </h4>
                   <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748B' }}>
-                    Choose format for Token #{order.token}
+                    Choose format for Order {formatOrderNumber(order)}
                   </p>
                 </div>
                 <button
@@ -3793,7 +3790,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
         <div className={`order-qr-banner ${isReady ? 'pulse-ready-glow' : ''}`}>
           <div className="order-qr-meta">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className="token-badge" style={{ margin: 0 }}>TOKEN #{order.token}</div>
+              <div className="token-badge" style={{ margin: 0 }}>{formatOrderNumber(order)}</div>
               {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 10px', borderRadius: '9999px' }}>READY FOR PICKUP</span>}
             </div>
             <span className="order-qr-hint">
@@ -3804,7 +3801,7 @@ function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemR
             </button>
           </div>
           <div className="order-qr-thumb-wrap" onClick={() => setShowQrModal(true)} title="Tap to enlarge QR Pass">
-            <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={76} />
+            <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={76} />
             <small style={{ display: 'block', textAlign: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>
               TAP TO ZOOM
             </small>
@@ -7847,7 +7844,7 @@ function QrEnlargeModal({ order, onClose }) {
               Campus Dining Pickup Pass
             </span>
             <h3 style={{ fontSize: '20px', fontWeight: 900, margin: '2px 0 0', color: 'var(--blue-primary)' }}>
-              TOKEN #{order.token}
+              {formatOrderNumber(order)}
             </h3>
           </div>
           <button className="cart-clear-btn" onClick={onClose} style={{ padding: '6px' }}><X size={18} /></button>
@@ -7855,10 +7852,10 @@ function QrEnlargeModal({ order, onClose }) {
 
         <div style={{ textAlign: 'center', background: '#FFFFFF', padding: '16px', borderRadius: '18px', border: '2px dashed var(--blue-primary)', boxShadow: '0 8px 24px rgba(30,58,138,0.1)' }}>
           <div style={{ display: 'inline-block' }}>
-            <ScannableQrCode value={`CB1.${order.id}.${order.token}`} size={180} />
+            <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={180} />
           </div>
           <p style={{ marginTop: '12px', fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>
-            Order #{order.id} · {order.outlets?.name || order.outlet_id}
+            Order {formatOrderNumber(order)} · {order.outlets?.name || order.outlet_id}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '6px' }}>
             <span className={`status-badge ${order.status}`}>{order.status.toUpperCase()}</span>

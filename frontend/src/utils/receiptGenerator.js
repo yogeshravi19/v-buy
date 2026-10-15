@@ -1,5 +1,6 @@
 import QRCode from 'qrcode'
 import { jsPDF } from 'jspdf'
+import { formatOrderNumber, getRawOrderNumber } from './orderNumber'
 
 /**
  * Generates an ultra-crisp HTML5 canvas representation of the official V Foods receipt.
@@ -10,7 +11,8 @@ export async function generateReceiptCanvas(order) {
   if (!order) throw new Error('Order data is required to generate receipt')
 
   const items = order.order_items || []
-  const token = order.token || order.id || 'N/A'
+  const token = formatOrderNumber(order)
+  const rawNum = getRawOrderNumber(order)
   const outletName = order.outlets?.name || order.outlet_name || order.outlet_id || 'Campus Canteen'
   const orderId = String(order.id || '').slice(0, 18)
   const orderDate = order.created_at ? new Date(order.created_at).toLocaleString('en-IN', {
@@ -264,7 +266,7 @@ export async function generateReceiptCanvas(order) {
  */
 export async function downloadReceiptAsPhoto(order) {
   const canvas = await generateReceiptCanvas(order)
-  const token = order.token || order.id || 'order'
+  const token = getRawOrderNumber(order)
   
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -275,7 +277,7 @@ export async function downloadReceiptAsPhoto(order) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `VFOODS-Receipt-Token-${token}.png`
+      a.download = `VFOODS-Receipt-Order-${token}.png`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -291,7 +293,7 @@ export async function downloadReceiptAsPhoto(order) {
  */
 export async function downloadReceiptAsPdf(order) {
   const canvas = await generateReceiptCanvas(order)
-  const token = order.token || order.id || 'order'
+  const token = getRawOrderNumber(order)
 
   // Image dimension in mm
   // Standard A4 width is 210mm. Let's create an exact fit receipt document or standard A4.
