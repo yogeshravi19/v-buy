@@ -504,7 +504,7 @@ export function PosCounterScreen({
                 <span>No matching dishes found in this category.</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3">
                 {filteredItems.map(item => {
                   const inCartLine = cartLines.find(l => l.item.id === item.id)
                   const isSoldOut = item.stock_qty !== null && item.stock_qty <= 0
@@ -595,7 +595,7 @@ export function PosCounterScreen({
         </div>
 
         {/* Right: Ticket Panel (Desktop & Tablet side panel) */}
-        <div className="hidden md:flex w-80 lg:w-96 bg-white border-l border-slate-200 flex-col shadow-lg z-10 shrink-0">
+        <div className="hidden md:flex w-72 lg:w-80 xl:w-88 bg-white border-l border-slate-200 flex-col shadow-lg z-10 shrink-0">
           {/* Ticket Header */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
@@ -624,15 +624,15 @@ export function PosCounterScreen({
             />
 
             <div className="flex items-center justify-between px-1">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={isQuickSale}
                   onChange={(e) => setIsQuickSale(e.target.checked)}
-                  className="rounded text-blue-700 focus:ring-blue-600 h-3.5 w-3.5"
+                  className="rounded text-blue-700 focus:ring-blue-600 h-4 w-4 accent-blue-700"
                 />
-                <span className="flex items-center gap-1">
-                  <Zap size={13} className="text-amber-500" />
+                <span className="flex items-center gap-1.5">
+                  <Zap size={14} className="text-amber-500 fill-amber-500" />
                   Quick Sale (Collected Now)
                 </span>
               </label>
@@ -712,48 +712,48 @@ export function PosCounterScreen({
                 <button
                   type="button"
                   onClick={() => setPaymentMode('CASH')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors ${paymentMode === 'CASH' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'CASH' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <Banknote size={15} />
-                  Cash
+                  <Banknote size={15} className="shrink-0" />
+                  <span className="truncate">Cash</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('UPI_COUNTER')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors ${paymentMode === 'UPI_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'UPI_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <QrCode size={15} />
-                  UPI
+                  <QrCode size={15} className="shrink-0" />
+                  <span className="truncate">UPI</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('CARD_COUNTER')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors ${paymentMode === 'CARD_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'CARD_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <CreditCard size={15} />
-                  Card
+                  <CreditCard size={15} className="shrink-0" />
+                  <span className="truncate">Card</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('OTHER')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors ${paymentMode === 'OTHER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'OTHER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <FileText size={15} />
-                  Other
+                  <FileText size={15} className="shrink-0" />
+                  <span className="truncate">Other</span>
                 </button>
               </div>
 
               {/* Cash Tendered & Change Calculator */}
               {paymentMode === 'CASH' && (
                 <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1 mt-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-emerald-900 font-semibold">Cash Tendered (₹):</span>
+                  <div className="flex items-center justify-between text-xs gap-2">
+                    <span className="text-emerald-900 font-semibold truncate">Cash Tendered (₹):</span>
                     <input
                       type="number"
                       placeholder="e.g. 500"
                       value={cashTendered}
                       onChange={(e) => setCashTendered(e.target.value)}
-                      className="w-24 h-7 px-2 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none"
+                      className="w-24 h-7 px-2 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none shrink-0"
                     />
                   </div>
                   {cashChange !== null && (

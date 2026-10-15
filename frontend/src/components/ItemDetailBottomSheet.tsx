@@ -148,7 +148,7 @@ const ItemDetailContent: React.FC<ItemDetailBottomSheetProps> = ({
   const isArchived = Boolean(item.is_archived)
   const isAvailable = item.available !== false && !isSoldOut && isWithinWindow && !isArchived
 
-  const rawImageUrl = item.image_url || getFoodImage(item.name)
+  const rawImageUrl = item.image_url || getFoodImage(item.name, item.category).url
   const itemName = item.name || 'Menu Item'
   const firstLetter = itemName.charAt(0).toUpperCase()
 

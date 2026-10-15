@@ -1434,7 +1434,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         )}
 
         {/* Content Body */}
-        <div className="saas-body">
+        <div className={`saas-body ${activeTab === 'pos' ? 'saas-body-pos' : ''}`}>
           {/* ══════════════════════════════════════════════════════════
               TAB 1: OVERVIEW
               ══════════════════════════════════════════════════════════ */}
@@ -2220,7 +2220,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               TAB 6: POS COUNTER
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'pos' && (
-            <div style={{ height: 'calc(100vh - 120px)', minHeight: '620px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <PosCounterScreen
                 outletId={activeOutletId}
                 outletName={currentOutlet?.name || 'Main Canteen'}
