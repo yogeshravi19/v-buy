@@ -6,7 +6,9 @@
 /* ── LAYOUT SHELL ── */
 .saas-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background-color: #F8FAFC;
   color: #0F172A;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -21,9 +23,9 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   z-index: 40;
 }
 
@@ -242,20 +244,22 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: #F8FAFC;
 }
 
 /* Topbar */
 .saas-topbar {
   height: 64px;
+  flex-shrink: 0;
   background: #FFFFFF;
   border-bottom: 1px solid #E2E8F0;
   padding: 0 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
   z-index: 30;
 }
 
@@ -341,6 +345,10 @@
 .saas-body {
   padding: 24px 28px 48px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Clean Professional Metric Card Grid */
@@ -889,13 +897,21 @@
     display: inline-flex !important;
   }
 
+  .saas-layout {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+  }
+
   .saas-sidebar {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     width: 280px;
-    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -919,12 +935,19 @@
     width: 100%;
     min-width: 0;
     flex: 1;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .saas-topbar {
+    position: sticky;
+    top: 0;
     padding: 0 16px;
     gap: 8px;
     height: 58px;
+    z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   .saas-breadcrumb {
@@ -940,7 +963,8 @@
 
   .saas-body {
     padding: 16px;
-    overflow-x: hidden;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    overflow: visible;
   }
 
   .saas-kpi-grid {
@@ -959,6 +983,15 @@
   }
 }
 
+@media (max-height: 800px) and (min-width: 769px) {
+  .saas-sidebar-brand { height: 52px; }
+  .saas-sidebar-outlet { padding: 8px 14px; }
+  .saas-nav { padding: 6px 8px; gap: 1px; }
+  .saas-nav-btn { padding: 6px 10px; font-size: 12px; }
+  .saas-topbar { height: 52px; padding: 0 20px; }
+  .saas-body { padding: 16px 20px 32px; }
+}
+
 @media (max-width: 540px) {
   .saas-top-actions .saas-btn span {
     display: none;
@@ -972,6 +1005,8 @@
   }
   .saas-body {
     padding: 12px;
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
   }
 }
+
 
