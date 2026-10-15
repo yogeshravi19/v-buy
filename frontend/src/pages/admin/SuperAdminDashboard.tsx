@@ -180,7 +180,42 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     | 'audit-logs'
     | 'system-settings'
 
-  const [activeTab, setActiveTab] = useState<SuperTab>('overview')
+  const parseSuperPath = (path: string): SuperTab => {
+    const p = path.toLowerCase()
+    if (p.includes('/counter') || p.includes('/pos') || p.includes('/billing')) return 'counter-billing'
+    if (p.includes('/campuses')) return 'campuses'
+    if (p.includes('/outlets')) return 'outlets'
+    if (p.includes('/users')) return 'users'
+    if (p.includes('/orders')) return 'orders'
+    if (p.includes('/payments')) return 'payments'
+    if (p.includes('/settlements')) return 'settlements'
+    if (p.includes('/analytics') || p.includes('/reports')) return 'analytics-reports'
+    if (p.includes('/coupons')) return 'coupons'
+    if (p.includes('/audit') || p.includes('/logs')) return 'audit-logs'
+    if (p.includes('/settings') || p.includes('/system-settings')) return 'system-settings'
+    return 'overview'
+  }
+
+  const [activeTab, setActiveTabState] = useState<SuperTab>(() => parseSuperPath(window.location.pathname))
+
+  const setActiveTab = (tab: SuperTab, updateHistory: boolean = true) => {
+    setActiveTabState(tab)
+    if (updateHistory) {
+      const slug = tab === 'overview' ? '' : `/${tab}`
+      const newUrl = `/admin${slug}`
+      if (window.location.pathname !== newUrl) {
+        window.history.pushState(null, '', newUrl)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTabState(parseSuperPath(window.location.pathname))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
   const [counterOutletId, setCounterOutletId] = useState<string>('g1')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 

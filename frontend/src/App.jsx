@@ -25,6 +25,7 @@ const VFoodsUserDashboard = React.lazy(() => import('./components/VFoodsUserDash
 const ShopStaffDashboard = React.lazy(() => import('./pages/staff/ShopStaffDashboard'))
 const ShopAdminDashboard = React.lazy(() => import('./pages/shop/ShopAdminDashboard'))
 const SuperAdminDashboard = React.lazy(() => import('./pages/admin/SuperAdminDashboard'))
+import { NotFoundPage } from './pages/NotFoundPage'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -437,8 +438,37 @@ function App() {
     return true
   }
 
-  const [cart, setCart]               = useState({ outlet: null, items: [] })
-  const [tab, setTab]                 = useState('browse')
+  const getInitialUserTab = () => {
+    const p = window.location.pathname.toLowerCase()
+    if (p.startsWith('/orders')) return 'orders'
+    if (p.startsWith('/wallet')) return 'wallet'
+    if (p.startsWith('/cart')) return 'cart'
+    if (p.startsWith('/profile')) return 'profile'
+    return 'browse'
+  }
+
+  const [tab, setTabState]            = useState(getInitialUserTab)
+
+  const setTab = useCallback((newTab) => {
+    setTabState(newTab)
+    const newPath = (newTab === 'browse' || newTab === 'home') ? '/' : `/${newTab}`
+    if (window.location.pathname !== newPath) {
+      window.history.pushState(null, '', newPath)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const p = window.location.pathname.toLowerCase()
+      if (p.startsWith('/orders')) setTabState('orders')
+      else if (p.startsWith('/wallet')) setTabState('wallet')
+      else if (p.startsWith('/cart')) setTabState('cart')
+      else if (p.startsWith('/profile')) setTabState('profile')
+      else if (p === '/' || p.startsWith('/browse')) setTabState('browse')
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
   const [locationFilter, setLocationFilter] = useState('All')
   const [walletPrefill, setWalletPrefill] = useState(null)
   const [query, setQuery]             = useState('')
@@ -1392,6 +1422,53 @@ function App() {
   const isStaff   = role === 'staff'
   const isOwner   = role === 'owner' || role === 'shop_admin'
   const isAdmin   = role === 'admin' || role === 'superadmin' || role === 'super_admin'
+
+  // Route validation and role protection
+  const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/'
+
+  const isKnownRoute = (
+    rawPath === '/' ||
+    rawPath.startsWith('/browse') ||
+    rawPath.startsWith('/orders') ||
+    rawPath.startsWith('/wallet') ||
+    rawPath.startsWith('/cart') ||
+    rawPath.startsWith('/profile') ||
+    rawPath.startsWith('/welcome') ||
+    rawPath.startsWith('/staff') ||
+    rawPath.startsWith('/shop-admin') ||
+    rawPath.startsWith('/admin')
+  )
+
+  if (!isKnownRoute) {
+    return (
+      <NotFoundPage
+        onGoHome={() => {
+          const homeUrl = isStaff ? '/staff' : isOwner ? '/shop-admin' : isAdmin ? '/admin' : '/'
+          window.history.pushState(null, '', homeUrl)
+          window.location.reload()
+        }}
+      />
+    )
+  }
+
+  // Cross-role protection: redirect to legitimate dashboard if unauthorized role accesses route
+  if (isCustomer && (rawPath.startsWith('/staff') || rawPath.startsWith('/shop-admin') || rawPath.startsWith('/admin'))) {
+    if (window.location.pathname !== '/') {
+      window.history.replaceState(null, '', '/')
+    }
+  } else if (isStaff && (rawPath.startsWith('/admin') || rawPath.startsWith('/shop-admin') || rawPath === '/')) {
+    if (!window.location.pathname.startsWith('/staff')) {
+      window.history.replaceState(null, '', '/staff')
+    }
+  } else if (isOwner && (rawPath.startsWith('/admin') || rawPath === '/')) {
+    if (!window.location.pathname.startsWith('/shop-admin')) {
+      window.history.replaceState(null, '', '/shop-admin')
+    }
+  } else if (isAdmin && rawPath === '/') {
+    if (!window.location.pathname.startsWith('/admin')) {
+      window.history.replaceState(null, '', '/admin')
+    }
+  }
 
   if (isCustomer) {
     return (

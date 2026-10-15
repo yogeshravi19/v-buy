@@ -192,7 +192,42 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     | 'reports'
     | 'shop-settings'
 
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview')
+  const parseAdminPath = (path: string): AdminTab => {
+    const p = path.toLowerCase()
+    if (p.includes('/counter') || p.includes('/pos')) return 'pos'
+    if (p.includes('/kds')) return 'kds'
+    if (p.includes('/orders') || p.includes('/live-orders')) return 'live-orders'
+    if (p.includes('/menu') || p.includes('/menu-items')) return 'menu-items'
+    if (p.includes('/inventory') || p.includes('/stock')) return 'inventory'
+    if (p.includes('/slots') || p.includes('/pickup-slots')) return 'pickup-slots'
+    if (p.includes('/staff')) return 'staff'
+    if (p.includes('/sales') || p.includes('/revenue') || p.includes('/sales-revenue')) return 'sales-revenue'
+    if (p.includes('/settlements')) return 'settlements'
+    if (p.includes('/reports')) return 'reports'
+    if (p.includes('/settings') || p.includes('/shop-settings')) return 'shop-settings'
+    return 'overview'
+  }
+
+  const [activeTab, setActiveTabState] = useState<AdminTab>(() => parseAdminPath(window.location.pathname))
+
+  const setActiveTab = (tab: AdminTab, updateHistory: boolean = true) => {
+    setActiveTabState(tab)
+    if (updateHistory) {
+      const slug = tab === 'overview' ? '' : `/${tab}`
+      const newUrl = `/shop-admin${slug}`
+      if (window.location.pathname !== newUrl) {
+        window.history.pushState(null, '', newUrl)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTabState(parseAdminPath(window.location.pathname))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   // Active Outlet identification
   const activeOutletId = forcedOutletId || currentUser?.outlet_id || 'g1'

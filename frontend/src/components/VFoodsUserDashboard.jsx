@@ -1007,9 +1007,19 @@ export default function VFoodsUserDashboard({
                         <img
                           src={getItemImageUrl(item)}
                           alt={item.name}
-                          className="vfoods-cart-item-thumb"
+                          className="vfoods-cart-item-thumb cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => {
+                            setSelectedDetailItem(item)
+                            setSelectedDetailOutlet(cart.outlet)
+                          }}
                         />
-                        <div className="vfoods-cart-item-info">
+                        <div
+                          className="vfoods-cart-item-info cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => {
+                            setSelectedDetailItem(item)
+                            setSelectedDetailOutlet(cart.outlet)
+                          }}
+                        >
                           <div className="vfoods-cart-item-name">{item.name}</div>
                           <div className="vfoods-cart-item-price">{money(item.price * item.qty)}</div>
                         </div>

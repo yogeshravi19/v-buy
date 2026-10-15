@@ -143,7 +143,38 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 }) => {
   // Active Sidebar Nav Tab (Staff's 7 mandatory sections)
   type StaffTab = 'overview' | 'live-orders' | 'kds' | 'stock' | 'pickup-queue' | 'pos' | 'shift-billing'
-  const [activeTab, setActiveTab] = useState<StaffTab>('overview')
+  
+  const parseStaffPath = (path: string): StaffTab => {
+    const p = path.toLowerCase()
+    if (p.includes('/counter') || p.includes('/pos')) return 'pos'
+    if (p.includes('/kds')) return 'kds'
+    if (p.includes('/stock') || p.includes('/inventory')) return 'stock'
+    if (p.includes('/queue') || p.includes('/pickup-queue')) return 'pickup-queue'
+    if (p.includes('/orders') || p.includes('/live-orders')) return 'live-orders'
+    if (p.includes('/shift') || p.includes('/billing')) return 'shift-billing'
+    return 'overview'
+  }
+
+  const [activeTab, setActiveTabState] = useState<StaffTab>(() => parseStaffPath(window.location.pathname))
+
+  const setActiveTab = (tab: StaffTab, updateHistory: boolean = true) => {
+    setActiveTabState(tab)
+    if (updateHistory) {
+      const slug = tab === 'overview' ? '' : `/${tab}`
+      const newUrl = `/staff${slug}`
+      if (window.location.pathname !== newUrl) {
+        window.history.pushState(null, '', newUrl)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTabState(parseStaffPath(window.location.pathname))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   // Outlet context
   const activeOutletId = forcedOutletId || currentUser?.outlet_id || 'g1'
