@@ -1,61 +1,143 @@
-// V FOODS Service Worker — Offline-first caching strategy
-const CACHE_NAME = 'vfoods-v1';
+// V Foods Service Worker — Robust Caching, Offline Support & Push Notifications
+const CACHE_VERSION = 'vfoods-v2';
+const STATIC_CACHE = `vfoods-static-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `vfoods-runtime-${CACHE_VERSION}`;
+const MENU_CACHE = `vfoods-menu-${CACHE_VERSION}`;
+
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/vit-chennai-logo.png',
-  '/manifest.json',
+  '/manifest.json'
 ];
 
-// Install: cache static shell
+// Install: Precache core static shell
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(STATIC_CACHE).then(cache => {
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
 });
 
-// Activate: clean old caches
+// Activate: Purge obsolete caches and claim clients immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys
+          .filter(key => key !== STATIC_CACHE && key !== RUNTIME_CACHE && key !== MENU_CACHE)
+          .map(key => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch: network-first for API calls, cache-first for static assets
+// Skip waiting message handler for seamless PWA updates
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Fetch dispatcher
 self.addEventListener('fetch', event => {
   const { request } = event;
-  const url = new URL(request.url);
-
-  // API and Supabase calls: always network, no cache
-  if (
-    url.hostname.includes('supabase.co') ||
-    url.hostname === 'localhost' ||
-    url.hostname === '127.0.0.1' ||
-    url.pathname.startsWith('/api/')
-  ) {
-    return; // let browser handle natively
+  if (request.method !== 'GET') {
+    return; // Service worker only caches GET requests
   }
 
-  // For navigation requests, serve cached index.html as fallback
-  if (request.mode === 'navigate') {
+  const url = new URL(request.url);
+
+  // 1. STRICT NO-CACHE ZONE: Sensitive Financial & Auth operations
+  const isStrictNoCache = (
+    url.pathname.includes('/auth/v1/') ||
+    url.pathname.includes('/rest/v1/orders') ||
+    url.pathname.includes('/rest/v1/order_items') ||
+    url.pathname.includes('/rest/v1/wallet') ||
+    url.pathname.includes('/rest/v1/wallet_transactions') ||
+    url.pathname.includes('/rest/v1/rpc/') ||
+    url.pathname.includes('/verify_and_record_payment') ||
+    url.pathname.includes('/api/paytm') ||
+    url.searchParams.has('order_id')
+  );
+
+  if (isStrictNoCache) {
+    return; // Pass through straight to network, never touch cache
+  }
+
+  // 2. Menu Images & Static Assets (Cache-First with Network Fallback)
+  const isMenuImage = url.pathname.includes('/menu-images') || url.pathname.includes('/storage/v1/object/public/menu-images');
+  const isStaticAsset = (
+    request.destination === 'image' ||
+    request.destination === 'font' ||
+    url.pathname.endsWith('.woff2') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.webp') ||
+    url.pathname.endsWith('.svg')
+  );
+
+  if (isMenuImage || isStaticAsset) {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html'))
+      caches.open(RUNTIME_CACHE).then(cache => {
+        return cache.match(request).then(cached => {
+          if (cached) return cached;
+          return fetch(request).then(response => {
+            if (response && response.status === 200) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          }).catch(() => {
+            // Return cached default icon if available
+            return caches.match('/vit-chennai-logo.png');
+          });
+        });
+      })
     );
     return;
   }
 
-  // Cache-first for static assets (JS, CSS, images, fonts)
+  // 3. Read-Only Menu Data (Network-First with Offline Cache Fallback)
+  const isReadOnlyMenuData = (
+    url.pathname.includes('/rest/v1/menu_items') ||
+    url.pathname.includes('/rest/v1/outlets')
+  );
+
+  if (isReadOnlyMenuData) {
+    event.respondWith(
+      caches.open(MENU_CACHE).then(cache => {
+        return fetch(request)
+          .then(response => {
+            if (response && response.status === 200) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          })
+          .catch(() => cache.match(request));
+      })
+    );
+    return;
+  }
+
+  // 4. Navigation Requests (Network with fallback to /index.html)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return caches.match('/index.html');
+      })
+    );
+    return;
+  }
+
+  // 5. Default static files (Vite bundles, CSS, JS)
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
       return fetch(request).then(response => {
-        if (response && response.status === 200) {
-          const cloned = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, cloned));
+        if (response && response.status === 200 && url.origin === self.location.origin) {
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then(cache => cache.put(request, clone));
         }
         return response;
       });
@@ -63,21 +145,43 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Push notifications (for future backend push)
+// Push notification receiver
 self.addEventListener('push', event => {
   if (!event.data) return;
-  const data = event.data.json();
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'V FOODS', {
+  try {
+    const data = event.data.json();
+    const title = data.title || 'V Foods';
+    const options = {
       body: data.body || '',
-      icon: '/vit-chennai-logo.png',
+      icon: data.icon || '/vit-chennai-logo.png',
       badge: '/vit-chennai-logo.png',
       tag: data.tag || 'vfoods-notification',
-    })
-  );
+      data: {
+        url: data.url || '/orders'
+      }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (err) {
+    console.error('Failed to parse push notification payload', err);
+  }
 });
 
+// Notification click router: focuses existing tab or navigates
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  event.waitUntil(clients.openWindow('/'));
+  const targetUrl = event.notification.data?.url || '/orders';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });

@@ -26,6 +26,8 @@ const ShopStaffDashboard = React.lazy(() => import('./pages/staff/ShopStaffDashb
 const ShopAdminDashboard = React.lazy(() => import('./pages/shop/ShopAdminDashboard'))
 const SuperAdminDashboard = React.lazy(() => import('./pages/admin/SuperAdminDashboard'))
 import { NotFoundPage } from './pages/NotFoundPage'
+import { usePwa } from './hooks/usePwa'
+import { OfflineBanner, PwaUpdateToast, InAppBrowserBanner, IosInstallModal } from './components/PwaInstallPrompt'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -476,7 +478,6 @@ function App() {
   const [busy, setBusy]               = useState(false)
   const [vegOnly, setVegOnly]         = useState(false)
   const [priceFilter, setPriceFilter] = useState('All')  // 'All' | 'u50' | 'u100' | 'u200'
-  const [isOnline, setIsOnline]       = useState(navigator.onLine)
   const [ab3Slot, setAb3Slot]         = useState(getAB3TimeSlot())
   const prevOrderCountRef             = useRef(0)
 
@@ -537,15 +538,6 @@ function App() {
     setShowGroupModal(false)
     setNotice('Exited group cart.')
   }
-
-  // Online/offline detection
-  useEffect(() => {
-    const onOnline = () => setIsOnline(true)
-    const onOffline = () => setIsOnline(false)
-    window.addEventListener('online', onOnline)
-    window.addEventListener('offline', onOffline)
-    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline) }
-  }, [])
 
   // Update AB3 time slot every minute
   useEffect(() => {
@@ -815,36 +807,21 @@ function App() {
     }
   }, [])
 
-  // ── PWA Installation Prompt Handler ───────────────────────────────────────
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [showIosPrompt, setShowIosPrompt] = useState(false)
+  // ── PWA Installation, Offline Detection & Updates ─────────────────────────
+  const {
+    isOnline,
+    isStandalone,
+    isIos,
+    isInAppBrowser,
+    isInstallable,
+    updateAvailable,
+    showIosInstallModal,
+    setShowIosInstallModal,
+    promptInstall,
+    reloadApp
+  } = usePwa()
 
-  useEffect(() => {
-    const handleBeforeInstall = (e) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-    }
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
-  }, [])
-
-  async function handleInstallClick() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null)
-        setNotice('V FOODS App installed successfully!')
-      }
-    } else {
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
-      if (isIos) {
-        setShowIosPrompt(true)
-      } else {
-        setNotice('To install on Desktop or Mobile: look for the Install icon in your browser address bar, or use browser menu > Install App.')
-      }
-    }
-  }
+  const handleInstallClick = promptInstall
 
   // ── Computed visible outlets ──────────────────────────────────────────────
   const visibleOutlets = useMemo(() => {
@@ -1368,33 +1345,10 @@ function App() {
   if (!currentUser) {
     return (
       <>
-        {showIosPrompt && (
-          <div className="ios-modal-overlay" onClick={() => setShowIosPrompt(false)}>
-            <div className="ios-modal" onClick={e => e.stopPropagation()}>
-              <div className="ios-modal-header">
-                <h3>Install V FOODS on iOS</h3>
-                <button className="close-btn" onClick={() => setShowIosPrompt(false)}><X size={18} /></button>
-              </div>
-              <div className="ios-steps">
-                <div className="ios-step">
-                  <div className="step-num">1</div>
-                  <div className="step-text">Tap the <strong>Share</strong> button in Safari's bottom toolbar.</div>
-                </div>
-                <div className="ios-step">
-                  <div className="step-num">2</div>
-                  <div className="step-text">Scroll down and tap <strong>Add to Home Screen</strong>.</div>
-                </div>
-                <div className="ios-step">
-                  <div className="step-num">3</div>
-                  <div className="step-text">Tap <strong>Add</strong> in the top-right corner. Done!</div>
-                </div>
-              </div>
-              <button className="btn-primary" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }} onClick={() => setShowIosPrompt(false)}>
-                Got it
-              </button>
-            </div>
-          </div>
-        )}
+        <OfflineBanner isOnline={isOnline} />
+        <InAppBrowserBanner isInAppBrowser={isInAppBrowser} />
+        <PwaUpdateToast updateAvailable={updateAvailable} onReload={reloadApp} />
+        <IosInstallModal isOpen={showIosInstallModal} onClose={() => setShowIosInstallModal(false)} />
         <AuthScreen onLoginUser={setCurrentUser} onInstallClick={handleInstallClick} />
       </>
     )
@@ -1474,6 +1428,10 @@ function App() {
     return (
       <MotionConfig reducedMotion="user">
         <Toaster />
+        <OfflineBanner isOnline={isOnline} />
+        <InAppBrowserBanner isInAppBrowser={isInAppBrowser} />
+        <PwaUpdateToast updateAvailable={updateAvailable} onReload={reloadApp} />
+        <IosInstallModal isOpen={showIosInstallModal} onClose={() => setShowIosInstallModal(false)} />
         <React.Suspense fallback={<DashboardSkeleton />}>
           <VFoodsUserDashboard
             currentUser={currentUser}
@@ -1501,6 +1459,10 @@ function App() {
             itemRatings={itemRatings}
             submitItemRating={submitItemRating}
             handleSignOut={handleSignOut}
+            handleInstallClick={handleInstallClick}
+            isOnline={isOnline}
+            isInstallable={isInstallable}
+            promptInstall={promptInstall}
             pickupSlots={pickupSlots}
             isScheduled={isScheduled}
             setIsScheduled={setIsScheduled}
@@ -1523,6 +1485,10 @@ function App() {
     return (
       <MotionConfig reducedMotion="user">
         <Toaster />
+        <OfflineBanner isOnline={isOnline} />
+        <InAppBrowserBanner isInAppBrowser={isInAppBrowser} />
+        <PwaUpdateToast updateAvailable={updateAvailable} onReload={reloadApp} />
+        <IosInstallModal isOpen={showIosInstallModal} onClose={() => setShowIosInstallModal(false)} />
         <React.Suspense fallback={<DashboardSkeleton />}>
           <ShopStaffDashboard
             currentUser={currentUser}
@@ -1544,6 +1510,10 @@ function App() {
     return (
       <MotionConfig reducedMotion="user">
         <Toaster />
+        <OfflineBanner isOnline={isOnline} />
+        <InAppBrowserBanner isInAppBrowser={isInAppBrowser} />
+        <PwaUpdateToast updateAvailable={updateAvailable} onReload={reloadApp} />
+        <IosInstallModal isOpen={showIosInstallModal} onClose={() => setShowIosInstallModal(false)} />
         <React.Suspense fallback={<DashboardSkeleton />}>
           <ShopAdminDashboard
             currentUser={currentUser}
@@ -1566,6 +1536,10 @@ function App() {
     return (
       <MotionConfig reducedMotion="user">
         <Toaster />
+        <OfflineBanner isOnline={isOnline} />
+        <InAppBrowserBanner isInAppBrowser={isInAppBrowser} />
+        <PwaUpdateToast updateAvailable={updateAvailable} onReload={reloadApp} />
+        <IosInstallModal isOpen={showIosInstallModal} onClose={() => setShowIosInstallModal(false)} />
         <React.Suspense fallback={<DashboardSkeleton />}>
           <SuperAdminDashboard
             currentUser={currentUser}

@@ -1,7 +1,7 @@
 {
-  "name": "V FOODS — VIT Chennai Smart Dining & Wallet",
-  "short_name": "V FOODS",
-  "description": "Pre-order meals from VIT Chennai canteens, skip the rush, pay seamlessly from your prepaid campus wallet.",
+  "name": "V Foods — Campus Dining & Pre-Order",
+  "short_name": "V Foods",
+  "description": "Pre-order meals from campus canteens, skip the rush, pay seamlessly from your prepaid campus wallet.",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#0B192C",
@@ -30,21 +30,21 @@
       "name": "Browse Canteens",
       "short_name": "Browse",
       "description": "Browse Gazebo, North Square & AB3 food counters",
-      "url": "/?tab=browse",
+      "url": "/browse",
       "icons": [{ "src": "/vit-chennai-logo.png", "sizes": "192x192" }]
     },
     {
       "name": "My Orders & Token",
       "short_name": "Orders",
       "description": "Track active food preparation tokens live",
-      "url": "/?tab=orders",
+      "url": "/orders",
       "icons": [{ "src": "/vit-chennai-logo.png", "sizes": "192x192" }]
     },
     {
       "name": "Campus Wallet",
       "short_name": "Wallet",
       "description": "Check balance and recharge prepaid wallet",
-      "url": "/?tab=wallet",
+      "url": "/wallet",
       "icons": [{ "src": "/vit-chennai-logo.png", "sizes": "192x192" }]
     }
   ]

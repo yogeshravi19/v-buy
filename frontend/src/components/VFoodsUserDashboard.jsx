@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase'
 import SpotlightSearch from './SpotlightSearch'
 import LiveOrderTracker from './LiveOrderTracker'
 import { ItemDetailBottomSheet } from './ItemDetailBottomSheet'
+import { InstallBannerCard } from './PwaInstallPrompt'
 import { EmptyState } from './ui/empty-state'
 import { lightHaptic, mediumHaptic } from '../lib/haptics'
 import { motionDurations, motionEasings, getSlideVariants, fadeInUp } from '../lib/motion'
@@ -109,6 +110,9 @@ export default function VFoodsUserDashboard({
   WalletView,
   ProfileView,
   money = (v) => `₹${Number(Number(v || 0).toFixed(2)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+  isOnline = true,
+  isInstallable = false,
+  promptInstall = null,
 }) {
   // Navigation & Screen selection
   const [selectedFoodCourt, setSelectedFoodCourt] = useState(null)
@@ -124,6 +128,13 @@ export default function VFoodsUserDashboard({
   const [selectedGatewayApp, setSelectedGatewayApp] = useState('phonepe') // 'phonepe' | 'paytm' | 'gpay' | 'upi'
   const [isGatewayProcessing, setIsGatewayProcessing] = useState(false)
   const [gatewayStep, setGatewayStep] = useState('select') // 'select' | 'processing' | 'success'
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('vfoods_pwa_dismissed') === 'true'
+    } catch {
+      return false
+    }
+  })
 
   // Spotlight & Detail Bottom Sheet State
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false)
@@ -619,6 +630,21 @@ export default function VFoodsUserDashboard({
                     <span>My Orders {activeOrdersCount > 0 ? `(${activeOrdersCount} live)` : ''}</span>
                   </button>
 
+                  {isInstallable && (
+                    <button
+                      type="button"
+                      className="vfoods-profile-dd-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false)
+                        if (promptInstall) promptInstall()
+                        else if (handleInstallClick) handleInstallClick()
+                      }}
+                    >
+                      <Download size={15} />
+                      <span>Install V Foods App</span>
+                    </button>
+                  )}
+
                   <div className="vfoods-profile-dd-divider" />
 
                   <button
@@ -670,6 +696,22 @@ export default function VFoodsUserDashboard({
                 </button>
               )}
             </div>
+
+            {/* PWA Install Banner Card */}
+            {isInstallable && !installBannerDismissed && !searchQuery.trim() && (
+              <InstallBannerCard
+                onInstall={() => {
+                  if (promptInstall) promptInstall()
+                  else if (handleInstallClick) handleInstallClick()
+                }}
+                onDismiss={() => {
+                  setInstallBannerDismissed(true)
+                  try {
+                    localStorage.setItem('vfoods_pwa_dismissed', 'true')
+                  } catch {}
+                }}
+              />
+            )}
 
             {/* If search query active: Show search results */}
             {searchQuery.trim() ? (
@@ -1217,11 +1259,27 @@ export default function VFoodsUserDashboard({
                   </strong>
                 </div>
 
+                {!isOnline && (
+                  <div style={{
+                    padding: '10px 14px',
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FECACA',
+                    borderRadius: '12px',
+                    color: '#DC2626',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    marginBottom: '10px',
+                    textAlign: 'center'
+                  }}>
+                    Offline Mode — Connect to internet to place orders
+                  </div>
+                )}
+
                 {paymentMode === 'wallet' ? (
                   !isInsufficient ? (
                     <button
                       className="vfoods-pay-btn-primary"
-                      disabled={busy}
+                      disabled={busy || !isOnline}
                       onClick={() => placeOrder('wallet')}
                     >
                       Pay {money(finalDebit)} from Wallet
@@ -1230,12 +1288,14 @@ export default function VFoodsUserDashboard({
                     <div className="vfoods-deficit-btn-row">
                       <button
                         className="vfoods-topup-pay-btn"
+                        disabled={busy || !isOnline}
                         onClick={handleDeficitPay}
                       >
                         Top Up {money(deficit)} &amp; Pay
                       </button>
                       <button
                         className="vfoods-switch-gateway-btn"
+                        disabled={busy || !isOnline}
                         onClick={() => setPaymentMode('instant_gateway')}
                       >
                         Pay via UPI
@@ -1245,7 +1305,7 @@ export default function VFoodsUserDashboard({
                 ) : (
                   <button
                     className="vfoods-pay-btn-gateway"
-                    disabled={busy}
+                    disabled={busy || !isOnline}
                     onClick={() => setIsGatewayModalOpen(true)}
                   >
                     Pay {money(finalDebit)} via UPI
