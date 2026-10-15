@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../components/ui/sound-toggle'
+import { PushNotificationToggle } from '../../components/ui/push-toggle'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
 import { supabase } from '../../lib/supabase'
@@ -965,6 +966,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
             </div>
 
             <SoundToggle />
+            <PushNotificationToggle userId={currentUser?.id} />
 
             <button
               className="saas-btn saas-btn-secondary saas-btn-sm"

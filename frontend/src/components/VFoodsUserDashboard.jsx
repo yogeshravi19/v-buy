@@ -6,10 +6,11 @@ import {
   ChevronRight, ChevronDown, Plus, Minus, Trash2, CheckCircle2, AlertCircle,
   Tag, Utensils, Zap, Download, LogOut, Check, ShoppingCart, RefreshCw,
   Flame, Building2, MapPin, Star, Leaf, Wallet, QrCode, ShieldCheck, Lock,
-  Edit2, Settings
+  Edit2, Settings, BellRing, BellOff
 } from 'lucide-react'
 import { getFoodImage } from '../lib/foodImages'
 import { supabase } from '../lib/supabase'
+import { useWebPush } from '../hooks/useWebPush'
 import SpotlightSearch from './SpotlightSearch'
 import LiveOrderTracker from './LiveOrderTracker'
 import { ItemDetailBottomSheet } from './ItemDetailBottomSheet'
@@ -135,6 +136,7 @@ export default function VFoodsUserDashboard({
       return false
     }
   })
+  const { supported: pushSupported, isSubscribed: pushSubscribed, toggleSubscription: togglePush } = useWebPush(currentUser?.id)
 
   // Spotlight & Detail Bottom Sheet State
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false)
@@ -642,6 +644,20 @@ export default function VFoodsUserDashboard({
                     >
                       <Download size={15} />
                       <span>Install V Foods App</span>
+                    </button>
+                  )}
+
+                  {pushSupported && (
+                    <button
+                      type="button"
+                      className="vfoods-profile-dd-item"
+                      onClick={async () => {
+                        const ok = await togglePush()
+                        setNotice(ok ? (pushSubscribed ? 'Push notifications disabled' : 'Order push alerts enabled!') : 'Could not update push alerts')
+                      }}
+                    >
+                      {pushSubscribed ? <BellRing size={15} color="#2563EB" /> : <BellOff size={15} />}
+                      <span>{pushSubscribed ? 'Order Alerts: ON' : 'Enable Push Alerts'}</span>
                     </button>
                   )}
 
