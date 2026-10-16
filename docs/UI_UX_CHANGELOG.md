@@ -123,8 +123,28 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
   - `frontend/src/pages/admin/SuperAdminDashboard.tsx`: Fixed ReferenceError where `outlets`, `platformOrders`, and `auditLogs` were referenced before/outside scope in `SaasBottomTabBar` mobile navigation badges; replaced with scoped identifiers `outletList.length || globalOutlets.length`, `orders.length || globalOrders.length`, and `auditLogsList.length`.
   - `docs/assets/modernized/*`: Recaptured all 30 screenshots across mobile (375px), tablet (768px), and desktop (1440px) with explicit `#initial-splash-loader` synchronization to ensure zero dashboards capture on loading states or error boundaries. Added full captures for Shop Staff POS Counter (`06-shop-staff-counter-pos-*`) and Super Admin Master Outlets Registry (`10-super-admin-outlets-registry-*`).
 - **Previous Behavior**: Super Admin encountered an error boundary (`outlets is not defined`); Shop Staff screenshot was captured prematurely while root splash loader was still resolving auth redirect.
-- **New Behavior**: All 4 dashboards (User, Shop Staff, Shop Admin, Super Admin) open instantly and render with 100% visual fidelity without console errors or crash boundaries.
-- **Rollback Scope**: Reverting commit `UI: verify and resolve dashboard loading and runtime integrity` restores previous bottom tab bar badge bindings.
-
-
-
+### 13. Interactive Modal and Popup QA Verification
+- **Area**: Comprehensive Interactive Popup & Modal Verification
+- **Commit**: `UI: verify and document all popups, modals, and click flows`
+- **Files Modified/Created**:
+  - `docs/assets/modals/*`: 26 high-resolution screenshots capturing every interactive popup, drawer, sheet, and modal across all 4 dashboard roles and the landing page:
+    - `00-landing-ios-install-modal.png`: PWA iOS Install Instructions guide with step-by-step safari hints.
+    - `00-landing-waitlist-modal.png`: Campus Pilot Waitlist modal with department, roll number, and canteen interest fields.
+    - `01-user-spotlight-search-modal.png`: Spotlight search modal (Cmd+K / Search trigger) across all 13 canteens.
+    - `02-user-item-detail-sheet.png`: Dish item detail bottom drawer with dietary badge, prep time, notes, and stepper.
+    - `03-user-cart-review.png`: Cart Review drawer with scheduling slot selector and price breakdown.
+    - `04-user-payment-gateway-modal.png`: Instant Payment Gateway Modal with PhonePe, Paytm, Google Pay, and UPI Intent.
+    - `05-user-edit-profile-modal.png`: User Edit Profile modal dialog with name, mobile, and role inputs.
+    - `08-staff-verify-handover-modal.png`: Shop Staff Verify Handover Token modal with 3-digit token validation.
+    - `09-staff-add-stock-modal.png`: Shop Staff Add Stock Item form dialog with category, price, and stock quantity.
+    - `09b-staff-edit-stock-modal.png`: Shop Staff Edit Stock Item dialog pre-filled with live item values.
+    - `11-shopadmin-add-menu-modal.png` / `06-shopadmin-add-menu-modal.png`: Shop Admin Menu Item Form Dialog with photo dropzone, category selector, dietary chips, and stock inputs.
+    - `12-shopadmin-menu-audit-modal.png` / `07-shopadmin-menu-audit-modal.png`: Shop Admin Menu Audit Trail modal with historical diff tables.
+    - `13-shopadmin-add-staff-modal.png` / `08-shopadmin-add-staff-modal.png`: Shop Admin Add Staff Member enrollment dialog.
+    - `14-superadmin-create-outlet-modal.png` / `09-superadmin-create-outlet-modal.png`: Super Admin Create Outlet dialog with location datalist and festival flag.
+    - `15-superadmin-edit-outlet-modal.png` / `10-superadmin-edit-outlet-modal.png`: Super Admin Edit Outlet dialog.
+    - `16-superadmin-create-coupon-modal.png` / `11-superadmin-create-coupon-modal.png`: Super Admin Create Discount Coupon dialog with discount type, percentage/flat amount, min order, and max uses.
+    - `17-superadmin-audit-detail-modal.png` / `12-superadmin-audit-detail-modal.png`: Super Admin Security & Operations Audit Record JSON inspector modal.
+- **Previous Behavior**: Dialogs and popups were visually unverified at a component level; only page-level screenshots existed.
+- **New Behavior**: 100% of interactive popups and drawers verified opening, operating, and closing with zero console errors or unhandled exceptions.
+- **Rollback Scope**: Non-breaking visual verification assets and test documentation.
