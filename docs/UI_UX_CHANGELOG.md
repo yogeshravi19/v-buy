@@ -46,4 +46,12 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
   - `frontend/src/styles.css`: Updated `.vfoods-filter-pill-group` and `.vfoods-right-filters-scroll` for single-row horizontal swiping on mobile with hidden scrollbars, `white-space: nowrap`, and `flex-shrink: 0`.
 - **Previous Behavior**: Food card titles could wrap arbitrarily causing uneven card heights in grids; out-of-stock items had no visual overlay on card thumbnails; filter pills could wrap onto 2 lines on narrow mobile viewports; spring animations had bounce overshoots.
 - **New Behavior**: Uniform card grid with aligned prices and action buttons; unambiguous Sold Out overlays and Unavailable disabled buttons; single-line horizontally scrollable filter chips; crisp 220ms motion transitions; empty states with clear recovery guidance.
-- **Rollback Scope**: Reverting commit `UI: user experience` restores earlier food card layouts and motion springs without affecting order placement, cart calculations, wallet, or payment logic.
+### 4. Shop Staff
+- **Area**: Shop Staff
+- **Commit**: `UI: shop staff`
+- **Files Modified/Created**:
+  - `frontend/src/pages/staff/ShopStaffDashboard.tsx`: Added calm highlight styling for incoming placed orders (< 3 min) in the Live Orders table (`boxShadow: inset 3px 0 0 #2563EB`, soft blue tint, and `NEW` badge) and KDS Kanban column (`border: 1.5px solid #3B82F6` and `NEW` badge); modernized counter stock availability with an accessible 1-tap pill toggle (`aria-pressed`, emerald/slate status dot, and instant label).
+  - `frontend/src/components/pos/PosCounterScreen.tsx`: Enforced 2-line title min-height on product cards for clean grid row alignment; maintained exact transaction flow, quick sale toggle, cash change calculation, and thermal receipt/KOT dialogs.
+- **Previous Behavior**: Incoming placed orders had the same visual weight as older pending orders, requiring staff to scan elapsed times manually; stock availability buttons lacked distinct indicator dots and accessibility aria attributes; product titles with single lines caused misaligned pricing rows in the POS grid.
+- **New Behavior**: New placed orders (< 3 mins) feature a calm Royal Blue highlight and badge without distracting flashing; stock availability is a clear 1-tap accessible pill with live status dot; POS product cards have aligned price rows across varying title lengths.
+- **Rollback Scope**: Reverting commit `UI: shop staff` restores prior table rows and button styles without affecting order fulfillment, POS punch transactions, or database records.

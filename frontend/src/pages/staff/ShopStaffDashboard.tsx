@@ -1254,8 +1254,13 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredOrders.map(order => (
-                        <tr key={order.id}>
+                      {filteredOrders.map(order => {
+                        const isNewOrder = order.status === 'placed' && (Date.now() - new Date(order.created_at).getTime()) < 180000
+                        return (
+                        <tr
+                          key={order.id}
+                          style={isNewOrder ? { background: '#F8FAFC', boxShadow: 'inset 3px 0 0 #2563EB' } : undefined}
+                        >
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{
@@ -1263,12 +1268,27 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                                 fontSize: '15px',
                                 fontFamily: 'monospace',
                                 color: '#0F172A',
-                                background: '#F1F5F9',
+                                background: isNewOrder ? '#EFF6FF' : '#F1F5F9',
+                                border: isNewOrder ? '1px solid #BFDBFE' : 'none',
                                 padding: '3px 8px',
                                 borderRadius: '4px'
                               }}>
                                 {formatOrderNumber(order)}
                               </span>
+                              {isNewOrder && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 800,
+                                  color: '#1E40AF',
+                                  background: '#DBEAFE',
+                                  padding: '2px 5px',
+                                  borderRadius: '4px',
+                                  letterSpacing: '0.4px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  New
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td>
@@ -1338,7 +1358,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             )}
                           </td>
                         </tr>
-                      ))}
+                      )})}
                       {filteredOrders.length === 0 && (
                         <tr>
                           <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: '#64748B' }}>
@@ -1472,18 +1492,36 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                   </div>
 
                   <div className="saas-kds-list">
-                    {localOrders.filter(o => o.status === 'placed').map(order => (
+                    {localOrders.filter(o => o.status === 'placed').map(order => {
+                      const isNewKds = (Date.now() - new Date(order.created_at).getTime()) < 180000
+                      return (
                       <motion.div
                         layout
                         key={order.id}
                         className="saas-ticket"
+                        style={isNewKds ? { border: '1.5px solid #3B82F6', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.12)' } : undefined}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
                       >
                         <div className="saas-ticket-header">
-                          <span className="saas-ticket-token">{formatOrderNumber(order)}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span className="saas-ticket-token">{formatOrderNumber(order)}</span>
+                            {isNewKds && (
+                              <span style={{
+                                fontSize: '9.5px',
+                                fontWeight: 800,
+                                color: '#1E40AF',
+                                background: '#DBEAFE',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                textTransform: 'uppercase'
+                              }}>
+                                New
+                              </span>
+                            )}
+                          </div>
                           <span className="saas-ticket-time">{formatElapsed(order.created_at)}</span>
                         </div>
 
@@ -1573,7 +1611,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           </button>
                         </div>
                       </motion.div>
-                    ))}
+                    )})}
                     {localOrders.filter(o => o.status === 'placed').length === 0 && (
                       <div style={{ textAlign: 'center', padding: '32px 16px', color: '#94A3B8', fontSize: '13px' }}>
                         No new orders pending
@@ -1925,20 +1963,33 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           </td>
                           <td>
                             <button
+                              type="button"
                               onClick={() => handleToggleItemAvailability(item.id, item.available)}
+                              aria-pressed={item.available}
+                              title={item.available ? 'Tap to mark Unavailable' : 'Tap to mark Available'}
                               style={{
-                                border: item.available ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
-                                background: item.available ? '#DCFCE7' : '#F1F5F9',
-                                color: item.available ? '#166534' : '#64748B',
-                                padding: '4px 10px',
-                                borderRadius: '12px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                border: item.available ? '1px solid #A7F3D0' : '1px solid #CBD5E1',
+                                background: item.available ? '#ECFDF5' : '#F8FAFC',
+                                color: item.available ? '#065F46' : '#64748B',
+                                padding: '5px 12px',
+                                borderRadius: '9999px',
                                 fontSize: '12px',
-                                fontWeight: 600,
+                                fontWeight: 700,
                                 cursor: 'pointer',
-                                transition: 'all 0.15s ease'
+                                transition: 'all 0.15s ease',
+                                boxShadow: item.available ? '0 1px 2px rgba(5, 150, 105, 0.08)' : 'none'
                               }}
                             >
-                              {item.available ? 'Mark Unavailable' : 'Mark Available'}
+                              <span style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                background: item.available ? '#059669' : '#94A3B8'
+                              }} />
+                              <span>{item.available ? 'Available' : 'Unavailable'}</span>
                             </button>
                           </td>
                           <td style={{ textAlign: 'right' }}>

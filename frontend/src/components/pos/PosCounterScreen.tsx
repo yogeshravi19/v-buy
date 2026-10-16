@@ -565,7 +565,7 @@ export function PosCounterScreen({
                       {/* Item Details */}
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 leading-tight">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 leading-tight min-h-[32px]">
                             {item.name}
                           </h4>
                           {item.description && (
