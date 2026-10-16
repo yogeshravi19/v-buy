@@ -5773,6 +5773,14 @@ body::before {
   background: #F1F5F9;
   padding: 4px;
   border-radius: 9999px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.vfoods-filter-pill-group::-webkit-scrollbar {
+  display: none;
 }
 
 .vfoods-filter-pill-btn {
@@ -5787,6 +5795,8 @@ body::before {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
@@ -6372,6 +6382,11 @@ body::before {
   padding-bottom: 8px;
   margin-bottom: 8px;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vfoods-right-filters-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .vfoods-right-filter-chip {

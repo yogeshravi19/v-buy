@@ -188,7 +188,7 @@ const ItemDetailContent: React.FC<ItemDetailBottomSheetProps> = ({
             initial={{ y: '100%', opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[32px] sm:rounded-[28px] shadow-2xl border-t sm:border border-slate-200 dark:border-slate-800 overflow-hidden relative z-10 flex flex-col max-h-[90vh] sm:max-h-[85vh] my-0 sm:my-auto"
           >
             {/* Grab Handle (mobile only) */}

@@ -413,120 +413,195 @@ export default function VFoodsUserDashboard({
   const renderDishCard = (item, isBestseller = false) => {
     const cartItem = (cart.items || []).find(ci => ci.id === item.id)
     const qty = cartItem ? cartItem.qty : 0
+    const isAvailable = item.available !== false && (item.stock_qty == null || item.stock_qty > 0)
+
     return (
       <div
         key={item.id}
-        className="vfoods-dish-card cursor-pointer group transition-all"
+        className={`vfoods-dish-card h-full flex flex-col justify-between cursor-pointer group transition-all ${
+          !isAvailable ? 'opacity-80' : ''
+        }`}
         onClick={() => {
           setSelectedDetailItem(item)
           setSelectedDetailOutlet(item.outlet)
         }}
       >
-        <div className="vfoods-dish-img-wrap overflow-hidden rounded-[14px]">
-          <img
-            src={getItemImageUrl(item)}
-            alt={item.name}
-            className="vfoods-dish-img transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            left: '8px',
-            zIndex: 2,
-            background: 'rgba(255, 255, 255, 0.96)',
-            padding: '3px',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
-          }} title={item.is_veg ? 'Pure Veg' : 'Non-Veg'}>
-            {item.is_veg ? (
-              <span style={{
-                display: 'inline-flex',
+        <div>
+          <div className="vfoods-dish-img-wrap overflow-hidden rounded-[14px] relative">
+            <img
+              src={getItemImageUrl(item)}
+              alt={item.name}
+              className={`vfoods-dish-img transition-transform duration-300 group-hover:scale-105 ${
+                !isAvailable ? 'grayscale-[40%]' : ''
+              }`}
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop&q=80'
+              }}
+            />
+
+            {/* Veg / Non-Veg Indicator */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '8px',
+                left: '8px',
+                zIndex: 2,
+                background: 'rgba(255, 255, 255, 0.96)',
+                padding: '3px',
+                borderRadius: '6px',
+                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '13px',
-                height: '13px',
-                border: '1.5px solid #16A34A',
-                borderRadius: '2.5px',
-                background: '#FFFFFF'
-              }}>
-                <span style={{ width: '5.5px', height: '5.5px', borderRadius: '50%', background: '#16A34A' }} />
-              </span>
-            ) : (
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '13px',
-                height: '13px',
-                border: '1.5px solid #DC2626',
-                borderRadius: '2.5px',
-                background: '#FFFFFF'
-              }}>
+                boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+              }}
+              title={item.is_veg ? 'Pure Veg' : 'Non-Veg'}
+            >
+              {item.is_veg ? (
                 <span style={{
-                  width: 0,
-                  height: 0,
-                  borderLeft: '3px solid transparent',
-                  borderRight: '3px solid transparent',
-                  borderBottom: '5.5px solid #DC2626'
-                }} />
-              </span>
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '13px',
+                  height: '13px',
+                  border: '1.5px solid #059669',
+                  borderRadius: '2.5px',
+                  background: '#FFFFFF'
+                }}>
+                  <span style={{ width: '5.5px', height: '5.5px', borderRadius: '50%', background: '#059669' }} />
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '13px',
+                  height: '13px',
+                  border: '1.5px solid #DC2626',
+                  borderRadius: '2.5px',
+                  background: '#FFFFFF'
+                }}>
+                  <span style={{
+                    width: 0,
+                    height: 0,
+                    borderLeft: '3px solid transparent',
+                    borderRight: '3px solid transparent',
+                    borderBottom: '5.5px solid #DC2626'
+                  }} />
+                </span>
+              )}
+            </div>
+
+            {/* Bestseller Badge */}
+            {isBestseller && isAvailable && (
+              <div className="vfoods-bestseller-ribbon">
+                <Star size={7.5} fill="#D97706" color="#D97706" /> Bestseller
+              </div>
+            )}
+
+            {/* Sold Out Overlay */}
+            {!isAvailable && (
+              <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-[1px] flex items-center justify-center z-10">
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#0F172A]/90 text-white border border-white/20 shadow-sm">
+                  Sold Out
+                </span>
+              </div>
             )}
           </div>
-          {isBestseller && (
-            <div className="vfoods-bestseller-ribbon">
-              <Star size={7.5} fill="#D97706" color="#D97706" /> Bestseller
-            </div>
-          )}
-        </div>
-        <div className="vfoods-dish-body">
-          <div>
-            <div className="vfoods-dish-title" title={item.name}>{item.name}</div>
-            <div className="vfoods-dish-meta-row">
-              <span className="vfoods-rating-pill">
-                <Star size={9} fill="#FFFFFF" color="#FFFFFF" /> 4.3
-              </span>
-              <span className="vfoods-prep-time">
-                <Clock size={10} /> 10-15m
-              </span>
-            </div>
-            <div style={{ marginTop: '3px' }}>
-              <div className="vfoods-dish-canteen" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {item.outlet?.name || 'Campus Canteen'}
+
+          <div className="vfoods-dish-body">
+            <div>
+              <div
+                className="vfoods-dish-title"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  minHeight: '36px',
+                  lineHeight: '1.35',
+                  fontWeight: 700
+                }}
+                title={item.name}
+              >
+                {item.name}
+              </div>
+              <div className="vfoods-dish-meta-row">
+                <span className="vfoods-rating-pill">
+                  <Star size={9} fill="#FFFFFF" color="#FFFFFF" /> 4.3
+                </span>
+                <span className="vfoods-prep-time">
+                  <Clock size={10} /> 10-15m
+                </span>
+              </div>
+              <div style={{ marginTop: '2px' }}>
+                <div
+                  className="vfoods-dish-canteen"
+                  style={{
+                    margin: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={item.outlet?.name || 'Campus Canteen'}
+                >
+                  {item.outlet?.name || 'Campus Canteen'}
+                </div>
               </div>
             </div>
           </div>
-          <div className="vfoods-dish-bottom">
-            <span className="vfoods-dish-price font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(item.price)}</span>
-            {qty > 0 ? (
-              <div className="vfoods-dish-qty-stepper" onClick={e => e.stopPropagation()}>
-                <button onClick={() => { lightHaptic(); removeFromCart(item.id); }}>-</button>
-                <span className="font-mono">{qty}</span>
-                <button onClick={() => {
+        </div>
+
+        {/* Aligned Bottom Row: Price and Add Action */}
+        <div className="vfoods-dish-bottom px-3.5 pb-3 pt-2">
+          <span className="vfoods-dish-price font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {money(item.price)}
+          </span>
+          {!isAvailable ? (
+            <span className="text-[11px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2.5 py-1 rounded-md border border-[#CBD5E1]">
+              Unavailable
+            </span>
+          ) : qty > 0 ? (
+            <div className="vfoods-dish-qty-stepper" onClick={e => e.stopPropagation()}>
+              <button
+                type="button"
+                aria-label="Decrease quantity"
+                onClick={() => { lightHaptic(); removeFromCart(item.id); }}
+              >
+                -
+              </button>
+              <span className="font-mono">{qty}</span>
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                onClick={() => {
                   lightHaptic();
                   setCartBadgeBump(true);
                   setTimeout(() => setCartBadgeBump(false), 300);
                   addToCart(item.outlet, item);
-                }}>+</button>
-              </div>
-            ) : (
-              <button
-                className="vfoods-dish-add-btn transition-transform active:scale-95"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  lightHaptic()
-                  setCartBadgeBump(true)
-                  setTimeout(() => setCartBadgeBump(false), 300)
-                  addToCart(item.outlet, item)
                 }}
               >
-                + ADD
+                +
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="vfoods-dish-add-btn transition-transform active:scale-95"
+              aria-label={`Add ${item.name} to cart`}
+              onClick={(e) => {
+                e.stopPropagation()
+                lightHaptic()
+                setCartBadgeBump(true)
+                setTimeout(() => setCartBadgeBump(false), 300)
+                addToCart(item.outlet, item)
+              }}
+            >
+              + ADD
+            </button>
+          )}
         </div>
       </div>
     )
@@ -977,9 +1052,18 @@ export default function VFoodsUserDashboard({
                 </div>
 
                 {/* 2-Column Food Grid */}
-                <div className="vfoods-explorer-grid-2">
-                  {explorerDishes.map((item, idx) => renderDishCard(item, idx % 4 === 0))}
-                </div>
+                {explorerDishes.length === 0 ? (
+                  <EmptyState
+                    icon={Utensils}
+                    title="No dishes found"
+                    description="No items match your selected filter for this counter."
+                    className="my-8"
+                  />
+                ) : (
+                  <div className="vfoods-explorer-grid-2">
+                    {explorerDishes.map((item, idx) => renderDishCard(item, idx % 4 === 0))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -95,7 +95,7 @@ export const LiveOrderTracker: React.FC<LiveOrderTrackerProps> = ({ order, onSho
               className="h-full bg-gradient-to-r from-blue-500 via-amber-500 to-emerald-500"
               initial={{ width: 0 }}
               animate={{ width: `${(currentStepIdx / (STEPS.length - 1)) * 100}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
 

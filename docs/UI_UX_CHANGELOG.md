@@ -36,4 +36,14 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
 - **Previous Behavior**: Staff, Shop Admin, and Super Admin mobile views relied on a slide-out drawer with 7 to 12 links. Bottom navigation jumped over input fields when virtual keyboards opened. Low-height desktop screens required vertical scrolling inside the sidebar.
 - **New Behavior**: Mobile views for all roles have fixed headers and clean 5-tab bottom navigation bars (primary actions + More sheet). Virtual keyboard focus cleanly hides bottom navigation bars. Fixed desktop sidebar at 100dvh with zero scroll leak across all target desktop resolutions.
 - **Rollback Scope**: Reverting commit `UI: global layout` restores previous sidebar drawer behavior and CSS rules without touching business logic or data layers.
-
+### 3. User Experience
+- **Area**: User Experience
+- **Commit**: `UI: user experience`
+- **Files Modified/Created**:
+  - `frontend/src/components/VFoodsUserDashboard.jsx`: Equal height food cards with flex containers, 2-line clamped titles (`-webkit-line-clamp: 2`), 1-line truncated outlet name, bottom-aligned price & add actions, high-contrast Veg/Non-Veg badges with tooltip/accessible labels, Sold Out badge overlay, image load fallback, and EmptyState for empty search results and empty explorer filter selections.
+  - `frontend/src/components/ItemDetailBottomSheet.tsx`: Bounded drawer animation to 220ms ease-out, accessible full keyboard and ESC trap, accessible Add button labels and clean Dark Slate/Royal Blue design tokens.
+  - `frontend/src/components/LiveOrderTracker.tsx`: Bounded order stepper animation to 220ms ease-out with zero bounce.
+  - `frontend/src/styles.css`: Updated `.vfoods-filter-pill-group` and `.vfoods-right-filters-scroll` for single-row horizontal swiping on mobile with hidden scrollbars, `white-space: nowrap`, and `flex-shrink: 0`.
+- **Previous Behavior**: Food card titles could wrap arbitrarily causing uneven card heights in grids; out-of-stock items had no visual overlay on card thumbnails; filter pills could wrap onto 2 lines on narrow mobile viewports; spring animations had bounce overshoots.
+- **New Behavior**: Uniform card grid with aligned prices and action buttons; unambiguous Sold Out overlays and Unavailable disabled buttons; single-line horizontally scrollable filter chips; crisp 220ms motion transitions; empty states with clear recovery guidance.
+- **Rollback Scope**: Reverting commit `UI: user experience` restores earlier food card layouts and motion springs without affecting order placement, cart calculations, wallet, or payment logic.
