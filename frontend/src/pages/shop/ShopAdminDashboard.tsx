@@ -48,6 +48,7 @@ import { ShopAnalyticsChart } from '../../components/analytics/ShopAnalyticsChar
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { MenuAuditLogModal } from '../../components/forms/MenuAuditLogModal'
 import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
+import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { toast } from '../../components/ui/toast'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
@@ -2884,6 +2885,31 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         isOpen={showAuditLogModal}
         onClose={() => setShowAuditLogModal(false)}
         outletId={activeOutletId}
+      />
+
+      {/* Mobile Bottom Tab Bar (at most 5 tabs + More sheet) */}
+      <SaasBottomTabBar
+        primaryTabs={[
+          { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+          { id: 'live-orders', label: 'Orders', icon: Clock, badge: activeKitchenCount },
+          { id: 'menu-items', label: 'Menu', icon: UtensilsCrossed, badge: menuItems.length },
+          { id: 'pos', label: 'POS', icon: Calculator },
+        ]}
+        moreTabs={[
+          { id: 'kds', label: 'KDS / Kitchen Workflow', icon: ChefHat },
+          { id: 'inventory', label: 'Inventory & Stock', icon: Boxes, badge: lowStockCount },
+          { id: 'pickup-slots', label: 'Pickup Slots', icon: CalendarClock },
+          { id: 'staff', label: 'Staff Roster', icon: Users, badge: staffList.filter(s => s.is_active).length },
+          { id: 'sales-revenue', label: 'Sales & Revenue', icon: TrendingUp },
+          { id: 'settlements', label: 'Settlements', icon: Receipt },
+          { id: 'reports', label: 'Business Reports', icon: FileSpreadsheet },
+          { id: 'shop-settings', label: 'Shop Settings', icon: Settings },
+        ]}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        currentUser={currentUser}
+        onSignOut={handleSignOut}
+        roleLabel="Shop Admin"
       />
     </div>
   )

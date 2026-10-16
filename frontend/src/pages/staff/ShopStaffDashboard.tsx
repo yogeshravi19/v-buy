@@ -44,6 +44,7 @@ import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../component
 import { PushNotificationToggle } from '../../components/ui/push-toggle'
 import { MenuItemFormDialog } from '../../components/forms/MenuItemFormDialog'
 import { PosCounterScreen } from '../../components/pos/PosCounterScreen'
+import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
 import { getFoodImage } from '../../lib/foodImages'
@@ -2359,6 +2360,26 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
             }
           }
         }}
+      />
+
+      {/* Mobile Bottom Tab Bar (at most 5 tabs + More sheet) */}
+      <SaasBottomTabBar
+        primaryTabs={[
+          { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+          { id: 'live-orders', label: 'Orders', icon: Clock, badge: activeOrdersCount },
+          { id: 'kds', label: 'Kitchen', icon: ChefHat, badge: activeOrdersCount },
+          { id: 'pos', label: 'POS', icon: Calculator },
+        ]}
+        moreTabs={[
+          { id: 'stock', label: 'Stock & Inventory', icon: Boxes, badge: lowStockCount },
+          { id: 'pickup-queue', label: 'Pickup Queue', icon: BellRing, badge: readyOrdersCount },
+          { id: 'shift-billing', label: 'Shift Billing', icon: ReceiptText },
+        ]}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        currentUser={currentUser}
+        onSignOut={handleSignOut}
+        roleLabel="Shop Staff"
       />
     </div>
   )

@@ -976,62 +976,41 @@
   color: #FFFFFF;
 }
 
-@media (max-width: 900px) {
+/* Keyboard focus auto-hide to prevent bottom nav jumping over inputs */
+body:has(input:focus, textarea:focus) .saas-bottom-tab-bar,
+body:has(input:focus, textarea:focus) .vfoods-bottom-nav,
+body:has(input:focus, textarea:focus) .bottom-nav {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
   .saas-layout {
     position: relative;
     overflow-x: hidden;
     width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
   }
 
   .saas-mobile-toggle {
-    display: inline-flex !important;
-  }
-
-  .saas-sidebar-close-btn {
-    display: inline-flex !important;
-  }
-
-  .saas-layout {
-    height: auto;
-    min-height: 100dvh;
-    max-height: none;
-    overflow: visible;
+    display: none !important; /* Replaced by bottom tab bar More sheet */
   }
 
   .saas-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 280px;
-    height: 100dvh;
-    max-height: 100dvh;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
-  }
-
-  .saas-sidebar.mobile-open {
-    transform: translateX(0) !important;
+    display: none !important; /* Replaced by SaasBottomTabBar on phone */
   }
 
   .saas-sidebar-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 999;
+    display: none !important;
   }
 
   .saas-main {
     width: 100%;
     min-width: 0;
     flex: 1;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .saas-topbar {
@@ -1039,9 +1018,11 @@
     top: 0;
     padding: 0 16px;
     gap: 8px;
-    height: 58px;
+    height: 54px;
     z-index: 40;
     padding-top: env(safe-area-inset-top, 0px);
+    background: #0F172A;
+    border-bottom: 1px solid #1E293B;
   }
 
   .saas-breadcrumb {
@@ -1049,26 +1030,29 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #F8FAFC;
   }
 
   .saas-breadcrumb-title {
-    font-size: 14px;
+    font-size: 13.5px;
+    color: #FFFFFF;
+    font-weight: 700;
   }
 
   .saas-body {
-    padding: 16px;
-    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    padding: 14px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
     overflow: visible;
   }
 
   .saas-kpi-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
   .saas-kds-grid {
     grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    gap: 12px !important;
   }
 
   .saas-table-container {
@@ -1077,13 +1061,48 @@
   }
 }
 
+/* Compact Sidebar Spacing for Low-Height Viewports (1280x720, 1366x768, 1024x768) */
 @media (max-height: 800px) and (min-width: 769px) {
-  .saas-sidebar-brand { height: 52px; }
-  .saas-sidebar-outlet { padding: 8px 14px; }
-  .saas-nav { padding: 6px 8px; gap: 1px; }
-  .saas-nav-btn { padding: 6px 10px; font-size: 12px; }
-  .saas-topbar { height: 52px; padding: 0 20px; }
-  .saas-body { padding: 16px 20px 32px; }
+  .saas-sidebar {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .saas-sidebar-brand { height: 48px; padding: 0 14px; }
+  .saas-sidebar-outlet { padding: 6px 12px; }
+  .saas-outlet-name { font-size: 11.5px; }
+  .saas-nav { padding: 4px 6px; gap: 1px; }
+  .saas-nav-btn { padding: 5px 8px; font-size: 11.5px; }
+  .saas-sidebar-footer { padding: 8px 12px; }
+  .saas-topbar { height: 48px; padding: 0 16px; }
+  .saas-body { padding: 14px 18px 28px; }
+}
+
+@media (max-height: 730px) and (min-width: 769px) {
+  .saas-sidebar-brand { height: 44px; padding: 0 12px; }
+  .saas-brand-img { height: 26px; }
+  .saas-brand-text { font-size: 13px; }
+  .saas-sidebar-outlet { padding: 4px 10px; }
+  .saas-outlet-label { font-size: 9px; }
+  .saas-outlet-name { font-size: 11px; margin-top: 1px; }
+  .saas-outlet-status { font-size: 10px; margin-top: 2px; }
+  .saas-nav { padding: 2px 4px; gap: 0px; }
+  .saas-nav-btn { padding: 4px 6px; font-size: 11px; }
+  .saas-nav-btn svg { width: 14px; height: 14px; }
+  .saas-sidebar-footer { padding: 6px 10px; }
+  .saas-user-name { font-size: 11px; }
+  .saas-user-role-label { font-size: 9px; }
+  .saas-topbar { height: 44px; padding: 0 14px; }
+}
+
+/* Tablet Narrow Width Icon Rail Optimization (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .saas-sidebar {
+    width: 220px;
+  }
+  .saas-nav-btn {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 540px) {
