@@ -2652,13 +2652,6 @@ function OutletCard({ outlet, addToCart, removeFromCart, cart, getItemRatingStat
 
                     <div className="food-flow-dish-price">
                       <span>{money(item.price)}</span>
-                      {rStats && (
-                        <span className="food-flow-rating-pill">
-                          <Star size={10} fill="#F59E0B" color="#F59E0B" />
-                          <strong>{rStats.avg}</strong>
-                          <span style={{ opacity: 0.75, fontSize: '9.5px' }}>({rStats.count})</span>
-                        </span>
-                      )}
                     </div>
 
                     <div className="food-flow-dish-meta">
@@ -3772,8 +3765,6 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
                 order={order}
                 repeatOrder={repeatOrder}
                 onShowReceipt={setReceiptOrder}
-                itemRatings={itemRatings}
-                submitItemRating={submitItemRating}
               />
             ))
           )}
@@ -3839,8 +3830,6 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
                 order={order}
                 repeatOrder={repeatOrder}
                 onShowReceipt={setReceiptOrder}
-                itemRatings={itemRatings}
-                submitItemRating={submitItemRating}
               />
             ))
           )}
@@ -3850,131 +3839,197 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
   )
 }
 
-function OrderCard({ order, repeatOrder, onShowReceipt, itemRatings, submitItemRating }) {
+function OrderCard({ order, repeatOrder, onShowReceipt }) {
   const [showQrModal, setShowQrModal] = useState(false)
-  const [showRateModal, setShowRateModal] = useState(false)
-  const stepIndex = statuses.indexOf(order.status)
-  const isReady   = order.status === 'ready'
+  const [isExpanded, setIsExpanded] = useState(false)
+  const isReady = order.status === 'ready'
   const isCancelled = order.status === 'cancelled'
   const minsAgo = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
+  const outletName = (order.outlets?.name || order.outlet_id || 'Campus Canteen').split('—')[0].trim()
+  const itemsSummary = (order.order_items || []).map(i => `${i.name} × ${i.qty}`).join(', ')
+  const formattedDate = new Date(order.created_at).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
 
   return (
     <article className={`order-card ${isCancelled ? 'order-cancelled' : ''} ${isReady ? 'pulse-ready-glow' : ''}`}>
       {showQrModal && <QrEnlargeModal order={order} onClose={() => setShowQrModal(false)} />}
-      {showRateModal && (
-        <RatingModal
-          order={order}
-          onClose={() => setShowRateModal(false)}
-          submitItemRating={submitItemRating}
-          itemRatings={itemRatings}
-        />
-      )}
-      <div className="order-head">
-        <div>
-          <span className="location-tag">ORDER #{order.id} · {order.outlets?.name || order.outlet_id}</span>
-          <h3>{money(order.total)}</h3>
-          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-            <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
-            {new Date(order.created_at).toLocaleString('en-IN')} ({minsAgo} min ago)
-          </small>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <span className={`status-badge ${order.status}`}>{order.status}</span>
-          {order.status === 'collected' && (
-            <button
-              className="btn-secondary btn-spring"
-              style={{ padding: '6px 12px', fontSize: '12px', background: '#FEF3C7', color: '#92400E', borderColor: '#FDE68A' }}
-              onClick={() => setShowRateModal(true)}
-              title="Rate dishes from this collected order"
-            >
-              <Star size={13} fill="#F59E0B" color="#F59E0B" /> Rate Food
-            </button>
-          )}
-          {!isCancelled && (
-            <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setShowQrModal(true)} title="Show full QR for counter scan">
-              <QrCode size={13} /> QR Pass
-            </button>
-          )}
-          <button className="btn-secondary btn-spring" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => onShowReceipt && onShowReceipt(order)}>
-            <FileText size={13} /> Receipt
-          </button>
-          {!isCancelled && (
-            <button
-              className="btn-secondary btn-spring reorder-btn"
-              style={{ padding: '6px 14px', fontSize: '12px' }}
-              onClick={() => repeatOrder(order)}
-              title="Reorder this past order into your cart"
-            >
-              <Repeat size={13} /> Reorder
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* ── Feature 6: Visual Order Stepper ── */}
-      {!isCancelled && <OrderStepper status={order.status} order={order} />}
-
-      {/* ── Badges for Scheduled Slots & Group Orders ── */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-        {order.pickup_slot_time && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
-            <Clock size={12} /> Scheduled Pickup: {order.pickup_slot_time}
-          </span>
-        )}
-        {order.group_id && (
-          <span className="group-badge-chip">
-            <Users size={12} /> Group Order {order.is_group_payer ? '(Payer: You)' : ''}
-          </span>
-        )}
-        {order.coupon_code && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
-            Promo {order.coupon_code} Applied
-          </span>
-        )}
-      </div>
-
-      {/* ── Order Items with Food Images ── */}
-      <div className="order-items-list">
-        {(order.order_items || []).map((item, idx) => {
-          const foodImg = getFoodImage(item.name)
-          return (
-            <div key={idx} className="item-chip-wrap">
-              <div className="order-item-mini-card">
-                <img
-                  src={foodImg.url}
-                  alt={item.name}
-                  className="order-item-mini-thumb"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <span className="item-chip">{item.name} × {item.qty}</span>
-              </div>
-              {item.notes && <span className="item-notes-chip">{item.notes}</span>}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ── Order QR Code Banner (Active immediately upon order placement) ── */}
-      {!isCancelled && (
-        <div className={`order-qr-banner ${isReady ? 'pulse-ready-glow' : ''}`}>
-          <div className="order-qr-meta">
+      {/* ── Front / Basic Information (Visible Always) ── */}
+      <div
+        className="order-card-front"
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{ cursor: 'pointer' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+          <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className="token-badge" style={{ margin: 0 }}>{formatOrderNumber(order)}</div>
-              {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 10px', borderRadius: '9999px' }}>READY FOR PICKUP</span>}
+              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#0F172A', padding: 0 }}>{outletName}</h3>
+              <span className="order-number-pill">#{order.id}</span>
             </div>
-            <span className="order-qr-hint">
-              {isReady ? 'Ready at counter! Present QR to staff' : 'Order placed! Counter verification QR code generated'}
-            </span>
-            <button className="btn-secondary btn-spring qr-zoom-btn" onClick={() => setShowQrModal(true)}>
-              <Maximize2 size={12} /> Fullscreen QR Pass
+            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '3px' }}>
+              {formattedDate} {minsAgo < 60 && `(${minsAgo}m ago)`}
+            </div>
+          </div>
+          <span className={`status-badge ${order.status}`}>{order.status}</span>
+        </div>
+
+        {itemsSummary && (
+          <div style={{
+            fontSize: '12.5px',
+            color: '#334155',
+            marginTop: '8px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {itemsSummary}
+          </div>
+        )}
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '10px',
+          paddingTop: '8px',
+          borderTop: '1px solid #F1F5F9'
+        }}>
+          <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+            {money(order.total)}
+          </div>
+          <button
+            type="button"
+            className="order-toggle-details-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsExpanded(!isExpanded)
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#059669',
+              background: '#ECFDF5',
+              border: '1px solid #A7F3D0',
+              padding: '4px 10px',
+              borderRadius: '9999px',
+              cursor: 'pointer'
+            }}
+          >
+            <span>{isExpanded ? 'Hide Details' : 'Show Details'}</span>
+            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Expanded Full Details (Revealed Only After Clicking) ── */}
+      {isExpanded && (
+        <div className="order-card-details" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #E2E8F0' }}>
+          {/* Visual Order Stepper */}
+          {!isCancelled && <OrderStepper status={order.status} order={order} />}
+
+          {/* Badges for Scheduled Slots & Group Orders */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '12px 0 10px' }}>
+            {order.pickup_slot_time && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
+                <Clock size={12} /> Scheduled Pickup: {order.pickup_slot_time}
+              </span>
+            )}
+            {order.group_id && (
+              <span className="group-badge-chip">
+                <Users size={12} /> Group Order {order.is_group_payer ? '(Payer: You)' : ''}
+              </span>
+            )}
+            {order.coupon_code && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
+                Promo {order.coupon_code} Applied
+              </span>
+            )}
+          </div>
+
+          {/* Order Items with Food Images */}
+          <div className="order-items-list" style={{ marginTop: '10px' }}>
+            {(order.order_items || []).map((item, idx) => {
+              const foodImg = getFoodImage(item.name)
+              return (
+                <div key={idx} className="item-chip-wrap">
+                  <div className="order-item-mini-card">
+                    <img
+                      src={foodImg.url}
+                      alt={item.name}
+                      className="order-item-mini-thumb"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <span className="item-chip">{item.name} × {item.qty}</span>
+                  </div>
+                  {item.notes && <span className="item-notes-chip">{item.notes}</span>}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Order Actions: QR Pass, Receipt, Reorder (No Rate Food!) */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '14px' }}>
+            {!isCancelled && (
+              <button
+                type="button"
+                className="btn-secondary btn-spring"
+                style={{ padding: '7px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => setShowQrModal(true)}
+              >
+                <QrCode size={14} /> QR Pass
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-secondary btn-spring"
+              style={{ padding: '7px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              onClick={() => onShowReceipt && onShowReceipt(order)}
+            >
+              <FileText size={14} /> Digital Receipt
             </button>
+            {!isCancelled && (
+              <button
+                type="button"
+                className="btn-secondary btn-spring reorder-btn"
+                style={{ padding: '7px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => repeatOrder(order)}
+              >
+                <Repeat size={14} /> Reorder Meal
+              </button>
+            )}
           </div>
-          <div className="order-qr-thumb-wrap" onClick={() => setShowQrModal(true)} title="Tap to enlarge QR Pass">
-            <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={76} />
-            <small style={{ display: 'block', textAlign: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>
-              TAP TO ZOOM
-            </small>
-          </div>
+
+          {/* Order QR Code Banner (Active immediately upon order placement) */}
+          {!isCancelled && (
+            <div className={`order-qr-banner ${isReady ? 'pulse-ready-glow' : ''}`} style={{ marginTop: '14px' }}>
+              <div className="order-qr-meta">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="token-badge" style={{ margin: 0 }}>{formatOrderNumber(order)}</div>
+                  {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 10px', borderRadius: '9999px' }}>READY FOR PICKUP</span>}
+                </div>
+                <span className="order-qr-hint">
+                  {isReady ? 'Ready at counter! Present QR to staff' : 'Counter pickup QR pass ready'}
+                </span>
+                <button className="btn-secondary btn-spring qr-zoom-btn" onClick={() => setShowQrModal(true)}>
+                  <Maximize2 size={12} /> Fullscreen QR Pass
+                </button>
+              </div>
+              <div className="order-qr-thumb-wrap" onClick={() => setShowQrModal(true)} title="Tap to enlarge QR Pass">
+                <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={76} />
+                <small style={{ display: 'block', textAlign: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>
+                  TAP TO ZOOM
+                </small>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </article>

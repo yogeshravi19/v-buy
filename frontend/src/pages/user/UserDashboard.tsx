@@ -1327,21 +1327,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
                           </motion.button>
                         )}
 
-                        {/* Post-pickup rating unlock */}
-                        {isCollected && (
-                          <motion.button
-                            whileTap={{ scale: 0.94 }}
-                            onClick={() => {
-                              const firstItem = order.order_items?.[0]
-                              setRatingOrder(order)
-                              setRatingItemId(firstItem?.item_id || 101)
-                            }}
-                            className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all"
-                          >
-                            <Star className="h-3.5 w-3.5 fill-amber-400" strokeWidth={2} />
-                            <span>Rate Food</span>
-                          </motion.button>
-                        )}
+
 
                         {/* 1-Tap Reorder */}
                         <motion.button
@@ -1875,59 +1861,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
         )}
       </AnimatePresence>
 
-      {/* ── RATE FOOD ITEM MODAL ── */}
-      <AnimatePresence>
-        {ratingOrder && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-                <h3 className="font-extrabold text-base text-white">Rate Your Dining Experience</h3>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setRatingOrder(null)} className="text-slate-400 hover:text-white">
-                  <X className="h-4 w-4" />
-                </motion.button>
-              </div>
 
-              <div className="flex justify-center gap-2 py-3">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <motion.button
-                    key={star}
-                    whileTap={{ scale: 1.25 }}
-                    onClick={() => setRatingStars(star)}
-                    className="p-1"
-                    aria-label={`Rate ${star} stars`}
-                  >
-                    <Star
-                      className={`w-7 h-7 ${star <= ratingStars ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`}
-                      strokeWidth={1.75}
-                    />
-                  </motion.button>
-                ))}
-              </div>
-
-              <textarea
-                placeholder="How was the taste, packaging, and hotness? (Optional)"
-                value={ratingComment}
-                onChange={e => setRatingComment(e.target.value)}
-                className="w-full h-20 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 mb-3"
-              />
-
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                disabled={isSubmittingRating}
-                onClick={handleSubmitRating}
-                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-950/40"
-              >
-                {isSubmittingRating ? 'Recording...' : 'Submit Rating'}
-              </motion.button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

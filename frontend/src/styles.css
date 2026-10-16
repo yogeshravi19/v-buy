@@ -1085,20 +1085,39 @@ body::before {
 
 /* ── ORDER CARDS ─────────────────────────────────────────────────────────── */
 .order-card {
-  background:#FFFFFF; border:1px solid rgba(226, 232, 240, 0.85);
-  border-radius:20px; padding:24px; margin-bottom:16px;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
-  transition:all 0.25s var(--ease-spring);
-  animation:card-in 0.4s var(--ease-spring) both;
+  background:#FFFFFF; border:1px solid rgba(226, 232, 240, 0.9);
+  border-radius:16px; padding:16px 18px; margin-bottom:12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition:all 0.2s var(--ease-spring);
+  animation:card-in 0.35s var(--ease-spring) both;
   position:relative; overflow:hidden;
 }
-.order-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-3px); border-color:rgba(30,64,175,0.15); }
-.order-cancelled { opacity:0.55; border-style:dashed; }
+.order-card:hover { box-shadow:var(--shadow-md); border-color:rgba(5, 150, 105, 0.25); }
+.order-cancelled { opacity:0.6; border-style:dashed; }
 
 /* Stripe accent on left */
 .order-card::before {
   content:''; position:absolute; left:0; top:0; bottom:0;
-  width:4px; background:var(--grad-brand); border-radius:4px 0 0 4px;
+  width:4px; background:linear-gradient(to bottom, #059669, #10B981); border-radius:4px 0 0 4px;
+}
+
+.order-number-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  background: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+}
+
+.order-toggle-details-btn {
+  transition: all 0.15s ease;
+}
+.order-toggle-details-btn:hover {
+  background: #D1FAE5 !important;
+  border-color: #059669 !important;
+  color: #047857 !important;
 }
 
 .order-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:12px; }
@@ -6296,19 +6315,19 @@ body::before {
 }
 
 .vfoods-rail-avatar-btn.active .vfoods-rail-avatar-circle {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.22);
   transform: scale(1.05);
-  background: #EFF6FF;
-  color: #1D4ED8;
+  background: #ECFDF5;
+  color: #047857;
 }
 
 .vfoods-rail-avatar-name {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   color: #64748B;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
   max-width: 68px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6318,7 +6337,7 @@ body::before {
 }
 
 .vfoods-rail-avatar-btn.active .vfoods-rail-avatar-name {
-  color: #1D4ED8;
+  color: #047857;
   font-weight: 800;
 }
 
@@ -7334,7 +7353,7 @@ body::before {
 
 .vfoods-rail-item.active .vfoods-rail-avatar-circle {
   transform: scale(1.12) !important;
-  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.25), 0 6px 14px rgba(37, 99, 235, 0.3) !important;
+  box-shadow: 0 0 0 3.5px rgba(5, 150, 105, 0.25), 0 6px 14px rgba(5, 150, 105, 0.3) !important;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease !important;
 }
 
@@ -7585,16 +7604,16 @@ body::before {
 .vfoods-rail-item.active .vfoods-rail-avatar-circle {
   transform: scale(1.15) !important;
   box-shadow: 0 0 0 3px #FFFFFF,
-              0 0 0 6px rgba(37, 99, 235, 0.3),
-              0 10px 22px rgba(37, 99, 235, 0.35) !important;
+              0 0 0 6px rgba(5, 150, 105, 0.3),
+              0 10px 22px rgba(5, 150, 105, 0.35) !important;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 /* ── 5. FLOATING BOTTOM CART BAR (Magnetic Showcase Elevation) ── */
 .vfoods-floating-cart-bar {
-  background: linear-gradient(135deg, #1E40AF 0%, #2563EB 55%, #1D4ED8 100%) !important;
+  background: linear-gradient(135deg, #047857 0%, #059669 55%, #0D9488 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45),
+  box-shadow: 0 12px 32px rgba(5, 150, 105, 0.45),
               0 4px 12px rgba(15, 23, 42, 0.2),
               inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -7603,7 +7622,7 @@ body::before {
 
 .vfoods-floating-cart-bar:hover {
   transform: translateY(-3px) scale(1.015) !important;
-  box-shadow: 0 18px 42px rgba(37, 99, 235, 0.55),
+  box-shadow: 0 18px 42px rgba(5, 150, 105, 0.55),
               0 6px 16px rgba(15, 23, 42, 0.25) !important;
 }
 

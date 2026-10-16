@@ -529,9 +529,6 @@ export default function VFoodsUserDashboard({
                 {item.name}
               </div>
               <div className="vfoods-dish-meta-row">
-                <span className="vfoods-rating-pill">
-                  <Star size={9} fill="#FFFFFF" color="#FFFFFF" /> 4.3
-                </span>
                 <span className="vfoods-prep-time">
                   <Clock size={10} /> 10-15m
                 </span>
@@ -547,7 +544,7 @@ export default function VFoodsUserDashboard({
                   }}
                   title={item.outlet?.name || 'Campus Canteen'}
                 >
-                  {item.outlet?.name || 'Campus Canteen'}
+                  {((item.outlet?.name || '').split('—')[0].split('-')[0].split('(')[0].trim()) || 'Campus Canteen'}
                 </div>
               </div>
             </div>
@@ -978,6 +975,7 @@ export default function VFoodsUserDashboard({
                 {/* Stalls / Canteens in this food court */}
                 {explorerOutlets.map(outlet => {
                   const isActive = explorerCanteenId === outlet.id
+                  const shortName = (outlet.name || '').split('—')[0].split('-')[0].split('(')[0].trim()
                   return (
                     <button
                       key={outlet.id}
@@ -986,9 +984,9 @@ export default function VFoodsUserDashboard({
                       title={outlet.name}
                     >
                       <div className="vfoods-rail-avatar-circle">
-                        <span>{outlet.name.charAt(0)}</span>
+                        <span>{shortName.charAt(0)}</span>
                       </div>
-                      <span className="vfoods-rail-avatar-name">{outlet.name}</span>
+                      <span className="vfoods-rail-avatar-name">{shortName}</span>
                       {!outlet.is_open && (
                         <span className="vfoods-rail-closed-tag">CLOSED</span>
                       )}
@@ -1002,11 +1000,6 @@ export default function VFoodsUserDashboard({
                 <div className="vfoods-right-header">
                   <div className="vfoods-right-canteen-name">
                     {explorerActiveOutlet ? explorerActiveOutlet.name : `All in ${selectedFoodCourt.name}`}
-                    {explorerActiveOutlet && (
-                      <span style={{ fontSize: '11px', color: '#D97706', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <Star size={11} fill="#D97706" color="#D97706" /> 4.7
-                      </span>
-                    )}
                   </div>
                   <div className="vfoods-right-item-count">
                     {explorerDishes.length} items available
