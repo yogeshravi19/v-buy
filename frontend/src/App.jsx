@@ -3841,7 +3841,7 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
 
 function OrderCard({ order, repeatOrder, onShowReceipt }) {
   const [showQrModal, setShowQrModal] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const isReady = order.status === 'ready'
   const isCancelled = order.status === 'cancelled'
   const minsAgo = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
@@ -3858,11 +3858,20 @@ function OrderCard({ order, repeatOrder, onShowReceipt }) {
   return (
     <article className={`order-card ${isCancelled ? 'order-cancelled' : ''} ${isReady ? 'pulse-ready-glow' : ''}`}>
       {showQrModal && <QrEnlargeModal order={order} onClose={() => setShowQrModal(false)} />}
+      {showDetailsModal && (
+        <OrderDetailsSheet
+          order={order}
+          onClose={() => setShowDetailsModal(false)}
+          repeatOrder={repeatOrder}
+          onShowReceipt={onShowReceipt}
+          onShowQr={() => setShowQrModal(true)}
+        />
+      )}
 
-      {/* ── Front / Basic Information (Visible Always) ── */}
+      {/* ── Front / Basic Information (Visible Always, Never Expands Downwards) ── */}
       <div
         className="order-card-front"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => setShowDetailsModal(true)}
         style={{ cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
@@ -3907,38 +3916,161 @@ function OrderCard({ order, repeatOrder, onShowReceipt }) {
             className="order-toggle-details-btn"
             onClick={(e) => {
               e.stopPropagation()
-              setIsExpanded(!isExpanded)
+              setShowDetailsModal(true)
             }}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
               fontSize: '12px',
-              fontWeight: 600,
+              fontWeight: 700,
               color: '#059669',
               background: '#ECFDF5',
               border: '1px solid #A7F3D0',
-              padding: '4px 10px',
+              padding: '5px 12px',
               borderRadius: '9999px',
               cursor: 'pointer'
             }}
           >
-            <span>{isExpanded ? 'Hide Details' : 'Show Details'}</span>
-            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <span>View Details</span>
+            <ChevronRight size={14} />
           </button>
         </div>
       </div>
+    </article>
+  )
+}
 
-      {/* ── Expanded Full Details (Revealed Only After Clicking) ── */}
-      {isExpanded && (
-        <div className="order-card-details" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #E2E8F0' }}>
+function OrderDetailsSheet({ order, onClose, repeatOrder, onShowReceipt, onShowQr }) {
+  // Close on Escape key and lock background scroll
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [onClose])
+
+  if (!order) return null
+  const isReady = order.status === 'ready'
+  const isCancelled = order.status === 'cancelled'
+  const outletName = (order.outlets?.name || order.outlet_id || 'Campus Canteen').split('—')[0].trim()
+  const formattedDate = new Date(order.created_at).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+
+  return (
+    <div className="order-details-overlay" onClick={onClose}>
+      <div className="order-details-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="order-details-drag-handle" />
+
+        {/* Sheet Top Header */}
+        <div className="order-details-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              Order Details
+            </h3>
+            <span className="order-number-pill">#{order.id}</span>
+          </div>
+          <button
+            type="button"
+            className="close-btn"
+            onClick={onClose}
+            aria-label="Close details"
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              background: '#F1F5F9',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#64748B'
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Sheet Scroll Body */}
+        <div className="order-details-scroll-body">
+          {/* Outlet Info & Status Pill */}
+          <div style={{
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            borderRadius: '16px',
+            padding: '14px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{outletName}</div>
+              <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>{formattedDate}</div>
+            </div>
+            <span className={`status-badge ${order.status}`}>{order.status}</span>
+          </div>
+
           {/* Visual Order Stepper */}
-          {!isCancelled && <OrderStepper status={order.status} order={order} />}
+          {!isCancelled && (
+            <div style={{ padding: '4px 0' }}>
+              <OrderStepper status={order.status} order={order} />
+            </div>
+          )}
 
-          {/* Badges for Scheduled Slots & Group Orders */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '12px 0 10px' }}>
+          {/* Ready / Token Banner */}
+          {!isCancelled && (
+            <div className={`order-qr-banner ${isReady ? 'pulse-ready-glow' : ''}`}>
+              <div className="order-qr-meta">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="token-badge" style={{ margin: 0 }}>{formatOrderNumber(order)}</div>
+                  {isReady && (
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 10px', borderRadius: '9999px' }}>
+                      READY FOR PICKUP
+                    </span>
+                  )}
+                </div>
+                <span className="order-qr-hint">
+                  {isReady ? 'Ready at counter! Present QR to staff' : 'Counter pickup QR pass ready'}
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary btn-spring qr-zoom-btn"
+                  onClick={() => onShowQr && onShowQr()}
+                >
+                  <Maximize2 size={12} /> Fullscreen QR Pass
+                </button>
+              </div>
+              <div
+                className="order-qr-thumb-wrap"
+                onClick={() => onShowQr && onShowQr()}
+                title="Tap to enlarge QR Pass"
+                style={{ cursor: 'pointer' }}
+              >
+                <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={76} />
+                <small style={{ display: 'block', textAlign: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>
+                  TAP TO ZOOM
+                </small>
+              </div>
+            </div>
+          )}
+
+          {/* Scheduled Slot / Group Badges */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {order.pickup_slot_time && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#1E40AF', padding: '4px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
                 <Clock size={12} /> Scheduled Pickup: {order.pickup_slot_time}
               </span>
             )}
@@ -3948,91 +4080,114 @@ function OrderCard({ order, repeatOrder, onShowReceipt }) {
               </span>
             )}
             {order.coupon_code && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DCFCE7', color: '#15803D', padding: '4px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700 }}>
                 Promo {order.coupon_code} Applied
               </span>
             )}
           </div>
 
-          {/* Order Items with Food Images */}
-          <div className="order-items-list" style={{ marginTop: '10px' }}>
-            {(order.order_items || []).map((item, idx) => {
-              const foodImg = getFoodImage(item.name)
-              return (
-                <div key={idx} className="item-chip-wrap">
-                  <div className="order-item-mini-card">
-                    <img
-                      src={foodImg.url}
-                      alt={item.name}
-                      className="order-item-mini-thumb"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                    <span className="item-chip">{item.name} × {item.qty}</span>
+          {/* Items Breakdown */}
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: '#334155', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Items Ordered
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(order.order_items || []).map((item, idx) => {
+                const foodImg = getFoodImage(item.name)
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: '#F8FAFC',
+                      borderRadius: '12px',
+                      border: '1px solid #F1F5F9'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={foodImg.url}
+                        alt={item.name}
+                        style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }}
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                      <div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>
+                          {item.name}
+                        </div>
+                        {item.notes && (
+                          <div style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic' }}>
+                            {item.notes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>
+                      × {item.qty}
+                    </div>
                   </div>
-                  {item.notes && <span className="item-notes-chip">{item.notes}</span>}
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
-          {/* Order Actions: QR Pass, Receipt, Reorder (No Rate Food!) */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '14px' }}>
+          {/* Bill Details */}
+          <div style={{
+            background: '#F8FAFC',
+            borderRadius: '14px',
+            border: '1px solid #E2E8F0',
+            padding: '12px 14px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', color: '#64748B', marginBottom: '6px' }}>
+              <span>Item Total</span>
+              <span className="font-mono">{money(order.total)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 800, color: '#0F172A', paddingTop: '8px', borderTop: '1px solid #E2E8F0' }}>
+              <span>Total Paid</span>
+              <span className="font-mono" style={{ color: '#059669' }}>{money(order.total)}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons: QR Pass, Digital Receipt, Reorder */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' }}>
             {!isCancelled && (
               <button
                 type="button"
                 className="btn-secondary btn-spring"
-                style={{ padding: '7px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                onClick={() => setShowQrModal(true)}
+                style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                onClick={() => onShowQr && onShowQr()}
               >
-                <QrCode size={14} /> QR Pass
+                <QrCode size={15} /> QR Pass
               </button>
             )}
             <button
               type="button"
               className="btn-secondary btn-spring"
-              style={{ padding: '7px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               onClick={() => onShowReceipt && onShowReceipt(order)}
             >
-              <FileText size={14} /> Digital Receipt
+              <FileText size={15} /> Digital Receipt
             </button>
             {!isCancelled && (
               <button
                 type="button"
-                className="btn-secondary btn-spring reorder-btn"
-                style={{ padding: '7px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                onClick={() => repeatOrder(order)}
+                className="btn-primary btn-spring"
+                style={{ width: '100%', padding: '12px', fontSize: '13.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#059669', borderColor: '#059669' }}
+                onClick={() => {
+                  onClose()
+                  repeatOrder && repeatOrder(order)
+                }}
               >
-                <Repeat size={14} /> Reorder Meal
+                <Repeat size={15} /> Reorder Meal
               </button>
             )}
           </div>
-
-          {/* Order QR Code Banner (Active immediately upon order placement) */}
-          {!isCancelled && (
-            <div className={`order-qr-banner ${isReady ? 'pulse-ready-glow' : ''}`} style={{ marginTop: '14px' }}>
-              <div className="order-qr-meta">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div className="token-badge" style={{ margin: 0 }}>{formatOrderNumber(order)}</div>
-                  {isReady && <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '2px 10px', borderRadius: '9999px' }}>READY FOR PICKUP</span>}
-                </div>
-                <span className="order-qr-hint">
-                  {isReady ? 'Ready at counter! Present QR to staff' : 'Counter pickup QR pass ready'}
-                </span>
-                <button className="btn-secondary btn-spring qr-zoom-btn" onClick={() => setShowQrModal(true)}>
-                  <Maximize2 size={12} /> Fullscreen QR Pass
-                </button>
-              </div>
-              <div className="order-qr-thumb-wrap" onClick={() => setShowQrModal(true)} title="Tap to enlarge QR Pass">
-                <ScannableQrCode value={`VFOOD:${order.outlet_id}:${getRawOrderNumber(order)}`} size={76} />
-                <small style={{ display: 'block', textAlign: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>
-                  TAP TO ZOOM
-                </small>
-              </div>
-            </div>
-          )}
         </div>
-      )}
-    </article>
+      </div>
+    </div>
   )
 }
 

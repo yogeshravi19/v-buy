@@ -446,7 +446,7 @@ export default function VFoodsUserDashboard({
               style={{
                 position: 'absolute',
                 top: '8px',
-                left: '8px',
+                right: '8px',
                 zIndex: 2,
                 background: 'rgba(255, 255, 255, 0.96)',
                 padding: '3px',
@@ -515,23 +515,17 @@ export default function VFoodsUserDashboard({
               <div
                 className="vfoods-dish-title"
                 style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
+                  whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  minHeight: '36px',
-                  lineHeight: '1.35',
-                  fontWeight: 700
+                  fontSize: '12.5px',
+                  lineHeight: '1.25',
+                  fontWeight: 700,
+                  color: '#0F172A'
                 }}
                 title={item.name}
               >
                 {item.name}
-              </div>
-              <div className="vfoods-dish-meta-row">
-                <span className="vfoods-prep-time">
-                  <Clock size={10} /> 10-15m
-                </span>
               </div>
               <div style={{ marginTop: '2px' }}>
                 <div
@@ -540,7 +534,10 @@ export default function VFoodsUserDashboard({
                     margin: 0,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    fontSize: '10.5px',
+                    color: '#64748B',
+                    fontWeight: 500
                   }}
                   title={item.outlet?.name || 'Campus Canteen'}
                 >
@@ -596,7 +593,7 @@ export default function VFoodsUserDashboard({
                 addToCart(item.outlet, item)
               }}
             >
-              + ADD
+              ADD
             </button>
           )}
         </div>
