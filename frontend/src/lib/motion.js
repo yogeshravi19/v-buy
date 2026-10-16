@@ -8,9 +8,9 @@
  */
 
 export const motionDurations = {
-  micro: 0.12,     // 120ms - icon states, chip switches, button presses
-  standard: 0.22,  // 220ms - dialogs, tabs, card entries
-  emphasis: 0.35,  // 350ms - bottom sheets, full page transitions
+  micro: 0.15,     // 150ms - state changes, chip switches, button presses
+  standard: 0.20,  // 200ms - dialogs, tabs, card transitions
+  emphasis: 0.25,  // 250ms - sheets & drawer reveals (capped at 250ms)
 }
 
 export const motionEasings = {
