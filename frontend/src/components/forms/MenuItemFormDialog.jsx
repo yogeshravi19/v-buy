@@ -131,6 +131,23 @@ export function MenuItemFormDialog({
     }
   }, [isOpen, initialData, reset])
 
+  // Escape key listener & background scroll lock
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isSubmitting && !isUploading) {
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isOpen, isSubmitting, isUploading, onClose])
+
   if (!isOpen) return null
 
   // Handle selected file (camera or gallery)

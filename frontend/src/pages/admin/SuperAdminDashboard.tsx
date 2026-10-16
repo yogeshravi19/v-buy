@@ -296,6 +296,30 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [auditSearchQuery, setAuditSearchQuery] = useState('')
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogRecord | null>(null)
 
+  // Escape key listener & background scroll lock for Super Admin modals
+  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser)
+  useEffect(() => {
+    if (!isAnySuperModalOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (!savingOutlet) {
+          setShowAddOutletModal(false)
+          setEditingOutlet(null)
+        }
+        setShowAddCouponModal(false)
+        setSelectedAuditLog(null)
+        if (!savingRole) setEditingRoleUser(null)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isAnySuperModalOpen, savingOutlet, savingRole])
+
   // Fetch cross-outlet global orders
   const loadGlobalData = useCallback(async () => {
     setSyncing(true)
