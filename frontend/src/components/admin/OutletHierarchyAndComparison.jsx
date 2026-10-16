@@ -18,7 +18,16 @@ import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
 
 export function OutletComparisonChart({ outlets = [], orders = [], money }) {
-  const totalVolume = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+  const isToday = (d) => {
+    if (!d) return false
+    try {
+      return new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    } catch (e) {
+      return false
+    }
+  }
+  const todayOrders = orders.filter(o => isToday(o.created_at))
+  const totalVolume = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0)
   const openCount = outlets.filter(o => o.is_open).length
   const regularCount = outlets.filter(o => !o.is_event).length
   const eventCount = outlets.filter(o => o.is_event).length
@@ -71,7 +80,7 @@ export function OutletComparisonChart({ outlets = [], orders = [], money }) {
             <ShoppingBag size={16} />
           </div>
         </div>
-        <div className="mt-2 text-2xl font-black text-slate-900 tabular-nums">{orders.length}</div>
+        <div className="mt-2 text-2xl font-black text-slate-900 tabular-nums">{todayOrders.length}</div>
         <p className="mt-1 text-xs text-slate-500">Campus meal tokens issued today</p>
       </Card>
     </div>
