@@ -148,3 +148,20 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
 - **Previous Behavior**: Dialogs and popups were visually unverified at a component level; only page-level screenshots existed.
 - **New Behavior**: 100% of interactive popups and drawers verified opening, operating, and closing with zero console errors or unhandled exceptions.
 - **Rollback Scope**: Non-breaking visual verification assets and test documentation.
+
+### 14. Dashboard Sidebar Spacing & Visual Ergonomics
+- **Area**: Enterprise Sidebar Ergonomics & Multi-Viewport Density
+- **Commit**: `UI: enhance dashboard sidebar spacing and typography`
+- **Files Modified/Created**:
+  - `frontend/src/saas_dashboard.css`:
+    - Expanded desktop sidebar width from congested 250px to spacious 275px (`min-width: 275px`), allowing full outlet titles and profile names to render without ellipsis truncation.
+    - Upgraded `.saas-sidebar-brand` height from 64px to 68px and padding to `0 20px` with 16px bold wordmark and 10.5px role badge.
+    - Redesigned `.saas-sidebar-outlet` with `16px 20px` padding, 13.5px bold white counter station title, 11px uppercase label, and prominent 7px pulsing live status dot.
+    - Upgraded navigation item buttons (`.saas-nav-btn`) to `10px 14px` padding, 13.5px font size, 12px gap, 9px border radius, and 17px icon size.
+    - Replaced aggressive low-height media queries (`max-height: 800px` and `730px`) that were previously shrinking fonts to an illegible 11px and padding to 4px. Replaced with comfortable 13px/12.5px typography and custom thin dark scrollbar for smooth vertical flow.
+    - Upgraded footer profile padding to `16px 20px` with 13px user name and 11.5px role label.
+  - `frontend/src/styles.css`: Standardized `.vfoods-sidebar` to 275px width, 18px header padding, and 10px 14px button padding for cross-dashboard layout parity.
+  - `docs/assets/modals/*`: Captured visual proof across standard laptop (1366x768) and desktop (1440x900) resolutions for Staff (`staff-spacious-sidebar-1366x768.png`, `staff-spacious-sidebar-1440x900.png`), Shop Admin (`shopadmin-spacious-sidebar.png`), and Super Admin (`superadmin-spacious-sidebar.png`).
+- **Previous Behavior**: Narrow 250px sidebar with aggressive media queries compressed text down to 11px and 4px padding on laptop screens, truncating outlet names and user footer cards.
+- **New Behavior**: Generous 275px width with mature 13.5px typography, 10px 14px click targets, and un-truncated outlet and user metadata across all viewports.
+- **Rollback Scope**: Reverting commit `UI: enhance dashboard sidebar spacing and typography` restores 250px width and previous compact media queries.

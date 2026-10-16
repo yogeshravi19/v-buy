@@ -17,7 +17,8 @@
 
 /* ── SIDEBAR ── */
 .saas-sidebar {
-  width: 250px;
+  width: 275px;
+  min-width: 275px;
   background-color: #0B192C;
   border-right: 1px solid #1E293B;
   display: flex;
@@ -30,31 +31,32 @@
 }
 
 .saas-sidebar-brand {
-  height: 64px;
-  padding: 0 18px;
+  height: 68px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #1E293B;
+  flex-shrink: 0;
 }
 
 .saas-brand-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
 }
 
 .saas-brand-img {
-  height: 32px;
+  height: 34px;
   width: auto;
   object-fit: contain;
 }
 
 .saas-brand-text {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
   color: #FFFFFF;
 }
 
@@ -63,11 +65,11 @@
 }
 
 .saas-role-badge {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 6px;
 }
 
@@ -91,43 +93,47 @@
 
 /* Outlet Info Banner inside Sidebar */
 .saas-sidebar-outlet {
-  padding: 12px 16px;
+  padding: 16px 20px;
   background: #0F172A;
   border-bottom: 1px solid #1E293B;
+  flex-shrink: 0;
 }
 
 .saas-outlet-label {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #64748B;
+  letter-spacing: 0.6px;
+  color: #94A3B8;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .saas-outlet-name {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: #F1F5F9;
-  margin-top: 3px;
-  white-space: nowrap;
+  color: #F8FAFC;
+  margin-top: 5px;
+  line-height: 1.4;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .saas-outlet-status {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  margin-top: 4px;
+  gap: 6px;
+  font-size: 11.5px;
+  margin-top: 6px;
 }
 
 .saas-status-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
 }
 
@@ -137,12 +143,23 @@
 
 /* Navigation links */
 .saas-nav {
-  padding: 12px 10px;
+  padding: 16px 14px;
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+.saas-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.saas-nav::-webkit-scrollbar-thumb {
+  background-color: #334155;
+  border-radius: 4px;
 }
 
 .saas-nav-btn {
@@ -150,12 +167,12 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border-radius: 9px;
   border: none;
   background: transparent;
   color: #94A3B8;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -164,26 +181,34 @@
 
 .saas-nav-btn:hover {
   background: #1E293B;
-  color: #F1F5F9;
+  color: #F8FAFC;
 }
 
 .saas-nav-btn.active {
   background: #1E40AF;
   color: #FFFFFF;
   font-weight: 700;
+  box-shadow: 0 1px 3px rgba(30, 64, 175, 0.35);
 }
 
 .saas-nav-item-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  font-size: 13.5px;
+}
+
+.saas-nav-item-left svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
 }
 
 .saas-nav-badge {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 10px;
+  padding: 2.5px 8px;
+  border-radius: 12px;
   background: #1E293B;
   color: #94A3B8;
 }
@@ -195,42 +220,48 @@
 
 /* Sidebar Footer Profile */
 .saas-sidebar-footer {
-  padding: 14px 16px;
+  padding: 16px 20px;
   border-top: 1px solid #1E293B;
   background: #0B192C;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .saas-user-meta {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 2px;
 }
 
 .saas-user-name {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
-  color: #F1F5F9;
+  color: #F8FAFC;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .saas-user-role-label {
-  font-size: 11px;
-  color: #64748B;
+  font-size: 11.5px;
+  color: #94A3B8;
 }
 
 .saas-logout-btn {
-  background: none;
+  background: transparent;
   border: none;
   color: #94A3B8;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .saas-logout-btn:hover {
@@ -1061,47 +1092,43 @@ body:has(input:focus, textarea:focus) .bottom-nav {
   }
 }
 
-/* Compact Sidebar Spacing for Low-Height Viewports (1280x720, 1366x768, 1024x768) */
+/* Responsive Ergonomic Sizing for Desktop & Laptop Viewports */
 @media (max-height: 800px) and (min-width: 769px) {
   .saas-sidebar {
     height: 100dvh;
     max-height: 100dvh;
   }
-  .saas-sidebar-brand { height: 48px; padding: 0 14px; }
-  .saas-sidebar-outlet { padding: 6px 12px; }
-  .saas-outlet-name { font-size: 11.5px; }
-  .saas-nav { padding: 4px 6px; gap: 1px; }
-  .saas-nav-btn { padding: 5px 8px; font-size: 11.5px; }
-  .saas-sidebar-footer { padding: 8px 12px; }
-  .saas-topbar { height: 48px; padding: 0 16px; }
-  .saas-body { padding: 14px 18px 28px; }
+  .saas-sidebar-brand { height: 60px; padding: 0 18px; }
+  .saas-sidebar-outlet { padding: 12px 18px; }
+  .saas-outlet-name { font-size: 13px; }
+  .saas-nav { padding: 12px 12px; gap: 3px; }
+  .saas-nav-btn { padding: 8.5px 12px; font-size: 13px; }
+  .saas-sidebar-footer { padding: 12px 18px; }
+  .saas-topbar { height: 56px; padding: 0 20px; }
+  .saas-body { padding: 18px 22px 30px; }
 }
 
-@media (max-height: 730px) and (min-width: 769px) {
-  .saas-sidebar-brand { height: 44px; padding: 0 12px; }
-  .saas-brand-img { height: 26px; }
-  .saas-brand-text { font-size: 13px; }
-  .saas-sidebar-outlet { padding: 4px 10px; }
-  .saas-outlet-label { font-size: 9px; }
-  .saas-outlet-name { font-size: 11px; margin-top: 1px; }
-  .saas-outlet-status { font-size: 10px; margin-top: 2px; }
-  .saas-nav { padding: 2px 4px; gap: 0px; }
-  .saas-nav-btn { padding: 4px 6px; font-size: 11px; }
-  .saas-nav-btn svg { width: 14px; height: 14px; }
-  .saas-sidebar-footer { padding: 6px 10px; }
-  .saas-user-name { font-size: 11px; }
-  .saas-user-role-label { font-size: 9px; }
-  .saas-topbar { height: 44px; padding: 0 14px; }
+@media (max-height: 700px) and (min-width: 769px) {
+  .saas-sidebar-brand { height: 54px; padding: 0 16px; }
+  .saas-sidebar-outlet { padding: 10px 16px; }
+  .saas-outlet-name { font-size: 12.5px; }
+  .saas-nav { padding: 10px 10px; gap: 2px; }
+  .saas-nav-btn { padding: 7px 10px; font-size: 12.5px; }
+  .saas-nav-btn svg { width: 16px; height: 16px; }
+  .saas-sidebar-footer { padding: 10px 16px; }
+  .saas-user-name { font-size: 12.5px; }
+  .saas-topbar { height: 50px; padding: 0 16px; }
 }
 
-/* Tablet Narrow Width Icon Rail Optimization (769px - 1024px) */
+/* Tablet Width Optimization (769px - 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   .saas-sidebar {
-    width: 220px;
+    width: 250px;
+    min-width: 250px;
   }
   .saas-nav-btn {
-    padding: 6px 8px;
-    font-size: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
   }
 }
 
