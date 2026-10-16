@@ -54,7 +54,8 @@ export function DataTable({
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-9 pl-9 pr-3 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-colors"
+              style={{ paddingLeft: '34px' }}
+              className="w-full h-9 pr-3 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-colors"
             />
           </div>
           <div className="text-xs text-slate-500 tabular-nums">

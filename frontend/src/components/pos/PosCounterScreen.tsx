@@ -378,21 +378,14 @@ export function PosCounterScreen({
       )}
 
       {/* POS Top Bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-700 text-white flex items-center justify-center font-black text-sm">
+      <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-blue-700 text-white flex items-center justify-center font-bold text-xs">
             POS
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900 leading-tight">Counter Billing Register</h2>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                Live
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">
-              Outlet: <span className="font-semibold text-slate-700">{outletName}</span>
-            </p>
+            <h2 className="text-sm font-bold text-slate-900 leading-tight">{outletName}</h2>
+            <p className="text-[11px] text-slate-500">Counter Register</p>
           </div>
         </div>
 
@@ -424,10 +417,11 @@ export function PosCounterScreen({
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search catalog or tap dish..."
+                  placeholder="Search items..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-9 pr-3 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-700 shadow-sm"
+                  style={{ paddingLeft: '34px' }}
+                  className="w-full h-9 pr-3 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-700 shadow-xs"
                 />
                 {searchQuery && (
                   <button
@@ -504,7 +498,7 @@ export function PosCounterScreen({
                 <span>No matching dishes found in this category.</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5">
                 {filteredItems.map(item => {
                   const inCartLine = cartLines.find(l => l.item.id === item.id)
                   const isSoldOut = item.stock_qty !== null && item.stock_qty <= 0
@@ -595,12 +589,12 @@ export function PosCounterScreen({
         </div>
 
         {/* Right: Ticket Panel (Desktop & Tablet side panel) */}
-        <div className="hidden md:flex w-72 lg:w-80 xl:w-88 bg-white border-l border-slate-200 flex-col shadow-lg z-10 shrink-0">
+        <div className="hidden md:flex w-72 lg:w-80 xl:w-84 bg-white border-l border-slate-200 flex-col shadow-md z-10 shrink-0">
           {/* Ticket Header */}
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="p-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
-              <ShoppingBag size={17} className="text-blue-700" />
-              <h3 className="font-bold text-slate-900 text-sm">Active Counter Ticket</h3>
+              <ShoppingBag size={16} className="text-blue-700" />
+              <h3 className="font-bold text-slate-900 text-sm">Order Ticket</h3>
             </div>
             {cartLines.length > 0 && (
               <button
@@ -608,43 +602,40 @@ export function PosCounterScreen({
                 onClick={clearCart}
                 className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold"
               >
-                Clear All
+                Clear
               </button>
             )}
           </div>
 
-          {/* Customer Name & Quick Sale Toggle */}
+          {/* Customer Name & Instant Handover Toggle */}
           <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2 shrink-0">
             <input
               type="text"
-              placeholder="Customer Name or Mobile (Optional)"
+              placeholder="Customer Name / Mobile"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               className="w-full h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-700"
             />
 
             <div className="flex items-center justify-between px-1">
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={isQuickSale}
                   onChange={(e) => setIsQuickSale(e.target.checked)}
                   className="rounded text-blue-700 focus:ring-blue-600 h-4 w-4 accent-blue-700"
                 />
-                <span className="flex items-center gap-1.5">
-                  <Zap size={14} className="text-amber-500 fill-amber-500" />
-                  Quick Sale (Collected Now)
-                </span>
+                <span>Instant Handover</span>
               </label>
             </div>
           </div>
 
           {/* Cart Item Rows */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {cartLines.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs gap-2 py-12">
-                <ShoppingBag size={32} className="text-slate-200" />
-                <span>Ticket is empty. Tap any dish on the left to add.</span>
+                <ShoppingBag size={28} className="text-slate-300" />
+                <span>No items selected.</span>
               </div>
             ) : (
               cartLines.map(line => (
@@ -663,7 +654,7 @@ export function PosCounterScreen({
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-50">
                     <input
                       type="text"
-                      placeholder="Note (e.g. no onion)"
+                      placeholder="Item note..."
                       value={line.notes}
                       onChange={(e) => updateLineNote(line.item.id, e.target.value)}
                       className="flex-1 h-7 px-2 text-[11px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none"
@@ -706,7 +697,7 @@ export function PosCounterScreen({
             {/* Payment Mode Selection */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                Counter Payment Mode
+                Payment Method
               </label>
               <div className="grid grid-cols-4 gap-1.5">
                 <button
@@ -747,18 +738,21 @@ export function PosCounterScreen({
               {paymentMode === 'CASH' && (
                 <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1 mt-2">
                   <div className="flex items-center justify-between text-xs gap-2">
-                    <span className="text-emerald-900 font-semibold truncate">Cash Tendered (₹):</span>
-                    <input
-                      type="number"
-                      placeholder="e.g. 500"
-                      value={cashTendered}
-                      onChange={(e) => setCashTendered(e.target.value)}
-                      className="w-24 h-7 px-2 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none shrink-0"
-                    />
+                    <span className="text-emerald-900 font-semibold truncate">Cash Tendered:</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-bold text-slate-500">₹</span>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={cashTendered}
+                        onChange={(e) => setCashTendered(e.target.value)}
+                        className="w-20 h-7 px-2 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none shrink-0"
+                      />
+                    </div>
                   </div>
                   {cashChange !== null && (
                     <div className="flex items-center justify-between text-xs font-black text-emerald-800 pt-1 border-t border-emerald-200">
-                      <span>Change to Return:</span>
+                      <span>Change:</span>
                       <span className="text-sm">₹{cashChange}</span>
                     </div>
                   )}
@@ -769,7 +763,7 @@ export function PosCounterScreen({
               {paymentMode === 'OTHER' && (
                 <input
                   type="text"
-                  placeholder="Record payment details / voucher ref"
+                  placeholder="Payment details or reference"
                   value={paymentNote}
                   onChange={(e) => setPaymentNote(e.target.value)}
                   className="w-full h-8 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none mt-2"
@@ -779,7 +773,7 @@ export function PosCounterScreen({
 
             {/* Total and Submit */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-600">Total Payable:</span>
+              <span className="text-xs font-bold text-slate-600">Total:</span>
               <span className="text-xl font-black text-blue-900 tabular-nums">
                 ₹{cartSubtotal}
               </span>
@@ -795,14 +789,14 @@ export function PosCounterScreen({
               type="button"
               disabled={cartLines.length === 0 || isSubmitting || !isOnline}
               onClick={handlePlacePosOrder}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
             >
               {isSubmitting ? (
-                <span>Generating Order...</span>
+                <span>Processing...</span>
               ) : (
                 <>
                   <CheckCircle2 size={16} />
-                  <span>Confirm & Punch Order (₹{cartSubtotal})</span>
+                  <span>Confirm Order • ₹{cartSubtotal}</span>
                 </>
               )}
             </button>
@@ -914,7 +908,7 @@ export function PosCounterScreen({
                 }}
                 className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-md"
               >
-                Confirm & Punch Order
+                Confirm Order • ₹{cartSubtotal}
               </button>
             </div>
           </div>

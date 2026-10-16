@@ -48,6 +48,7 @@ import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
 import { getFoodImage } from '../../lib/foodImages'
+import { useResizableSidebar } from '../../hooks/useResizableSidebar'
 
 export interface OrderItem {
   item_id?: number
@@ -199,6 +200,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [syncing, setSyncing] = useState(false)
   const [bannerNotice, setBannerNotice] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { sidebarWidth, isResizing, handleMouseDown } = useResizableSidebar({ storageKey: 'vfoods_shopstaff_sidebar_width' })
 
   // Figma-inspired Kitchen Rush Management & Ticket Accordion
   const [delayBuffers, setDelayBuffers] = useState<Record<number, number>>({})
@@ -773,7 +775,16 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       )}
 
       {/* ── LEFT SIDEBAR (Shop Staff's Exact 7 Sections) ── */}
-      <aside className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+      <aside
+        className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
+        style={{ width: `${sidebarWidth}px`, minWidth: `${sidebarWidth}px` }}
+      >
+        <div
+          className={`saas-sidebar-resizer ${isResizing ? 'is-resizing' : ''}`}
+          onMouseDown={handleMouseDown}
+          title="Drag to resize sidebar"
+        />
+
         {/* Brand */}
         <div className="saas-sidebar-brand">
           <div className="saas-brand-wrap">
@@ -927,16 +938,16 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
               <span>Menu</span>
             </button>
             <div className="saas-breadcrumb">
-              <span>Staff Console</span>
+              <span>Shop Staff</span>
               <ChevronRight size={14} />
               <span className="saas-breadcrumb-title">
                 {activeTab === 'overview' && 'Overview'}
                 {activeTab === 'live-orders' && 'Live Orders'}
-                {activeTab === 'kds' && 'KDS / Kitchen Display'}
-                {activeTab === 'stock' && 'Stock & Inventory'}
-                {activeTab === 'pickup-queue' && 'Pickup & Token Queue'}
-                {activeTab === 'pos' && 'Counter POS Terminal'}
-                {activeTab === 'shift-billing' && 'Shift Billing & Reconciliation'}
+                {activeTab === 'kds' && 'KDS'}
+                {activeTab === 'stock' && 'Inventory'}
+                {activeTab === 'pickup-queue' && 'Pickup Queue'}
+                {activeTab === 'pos' && 'POS'}
+                {activeTab === 'shift-billing' && 'Reconciliation'}
               </span>
             </div>
           </div>

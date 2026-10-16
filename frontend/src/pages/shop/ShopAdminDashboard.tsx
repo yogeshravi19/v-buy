@@ -56,6 +56,7 @@ import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
 import { getFoodImage } from '../../lib/foodImages'
+import { useResizableSidebar } from '../../hooks/useResizableSidebar'
 
 export interface OrderItem {
   item_id?: number
@@ -270,6 +271,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   const [syncing, setSyncing] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { sidebarWidth, isResizing, handleMouseDown } = useResizableSidebar({ storageKey: 'vfoods_shopadmin_sidebar_width' })
 
   // Rush Hour Batch Optimization States
   const [autoAcceptRushMode, setAutoAcceptRushMode] = useState<boolean>(false)
@@ -1164,7 +1166,16 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       )}
 
       {/* ── LEFT SIDEBAR (Shop Admin's Exact 12 Sections) ── */}
-      <aside className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+      <aside
+        className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
+        style={{ width: `${sidebarWidth}px`, minWidth: `${sidebarWidth}px` }}
+      >
+        <div
+          className={`saas-sidebar-resizer ${isResizing ? 'is-resizing' : ''}`}
+          onMouseDown={handleMouseDown}
+          title="Drag to resize sidebar"
+        />
+
         {/* Brand */}
         <div className="saas-sidebar-brand">
           <div className="saas-brand-wrap">
@@ -1367,24 +1378,24 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               <span>Menu</span>
             </button>
             <div className="saas-breadcrumb">
-              <span>Shop Admin Portal</span>
+              <span>Shop Admin</span>
               <ChevronRight size={14} />
               <span className="saas-breadcrumb-title">
-                {activeTab === 'overview' && 'Franchise Overview'}
-                {activeTab === 'live-orders' && 'Live Kitchen & Online Orders'}
-                {activeTab === 'kds' && 'KDS / Kitchen Workflow'}
-              {activeTab === 'menu-items' && 'Menu Catalog & Pricing'}
-              {activeTab === 'inventory' && 'Inventory & Stock Management'}
-              {activeTab === 'pos' && 'Manager POS Register'}
-              {activeTab === 'pickup-slots' && 'Pickup Slots & Capacity Limits'}
-              {activeTab === 'staff' && 'Outlet Staff Roster & Shifts'}
-              {activeTab === 'sales-revenue' && 'Revenue & Sales Metrics'}
-              {activeTab === 'settlements' && 'Bank Settlements & Payouts'}
-              {activeTab === 'reports' && 'Exportable Business Reports'}
-              {activeTab === 'shop-settings' && 'Outlet Hours & Operational Parameters'}
-            </span>
+                {activeTab === 'overview' && 'Overview'}
+                {activeTab === 'live-orders' && 'Live Orders'}
+                {activeTab === 'kds' && 'KDS'}
+                {activeTab === 'menu-items' && 'Menu'}
+                {activeTab === 'inventory' && 'Inventory'}
+                {activeTab === 'pos' && 'POS'}
+                {activeTab === 'pickup-slots' && 'Pickup Slots'}
+                {activeTab === 'staff' && 'Staff'}
+                {activeTab === 'sales-revenue' && 'Revenue'}
+                {activeTab === 'settlements' && 'Settlements'}
+                {activeTab === 'reports' && 'Reports'}
+                {activeTab === 'shop-settings' && 'Settings'}
+              </span>
+            </div>
           </div>
-        </div>
 
           <div className="saas-top-actions">
             {/* Quick Kitchen Status Mode */}
@@ -1400,9 +1411,9 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 background: '#FFFFFF'
               }}
             >
-              <option value="open">Operational (Normal)</option>
-              <option value="rush">Rush Hour (+10m Buffer)</option>
-              <option value="paused">Kitchen Paused</option>
+              <option value="open">Open</option>
+              <option value="rush">Busy (Rush)</option>
+              <option value="paused">Paused</option>
             </select>
 
             <button

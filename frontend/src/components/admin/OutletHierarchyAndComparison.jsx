@@ -6,83 +6,85 @@ import {
   UserCheck,
   ChevronDown,
   ChevronRight,
-  Clock,
-  CheckCircle2,
-  AlertCircle
+  TrendingUp,
+  ShoppingBag,
+  Plus,
+  X,
+  Check,
+  AlertTriangle
 } from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts'
 import { Card } from '../ui/card'
-import { StatusBadge } from '../ui/status-badge'
 import { cn } from '../../lib/utils'
+import { supabase } from '../../lib/supabase'
 
 export function OutletComparisonChart({ outlets = [], orders = [], money }) {
-  const chartData = outlets.map(outlet => {
-    const outletOrders = orders.filter(o => o.outlet_id === outlet.id)
-    const gmv = outletOrders.reduce((sum, o) => sum + (o.total || 0), 0) || outlet.today_gmv || 0
-    return {
-      name: outlet.name.replace(/—.*$/, '').trim(),
-      gmv,
-      orders: outletOrders.length || outlet.order_count || 0,
-      isOpen: outlet.is_open
-    }
-  })
+  const totalVolume = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+  const openCount = outlets.filter(o => o.is_open).length
+  const regularCount = outlets.filter(o => !o.is_event).length
+  const eventCount = outlets.filter(o => o.is_event).length
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h4 className="text-sm font-semibold text-slate-900">Cross-Outlet Turnover Comparison</h4>
-          <p className="text-xs text-slate-500">Live GMV distribution across campus dining facilities</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <Card className="p-4 bg-white border border-slate-200">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500">Total Canteens</span>
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+            <Store size={16} />
+          </div>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 tabular-nums">
-          ₹{chartData.reduce((s, o) => s + (o.gmv || 0), 0).toLocaleString('en-IN')} Total Platform Volume
-        </span>
-      </div>
+        <div className="mt-2 text-2xl font-black text-slate-900 tabular-nums">{outlets.length}</div>
+        <p className="mt-1 text-xs text-slate-500">
+          {regularCount} regular counters · {eventCount} event stalls
+        </p>
+      </Card>
 
-      <div className="h-52 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 8, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="bg-white/95 backdrop-blur-sm px-3 py-2 rounded-xl border border-slate-200 shadow-md text-xs">
-                      <p className="font-semibold text-slate-800">{label}</p>
-                      <p className="text-blue-700 font-bold tabular-nums">
-                        {money ? money(payload[0].value) : `₹${payload[0].value}`}
-                      </p>
-                    </div>
-                  )
-                }
-                return null
-              }}
-            />
-            <Bar
-              dataKey="gmv"
-              fill="#1E40AF"
-              radius={[6, 6, 0, 0]}
-              animationDuration={400}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </Card>
+      <Card className="p-4 bg-white border border-slate-200">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500">Live Kitchens</span>
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          </div>
+        </div>
+        <div className="mt-2 text-2xl font-black text-emerald-700 tabular-nums">{openCount} Open</div>
+        <p className="mt-1 text-xs text-slate-500">
+          {outlets.length - openCount} canteens currently offline
+        </p>
+      </Card>
+
+      <Card className="p-4 bg-white border border-slate-200">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500">Today's Platform GMV</span>
+          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+            <TrendingUp size={16} />
+          </div>
+        </div>
+        <div className="mt-2 text-2xl font-black text-slate-900 tabular-nums">
+          {money ? money(totalVolume) : `₹${totalVolume.toLocaleString('en-IN')}`}
+        </div>
+        <p className="mt-1 text-xs text-slate-500">Total sales across all outlets</p>
+      </Card>
+
+      <Card className="p-4 bg-white border border-slate-200">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500">Total Orders Placed</span>
+          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+            <ShoppingBag size={16} />
+          </div>
+        </div>
+        <div className="mt-2 text-2xl font-black text-slate-900 tabular-nums">{orders.length}</div>
+        <p className="mt-1 text-xs text-slate-500">Campus meal tokens issued today</p>
+      </Card>
+    </div>
   )
 }
 
-export function OutletHierarchyTree({ outlets = [], users = [] }) {
+export function OutletHierarchyTree({ outlets = [], users = [], onUserUpdated }) {
   const [expandedOutlets, setExpandedOutlets] = useState({})
+  const [assigningOutlet, setAssigningOutlet] = useState(null)
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [selectedRole, setSelectedRole] = useState('staff')
+  const [saving, setSaving] = useState(false)
+  const [notice, setNotice] = useState(null)
 
   const toggleOutlet = (id) => {
     setExpandedOutlets(prev => ({
@@ -101,14 +103,41 @@ export function OutletHierarchyTree({ outlets = [], users = [] }) {
     setExpandedOutlets({})
   }
 
+  const handleAssignRole = async (e) => {
+    e.preventDefault()
+    if (!assigningOutlet || !selectedUserId) return
+    setSaving(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          outlet_id: assigningOutlet.id,
+          role: selectedRole
+        })
+        .eq('id', selectedUserId)
+
+      if (error) {
+        alert('Could not update role: ' + error.message)
+      } else {
+        setNotice(`Assigned user to ${assigningOutlet.name}`)
+        setTimeout(() => setNotice(null), 3000)
+        setAssigningOutlet(null)
+        setSelectedUserId('')
+        if (onUserUpdated) onUserUpdated()
+      }
+    } catch (err) {
+      alert('Error updating user: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <Card className="p-5 space-y-4">
-      <div className="flex items-center justify-between">
+    <Card className="p-5 space-y-4 bg-white border border-slate-200">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h4 className="text-sm font-semibold text-slate-900">Governance & Role Hierarchy</h4>
-          <p className="text-xs text-slate-500">
-            Structure: Outlet &rarr; Shop Admin &rarr; Shop Staff
-          </p>
+          <h4 className="text-sm font-bold text-slate-900">Outlet Staff & Management Directory</h4>
+          <p className="text-xs text-slate-500">Live roster of assigned shop owners and kitchen staff per canteen</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -128,31 +157,29 @@ export function OutletHierarchyTree({ outlets = [], users = [] }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      {notice && (
+        <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-medium flex items-center gap-2">
+          <Check size={14} />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      <div className="space-y-2.5">
         {outlets.map(outlet => {
           const isExpanded = Boolean(expandedOutlets[outlet.id])
-          const outletAdmins = users.filter(u => u.outlet_id === outlet.id && u.role === 'shop_admin')
+          const outletAdmins = users.filter(u => u.outlet_id === outlet.id && (u.role === 'shop_admin' || u.role === 'owner'))
           const outletStaff = users.filter(u => u.outlet_id === outlet.id && u.role === 'staff')
-
-          const displayAdmins = outletAdmins.length > 0 ? outletAdmins : [
-            { id: `demo-admin-${outlet.id}`, full_name: outlet.owner_name || 'Assigned Franchise Lead', phone: outlet.owner_phone || '+91 98765 40001', role: 'shop_admin', is_active: true }
-          ]
-
-          const displayStaff = outletStaff.length > 0 ? outletStaff : [
-            { id: `demo-staff-${outlet.id}-1`, full_name: 'Counter Operator A', phone: '+91 98765 40002', role: 'Counter Staff', is_active: true },
-            { id: `demo-staff-${outlet.id}-2`, full_name: 'Prep Cook B', phone: '+91 98765 40003', role: 'Kitchen Lead', is_active: true }
-          ]
 
           return (
             <div
               key={outlet.id}
-              className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50/50"
+              className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-xs"
             >
-              {/* Outlet Level (Root) */}
+              {/* Outlet Level */}
               <button
                 type="button"
                 onClick={() => toggleOutlet(outlet.id)}
-                className="w-full flex items-center justify-between p-3.5 hover:bg-slate-100/60 transition-colors text-left"
+                className="w-full flex items-center justify-between p-3 hover:bg-slate-50/80 transition-colors text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
@@ -160,7 +187,7 @@ export function OutletHierarchyTree({ outlets = [], users = [] }) {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-xs text-slate-900">{outlet.name}</span>
+                      <span className="font-bold text-xs text-slate-900">{outlet.name}</span>
                       <span className="font-mono text-[10px] text-slate-400">({outlet.id})</span>
                     </div>
                     <span className="text-[11px] text-slate-500">{outlet.location}</span>
@@ -168,6 +195,9 @@ export function OutletHierarchyTree({ outlets = [], users = [] }) {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-medium text-slate-400">
+                    {outletAdmins.length + outletStaff.length} Team Members
+                  </span>
                   <span className={cn(
                     'text-[10px] font-bold px-2 py-0.5 rounded-full border',
                     outlet.is_open ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'
@@ -180,66 +210,91 @@ export function OutletHierarchyTree({ outlets = [], users = [] }) {
                 </div>
               </button>
 
-              {/* Children Nodes (Shop Admin & Staff) */}
+              {/* Children Nodes (Real Shop Admin & Staff) */}
               <AnimatePresence initial={false}>
                 {isExpanded && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
+                    transition={{ duration: 0.18 }}
+                    className="overflow-hidden bg-slate-50/60 border-t border-slate-100"
                   >
-                    <div className="px-4 pb-3.5 pt-1">
-                      {/* Tree branch connector */}
-                      <div className="ml-4 pl-4 border-l-2 border-blue-200 space-y-3">
-                        {/* Shop Admin Node */}
-                        <div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1.5">
+                    <div className="p-3.5 space-y-3">
+                      {/* Shop Admins */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
                             <Shield size={13} />
-                            <span>Shop Admin</span>
-                          </div>
-                          <div className="space-y-1.5">
-                            {displayAdmins.map(admin => (
+                            Shop Admin / Owner ({outletAdmins.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { setAssigningOutlet(outlet); setSelectedRole('shop_admin'); }}
+                            className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          >
+                            <Plus size={12} /> Assign Admin
+                          </button>
+                        </div>
+
+                        {outletAdmins.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic py-1">No shop owner assigned to this outlet</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {outletAdmins.map(admin => (
                               <div
                                 key={admin.id}
-                                className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs"
+                                className="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 text-xs"
                               >
                                 <div>
-                                  <span className="font-semibold text-slate-900">{admin.full_name}</span>
-                                  <span className="text-slate-400 ml-2 font-mono text-[11px]">{admin.phone}</span>
+                                  <div className="font-semibold text-slate-900">{admin.full_name}</div>
+                                  <div className="text-[11px] text-slate-400 font-mono">{admin.phone || admin.email || '—'}</div>
                                 </div>
-                                <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                  Franchise Owner
+                                <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  Shop Admin
                                 </span>
                               </div>
                             ))}
                           </div>
+                        )}
+                      </div>
+
+                      {/* Shop Staff */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
+                            <UserCheck size={13} />
+                            Kitchen & Counter Staff ({outletStaff.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { setAssigningOutlet(outlet); setSelectedRole('staff'); }}
+                            className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          >
+                            <Plus size={12} /> Assign Staff
+                          </button>
                         </div>
 
-                        {/* Shop Staff Node */}
-                        <div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">
-                            <UserCheck size={13} />
-                            <span>Shop Staff Roster ({displayStaff.length})</span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {displayStaff.map(staff => (
+                        {outletStaff.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic py-1">No kitchen staff assigned to this outlet</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {outletStaff.map(staff => (
                               <div
                                 key={staff.id}
-                                className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs"
+                                className="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 text-xs"
                               >
                                 <div>
                                   <div className="font-semibold text-slate-900">{staff.full_name}</div>
-                                  <div className="text-[10px] text-slate-400 font-mono">{staff.phone}</div>
+                                  <div className="text-[11px] text-slate-400 font-mono">{staff.phone || staff.email || '—'}</div>
                                 </div>
-                                <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                                  {staff.role}
+                                <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                                  Staff
                                 </span>
                               </div>
                             ))}
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -249,6 +304,75 @@ export function OutletHierarchyTree({ outlets = [], users = [] }) {
           )
         })}
       </div>
+
+      {/* Assign Staff/Admin Modal */}
+      {assigningOutlet && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Assign Member to Outlet</h3>
+                <p className="text-xs text-slate-500">{assigningOutlet.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssigningOutlet(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignRole} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Select User</label>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  required
+                  className="w-full h-9 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-700"
+                >
+                  <option value="">-- Choose a registered user --</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name} ({u.phone || u.email || 'No phone'}) - Current: {u.role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Target Role</label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="w-full h-9 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-700"
+                >
+                  <option value="staff">Shop Staff (Kitchen / POS Counter)</option>
+                  <option value="shop_admin">Shop Admin (Franchise Owner / Manager)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAssigningOutlet(null)}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving || !selectedUserId}
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded-lg transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Confirm Assignment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

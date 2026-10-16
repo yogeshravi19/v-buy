@@ -17,8 +17,10 @@
 
 /* ── SIDEBAR ── */
 .saas-sidebar {
-  width: 275px;
-  min-width: 275px;
+  position: relative;
+  width: 265px;
+  min-width: 200px;
+  max-width: 480px;
   background-color: #0B192C;
   border-right: 1px solid #1E293B;
   display: flex;
@@ -28,6 +30,31 @@
   max-height: 100dvh;
   overflow: hidden;
   z-index: 40;
+}
+
+.saas-sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 50;
+  user-select: none;
+  background-color: transparent;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.saas-sidebar-resizer:hover,
+.saas-sidebar-resizer.is-resizing {
+  background-color: #3B82F6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.7);
+}
+
+@media (max-width: 1024px) {
+  .saas-sidebar-resizer {
+    display: none;
+  }
 }
 
 .saas-sidebar-brand {

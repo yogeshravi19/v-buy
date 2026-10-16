@@ -48,6 +48,7 @@ import { OutletComparisonChart, OutletHierarchyTree } from '../../components/adm
 import { StatusBadge } from '../../components/ui/status-badge'
 import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { formatOrderNumber } from '../../utils/orderNumber'
+import { useResizableSidebar } from '../../hooks/useResizableSidebar'
 
 export interface PlatformOrder {
   id: number
@@ -215,6 +216,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { sidebarWidth, isResizing, handleMouseDown } = useResizableSidebar({ storageKey: 'vfoods_superadmin_sidebar_width' })
+
+  // User Role Editing State
+  const [editingRoleUser, setEditingRoleUser] = useState<PlatformUser | null>(null)
+  const [roleForm, setRoleForm] = useState<{ role: string; outlet_id: string }>({ role: 'student', outlet_id: '' })
+  const [savingRole, setSavingRole] = useState(false)
 
   // Global Festival / Event Mode
   const [eventMode, setEventMode] = useState<boolean>(propEventMode)
@@ -609,18 +616,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         const isOpen = row.original.is_open
         return (
           <div className="flex items-center gap-1.5">
-            <StatusBadge variant={isOpen ? 'success' : 'neutral'}>
-              {isOpen ? 'OPEN' : 'CLOSED'}
-            </StatusBadge>
-            {!isOpen && (
-              <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
-                title="Exception: Kitchen is currently offline/closed"
-              >
-                <AlertTriangle size={10} className="text-amber-500" />
-                Offline
-              </span>
-            )}
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                isOpen
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+              {isOpen ? 'Open' : 'Closed'}
+            </span>
           </div>
         )
       }
@@ -749,6 +754,47 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     setTimeout(() => setNotice(null), 3000)
     if (addAuditLog) {
       addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'USER', 'ROLE_CHANGE', `Changed user ${targetUser?.full_name} (${targetUser?.phone}) role to ${newRole}`)
+    }
+  }
+
+  const openEditRoleModal = (user: PlatformUser) => {
+    setEditingRoleUser(user)
+    setRoleForm({
+      role: user.role === 'customer' ? 'student' : user.role,
+      outlet_id: user.outlet_id || ''
+    })
+  }
+
+  const handleSaveUserRole = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingRoleUser) return
+    setSavingRole(true)
+    try {
+      const newRole = roleForm.role
+      const newOutletId = (newRole === 'staff' || newRole === 'shop_admin') ? (roleForm.outlet_id || null) : null
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole, outlet_id: newOutletId })
+        .eq('id', editingRoleUser.id)
+
+      if (error) {
+        console.error('Failed to update user role:', error)
+        toast.error('Could not save role: ' + error.message)
+      } else {
+        setUsersList(prev => prev.map(u => u.id === editingRoleUser.id ? { ...u, role: newRole as any, outlet_id: newOutletId } : u))
+        toast.success(`Role updated for ${editingRoleUser.full_name}`)
+        setNotice(`Role for "${editingRoleUser.full_name}" updated to ${newRole}.`)
+        setTimeout(() => setNotice(null), 3000)
+        if (addAuditLog) {
+          addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'USER', 'ROLE_CHANGE', `Updated role for ${editingRoleUser.full_name} to ${newRole} (outlet: ${newOutletId || 'none'})`)
+        }
+        setEditingRoleUser(null)
+      }
+    } catch (err: any) {
+      toast.error('Error saving role: ' + (err.message || 'Unknown error'))
+    } finally {
+      setSavingRole(false)
     }
   }
 
@@ -908,7 +954,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       )}
 
       {/* ── LEFT SIDEBAR (Super Admin's Exact 10 Sections) ── */}
-      <aside className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+      <aside
+        className={`saas-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
+        style={{ width: `${sidebarWidth}px`, minWidth: `${sidebarWidth}px` }}
+      >
+        <div
+          className={`saas-sidebar-resizer ${isResizing ? 'is-resizing' : ''}`}
+          onMouseDown={handleMouseDown}
+          title="Drag to resize sidebar"
+        />
+
         {/* Brand */}
         <div className="saas-sidebar-brand">
           <div className="saas-brand-wrap">
@@ -931,14 +986,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         {/* Platform Status Banner */}
         <div className="saas-sidebar-outlet">
           <span className="saas-outlet-label">
-            <ShieldCheck size={11} /> Platform Scope
+            <ShieldCheck size={11} /> Campus
           </span>
           <div className="saas-outlet-name">
-            VIT Campus Food Grid
+            VIT Chennai
           </div>
           <div className="saas-outlet-status">
             <span className="saas-status-dot online" />
-            <span style={{ color: '#38BDF8', fontWeight: 600 }}>{activeOutletsCount}/{totalOutletsCount} Outlets Live</span>
+            <span style={{ color: '#38BDF8', fontWeight: 600 }}>{activeOutletsCount} of {totalOutletsCount} Outlets Open</span>
           </div>
         </div>
 
@@ -1100,20 +1155,20 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <span>Menu</span>
             </button>
             <div className="saas-breadcrumb">
-              <span>Platform Governance</span>
+              <span>Super Admin</span>
               <ChevronRight size={14} />
               <span className="saas-breadcrumb-title">
-                {activeTab === 'overview' && 'Executive Telemetry & GMV Overview'}
-                {activeTab === 'campuses' && 'Campuses & Regional Dining Hubs'}
-                {activeTab === 'outlets' && 'Outlets & Canteen Master Registry'}
-                {activeTab === 'users' && 'User Directory & Access Governance'}
-                {activeTab === 'orders' && 'Cross-Platform Global Orders Telemetry'}
-                {activeTab === 'payments' && 'Payment Gateways & Wallet Ledger'}
-                {activeTab === 'settlements' && 'Franchise Payout Clearinghouse'}
-                {activeTab === 'analytics-reports' && 'Cross-Campus Analytics & Reports'}
-                {activeTab === 'coupons' && 'Platform Promotional Coupons'}
-                {activeTab === 'audit-logs' && 'Security & Operations Audit Trail'}
-                {activeTab === 'system-settings' && 'Global System Configuration Parameters'}
+                {activeTab === 'overview' && 'Overview'}
+                {activeTab === 'campuses' && 'Campuses'}
+                {activeTab === 'outlets' && 'Outlets'}
+                {activeTab === 'users' && 'Users'}
+                {activeTab === 'orders' && 'Orders'}
+                {activeTab === 'payments' && 'Payments'}
+                {activeTab === 'settlements' && 'Settlements'}
+                {activeTab === 'analytics-reports' && 'Analytics'}
+                {activeTab === 'coupons' && 'Coupons'}
+                {activeTab === 'audit-logs' && 'Audit Logs'}
+                {activeTab === 'system-settings' && 'Settings'}
               </span>
             </div>
           </div>
@@ -1364,8 +1419,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlets & Canteen Master Registry</h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Control operational status and force overrides across all canteens</p>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlets</h3>
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Manage operational status and canteens</p>
                 </div>
                 <button className="saas-btn saas-btn-primary" onClick={openAddOutletModal}>
                   <Plus size={15} />
@@ -1446,7 +1501,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                         <th>Assigned Role</th>
                         <th>Outlet Scope</th>
                         <th>Status</th>
-                        <th style={{ textAlign: 'right' }}>Account Status Action</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1480,12 +1535,24 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                               </span>
                             </td>
                             <td style={{ textAlign: 'right' }}>
-                              <button
-                                className={`saas-btn saas-btn-sm ${user.is_active ? 'saas-btn-secondary' : 'saas-btn-primary'}`}
-                                onClick={() => handleToggleUserActive(user.id)}
-                              >
-                                {user.is_active ? 'Suspend' : 'Reactivate'}
-                              </button>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1"
+                                  onClick={() => openEditRoleModal(user)}
+                                  title="Edit role and outlet assignment"
+                                >
+                                  <Edit size={12} />
+                                  <span>Edit Role</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`saas-btn saas-btn-sm ${user.is_active ? 'saas-btn-secondary' : 'saas-btn-primary'}`}
+                                  onClick={() => handleToggleUserActive(user.id)}
+                                >
+                                  {user.is_active ? 'Suspend' : 'Reactivate'}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -2386,6 +2453,102 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Role Modal */}
+      {editingRoleUser && (
+        <div className="saas-modal-backdrop">
+          <div className="saas-modal" style={{ maxWidth: '440px' }}>
+            <div className="saas-modal-header">
+              <h3 className="saas-modal-title">Edit User Role</h3>
+              <button
+                className="saas-modal-close"
+                onClick={() => setEditingRoleUser(null)}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveUserRole}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '2px' }}>MEMBER</div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>{editingRoleUser.full_name}</div>
+                  <div style={{ fontSize: '12px', color: '#64748B', fontFamily: 'monospace' }}>
+                    {editingRoleUser.phone} {editingRoleUser.email && editingRoleUser.email !== '—' ? `• ${editingRoleUser.email}` : ''}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Assigned Role
+                  </label>
+                  <select
+                    value={roleForm.role}
+                    onChange={e => setRoleForm(prev => ({ ...prev, role: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      background: '#FFFFFF'
+                    }}
+                  >
+                    <option value="student">User / Customer (Student & Faculty)</option>
+                    <option value="staff">Shop Staff (Kitchen & Counter)</option>
+                    <option value="shop_admin">Shop Admin (Franchise Owner)</option>
+                    <option value="super_admin">Super Admin (Platform Administrator)</option>
+                  </select>
+                </div>
+
+                {(roleForm.role === 'staff' || roleForm.role === 'shop_admin') && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Assigned Outlet Scope
+                    </label>
+                    <select
+                      value={roleForm.outlet_id}
+                      onChange={e => setRoleForm(prev => ({ ...prev, outlet_id: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '13px',
+                        background: '#FFFFFF'
+                      }}
+                      required
+                    >
+                      <option value="">Select an outlet...</option>
+                      {outletList.map(o => (
+                        <option key={o.id} value={o.id}>{o.name} ({o.location})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="saas-modal-footer">
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-secondary"
+                  onClick={() => setEditingRoleUser(null)}
+                  disabled={savingRole}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="saas-btn saas-btn-primary"
+                  disabled={savingRole}
+                >
+                  {savingRole ? 'Saving...' : 'Save Role'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
