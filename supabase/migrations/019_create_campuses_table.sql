@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 019: Create Campuses Table & RLS Policies
 -- Defect: DEFECT-07 (Campuses Schema & RLS)
--- 
+--
 -- SUMMARY:
 -- Creates the `campuses` table to back the Super Admin "Campuses" directory.
 -- Enables RLS with public/authenticated read access and Super Admin-only write access.
