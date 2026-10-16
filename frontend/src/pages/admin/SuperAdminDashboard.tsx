@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   LayoutDashboard,
   Building2,
@@ -238,6 +238,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // Outlets master list (loaded from the `outlets` table)
   const [outletList, setOutletList] = useState<OutletRecord[]>([])
+  const outletListRef = useRef<OutletRecord[]>([])
+  outletListRef.current = outletList
   const [outletsLoading, setOutletsLoading] = useState(true)
   const [outletsError, setOutletsError] = useState<string | null>(null)
 
@@ -317,7 +319,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             user_id: o.user_id,
             customer_name: o.customer_name || `User #${o.id % 900 + 100}`,
             outlet_id: o.outlet_id,
-            outlet_name: outletList.find(ot => ot.id === o.outlet_id)?.name || `Outlet ${o.outlet_id}`,
+            outlet_name: outletListRef.current.find(ot => ot.id === o.outlet_id)?.name || `Outlet ${o.outlet_id}`,
             token: o.token || String(o.id % 900 + 100),
             order_number: o.order_number || null,
             order_source: o.order_source || 'APP',
@@ -365,7 +367,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     } finally {
       setSyncing(false)
     }
-  }, [outletList])
+  }, [])
 
   // Sync when globalOrders updates
   useEffect(() => {
