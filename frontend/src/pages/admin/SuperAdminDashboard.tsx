@@ -386,6 +386,25 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           created_at: p.created_at ? p.created_at.split('T')[0] : '—'
         })))
       }
+
+      // Fetch live coupons from Supabase
+      const { data: dbCoupons } = await supabase
+        .from('coupons')
+        .select('code, discount_type, discount_value, min_order_value, max_uses, used_count, valid_to, active')
+
+      if (dbCoupons && dbCoupons.length > 0) {
+        setCoupons(dbCoupons.map((c: any) => ({
+          id: c.code,
+          code: c.code,
+          discount_type: (c.discount_type || 'percent') as 'percent' | 'flat',
+          discount_value: Number(c.discount_value || 0),
+          min_order: Number(c.min_order_value || 0),
+          used_count: Number(c.used_count || 0),
+          max_uses: Number(c.max_uses || 1000),
+          valid_to: c.valid_to ? c.valid_to.split('T')[0] : '2026-12-31',
+          is_active: c.active !== false
+        })))
+      }
     } catch (e) {
       console.warn('Super Admin global data fallback:', e)
     } finally {
@@ -882,6 +901,19 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         `Created platform coupon ${newCoupon.code} (${newCoupon.discount_value}${newCoupon.discount_type === 'percent' ? '%' : '₹'} discount)`
       )
     }
+
+    supabase.from('coupons').insert({
+      code: newCoupon.code,
+      discount_type: newCoupon.discount_type,
+      discount_value: newCoupon.discount_value,
+      min_order_value: newCoupon.min_order,
+      max_uses: newCoupon.max_uses,
+      used_count: 0,
+      valid_to: new Date(newCoupon.valid_to).toISOString(),
+      active: true
+    }).then(({ error }) => {
+      if (error) console.warn('Coupon insert warning:', error.message)
+    })
   }
 
   // Toggle Coupon Active
