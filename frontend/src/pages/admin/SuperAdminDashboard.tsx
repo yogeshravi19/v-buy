@@ -334,6 +334,25 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           { id: 9792, customer_name: 'Ananya Roy', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '502', status: 'collected', payment_method: 'UPI Online', total: 95, platform_fee: 4.75, net_payout: 90.25, created_at: new Date(Date.now() - 55 * 60000).toISOString() }
         ])
       }
+
+      // Fetch live user directory from profiles
+      const { data: dbUsers, error: usersErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, mobile_number, email, role, outlet_id, is_active, created_at')
+        .order('created_at', { ascending: false })
+
+      if (!usersErr && dbUsers && dbUsers.length > 0) {
+        setUsersList(dbUsers.map((p: any) => ({
+          id: p.id,
+          full_name: p.full_name || 'Campus Member',
+          phone: p.phone || p.mobile_number || '—',
+          email: p.email || '—',
+          role: p.role || 'customer',
+          outlet_id: p.outlet_id || null,
+          is_active: p.is_active !== false,
+          created_at: p.created_at ? p.created_at.split('T')[0] : '—'
+        })))
+      }
     } catch (e) {
       console.warn('Super Admin global data fallback:', e)
     } finally {
@@ -733,12 +752,26 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   }
 
-  // Toggle User Active/Suspended
-  const handleToggleUserActive = (userId: string) => {
+  // Toggle User Active/Suspended (persists to Supabase profiles)
+  const handleToggleUserActive = async (userId: string) => {
     const target = usersList.find(u => u.id === userId)
-    const next = !target?.is_active
+    if (!target) return
+    const next = !target.is_active
     setUsersList(prev => prev.map(u => u.id === userId ? { ...u, is_active: next } : u))
-    if (addAuditLog && target) {
+    
+    try {
+      const { error } = await supabase.from('profiles').update({ is_active: next }).eq('id', userId)
+      if (error) {
+        console.warn('Could not persist user active toggle:', error)
+      }
+    } catch (e) {
+      console.warn('User status toggle exception:', e)
+    }
+
+    setNotice(`User account "${target.full_name}" is now ${next ? 'Active' : 'Suspended'}.`)
+    setTimeout(() => setNotice(null), 3000)
+
+    if (addAuditLog) {
       addAuditLog(
         currentUser?.full_name || 'Super Admin',
         'super_admin',
@@ -1411,14 +1444,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                         <th>Mobile / Auth</th>
                         <th>Email</th>
                         <th>Assigned Role</th>
+                        <th>Outlet Scope</th>
                         <th>Status</th>
-                        <th>Role Authority Action</th>
-                        <th style={{ textAlign: 'right' }}>Account Toggle</th>
+                        <th style={{ textAlign: 'right' }}>Account Status Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {usersList
-                        .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter)
+                        .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter || (userRoleFilter === 'student' && (u.role === 'customer' || u.role === 'student' || u.role === 'user')))
                         .filter(u => {
                           if (!searchQuery) return true
                           const q = searchQuery.toLowerCase()
@@ -1435,29 +1468,20 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                                 user.role === 'shop_admin' ? 'saas-badge-warning' :
                                 user.role === 'staff' ? 'saas-badge-info' : 'saas-badge-success'
                               }`}>
-                                {user.role.toUpperCase()}
+                                {user.role === 'customer' || user.role === 'student' ? 'CUSTOMER' : user.role.toUpperCase()}
                               </span>
+                            </td>
+                            <td style={{ fontSize: '12px', color: '#64748B' }}>
+                              {user.outlet_id ? (outletList.find(o => o.id === user.outlet_id)?.name || `Outlet: ${user.outlet_id}`) : '—'}
                             </td>
                             <td>
                               <span style={{ fontSize: '12px', fontWeight: 600, color: user.is_active ? '#16A34A' : '#DC2626' }}>
                                 {user.is_active ? 'Active' : 'Suspended'}
                               </span>
                             </td>
-                            <td>
-                              <select
-                                value={user.role}
-                                onChange={e => handleUpdateUserRole(user.id, e.target.value)}
-                                style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #CBD5E1' }}
-                              >
-                                <option value="student">User</option>
-                                <option value="staff">Shop Staff</option>
-                                <option value="shop_admin">Shop Admin</option>
-                                <option value="super_admin">Super Admin</option>
-                              </select>
-                            </td>
                             <td style={{ textAlign: 'right' }}>
                               <button
-                                className="saas-btn saas-btn-secondary saas-btn-sm"
+                                className={`saas-btn saas-btn-sm ${user.is_active ? 'saas-btn-secondary' : 'saas-btn-primary'}`}
                                 onClick={() => handleToggleUserActive(user.id)}
                               >
                                 {user.is_active ? 'Suspend' : 'Reactivate'}
