@@ -577,10 +577,11 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     }
   ], [money])
 
-  // End-of-Day (EOD) Reconciliation State
-  const [eodFilterDate, setEodFilterDate] = useState(() => new Date().toISOString().split('T')[0])
+  // End-of-Day (EOD) Reconciliation State (India Standard Time)
+  const getTodayIST = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+  const [eodFilterDate, setEodFilterDate] = useState(getTodayIST)
   const [eodDateRangeMode, setEodDateRangeMode] = useState<'single' | 'range'>('single')
-  const [eodEndDate, setEodEndDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [eodEndDate, setEodEndDate] = useState(getTodayIST)
 
   // Fetch outlet data
   const loadData = useCallback(async () => {
@@ -982,7 +983,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       phone: staffForm.phone,
       role: staffForm.role,
       is_active: true,
-      created_at: new Date().toISOString().split('T')[0]
+      created_at: getTodayIST()
     }
     setStaffList(prev => [...prev, newStaff])
     setShowAddStaffModal(false)
@@ -1109,7 +1110,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   const eodScopedOrders = useMemo(() => {
     return localOrders.filter(o => {
       if (o.status === 'cancelled') return false
-      const d = (o.created_at || '').split('T')[0]
+      const d = o.created_at ? new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : ''
       if (eodDateRangeMode === 'single') {
         return d === eodFilterDate
       }
