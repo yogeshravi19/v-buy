@@ -78,3 +78,13 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
 - **Previous Behavior**: Landing page loaded heavy Three.js WebGL canvas animations in the hero and order flow sections, resulting in a large 658 kB initial chunk and GPU rendering overhead; lacked clear PWA installation instructions for Android and iOS users.
 - **New Behavior**: Lightweight 113 kB landing page chunk with instant first contentful paint; authentic app screenshots in tilted phone frames; structured 4-step lifecycle; dedicated PWA install section with native browser install trigger and iOS Safari guide modal.
 - **Rollback Scope**: Reverting commit `UI: landing page` restores prior 3D canvas components and navigation links without impacting app dashboards, authentication, or database records.
+
+### 8. Accessibility & Performance
+- **Area**: Accessibility & Performance
+- **Commit**: `UI: accessibility and performance`
+- **Files Modified/Created**:
+  - `frontend/src/index.css`: Added explicit `:focus-visible` outline rings (2px Royal Blue `#1E40AF` with 2px offset) across interactive elements (buttons, links, inputs, selects, textareas); enforced 44px minimum touch targets on coarse pointer devices (`@media (pointer: coarse)`) across action buttons, tab bars, filter pills, and navigation elements; verified global `prefers-reduced-motion: reduce` rules (clamping animations and transitions to 0.01ms).
+- **Previous Behavior**: Default browser outlines were inconsistent or suppressed in custom components; touch targets on mobile touch devices could fall below WCAG recommended 44px thresholds.
+- **New Behavior**: High-visibility keyboard navigation focus rings matching the brand palette; compliant 44px touch targets on touch devices; smooth, bounded transitions with full reduced-motion accessibility. Bundle builds in 3.96s with CSS payload reduced from 330.37 kB to 313.92 kB.
+- **Rollback Scope**: Reverting commit `UI: accessibility and performance` returns to previous CSS outline and sizing rules without touching application functionality.
+
