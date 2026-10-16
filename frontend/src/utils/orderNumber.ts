@@ -10,12 +10,16 @@ export interface OrderIdentifierLike {
   order_number?: string | number | null
   token?: string | number | null
   id?: string | number | null
+  order_source?: string | null
 }
 
 export function formatOrderNumber(
   order: OrderIdentifierLike | string | number | null | undefined
 ): string {
   if (order === null || order === undefined) return '#---'
+
+  const isPos = typeof order === 'object' && order?.order_source === 'POS'
+  const prefix = isPos ? 'P-' : ''
 
   if (typeof order === 'string' || typeof order === 'number') {
     const clean = String(order).trim().replace(/^#+/, '')
@@ -26,17 +30,18 @@ export function formatOrderNumber(
 
   const val = order.order_number ?? order.token
   if (val !== undefined && val !== null && String(val).trim() !== '') {
-    const clean = String(val).trim().replace(/^#+/, '')
-    if (!clean || clean === '---') return '#---'
+    const raw = String(val).trim().replace(/^#+/, '')
+    if (!raw || raw === '---') return '#---'
+    const clean = isPos && raw.startsWith('P-') ? raw.slice(2) : raw
     const padded = clean.length < 3 && /^\d+$/.test(clean) ? clean.padStart(3, '0') : clean
-    return `#${padded}`
+    return `#${prefix}${padded}`
   }
 
   // Fallback to internal ID only if both order_number and token are null
   if (order.id !== undefined && order.id !== null) {
     const cleanId = String(order.id).trim().replace(/^#+/, '')
     const padded = cleanId.length < 3 && /^\d+$/.test(cleanId) ? cleanId.padStart(3, '0') : cleanId
-    return `#${padded}`
+    return `#${prefix}${padded}`
   }
 
   return '#---'
