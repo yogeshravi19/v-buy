@@ -42,8 +42,8 @@ export function OutletComparisonChart({ outlets = [], orders = [], money }) {
           <h4 className="text-sm font-semibold text-slate-900">Cross-Outlet Turnover Comparison</h4>
           <p className="text-xs text-slate-500">Live GMV distribution across campus dining facilities</p>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-          Control Tower
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 tabular-nums">
+          ₹{chartData.reduce((s, o) => s + (o.gmv || 0), 0).toLocaleString('en-IN')} Total Platform Volume
         </span>
       </div>
 

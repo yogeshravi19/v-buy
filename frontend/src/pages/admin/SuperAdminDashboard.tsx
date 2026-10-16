@@ -586,11 +586,25 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     {
       accessorKey: 'is_open',
       header: 'Kitchen State',
-      cell: ({ row }: any) => (
-        <StatusBadge variant={row.original.is_open ? 'success' : 'neutral'}>
-          {row.original.is_open ? 'OPEN' : 'CLOSED'}
-        </StatusBadge>
-      )
+      cell: ({ row }: any) => {
+        const isOpen = row.original.is_open
+        return (
+          <div className="flex items-center gap-1.5">
+            <StatusBadge variant={isOpen ? 'success' : 'neutral'}>
+              {isOpen ? 'OPEN' : 'CLOSED'}
+            </StatusBadge>
+            {!isOpen && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
+                title="Exception: Kitchen is currently offline/closed"
+              >
+                <AlertTriangle size={10} className="text-amber-500" />
+                Offline
+              </span>
+            )}
+          </div>
+        )
+      }
     },
     {
       id: 'actions',

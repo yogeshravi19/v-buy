@@ -62,4 +62,12 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
   - `frontend/src/components/analytics/ShopAnalyticsChart.jsx`: Themed 7-day revenue trend (Royal Blue `#1E40AF` gradient) and daily order volume (Emerald `#059669` bars) charts; replaced literal color labels with authentic 7-day metric summaries.
 - **Previous Behavior**: Overview mixed immediate actionable emergencies with routine operational checks; analytics charts displayed static color names ("Royal Blue", "Emerald") rather than real metrics.
 - **New Behavior**: Structured hierarchy separating high-urgency alerts from routine administrative reviews; informative 7-day turnover and order volume summary badges on charts; clean, paginated, sortable data tables with empty states.
-- **Rollback Scope**: Reverting commit `UI: shop admin` restores previous overview card arrangement and chart headers without affecting shop settings, menu data, staff records, or financial metrics.
+### 6. Super Admin
+- **Area**: Super Admin
+- **Commit**: `UI: super admin`
+- **Files Modified/Created**:
+  - `frontend/src/pages/admin/SuperAdminDashboard.tsx`: Added amber exception alert badges in the Master Outlet Registry table for offline/closed kitchens (`<AlertTriangle /> Offline`); integrated multi-outlet telemetry with search, sort, and pagination.
+  - `frontend/src/components/admin/OutletHierarchyAndComparison.jsx`: Refined Cross-Outlet Turnover Comparison chart header with live aggregated platform volume in place of static placeholders; verified 3-tier expandable tree navigation (Outlet -> Shop Admin -> Shop Staff) using canonical tokens.
+- **Previous Behavior**: Offline or closed outlets in the master registry had no visual exception alert; comparison chart headers had generic static labels ("Control Tower").
+- **New Behavior**: Outlets that are closed or offline immediately flag an exception warning in the master registry table; turnover comparison header reflects live aggregate volume; governance tree cleanly visualizes the 3-tier operational hierarchy.
+- **Rollback Scope**: Reverting commit `UI: super admin` restores previous table column renderers and chart badge without modifying database outlets, permissions, or system parameters.
