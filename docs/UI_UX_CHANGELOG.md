@@ -70,4 +70,11 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
   - `frontend/src/components/admin/OutletHierarchyAndComparison.jsx`: Refined Cross-Outlet Turnover Comparison chart header with live aggregated platform volume in place of static placeholders; verified 3-tier expandable tree navigation (Outlet -> Shop Admin -> Shop Staff) using canonical tokens.
 - **Previous Behavior**: Offline or closed outlets in the master registry had no visual exception alert; comparison chart headers had generic static labels ("Control Tower").
 - **New Behavior**: Outlets that are closed or offline immediately flag an exception warning in the master registry table; turnover comparison header reflects live aggregate volume; governance tree cleanly visualizes the 3-tier operational hierarchy.
-- **Rollback Scope**: Reverting commit `UI: super admin` restores previous table column renderers and chart badge without modifying database outlets, permissions, or system parameters.
+### 7. Landing Page
+- **Area**: Landing Page
+- **Commit**: `UI: landing page`
+- **Files Modified/Created**:
+  - `frontend/src/pages/landing/WelcomePage.tsx`: Removed heavy Three.js WebGL canvas components (`CampusCanvas3D`, `OrderFlow3DVisualization`) reducing landing chunk size from 658.54 kB to 113.63 kB (83% decrease in JS payload); replaced with authentic dual-phone device frame showcase using real screenshots (`user-menu-veg.webp`, `user-order-tracking-ready.webp`); implemented a responsive 4-step real-time order lifecycle; added a dedicated PWA installation section with direct Android/Desktop 1-tap install and interactive iOS "Add to Home Screen" modal guide (`IosInstallModal`).
+- **Previous Behavior**: Landing page loaded heavy Three.js WebGL canvas animations in the hero and order flow sections, resulting in a large 658 kB initial chunk and GPU rendering overhead; lacked clear PWA installation instructions for Android and iOS users.
+- **New Behavior**: Lightweight 113 kB landing page chunk with instant first contentful paint; authentic app screenshots in tilted phone frames; structured 4-step lifecycle; dedicated PWA install section with native browser install trigger and iOS Safari guide modal.
+- **Rollback Scope**: Reverting commit `UI: landing page` restores prior 3D canvas components and navigation links without impacting app dashboards, authentication, or database records.

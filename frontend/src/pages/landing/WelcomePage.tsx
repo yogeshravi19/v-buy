@@ -3,18 +3,17 @@ import {
   ArrowRight, Wallet, QrCode, Clock, CheckCircle2,
   ChevronDown, ChevronUp, Shield, Store,
   Zap, Lock, Package, ChefHat, User,
-  TrendingUp, Menu, X, Sparkles, Check, Download
+  TrendingUp, Menu, X, Sparkles, Check, Download, Smartphone
 } from 'lucide-react'
 
 // Modular Interactive Components
-import { CampusCanvas3D } from './CampusCanvas3D'
-import { OrderFlow3DVisualization } from './OrderFlow3DVisualization'
 import { DatabaseSchemaArchitecture } from './DatabaseSchemaArchitecture'
 import { DashboardRolesWalkthrough } from './DashboardRolesWalkthrough'
 import { InteractiveMockups } from './InteractiveMockups'
 import { PaymentArchitectureSwitcher } from './PaymentArchitectureSwitcher'
 import { TechArchitectureSection } from './TechArchitectureSection'
 import { PilotRoadmapSection, WaitlistModal } from './PilotRoadmapModal'
+import { IosInstallModal } from '../../components/PwaInstallPrompt'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -225,15 +224,27 @@ function RoleCard({
 export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [waitlistOpen, setWaitlistOpen] = useState(false)
+  const [iosModalOpen, setIosModalOpen] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
 
   const navLinks = [
-    { href: '#order-flow-3d', label: '3D Order Flow' },
+    { href: '#order-flow', label: 'Order Flow' },
     { href: '#how-it-works', label: 'How it works' },
     { href: '#database', label: 'Database & Schemas' },
     { href: '#interactive-demo', label: 'Live Demo' },
     { href: '#tracking', label: 'Live Tracking' },
     { href: '#wallet', label: 'Payments' },
     { href: '#dashboards', label: 'Roles & Dashboards' },
+    { href: '#pwa-install', label: 'Install App' },
     { href: '#architecture', label: 'Tech Stack' },
     { href: '#faq', label: 'FAQ' },
   ]
@@ -241,6 +252,18 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
   const handleOpenApp = () => {
     if (onOpenApp) onOpenApp()
     else window.location.href = '/'
+  }
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null)
+      }
+    } else {
+      handleOpenApp()
+    }
   }
 
   const faqs = [
@@ -281,6 +304,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
   return (
     <>
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
+      <IosInstallModal isOpen={iosModalOpen} onClose={() => setIosModalOpen(false)} />
 
       <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-orange-500 selection:text-white antialiased">
         {/* ─── 0. STICKY NAVIGATION BAR ─────────────────────────── */}
@@ -441,19 +465,115 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
               </div>
             </div>
 
-            {/* Right 6 Columns: Interactive Three.js WebGL Campus Canvas */}
-            <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-3xl p-3 shadow-xl shadow-slate-200/60 relative">
-              <CampusCanvas3D onSelectCanteen={handleOpenApp} />
+            {/* Right 6 Columns: Authentic Dual-Phone Showcase */}
+            <div className="lg:col-span-6 relative flex items-center justify-center py-4">
+              <div className="relative flex items-center justify-center gap-4 sm:gap-6">
+                {/* Background ambient glow */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-100/60 via-indigo-50/40 to-emerald-50/40 rounded-3xl filter blur-2xl -z-10" />
+
+                {/* Primary Device: Food Court & Menu View */}
+                <div className="relative transform -rotate-1 hover:rotate-0 transition-transform duration-300">
+                  <PhoneFrame
+                    src="/assets/landing/user-menu-veg.webp"
+                    alt="V Foods Canteen Explorer and Menu"
+                    width={220}
+                  />
+                  <div className="absolute -bottom-3 -left-2 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 shadow-lg flex items-center gap-2 text-xs font-bold text-slate-800">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Pure Veg Active</span>
+                  </div>
+                </div>
+
+                {/* Secondary Device: Live Order Token & Stepper */}
+                <div className="relative transform rotate-2 hover:rotate-0 transition-transform duration-300 hidden sm:block">
+                  <PhoneFrame
+                    src="/assets/landing/user-order-tracking-ready.webp"
+                    alt="V Foods Live Pickup Token & Tracker"
+                    width={220}
+                  />
+                  <div className="absolute -top-3 -right-2 bg-slate-900 text-white px-3 py-1.5 rounded-xl border border-slate-700 shadow-lg flex items-center gap-2 text-xs font-bold">
+                    <Clock size={13} className="text-blue-300" />
+                    <span>Token #104 · Ready</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         <Divider />
 
-        {/* ─── 1.5 INTERACTIVE 3D SYSTEM ARCHITECTURE: WHAT HAPPENS ON ORDER ─── */}
-        <Section id="order-flow-3d" className="pt-10">
+        {/* ─── 1.5 REAL-TIME ORDER LIFECYCLE ARCHITECTURE ─── */}
+        <Section id="order-flow" className="pt-10">
           <FadeIn>
-            <OrderFlow3DVisualization />
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="text-xs font-bold text-blue-700 uppercase tracking-wider block mb-2">Order Lifecycle</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                From Class to Counter in 4 Simple Steps
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 mt-2">
+                Real-time synchronization connects student orders directly to kitchen display systems and counter token boards.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                {
+                  step: '01',
+                  title: 'Order & Instant Pay',
+                  desc: 'Pick your items, schedule a slot or choose instant pickup, and pay in milliseconds with Campus Wallet or UPI.',
+                  icon: Wallet,
+                  badge: 'Sub-second checkout',
+                  accent: 'border-blue-200 bg-blue-50/50 text-blue-700'
+                },
+                {
+                  step: '02',
+                  title: 'Kitchen KOT & Batch Prep',
+                  desc: 'Kitchen stations receive electronic tokens instantly with aggregated rush buffers to optimize prep time.',
+                  icon: ChefHat,
+                  badge: 'Direct to KDS',
+                  accent: 'border-amber-200 bg-amber-50/50 text-amber-700'
+                },
+                {
+                  step: '03',
+                  title: 'Real-Time Notification',
+                  desc: 'Your token updates live from Placed to Preparing to Ready, sending instant web push notifications.',
+                  icon: Zap,
+                  badge: 'Live Web Push',
+                  accent: 'border-emerald-200 bg-emerald-50/50 text-emerald-700'
+                },
+                {
+                  step: '04',
+                  title: '60-Second Express Pickup',
+                  desc: 'Walk up to the dedicated pre-order counter, verify your token number, and collect your hot meal without queues.',
+                  icon: CheckCircle2,
+                  badge: 'Zero wait time',
+                  accent: 'border-indigo-200 bg-indigo-50/50 text-indigo-700'
+                }
+              ].map((item, idx) => {
+                const IconComponent = item.icon
+                return (
+                  <div
+                    key={idx}
+                    className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-2xl font-black text-slate-300 font-mono">{item.step}</span>
+                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${item.accent}`}>
+                          <IconComponent size={20} />
+                        </div>
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900 mb-2">{item.title}</h3>
+                      <p className="text-xs text-slate-600 leading-relaxed">{item.desc}</p>
+                    </div>
+                    <div className="pt-4 mt-4 border-t border-slate-100">
+                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">{item.badge}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </FadeIn>
         </Section>
 
@@ -742,6 +862,71 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
 
         <Divider />
 
+        {/* ─── 11.5 PWA INSTALLATION SECTION ─── */}
+        <Section id="pwa-install" className="py-10">
+          <FadeIn>
+            <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white relative overflow-hidden shadow-2xl">
+              <div className="relative z-10 max-w-3xl">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-400 block mb-2">
+                  Progressive Web App
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
+                  Install V Foods on Your Phone
+                </h2>
+                <p className="text-sm sm:text-base text-slate-300 leading-relaxed mb-8">
+                  Get full standalone app experience with zero app store downloads. Works offline, delivers instant order notifications, and loads menus in milliseconds.
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {/* Android / Desktop Option */}
+                  <div className="p-5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Download className="w-5 h-5 text-emerald-400" />
+                        <h4 className="font-bold text-sm text-white">Android &amp; Chrome</h4>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                        Instant 1-tap installation. Launches fullscreen with offline menu caching.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleInstallClick}
+                      className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/25"
+                    >
+                      <Download size={14} />
+                      <span>Install on Android / Chrome</span>
+                    </button>
+                  </div>
+
+                  {/* iOS Option */}
+                  <div className="p-5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Smartphone className="w-5 h-5 text-blue-400" />
+                        <h4 className="font-bold text-sm text-white">iPhone &amp; iPad (iOS)</h4>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                        Add to Home Screen in 3 seconds from Safari. No Apple ID or App Store required.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIosModalOpen(true)}
+                      className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-600/25"
+                    >
+                      <Smartphone size={14} />
+                      <span>View iOS Install Guide</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </Section>
+
+        <Divider />
+
         {/* ─── 12. FAQ ACCORDION ─────────────────────────────────── */}
         <Section id="faq">
           <FadeIn>
@@ -815,16 +1000,17 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-6 text-slate-600">
-              <a href="#order-flow-3d" className="hover:text-slate-900 transition-colors no-underline">3D Order Flow</a>
+              <a href="#order-flow" className="hover:text-slate-900 transition-colors no-underline">Order Flow</a>
               <a href="#how-it-works" className="hover:text-slate-900 transition-colors no-underline">How it works</a>
               <a href="#database" className="hover:text-slate-900 transition-colors no-underline">Database &amp; Schemas</a>
               <a href="#interactive-demo" className="hover:text-slate-900 transition-colors no-underline">Live Demo</a>
               <a href="#tracking" className="hover:text-slate-900 transition-colors no-underline">Live Tracking</a>
               <a href="#wallet" className="hover:text-slate-900 transition-colors no-underline">Payments</a>
               <a href="#dashboards" className="hover:text-slate-900 transition-colors no-underline">Dashboard Roles</a>
+              <a href="#pwa-install" className="hover:text-slate-900 transition-colors no-underline">Install App</a>
               <a href="#architecture" className="hover:text-slate-900 transition-colors no-underline">Tech Stack</a>
               <a href="#faq" className="hover:text-slate-900 transition-colors no-underline">FAQ</a>
-              <button onClick={() => setWaitlistOpen(true)} className="text-orange-600 font-bold hover:underline cursor-pointer">
+              <button onClick={() => setWaitlistOpen(true)} className="text-blue-600 font-bold hover:underline cursor-pointer">
                 Join Pilot →
               </button>
             </div>
