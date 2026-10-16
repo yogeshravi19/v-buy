@@ -2370,9 +2370,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       <SaasBottomTabBar
         primaryTabs={[
           { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-          { id: 'outlets', label: 'Outlets', icon: Store, badge: outlets.length },
+          { id: 'outlets', label: 'Outlets', icon: Store, badge: (outletList.length || globalOutlets.length) || undefined },
           { id: 'users', label: 'Users', icon: Users },
-          { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: platformOrders.length },
+          { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: (orders.length || globalOrders.length) || undefined },
         ]}
         moreTabs={[
           { id: 'campuses', label: 'Campuses & Hubs', icon: Building2 },
@@ -2380,7 +2380,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           { id: 'settlements', label: 'Franchise Settlements', icon: Receipt },
           { id: 'analytics-reports', label: 'Analytics & Reports', icon: BarChart3 },
           { id: 'coupons', label: 'Platform Coupons', icon: Tag },
-          { id: 'audit-logs', label: 'Security Audit Trail', icon: ShieldAlert, badge: auditLogs.length },
+          { id: 'audit-logs', label: 'Security Audit Trail', icon: ShieldAlert, badge: auditLogsList.length || undefined },
           { id: 'system-settings', label: 'System Configuration', icon: Settings },
         ]}
         activeTab={activeTab}
