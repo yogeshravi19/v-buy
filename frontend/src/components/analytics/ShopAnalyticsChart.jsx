@@ -46,8 +46,8 @@ export function ShopAnalyticsChart({ data, totalRevenue }) {
             <h4 className="text-sm font-semibold text-slate-900">7-Day Revenue Trend</h4>
             <p className="text-xs text-slate-500">Daily gross turnover</p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-            Royal Blue
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 tabular-nums">
+            ₹{chartData.reduce((acc, curr) => acc + (curr.revenue || 0), 0).toLocaleString('en-IN')} Total
           </span>
         </div>
         <div className="h-60 w-full">
@@ -84,8 +84,8 @@ export function ShopAnalyticsChart({ data, totalRevenue }) {
             <h4 className="text-sm font-semibold text-slate-900">Daily Order Volume</h4>
             <p className="text-xs text-slate-500">Fulfilled customer orders</p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Emerald
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 tabular-nums">
+            {chartData.reduce((acc, curr) => acc + (curr.orders || 0), 0)} Orders Total
           </span>
         </div>
         <div className="h-60 w-full">

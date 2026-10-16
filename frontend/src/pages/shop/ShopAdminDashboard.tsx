@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Shield,
+  ShieldCheck,
   CreditCard,
   Banknote,
   Percent,
@@ -1572,6 +1573,59 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                       onClick={() => setActiveTab('staff')}
                     >
                       Manage
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2b: Things to check (Operational Review) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#1E40AF' }}>
+                    Things to check — Operational Review
+                  </span>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#1E40AF', background: '#DBEAFE', padding: '1px 7px', borderRadius: '10px' }}>
+                    Informational
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                  <div style={{ padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <ShieldCheck size={15} className="text-emerald-600" />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                          FSSAI &amp; Campus Compliance
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
+                        License active · Periodic cafeteria compliance review up to date.
+                      </p>
+                    </div>
+                    <button
+                      className="saas-btn saas-btn-secondary saas-btn-sm"
+                      onClick={() => setActiveTab('settings')}
+                    >
+                      View
+                    </button>
+                  </div>
+
+                  <div style={{ padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FileSpreadsheet size={15} className="text-blue-600" />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                          Settlement Reconciliation
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
+                        Daily sales ledger and payout status recorded for this counter.
+                      </p>
+                    </div>
+                    <button
+                      className="saas-btn saas-btn-secondary saas-btn-sm"
+                      onClick={() => setActiveTab('settlements')}
+                    >
+                      Review
                     </button>
                   </div>
                 </div>

@@ -54,4 +54,12 @@ All changes on branch `ui-ux-modernization` are strictly frontend UI/UX enhancem
   - `frontend/src/components/pos/PosCounterScreen.tsx`: Enforced 2-line title min-height on product cards for clean grid row alignment; maintained exact transaction flow, quick sale toggle, cash change calculation, and thermal receipt/KOT dialogs.
 - **Previous Behavior**: Incoming placed orders had the same visual weight as older pending orders, requiring staff to scan elapsed times manually; stock availability buttons lacked distinct indicator dots and accessibility aria attributes; product titles with single lines caused misaligned pricing rows in the POS grid.
 - **New Behavior**: New placed orders (< 3 mins) feature a calm Royal Blue highlight and badge without distracting flashing; stock availability is a clear 1-tap accessible pill with live status dot; POS product cards have aligned price rows across varying title lengths.
-- **Rollback Scope**: Reverting commit `UI: shop staff` restores prior table rows and button styles without affecting order fulfillment, POS punch transactions, or database records.
+### 5. Shop Admin
+- **Area**: Shop Admin
+- **Commit**: `UI: shop admin`
+- **Files Modified/Created**:
+  - `frontend/src/pages/shop/ShopAdminDashboard.tsx`: Added clear visual separation between "Things to act on (Actionable alerts requiring immediate staff/inventory response)" and "Things to check (Informational operational review: compliance, settlements)"; integrated TanStack-powered `DataTable` with live search, column sorting, pagination, and readable row density across menu items, staff rosters, and financial audit logs.
+  - `frontend/src/components/analytics/ShopAnalyticsChart.jsx`: Themed 7-day revenue trend (Royal Blue `#1E40AF` gradient) and daily order volume (Emerald `#059669` bars) charts; replaced literal color labels with authentic 7-day metric summaries.
+- **Previous Behavior**: Overview mixed immediate actionable emergencies with routine operational checks; analytics charts displayed static color names ("Royal Blue", "Emerald") rather than real metrics.
+- **New Behavior**: Structured hierarchy separating high-urgency alerts from routine administrative reviews; informative 7-day turnover and order volume summary badges on charts; clean, paginated, sortable data tables with empty states.
+- **Rollback Scope**: Reverting commit `UI: shop admin` restores previous overview card arrangement and chart headers without affecting shop settings, menu data, staff records, or financial metrics.
