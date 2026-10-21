@@ -1970,7 +1970,12 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-black text-base text-white">Scan-to-Collect Order</h3>
-              <button onClick={() => setShowScanModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+              <button
+                type="button"
+                onClick={() => setShowScanModal(false)}
+                aria-label="Close modal"
+                className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white"
+              >
                 <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
@@ -2015,7 +2020,12 @@ export const ShopDashboard: React.FC<ShopDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-800 w-full max-w-sm max-h-[min(90vh,90dvh)] overflow-y-auto overscroll-contain rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <h3 className="font-bold text-base text-white">Edit Staff Details</h3>
-              <button onClick={() => setShowEditStaffModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+              <button
+                type="button"
+                onClick={() => setShowEditStaffModal(false)}
+                aria-label="Close modal"
+                className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white"
+              >
                 <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>

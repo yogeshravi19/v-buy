@@ -245,11 +245,23 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   // Core Data States
   const [localOrders, setLocalOrders] = useState<Order[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [staffList, setStaffList] = useState<StaffMember[]>([
-    { id: 'st1', full_name: 'Murugan K', phone: '9876541001', role: 'Kitchen Lead', is_active: true, created_at: '2026-01-10' },
-    { id: 'st2', full_name: 'Anand R', phone: '9876541002', role: 'Counter Cashier', is_active: true, created_at: '2026-02-04' },
-    { id: 'st3', full_name: 'Suresh P', phone: '9876541003', role: 'Prep Cook', is_active: true, created_at: '2026-03-01' }
-  ])
+  const [staffList, setStaffList] = useState<StaffMember[]>(() => {
+    try {
+      const saved = localStorage.getItem(`vfoods_staff_${activeOutletId}`)
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    return [
+      { id: 'st1', full_name: 'Murugan K', phone: '9876541001', role: 'Kitchen Lead', is_active: true, created_at: '2026-01-10' },
+      { id: 'st2', full_name: 'Anand R', phone: '9876541002', role: 'Counter Cashier', is_active: true, created_at: '2026-02-04' },
+      { id: 'st3', full_name: 'Suresh P', phone: '9876541003', role: 'Prep Cook', is_active: true, created_at: '2026-03-01' }
+    ]
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`vfoods_staff_${activeOutletId}`, JSON.stringify(staffList))
+    } catch (e) {}
+  }, [staffList, activeOutletId])
   const [pickupSlots, setPickupSlots] = useState<PickupSlot[]>([
     { id: 'sl1', slot_time: '12:00 PM - 12:15 PM', max_orders: 25, booked_count: 14, is_active: true },
     { id: 'sl2', slot_time: '12:15 PM - 12:30 PM', max_orders: 25, booked_count: 22, is_active: true },

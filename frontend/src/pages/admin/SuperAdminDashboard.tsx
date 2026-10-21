@@ -581,6 +581,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const target = outletList.find(o => o.id === outletId)
     if (!target) return
     const nextState = !target.is_open
+    const confirmMessage = `Are you sure you want to force ${nextState ? 'OPEN' : 'CLOSE'} "${target.name}"? ${!nextState ? 'Students will not be able to place new orders from this outlet.' : 'The outlet will immediately appear open to students.'}`
+    if (!window.confirm(confirmMessage)) return
+
     const { error } = await supabase.from('outlets').update({ is_open: nextState }).eq('id', outletId)
     if (error) {
       setNotice(`Could not update ${target.name}: ${describeDbError(error)}`)
@@ -2477,7 +2480,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </div>
                 <div>
                   <div style={{ color: '#64748B', fontSize: '11px', fontWeight: 600 }}>CATEGORY / ACTION</div>
-                  <div style={{ fontWeight: 700, color: '#0284C7' }}>{selectedAuditLog.category} &bull; {selectedAuditLog.action}</div>
+                  <div style={{ fontWeight: 700, color: '#0369A1' }}>{selectedAuditLog.category} &bull; {selectedAuditLog.action}</div>
                 </div>
               </div>
 

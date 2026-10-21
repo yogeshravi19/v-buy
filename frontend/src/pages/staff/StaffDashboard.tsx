@@ -1577,8 +1577,10 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowScanModal(false)}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  aria-label="Close modal"
+                  className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                 >
                   <X className="h-5 w-5" strokeWidth={2} />
                 </button>
@@ -1776,7 +1778,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 <h3 className="font-black text-base text-white">
                   {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
                 </h3>
-                <button onClick={() => setShowItemModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-white">
+                <button
+                  type="button"
+                  onClick={() => setShowItemModal(false)}
+                  aria-label="Close modal"
+                  className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
                   <X className="h-5 w-5" strokeWidth={2} />
                 </button>
               </div>

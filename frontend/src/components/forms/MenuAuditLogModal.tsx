@@ -47,8 +47,19 @@ export function MenuAuditLogModal({ isOpen, onClose, outletId }: MenuAuditLogMod
   }
 
   useEffect(() => {
-    if (isOpen) {
-      fetchLogs()
+    if (!isOpen) return
+    fetchLogs()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = prevOverflow
     }
   }, [isOpen, outletId])
 
@@ -106,19 +117,9 @@ export function MenuAuditLogModal({ isOpen, onClose, outletId }: MenuAuditLogMod
             </button>
             <button
               type="button"
+              className="saas-modal-close"
               onClick={onClose}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#64748B',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer'
-              }}
+              aria-label="Close audit log"
             >
               <X size={18} />
             </button>

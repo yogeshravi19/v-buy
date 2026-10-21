@@ -101,6 +101,9 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({
 
           {/* Dialog Container */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Quick dish and canteen search"
             initial={{ opacity: 0, scale: 0.96, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -10 }}
@@ -109,24 +112,25 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({
           >
             {/* Search Input Bar */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <Search size={20} className="text-slate-400 shrink-0" />
+              <Search size={20} className="text-slate-500 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search Dosa, Cold Coffee, Veg Puff across 13 canteens..."
-                className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 text-base font-semibold focus:outline-none"
+                className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-500 text-base font-semibold focus:outline-none"
               />
               {query && (
                 <button
                   onClick={() => setQuery('')}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
+                  aria-label="Clear search query"
+                  className="p-1 text-slate-500 hover:text-slate-700 rounded-full"
                 >
                   <X size={16} />
                 </button>
               )}
-              <kbd className="hidden sm:inline-block text-[11px] font-bold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md border border-slate-200 dark:border-slate-700">
+              <kbd className="hidden sm:inline-block text-[11px] font-bold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700">
                 ESC
               </kbd>
             </div>
@@ -144,7 +148,7 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
                 Veg Only
               </button>
-              <span className="text-[11px] text-slate-400 ml-auto font-medium">
+              <span className="text-[11px] text-slate-600 dark:text-slate-400 ml-auto font-medium">
                 {filteredDishes.length} matches
               </span>
             </div>
@@ -216,8 +220,8 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({
             </div>
 
             {/* Footer with Campus Hint */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800 text-center text-[11px] text-slate-400">
-              <span className="font-semibold text-slate-600 dark:text-slate-300">Live Campus Engine:</span> Searches across 13 canteen menus with real-time stock sync
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800 text-center text-[11px] text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">Live Campus Engine:</span> Searches across 13 canteen menus with real-time stock sync
             </div>
           </motion.div>
         </div>

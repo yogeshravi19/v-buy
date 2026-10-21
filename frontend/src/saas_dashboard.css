@@ -663,7 +663,8 @@
   overscroll-behavior: contain;
 }
 
-.saas-modal-card {
+.saas-modal-card,
+.saas-modal {
   background: #FFFFFF;
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 24px;
@@ -984,18 +985,28 @@
 .saas-modal-close {
   background: none;
   border: none;
-  color: #94A3B8;
+  color: #64748B;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.15s ease;
 }
 
 .saas-modal-close:hover {
   color: #0F172A;
   background: #F1F5F9;
+}
+
+.saas-modal-close:focus-visible {
+  outline: 2px solid #0284C7;
+  outline-offset: 2px;
+  background: #F1F5F9;
+  color: #0F172A;
 }
 
 /* ── RESPONSIVE MOBILE & TABLET DRAWER (STAFF, SHOP ADMIN, SUPER ADMIN) ── */
@@ -1380,5 +1391,37 @@ body:has(input:focus, textarea:focus) .bottom-nav {
   opacity: 0.6 !important;
   cursor: not-allowed !important;
 }
+
+/* ── RESPONSIVE MOBILE MODAL ADJUSTMENTS ── */
+@media (max-width: 640px) {
+  .saas-modal-card,
+  .saas-modal {
+    border-radius: 16px !important;
+    max-height: 92dvh !important;
+    margin: 8px !important;
+  }
+  .saas-modal-header {
+    padding: 14px 16px !important;
+  }
+  .saas-modal-body {
+    padding: 16px 14px !important;
+  }
+  .saas-modal-footer {
+    padding: 12px 16px !important;
+  }
+}
+
+/* ── PREFERS REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  .v-modal-card,
+  .saas-modal-card,
+  .saas-modal,
+  .modal-enter,
+  .ios-modal-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 
 
