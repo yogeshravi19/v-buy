@@ -1238,18 +1238,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <span>System Settings</span>
             </div>
           </button>
-
-          {import.meta.env.VITE_ENABLE_SYSTEM_MAP === 'true' && (
-            <button
-              className={`saas-nav-btn ${activeTab === 'system-map' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('system-map'); setMobileMenuOpen(false); }}
-            >
-              <div className="saas-nav-item-left">
-                <Compass size={15} />
-                <span>Developer System Map</span>
-              </div>
-            </button>
-          )}
         </nav>
 
         {/* Sidebar Footer User Info */}
@@ -2758,10 +2746,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           { id: 'analytics-reports', label: 'Analytics & Reports', icon: BarChart3 },
           { id: 'coupons', label: 'Platform Coupons', icon: Tag },
           { id: 'audit-logs', label: 'Security Audit Trail', icon: ShieldAlert, badge: auditLogsList.length || undefined },
-          { id: 'system-settings', label: 'System Configuration', icon: Settings },
-          ...(import.meta.env.VITE_ENABLE_SYSTEM_MAP === 'true'
-            ? [{ id: 'system-map', label: 'Developer System Map', icon: Compass }]
-            : [])
+          { id: 'system-settings', label: 'System Configuration', icon: Settings }
         ]}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
