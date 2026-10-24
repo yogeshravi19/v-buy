@@ -734,6 +734,24 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           { id: 107, outlet_id: activeOutletId, name: 'Gulab Jamun (2 pcs)', price: 30, is_veg: true, category: 'desserts', available: true, stock_qty: 40 }
         ])
       }
+
+      // 3. Fetch Staff Roster from profiles table
+      const { data: sData, error: sErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, role, created_at')
+        .eq('outlet_id', activeOutletId)
+        .in('role', ['staff', 'shop_admin'])
+
+      if (!sErr && sData && sData.length > 0) {
+        setStaffList(sData.map((s: any) => ({
+          id: s.id,
+          full_name: s.full_name || 'Staff Member',
+          phone: s.phone || '9876541001',
+          role: s.role === 'shop_admin' ? 'Shop Admin' : 'Counter Cashier',
+          is_active: true,
+          created_at: s.created_at ? s.created_at.split('T')[0] : getTodayIST()
+        })))
+      }
     } catch (e) {
       console.warn('Shop Admin fetch fallback:', e)
     } finally {
@@ -2953,10 +2971,19 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => {
-                  setStaffList(prev => prev.filter(s => s.id !== staffToDelete.id))
-                  toast.success(`Removed "${staffToDelete.name}" from team`)
+                onClick={async () => {
+                  const targetId = staffToDelete.id
+                  const targetName = staffToDelete.name
+                  setStaffList(prev => prev.filter(s => s.id !== targetId))
                   setStaffToDelete(null)
+                  toast.success(`Removed "${targetName}" from team`)
+                  try {
+                    if (targetId.length > 20) {
+                      await supabase.from('profiles').update({ outlet_id: null }).eq('id', targetId)
+                    }
+                  } catch (e) {
+                    console.warn('Could not unlink profile:', e)
+                  }
                 }}
               >
                 Remove Member
