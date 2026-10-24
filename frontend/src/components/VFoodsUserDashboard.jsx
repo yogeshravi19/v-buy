@@ -1552,6 +1552,7 @@ export default function VFoodsUserDashboard({
           <div className="vfoods-main-content">
             <ProfileView
               currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
               wallet={wallet}
               orders={orders}
               onNavigate={setTab}

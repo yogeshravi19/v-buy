@@ -1915,6 +1915,7 @@ function App() {
           <div className="tab-content-enter" key="profile">
             <ProfileView
               currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
               wallet={wallet}
               orders={orders}
               onNavigate={setTab}
@@ -4331,9 +4332,22 @@ function WalletView({ wallet, topUp, busy, currentUser, setNotice, creditWalletB
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFILE VIEW (USER DASHBOARD)
 // ─────────────────────────────────────────────────────────────────────────────
-function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNotice }) {
+function ProfileView({ currentUser, setCurrentUser, wallet, orders, onNavigate, onSignOut, setNotice }) {
   const activeOrdersCount = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled').length
   const totalOrdersCount = orders.length
+
+  const [showEditProfile, setShowEditProfile] = useState(false)
+  const [editName, setEditName] = useState(currentUser?.full_name || '')
+  const [editPhone, setEditPhone] = useState(currentUser?.mobile_number || currentUser?.phone || '')
+  const [editSaving, setEditSaving] = useState(false)
+
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwdSaving, setPwdSaving] = useState(false)
+  const [pwdError, setPwdError] = useState('')
+
+  const [alertsEnabled, setAlertsEnabled] = useState(() => localStorage.getItem('vfoods_alerts_enabled') !== 'false')
 
   const initials = (currentUser?.full_name || 'User')
     .split(' ')
@@ -4366,6 +4380,31 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
                 <span>{currentUser?.mobile_number || currentUser?.phone}</span>
               </>
             ) : null}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="saas-btn saas-btn-sm saas-btn-secondary"
+              onClick={() => {
+                setEditName(currentUser?.full_name || '')
+                setEditPhone(currentUser?.mobile_number || currentUser?.phone || '')
+                setShowEditProfile(true)
+              }}
+            >
+              <Edit size={12} /> Edit Profile
+            </button>
+            <button
+              type="button"
+              className="saas-btn saas-btn-sm saas-btn-secondary"
+              onClick={() => {
+                setNewPassword('')
+                setConfirmPassword('')
+                setPwdError('')
+                setShowChangePassword(true)
+              }}
+            >
+              <Key size={12} /> Change Password
+            </button>
           </div>
         </div>
       </div>
@@ -4462,9 +4501,18 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
               <div className="profile-info-desc">Instant push notifications & SMS when kitchen readies your order</div>
             </div>
           </div>
-          <span className="profile-info-badge" style={{ color: 'var(--emerald)', background: '#ECFDF5', borderColor: '#A7F3D0' }}>
-            Enabled
-          </span>
+          <button
+            type="button"
+            className={`saas-btn saas-btn-sm ${alertsEnabled ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+            onClick={() => {
+              const next = !alertsEnabled
+              setAlertsEnabled(next)
+              localStorage.setItem('vfoods_alerts_enabled', String(next))
+              if (setNotice) setNotice(next ? 'Order status alerts enabled' : 'Order status alerts disabled')
+            }}
+          >
+            {alertsEnabled ? 'Alerts On' : 'Alerts Off'}
+          </button>
         </div>
 
         <div className="profile-info-row">
@@ -4519,6 +4567,178 @@ function ProfileView({ currentUser, wallet, orders, onNavigate, onSignOut, setNo
           <LogOut size={18} /> Sign Out of V FOODS Account
         </button>
       </div>
+
+      {/* ── Edit Profile Modal ── */}
+      {showEditProfile && (
+        <div className="saas-modal-backdrop" onClick={() => setShowEditProfile(false)}>
+          <div className="saas-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="saas-modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Edit Profile</h3>
+              <button type="button" className="saas-modal-close" onClick={() => setShowEditProfile(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!editName.trim()) return
+                setEditSaving(true)
+                try {
+                  if (supabase && currentUser?.id) {
+                    await supabase.from('profiles').update({
+                      full_name: editName.trim(),
+                      phone: editPhone.trim()
+                    }).eq('id', currentUser.id)
+                  }
+                  if (setCurrentUser) {
+                    setCurrentUser(prev => ({
+                      ...prev,
+                      full_name: editName.trim(),
+                      phone: editPhone.trim(),
+                      mobile_number: editPhone.trim()
+                    }))
+                  }
+                  setShowEditProfile(false)
+                  if (setNotice) setNotice('Profile updated successfully')
+                } catch (err) {
+                  console.error(err)
+                } finally {
+                  setEditSaving(false)
+                }
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}
+            >
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={e => setEditPhone(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-secondary"
+                  onClick={() => setShowEditProfile(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="saas-btn saas-btn-primary"
+                  disabled={editSaving}
+                >
+                  {editSaving ? 'Saving...' : 'Save Profile'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Change Password Modal ── */}
+      {showChangePassword && (
+        <div className="saas-modal-backdrop" onClick={() => setShowChangePassword(false)}>
+          <div className="saas-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="saas-modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Change Password</h3>
+              <button type="button" className="saas-modal-close" onClick={() => setShowChangePassword(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setPwdError('')
+                if (newPassword.length < 6) {
+                  return setPwdError('Password must be at least 6 characters')
+                }
+                if (newPassword !== confirmPassword) {
+                  return setPwdError('Passwords do not match')
+                }
+                setPwdSaving(true)
+                try {
+                  if (supabase) {
+                    const { error } = await supabase.auth.updateUser({ password: newPassword })
+                    if (error) throw error
+                  }
+                  setShowChangePassword(false)
+                  if (setNotice) setNotice('Password changed successfully')
+                } catch (err) {
+                  setPwdError(err.message || 'Failed to update password')
+                } finally {
+                  setPwdSaving(false)
+                }
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}
+            >
+              {pwdError && (
+                <div style={{ color: '#DC2626', fontSize: '12px', background: '#FEF2F2', padding: '8px 12px', borderRadius: '6px' }}>
+                  {pwdError}
+                </div>
+              )}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Min 6 characters"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-secondary"
+                  onClick={() => setShowChangePassword(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="saas-btn saas-btn-primary"
+                  disabled={pwdSaving}
+                >
+                  {pwdSaving ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
