@@ -137,7 +137,7 @@ export const WaitlistModal: React.FC<PilotRoadmapProps> = ({ isOpen, onClose }) 
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h4 className="text-lg font-bold text-slate-900">You're On the Priority List!</h4>
+            <h4 className="text-lg font-bold text-slate-900">Added to priority list</h4>
             <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
               We've reserved your slot for <strong>{formData.canteen}</strong>. We will email <strong>{formData.email}</strong> when your invite token unlocks.
             </p>
