@@ -366,7 +366,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
 
     // Realtime channel for order status updates
     const channel = supabase
-      .channel(`student_orders_${currentUserId}`)
+      .channel(`user_orders_${currentUserId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${currentUserId}` },
@@ -525,7 +525,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
 
         if (priceMismatch) {
           setCartItems(refreshed)
-          setCheckoutNotice('One or more item prices have changed. Please review the updated total before confirming.')
+          setCheckoutNotice('One or more item prices have changed. Review the updated total before confirming.')
           setIsPlacingOrder(false)
           return
         }
@@ -535,7 +535,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
     }
 
     if (checkoutMethod === 'wallet' && walletBalance < finalPayable) {
-      setCheckoutNotice(`Insufficient wallet balance (₹${walletBalance}). Please top-up or choose UPI.`)
+      setCheckoutNotice(`Insufficient wallet balance (₹${walletBalance}). Top up or choose UPI.`)
       setIsPlacingOrder(false)
       return
     }
@@ -821,7 +821,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
                   <EmptyState
                     icon={Store}
                     title="No campus canteens open"
-                    description="Canteens are currently closed or updating their meal schedule. Please check back shortly."
+                    description="Canteens are currently closed or updating their meal schedule. Check back shortly."
                     actionLabel="Refresh Outlets"
                     onAction={fetchOutlets}
                   />

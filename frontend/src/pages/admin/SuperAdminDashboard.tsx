@@ -448,7 +448,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           { id: 9801, customer_name: 'Aarav Patel', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '104', order_source: 'APP', status: 'placed', payment_method: 'UPI Online', total: 140, platform_fee: 7, net_payout: 133, created_at: new Date(Date.now() - 3 * 60000).toISOString() },
           { id: 9800, customer_name: 'Sneha Reddy', outlet_id: 'g3', outlet_name: 'Dakshin Chitra', token: '289', order_source: 'APP', status: 'preparing', payment_method: 'Meal Plan Card', total: 220, platform_fee: 11, net_payout: 209, created_at: new Date(Date.now() - 8 * 60000).toISOString() },
           { id: 9798, customer_name: 'Rohan Gupta', outlet_id: 'n2', outlet_name: 'Shawarma Nation', token: '312', order_source: 'APP', status: 'ready', payment_method: 'UPI Online', total: 180, platform_fee: 9, net_payout: 171, created_at: new Date(Date.now() - 15 * 60000).toISOString() },
-          { id: 9797, customer_name: 'Walk-in Student', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '305', order_source: 'POS', status: 'collected', payment_method: 'Counter Cash', total: 120, platform_fee: 0, net_payout: 120, created_at: new Date(Date.now() - 20 * 60000).toISOString() },
+          { id: 9797, customer_name: 'Walk-in Customer', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '305', order_source: 'POS', status: 'collected', payment_method: 'Counter Cash', total: 120, platform_fee: 0, net_payout: 120, created_at: new Date(Date.now() - 20 * 60000).toISOString() },
           { id: 9795, customer_name: 'Pooja Nair', outlet_id: 'g4', outlet_name: 'Lassi House', token: '419', order_source: 'APP', status: 'collected', payment_method: 'Wallet', total: 110, platform_fee: 5.5, net_payout: 104.5, created_at: new Date(Date.now() - 32 * 60000).toISOString() },
           { id: 9794, customer_name: 'Walk-in Faculty', outlet_id: 'g3', outlet_name: 'Dakshin Chitra', token: '422', order_source: 'POS', status: 'collected', payment_method: 'Counter UPI', total: 160, platform_fee: 0, net_payout: 160, created_at: new Date(Date.now() - 40 * 60000).toISOString() },
           { id: 9792, customer_name: 'Ananya Roy', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '502', order_source: 'APP', status: 'collected', payment_method: 'UPI Online', total: 95, platform_fee: 4.75, net_payout: 90.25, created_at: new Date(Date.now() - 55 * 60000).toISOString() }
@@ -668,7 +668,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const target = outletList.find(o => o.id === outletId)
     if (!target) return
     const nextState = !target.is_open
-    const confirmMessage = `Are you sure you want to force ${nextState ? 'OPEN' : 'CLOSE'} "${target.name}"? ${!nextState ? 'Students will not be able to place new orders from this outlet.' : 'The outlet will immediately appear open to students.'}`
+    const confirmMessage = `Are you sure you want to force ${nextState ? 'OPEN' : 'CLOSE'} "${target.name}"? ${!nextState ? 'Users will not be able to place new orders from this outlet.' : 'The outlet will immediately appear open to users.'}`
     if (!window.confirm(confirmMessage)) return
 
     const { error } = await supabase.from('outlets').update({ is_open: nextState }).eq('id', outletId)
@@ -1163,7 +1163,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const totalPlatformCut = Math.round(totalPlatformGmv * (platformCommission / 100))
   const totalOutletsCount = outletList.length
   const activeOutletsCount = outletList.filter(o => o.is_open).length
-  const studentWalletFloat = 148500 // Sum of wallet balances across students
+  const studentWalletFloat = 148500 // Sum of wallet balances across users
   const activeOrdersInQueue = orders.filter(o => o.status === 'placed' || o.status === 'preparing').length
 
   const filteredOrders = useMemo(() => {

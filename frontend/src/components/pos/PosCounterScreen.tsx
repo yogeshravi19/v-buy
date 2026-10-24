@@ -367,7 +367,7 @@ export function PosCounterScreen({
       }
     } catch (err: any) {
       console.error('POS order creation error:', err)
-      setPosError(err.message || 'Failed to complete order. Please check item availability.')
+      setPosError(err.message || 'Failed to complete order. Check item availability.')
     } finally {
       setIsSubmitting(false)
     }

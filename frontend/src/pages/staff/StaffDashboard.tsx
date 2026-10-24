@@ -475,7 +475,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   const handleVerifyCollect = async (overrideToken?: string) => {
     const rawToken = (overrideToken || verifyTokenInput).trim().toUpperCase()
     if (!rawToken) {
-      setVerifyResult({ success: false, message: 'Please enter a 3-digit token or scan QR code.' })
+      setVerifyResult({ success: false, message: 'Enter a 3-digit token or scan QR code.' })
       return
     }
 
@@ -547,7 +547,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         setVerifyResult(null)
       }, 1600)
     } catch (err: any) {
-      setVerifyResult({ success: false, message: err?.message || 'Verification failed. Please check token code.' })
+      setVerifyResult({ success: false, message: err?.message || 'Verification failed. Check token code.' })
     } finally {
       setIsVerifying(false)
     }
