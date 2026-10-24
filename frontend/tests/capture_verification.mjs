@@ -45,6 +45,13 @@ async function capture() {
     await page.screenshot({ path: `${ARTIFACT_DIR}/roles_permissions_full_access_saved.png`, fullPage: false })
     console.log('[OK] Captured roles_permissions_full_access_saved.png')
 
+    // 4. Click Developer System Map
+    const sysMapBtn = page.locator('button:has-text("Developer System Map")').first()
+    await sysMapBtn.click()
+    await page.waitForTimeout(1500)
+    await page.screenshot({ path: `${ARTIFACT_DIR}/system_map_clean_cards.png`, fullPage: false })
+    console.log('[OK] Captured system_map_clean_cards.png')
+
   } finally {
     await browser.close()
   }

@@ -60,7 +60,7 @@ export const SystemMapScreen: React.FC = () => {
         data.forEach((err: any) => {
           if (!summaries[err.card_id]) {
             summaries[err.card_id] = {
-              count: 0,
+              count: 1,
               latestError: {
                 short_message: err.short_message,
                 created_at: err.created_at,
@@ -68,8 +68,9 @@ export const SystemMapScreen: React.FC = () => {
                 endpoint: err.endpoint
               }
             }
+          } else {
+            summaries[err.card_id].count++
           }
-          summaries[err.card_id].count++
         })
         setErrorSummaries(summaries)
       }
@@ -84,33 +85,29 @@ export const SystemMapScreen: React.FC = () => {
     loadTelemetry()
   }, [])
 
-  // Filtered Registry Entries
+  // Filter entries
   const filteredEntries = useMemo(() => {
     return SYSTEM_REGISTRY.filter(entry => {
-      // Type filter
-      if (selectedType !== 'all' && entry.type !== selectedType) return false
+      const matchSearch =
+        !searchQuery ||
+        entry.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.pathOrTrigger.toLowerCase().includes(searchQuery.toLowerCase())
 
-      // Role filter
-      if (selectedRole !== 'all' && !entry.rolesAllowed.includes(selectedRole)) return false
+      const matchType = selectedType === 'all' || entry.type === selectedType
 
-      // Has errors filter
+      const matchRole =
+        selectedRole === 'all' ||
+        entry.rolesAllowed.includes(selectedRole as any)
+
       const errCount = errorSummaries[entry.id]?.count || 0
-      if (onlyErrors && errCount === 0) return false
+      const matchErrors = !onlyErrors || errCount > 0
 
-      // Search filter (by ID or Name)
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim()
-        const matchId = entry.id.toLowerCase().includes(q)
-        const matchName = entry.name.toLowerCase().includes(q)
-        const matchPath = entry.pathOrTrigger.toLowerCase().includes(q)
-        if (!matchId && !matchName && !matchPath) return false
-      }
-
-      return true
+      return matchSearch && matchType && matchRole && matchErrors
     })
-  }, [selectedType, selectedRole, onlyErrors, searchQuery, errorSummaries])
+  }, [searchQuery, selectedType, selectedRole, onlyErrors, errorSummaries])
 
-  // Group by type: Routes, Redirects, Popups
+  // Group by type for visual separation
   const groupedEntries = useMemo(() => {
     const routes = filteredEntries.filter(e => e.type === 'route')
     const redirects = filteredEntries.filter(e => e.type === 'redirect')
@@ -147,11 +144,19 @@ export const SystemMapScreen: React.FC = () => {
 
   if (!isEnabled) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center max-w-lg mx-auto my-12">
-        <AlertTriangle className="mx-auto text-amber-600 mb-3" size={36} />
-        <h3 className="text-base font-bold text-amber-900 m-0">System Map Feature Flag Disabled</h3>
-        <p className="text-xs text-amber-700 mt-2 leading-relaxed">
-          The Developer System Map is hidden by default in production. Set <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">VITE_ENABLE_SYSTEM_MAP=true</code> in your environment to activate diagnostic telemetry cards.
+      <div style={{
+        background: '#FFFBEB',
+        border: '1px solid #FDE68A',
+        borderRadius: '16px',
+        padding: '32px',
+        textAlign: 'center',
+        maxWidth: '520px',
+        margin: '48px auto'
+      }}>
+        <AlertTriangle style={{ margin: '0 auto 12px auto', color: '#D97706' }} size={36} />
+        <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#92400E', margin: 0 }}>System Map Feature Flag Disabled</h3>
+        <p style={{ fontSize: '12px', color: '#B45309', marginTop: '8px', lineHeight: 1.5 }}>
+          The Developer System Map is hidden. Set <code style={{ background: '#FEF3C7', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>VITE_ENABLE_SYSTEM_MAP=true</code> to activate diagnostic cards.
         </p>
       </div>
     )
@@ -160,32 +165,43 @@ export const SystemMapScreen: React.FC = () => {
   const totalErrors = Object.values(errorSummaries).reduce((acc, curr) => acc + curr.count, 0)
 
   return (
-    <div className="space-y-6">
+    <div className="gov-workspace" style={{ padding: '4px 0 24px 0' }}>
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0">
-              Developer System Map
-            </h1>
-            <span className="bg-blue-100 text-blue-900 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
-              {SYSTEM_REGISTRY.length} Registered Cards
+      <div className="gov-top-header">
+        <div className="gov-title-wrap">
+          <div className="gov-title-row">
+            <h1 className="gov-main-title">Developer System Map</h1>
+            <span style={{
+              background: '#EFF6FF',
+              color: '#1E40AF',
+              fontSize: '11px',
+              fontWeight: 700,
+              padding: '2px 10px',
+              borderRadius: '9999px',
+              border: '1px solid #BFDBFE'
+            }}>
+              {SYSTEM_REGISTRY.length} Cards
             </span>
             {totalErrors > 0 && (
-              <span className="bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-red-200">
+              <span style={{
+                background: '#FEF2F2',
+                color: '#991B1B',
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '2px 10px',
+                borderRadius: '9999px',
+                border: '1px solid #FECACA'
+              }}>
                 {totalErrors} Errors (7 Days)
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1 m-0">
-            End-to-end registry mapping every Route, Redirect, and Popup directly to source files, API routes, database tables, and error logs.
-          </p>
         </div>
 
         <button
           type="button"
           onClick={loadTelemetry}
-          className="btn btn-secondary text-xs py-1.5 px-3 self-start md:self-auto"
+          className="gov-btn-reset"
           title="Refresh error telemetry"
         >
           <RefreshCw size={13} className={loadingErrors ? 'animate-spin' : ''} />
@@ -194,28 +210,39 @@ export const SystemMapScreen: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+      <div style={{
+        background: '#FFFFFF',
+        padding: '14px 18px',
+        borderRadius: '12px',
+        border: '1px solid #E2E8F0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)'
+      }}>
         {/* Search Input */}
-        <div className="relative w-full md:w-80">
-          <Search size={14} className="absolute left-3 top-3 text-slate-400" />
+        <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
+          <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: '#94A3B8' }} />
           <input
             type="text"
             placeholder="Search by ID (e.g. R-STAFF-POS) or Name..."
-            className="input pl-8 py-1.5 text-xs w-full"
+            className="gov-search-input"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Type Filter */}
           <select
-            className="input py-1 px-2.5 text-xs w-auto"
+            style={{ padding: '6px 12px', fontSize: '12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none', background: '#FFFFFF' }}
             value={selectedType}
             onChange={e => setSelectedType(e.target.value)}
           >
-            <option value="all">All Types</option>
+            <option value="all">All Types ({SYSTEM_REGISTRY.length})</option>
             <option value="route">Routes ({SYSTEM_REGISTRY.filter(e => e.type === 'route').length})</option>
             <option value="redirect">Redirects ({SYSTEM_REGISTRY.filter(e => e.type === 'redirect').length})</option>
             <option value="popup">Popups ({SYSTEM_REGISTRY.filter(e => e.type === 'popup').length})</option>
@@ -223,7 +250,7 @@ export const SystemMapScreen: React.FC = () => {
 
           {/* Role Filter */}
           <select
-            className="input py-1 px-2.5 text-xs w-auto"
+            style={{ padding: '6px 12px', fontSize: '12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none', background: '#FFFFFF' }}
             value={selectedRole}
             onChange={e => setSelectedRole(e.target.value)}
           >
@@ -237,14 +264,15 @@ export const SystemMapScreen: React.FC = () => {
           {/* Has Errors Toggle */}
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
-              onlyErrors
-                ? 'bg-red-50 text-red-700 border-red-300 shadow-sm'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-            }`}
+            className="gov-btn-reset"
+            style={{
+              background: onlyErrors ? '#FEF2F2' : '#FFFFFF',
+              color: onlyErrors ? '#991B1B' : '#475569',
+              borderColor: onlyErrors ? '#FECACA' : '#CBD5E1'
+            }}
             onClick={() => setOnlyErrors(!onlyErrors)}
           >
-            <AlertTriangle size={13} className={onlyErrors ? 'text-red-600' : 'text-slate-400'} />
+            <AlertTriangle size={13} style={{ color: onlyErrors ? '#DC2626' : '#94A3B8' }} />
             <span>Errors Only</span>
           </button>
         </div>
@@ -264,15 +292,15 @@ export const SystemMapScreen: React.FC = () => {
         const GroupIcon = typeKey === 'route' ? RouteIcon : typeKey === 'redirect' ? Repeat : Layers
 
         return (
-          <div key={typeKey} className="space-y-3">
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-              <GroupIcon size={16} className="text-blue-800" />
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider m-0">
+          <div key={typeKey} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' }}>
+              <GroupIcon size={16} style={{ color: '#1E40AF' }} />
+              <h2 style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.4px', margin: 0 }}>
                 {groupTitle} ({entries.length})
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
               {entries.map(entry => {
                 const errSummary = errorSummaries[entry.id]
                 const errCount = errSummary?.count || 0
@@ -281,124 +309,165 @@ export const SystemMapScreen: React.FC = () => {
                 return (
                   <div
                     key={entry.id}
-                    className={`bg-white rounded-xl border p-4 shadow-sm flex flex-col justify-between transition-all hover:shadow-soft ${
-                      hasErrors ? 'border-red-300 ring-1 ring-red-400/20' : 'border-slate-200'
-                    }`}
+                    style={{
+                      background: '#FFFFFF',
+                      borderRadius: '12px',
+                      border: hasErrors ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
+                      padding: '16px',
+                      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      minHeight: '190px',
+                      transition: 'all 0.15s ease'
+                    }}
                   >
                     <div>
                       {/* Top Card Row */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <span className="font-mono text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{
+                          fontFamily: 'monospace',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          background: '#F1F5F9',
+                          color: '#334155',
+                          border: '1px solid #E2E8F0'
+                        }}>
                           {entry.id}
                         </span>
 
-                        <div className="flex items-center gap-1.5">
-                          {entry.protected && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase" title="Payment-critical protected screen">
-                              Protected
-                            </span>
-                          )}
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            hasErrors ? 'bg-red-100 text-red-800 font-mono' : 'bg-slate-100 text-slate-500'
-                          }`}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            textTransform: 'uppercase',
+                            background: entry.type === 'route' ? '#EFF6FF' : entry.type === 'popup' ? '#FFFBEB' : '#FAF5FF',
+                            color: entry.type === 'route' ? '#1E40AF' : entry.type === 'popup' ? '#92400E' : '#6B21A8'
+                          }}>
+                            {entry.type}
+                          </span>
+
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '9999px',
+                            fontFamily: 'monospace',
+                            background: hasErrors ? '#FEF2F2' : '#F1F5F9',
+                            color: hasErrors ? '#DC2626' : '#64748B'
+                          }}>
                             {errCount} err
                           </span>
                         </div>
                       </div>
 
                       {/* Card Title & Path */}
-                      <h3 className="text-sm font-bold text-slate-900 m-0 leading-tight">
+                      <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0', lineHeight: 1.3 }}>
                         {entry.name}
                       </h3>
-                      <div className="text-[11px] font-mono text-blue-700 bg-blue-50/60 px-2 py-1 rounded my-2 break-all border border-blue-100">
+
+                      <div style={{
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        color: '#1D4ED8',
+                        background: '#EFF6FF',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #DBEAFE',
+                        wordBreak: 'break-all',
+                        marginBottom: '8px'
+                      }}>
                         {entry.pathOrTrigger}
                       </div>
 
                       {/* Allowed Roles */}
-                      <div className="flex flex-wrap gap-1 mb-2.5">
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                         {entry.rolesAllowed.map(r => (
                           <span
                             key={r}
-                            className={`text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded ${
-                              r === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                              r === 'shop_admin' ? 'bg-amber-100 text-amber-800' :
-                              r === 'staff' ? 'bg-emerald-100 text-emerald-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              background: r === 'super_admin' ? '#FAF5FF' : r === 'shop_admin' ? '#FFFBEB' : r === 'staff' ? '#ECFDF5' : '#EFF6FF',
+                              color: r === 'super_admin' ? '#7C3AED' : r === 'shop_admin' ? '#D97706' : r === 'staff' ? '#059669' : '#1E40AF'
+                            }}
                           >
                             {r.replace('_', ' ')}
                           </span>
                         ))}
                       </div>
 
-                      {/* Redirect or Popup Details */}
-                      {entry.redirectTarget && (
-                        <div className="text-[11px] text-slate-600 mb-2">
-                          <span className="font-semibold text-slate-700">Target: </span>
-                          <code className="text-slate-800 font-mono">{entry.redirectTarget}</code>
-                        </div>
-                      )}
-
-                      {entry.popupActions && entry.popupActions.length > 0 && (
-                        <div className="text-[11px] text-slate-600 mb-2">
-                          <span className="font-semibold text-slate-700">Actions: </span>
-                          <span>{entry.popupActions.join(' · ')}</span>
-                        </div>
-                      )}
-
-                      {/* Endpoints & Tables */}
-                      <div className="space-y-1 text-[10.5px] text-slate-500 my-2 pt-2 border-t border-slate-100">
-                        {entry.apiRoutes && entry.apiRoutes.length > 0 && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <Globe size={11} className="text-slate-400 flex-shrink-0" />
-                            <span className="font-mono truncate">{entry.apiRoutes.join(', ')}</span>
-                          </div>
-                        )}
-                        {entry.tables && entry.tables.length > 0 && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <Database size={11} className="text-slate-400 flex-shrink-0" />
-                            <span className="font-mono truncate">{entry.tables.join(', ')}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1.5 truncate">
-                          <FileCode size={11} className="text-slate-400 flex-shrink-0" />
-                          <span className="font-mono truncate">{entry.sourceFiles[0]}</span>
-                        </div>
+                      {/* Source file */}
+                      <div style={{ fontSize: '10px', color: '#94A3B8', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <FileCode size={11} style={{ flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {entry.sourceFiles[0]}
+                        </span>
                       </div>
-
-                      {/* Latest Error if Any */}
-                      {hasErrors && errSummary.latestError && (
-                        <div className="bg-red-50 p-2 rounded-lg border border-red-200 my-2 text-[10.5px] text-red-800 font-mono">
-                          <div className="font-bold flex items-center gap-1">
-                            <AlertTriangle size={10} /> Latest:
-                          </div>
-                          <div className="truncate">{errSummary.latestError.short_message}</div>
-                          <div className="text-[9.5px] text-red-600 mt-0.5">
-                            {new Date(errSummary.latestError.created_at).toLocaleString('en-IN')}
-                          </div>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Card Footer: Copy Debug Info */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between mt-3">
-                      <span className="text-[10px] text-slate-400 truncate">
-                        Opens: {entry.openedFrom}
-                      </span>
+                    {/* Card Footer: Executable Actions */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderTop: '1px solid #F1F5F9',
+                      paddingTop: '10px',
+                      marginTop: '8px',
+                      gap: '8px'
+                    }}>
+                      {/* Executable direct route action */}
+                      {entry.type === 'route' && entry.pathOrTrigger.startsWith('/') ? (
+                        <a
+                          href={entry.pathOrTrigger}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#1D4ED8',
+                            background: '#EFF6FF',
+                            border: '1px solid #BFDBFE',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            textDecoration: 'none'
+                          }}
+                          title={`Open ${entry.pathOrTrigger}`}
+                        >
+                          <ExternalLink size={11} />
+                          <span>Open</span>
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'capitalize' }}>
+                          {entry.type}
+                        </span>
+                      )}
+
+                      {/* Copy Debug Info */}
                       <button
                         type="button"
-                        className="btn btn-secondary text-[10.5px] py-1 px-2.5 flex items-center gap-1 font-semibold"
+                        className="gov-btn-discard"
+                        style={{ fontSize: '11px', padding: '4px 8px' }}
                         onClick={() => handleCopyDebug(entry)}
                       >
                         {copiedCardId === entry.id ? (
                           <>
-                            <Check size={11} className="text-emerald-600" />
-                            <span className="text-emerald-700">Copied!</span>
+                            <Check size={11} style={{ color: '#059669' }} />
+                            <span style={{ color: '#059669' }}>Copied</span>
                           </>
                         ) : (
                           <>
                             <Copy size={11} />
-                            <span>Copy Debug Info</span>
+                            <span>Copy Debug</span>
                           </>
                         )}
                       </button>

@@ -793,17 +793,14 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
             <img src="/vit-chennai-logo.png" alt="V Foods" className="saas-brand-img" />
             <span className="saas-brand-text">V-<span>FOODS</span></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="saas-role-badge saas-role-staff">Shop Staff</span>
-            <button
-              type="button"
-              className="saas-sidebar-close-btn"
-              onClick={() => setMobileMenuOpen(false)}
-              title="Close navigation"
-            >
-              <X size={18} />
-            </button>
-          </div>
+          <button
+            type="button"
+            className="saas-sidebar-close-btn"
+            onClick={() => setMobileMenuOpen(false)}
+            title="Close navigation"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Current Outlet Badge */}

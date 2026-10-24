@@ -1040,16 +1040,27 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <img src="/vit-chennai-logo.png" alt="V Foods" className="saas-brand-img" />
             <span className="saas-brand-text">V-<span>FOODS</span></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="saas-role-badge saas-role-admin">Super Admin</span>
-            <button
-              type="button"
-              className="saas-sidebar-close-btn"
-              onClick={() => setMobileMenuOpen(false)}
-              title="Close navigation"
-            >
-              <X size={18} />
-            </button>
+          <button
+            type="button"
+            className="saas-sidebar-close-btn"
+            onClick={() => setMobileMenuOpen(false)}
+            title="Close navigation"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Platform Status Banner */}
+        <div className="saas-sidebar-outlet">
+          <span className="saas-outlet-label">
+            <ShieldCheck size={11} /> Campus
+          </span>
+          <div className="saas-outlet-name">
+            VIT Chennai
+          </div>
+          <div className="saas-outlet-status">
+            <span className="saas-status-dot online" />
+            <span style={{ color: '#38BDF8', fontWeight: 600 }}>{activeOutletsCount} of {totalOutletsCount} Outlets Open</span>
           </div>
         </div>
 

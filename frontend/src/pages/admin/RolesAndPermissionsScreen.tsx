@@ -253,13 +253,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
       {/* Top Header */}
       <div className="gov-top-header">
         <div className="gov-title-wrap">
-          <div className="gov-title-row">
-            <h1 className="gov-main-title">Roles & Access Governance</h1>
-            <span className="gov-badge-rls">Verified RLS Policies</span>
-          </div>
-          <p className="gov-subtitle">
-            Authoritative 4-tier security matrix. Cross-checked against Supabase Row Level Security and FastAPI route guards.
-          </p>
+          <h1 className="gov-main-title">Roles & Permissions</h1>
         </div>
 
         {/* View Tabs */}
@@ -351,44 +345,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Affirmative Policy Statement Banner */}
-      <div className="gov-banner-policy">
-        <div className="gov-banner-content">
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: 'rgba(37, 99, 235, 0.25)',
-            color: '#60A5FA',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <Info size={18} />
-          </div>
-          <div>
-            <strong style={{ color: '#FFFFFF', display: 'block', fontWeight: 700, fontSize: '12px' }}>
-              Affirmative Security Principle: Super Admins retain platform-wide governance. Anything not explicitly permitted is blocked by database RLS.
-            </strong>
-            <span style={{ color: '#94A3B8', fontSize: '11px' }}>
-              Shop Staff and Shop Admins are strictly scoped to their assigned outlet ID via <code style={{ color: '#93C5FD', fontFamily: 'monospace' }}>public.get_my_outlet()</code>.
-            </span>
-          </div>
-        </div>
-        <div style={{
-          fontSize: '11px',
-          color: '#CBD5E1',
-          background: 'rgba(30, 41, 59, 0.7)',
-          padding: '6px 12px',
-          borderRadius: '8px',
-          border: '1px solid #334155',
-          fontFamily: 'monospace',
-          whiteSpace: 'nowrap'
-        }}>
-          RLS: Active
-        </div>
-      </div>
+
 
       {/* Save Success Banner */}
       {saveSuccessMessage && (
@@ -450,9 +407,6 @@ export const RolesAndPermissionsScreen: React.FC = () => {
                   </span>
                 )}
               </div>
-              <p style={{ margin: 0, fontSize: '11px', color: '#64748B' }}>
-                Click any permission toggle below to modify live capabilities. Use "Grant Full Access" to unlock all modules.
-              </p>
             </div>
 
             {/* Matrix Action Buttons */}
