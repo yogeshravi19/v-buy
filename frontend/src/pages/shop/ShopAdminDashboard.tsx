@@ -1376,7 +1376,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 background: 'none',
                 border: 'none',
                 padding: 0,
-                color: '#38BDF8',
+                color: '#FFFFFF',
                 fontSize: '11px',
                 fontWeight: 600,
                 cursor: 'pointer',

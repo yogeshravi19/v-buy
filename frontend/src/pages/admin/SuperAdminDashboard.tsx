@@ -1083,7 +1083,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           </div>
           <div className="saas-outlet-status">
             <span className="saas-status-dot online" />
-            <span style={{ color: '#38BDF8', fontWeight: 600 }}>{activeOutletsCount} of {totalOutletsCount} Outlets Open</span>
+            <span style={{ color: '#FFFFFF', fontWeight: 700 }}>{activeOutletsCount} of {totalOutletsCount} Outlets Open</span>
           </div>
         </div>
 
@@ -1254,7 +1254,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 background: 'none',
                 border: 'none',
                 padding: 0,
-                color: '#38BDF8',
+                color: '#FFFFFF',
                 fontSize: '11px',
                 fontWeight: 600,
                 cursor: 'pointer',
