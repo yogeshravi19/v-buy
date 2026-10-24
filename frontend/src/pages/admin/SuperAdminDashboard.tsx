@@ -246,6 +246,34 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     { id: 'vit-riviera', name: 'Riviera Festival Food Court Arena', city: 'Festival Grounds', outlets_count: 20, students_count: 18500, today_gmv: 215000, status: 'active' }
   ])
 
+  // Add Campus State
+  const [showAddCampusModal, setShowAddCampusModal] = useState(false)
+  const [campusForm, setCampusForm] = useState({
+    name: '',
+    city: '',
+    outlets_count: 5,
+    students_count: 1000
+  })
+
+  const handleSaveCampus = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!campusForm.name.trim() || !campusForm.city.trim()) return
+    const id = campusForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const newCampus: CampusRecord = {
+      id: id || `campus-${Date.now()}`,
+      name: campusForm.name.trim(),
+      city: campusForm.city.trim(),
+      outlets_count: Number(campusForm.outlets_count) || 1,
+      students_count: Number(campusForm.students_count) || 500,
+      today_gmv: 0,
+      status: 'active'
+    }
+    setCampuses(prev => [...prev, newCampus])
+    setShowAddCampusModal(false)
+    setCampusForm({ name: '', city: '', outlets_count: 5, students_count: 1000 })
+    toast.success(`Campus Hub "${newCampus.name}" registered`)
+  }
+
   // Outlets master list (loaded from the `outlets` table)
   const [outletList, setOutletList] = useState<OutletRecord[]>([])
   const outletListRef = useRef<OutletRecord[]>([])
@@ -1514,6 +1542,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Campus Dining Clusters</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Multi-campus network directory and hub metrics</p>
                 </div>
+                <button className="saas-btn saas-btn-primary" onClick={() => setShowAddCampusModal(true)}>
+                  <Plus size={15} />
+                  <span>Add Campus</span>
+                </button>
               </div>
 
               <div className="saas-card">
@@ -2723,6 +2755,84 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   disabled={savingRole}
                 >
                   {savingRole ? 'Saving...' : 'Save Role'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD CAMPUS MODAL ── */}
+      {showAddCampusModal && (
+        <div className="saas-modal-backdrop" onClick={() => setShowAddCampusModal(false)}>
+          <div className="saas-modal-card" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <h3 className="saas-modal-title">Add Campus Hub</h3>
+              <button className="saas-modal-close" onClick={() => setShowAddCampusModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveCampus} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Campus / Hub Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. VIT Bhopal (Central Block)"
+                    value={campusForm.name}
+                    onChange={e => setCampusForm(prev => ({ ...prev, name: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    City / Region
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Bhopal, MP"
+                    value={campusForm.city}
+                    onChange={e => setCampusForm(prev => ({ ...prev, city: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Initial Outlets
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={campusForm.outlets_count}
+                      onChange={e => setCampusForm(prev => ({ ...prev, outlets_count: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Enrolled Users
+                    </label>
+                    <input
+                      type="number"
+                      min={10}
+                      value={campusForm.students_count}
+                      onChange={e => setCampusForm(prev => ({ ...prev, students_count: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="saas-modal-footer">
+                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowAddCampusModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="saas-btn saas-btn-primary">
+                  Register Campus
                 </button>
               </div>
             </form>
