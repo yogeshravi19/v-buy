@@ -287,16 +287,16 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
       )}
 
       {/* Spacious Canteen Selector & Filter Strip */}
-      <div className="p-6 bg-white rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+      <div className="p-6 bg-white rounded-3xl border-2 border-slate-300 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.06)] space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
-            <label className="text-xs font-black text-slate-700 uppercase tracking-wider shrink-0">
-              Select Canteen:
+            <label className="text-xs font-black text-slate-800 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+              <span>Select Canteen:</span>
             </label>
             <select
               value={activeOutletFilter}
               onChange={e => setActiveOutletFilter(e.target.value)}
-              className="h-12 px-4 bg-slate-50 border border-slate-300 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-700 max-w-xl w-full cursor-pointer transition-colors shadow-2xs"
+              className="h-12 px-4 bg-white border-2 border-slate-300 hover:border-blue-500 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-700 max-w-xl w-full cursor-pointer transition-colors shadow-2xs"
             >
               <option value="all">Overview: All Campus Canteens ({outlets.length} Slice Cards)</option>
               {outlets.map(o => {
@@ -319,14 +319,14 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   placeholder="Filter by canteen name or code..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 bg-slate-50 border border-slate-300 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-700 shadow-2xs"
+                  className="w-full h-12 pl-10 pr-4 bg-white border-2 border-slate-300 hover:border-blue-500 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-700 shadow-2xs"
                 />
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => setActiveOutletFilter('all')}
-                className="saas-btn saas-btn-secondary inline-flex items-center gap-2 h-12 px-5 text-xs font-bold rounded-2xl"
+                className="saas-btn saas-btn-secondary inline-flex items-center gap-2 h-12 px-5 text-xs font-bold rounded-2xl border-2 border-slate-300 hover:border-slate-400"
               >
                 <ArrowLeft size={15} />
                 <span>View All Canteen Slice Cards</span>
@@ -342,7 +342,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
       {activeOutletFilter === 'all' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">
+            <h3 className="text-xs font-black text-slate-600 uppercase tracking-wider">
               Campus Canteens ({filteredCanteens.length})
             </h3>
           </div>
@@ -357,24 +357,42 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 <div
                   key={canteen.id}
                   onClick={() => setActiveOutletFilter(canteen.id)}
-                  style={{ padding: '24px', borderRadius: '24px', minHeight: '340px' }}
-                  className="bg-white border border-slate-200/90 shadow-sm hover:border-blue-500 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group"
+                  style={{ padding: '24px', borderRadius: '24px', minHeight: '380px' }}
+                  className="relative overflow-hidden bg-white border-2 border-slate-300 hover:border-blue-600 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_40px_-4px_rgba(30,64,175,0.18)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
                 >
-                  <div className="space-y-4">
+                  {/* Vibrant Top Accent Strip */}
+                  <div
+                    className={cn(
+                      'absolute top-0 left-0 right-0 h-1.5 transition-colors',
+                      canteen.is_open
+                        ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-emerald-500'
+                        : 'bg-slate-300'
+                    )}
+                  />
+
+                  <div className="space-y-4 pt-1">
                     {/* Header Row */}
                     <div className="flex items-start justify-between gap-4">
                       <div
                         style={{ width: '56px', height: '56px', borderRadius: '16px' }}
-                        className="bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-2xs"
+                        className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 text-blue-700 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white group-hover:shadow-md transition-all shadow-xs"
                       >
                         <Store size={24} />
                       </div>
 
                       <span className={cn(
-                        'text-xs font-bold px-3 py-1 rounded-full border shrink-0',
-                        canteen.is_open ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                        'text-xs font-black px-3.5 py-1.5 rounded-full border-2 shrink-0 flex items-center gap-1.5 shadow-2xs',
+                        canteen.is_open
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-300'
                       )}>
-                        {canteen.is_open ? 'OPEN' : 'CLOSED'}
+                        <span
+                          className={cn(
+                            'w-2 h-2 rounded-full',
+                            canteen.is_open ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                          )}
+                        />
+                        <span>{canteen.is_open ? 'OPEN' : 'CLOSED'}</span>
                       </span>
                     </div>
 
@@ -383,46 +401,46 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                       <h3 className="text-lg font-black text-slate-900 group-hover:text-blue-700 transition-colors leading-snug">
                         {canteen.name}
                       </h3>
-                      <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
-                        <span className="flex items-center gap-1">
+                      <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+                        <span className="flex items-center gap-1 min-w-0">
                           <Building2 size={13} className="text-slate-400 shrink-0" />
                           <span className="truncate">{canteen.location || 'Campus Center'}</span>
                         </span>
                         <span className="text-slate-300">·</span>
-                        <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-bold">
+                        <span className="font-mono text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] font-bold">
                           {canteen.id}
                         </span>
                       </div>
                     </div>
 
                     {/* Sub-Boxes */}
-                    <div className="space-y-2.5 pt-2">
+                    <div className="space-y-2.5 pt-1">
                       <div
-                        style={{ padding: '14px', borderRadius: '16px' }}
-                        className="bg-amber-50/50 border border-amber-100 space-y-1"
+                        style={{ padding: '14px 16px', borderRadius: '16px' }}
+                        className="bg-gradient-to-br from-amber-50/90 via-amber-50/60 to-amber-100/40 border-2 border-amber-300/80 hover:border-amber-400 transition-colors space-y-1 shadow-2xs"
                       >
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-black text-amber-900 uppercase tracking-wider">
                           <span className="flex items-center gap-1.5">
-                            <Shield size={13} className="text-amber-600" />
+                            <Shield size={13} className="text-amber-700" />
                             Franchise Owner
                           </span>
                         </div>
-                        <div className="text-xs font-extrabold text-slate-900 truncate">
+                        <div className="text-xs font-black text-slate-900 truncate">
                           {admins.length > 0 ? admins[0].full_name : <span className="text-slate-400 font-normal italic">Unassigned</span>}
                         </div>
                       </div>
 
                       <div
-                        style={{ padding: '14px', borderRadius: '16px' }}
-                        className="bg-emerald-50/50 border border-emerald-100 space-y-1"
+                        style={{ padding: '14px 16px', borderRadius: '16px' }}
+                        className="bg-gradient-to-br from-emerald-50/90 via-emerald-50/60 to-emerald-100/40 border-2 border-emerald-300/80 hover:border-emerald-400 transition-colors space-y-1 shadow-2xs"
                       >
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-black text-emerald-900 uppercase tracking-wider">
                           <span className="flex items-center gap-1.5">
-                            <UserCheck size={13} className="text-emerald-600" />
+                            <UserCheck size={13} className="text-emerald-700" />
                             Counter Staff
                           </span>
                         </div>
-                        <div className="text-xs font-extrabold text-slate-900">
+                        <div className="text-xs font-black text-slate-900">
                           {staff.length} Active Member{staff.length === 1 ? '' : 's'}
                         </div>
                       </div>
@@ -430,8 +448,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   </div>
 
                   {/* Card Action Footer */}
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
-                    <span className="font-extrabold text-slate-700">
+                  <div className="pt-4 border-t-2 border-slate-100 flex items-center justify-between text-xs mt-4">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 font-extrabold text-slate-700">
                       Team: <span className="text-blue-700 font-black">{totalTeam}</span>
                     </span>
                     <div className="flex items-center gap-2">
@@ -441,14 +459,14 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                           e.stopPropagation()
                           setActiveOutletFilter(canteen.id)
                         }}
-                        className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1 font-bold px-3 py-1.5 rounded-xl"
+                        className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1 font-bold px-3 py-1.5 rounded-xl border-2 border-slate-200 hover:border-slate-300"
                       >
                         <Edit3 size={13} />
                         <span>Edit</span>
                       </button>
                       <button
                         type="button"
-                        className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1 font-bold px-3.5 py-1.5 rounded-xl"
+                        className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1 font-bold px-3.5 py-1.5 rounded-xl shadow-xs"
                       >
                         <span>Open</span>
                         <ChevronRight size={13} />
@@ -470,12 +488,21 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
           {/* Canteen Hero Banner Card */}
           <div
             style={{ padding: '24px', borderRadius: '24px' }}
-            className="bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5"
+            className="relative overflow-hidden bg-white border-2 border-slate-300 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.06)] flex flex-col md:flex-row md:items-center justify-between gap-5"
           >
-            <div className="flex items-center gap-4">
+            {/* Top Accent Strip */}
+            <div
+              className={cn(
+                'absolute top-0 left-0 right-0 h-1.5 transition-colors',
+                activeOutlet.is_open
+                  ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-emerald-500'
+                  : 'bg-slate-300'
+              )}
+            />
+            <div className="flex items-center gap-4 pt-1">
               <div
                 style={{ width: '64px', height: '64px', borderRadius: '20px' }}
-                className="bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs"
+                className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 text-blue-700 flex items-center justify-center shrink-0 shadow-xs"
               >
                 <Store size={32} />
               </div>
@@ -483,16 +510,24 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 <div className="flex items-center gap-3 flex-wrap">
                   <h3 className="text-2xl font-black text-slate-900">{activeOutlet.name}</h3>
                   <span className={cn(
-                    'text-xs font-bold px-3 py-1 rounded-full border',
-                    activeOutlet.is_open ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                    'text-xs font-black px-3.5 py-1.5 rounded-full border-2 flex items-center gap-1.5 shadow-2xs',
+                    activeOutlet.is_open
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-slate-100 text-slate-600 border-slate-300'
                   )}>
-                    {activeOutlet.is_open ? 'OPEN FOR ORDERS' : 'CLOSED'}
+                    <span
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        activeOutlet.is_open ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                      )}
+                    />
+                    <span>{activeOutlet.is_open ? 'OPEN FOR ORDERS' : 'CLOSED'}</span>
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
                   <span>Location: <strong className="text-slate-800">{activeOutlet.location || 'Campus Center'}</strong></span>
                   <span className="text-slate-300">·</span>
-                  <span>ID: <code className="font-mono text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded font-bold">{activeOutlet.id}</code></span>
+                  <span>ID: <code className="font-mono text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold">{activeOutlet.id}</code></span>
                 </p>
               </div>
             </div>
@@ -501,7 +536,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
               <button
                 type="button"
                 onClick={() => setActiveOutletFilter('all')}
-                className="saas-btn saas-btn-secondary inline-flex items-center gap-2 h-11 px-5 text-xs font-bold rounded-2xl"
+                className="saas-btn saas-btn-secondary inline-flex items-center gap-2 h-11 px-5 text-xs font-bold rounded-2xl border-2 border-slate-300 hover:border-slate-400"
               >
                 <ArrowLeft size={15} />
                 <span>All Canteens</span>
@@ -531,7 +566,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
-                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 text-xs font-bold rounded-xl"
+                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 text-xs font-bold rounded-xl border-2 border-slate-200"
                   onClick={() => {
                     setAssignRole('shop_admin')
                     setAssignOutletId(activeOutlet.id)
@@ -563,17 +598,18 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   <div
                     key={admin.id}
                     style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
-                    className="bg-white border-2 border-amber-200/90 shadow-sm flex flex-col justify-between hover:shadow-lg transition-all group"
+                    className="relative overflow-hidden bg-white border-2 border-amber-300 hover:border-amber-400 shadow-[0_4px_20px_-2px_rgba(245,158,11,0.08)] flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
                   >
-                    <div className="space-y-4">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-400" />
+                    <div className="space-y-4 pt-1">
                       <div className="flex items-start justify-between gap-3">
                         <div
                           style={{ width: '56px', height: '56px', borderRadius: '16px' }}
-                          className="bg-amber-100 text-amber-900 font-black text-lg flex items-center justify-center shrink-0 shadow-2xs"
+                          className="bg-gradient-to-br from-amber-100 to-amber-200 border-2 border-amber-300 text-amber-900 font-black text-lg flex items-center justify-center shrink-0 shadow-2xs"
                         >
                           {getInitials(admin.full_name)}
                         </div>
-                        <span className="text-[11px] font-black px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 uppercase tracking-wider">
+                        <span className="text-[11px] font-black px-3 py-1 rounded-full bg-amber-50 text-amber-900 border-2 border-amber-300 uppercase tracking-wider shadow-2xs">
                           Franchise Owner
                         </span>
                       </div>
@@ -585,25 +621,25 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                       </div>
 
                       <div
-                        style={{ padding: '14px', borderRadius: '16px' }}
-                        className="bg-amber-50/50 border border-amber-100 space-y-1.5 text-xs text-slate-600"
+                        style={{ padding: '14px 16px', borderRadius: '16px' }}
+                        className="bg-amber-50/70 border-2 border-amber-200/90 space-y-1.5 text-xs text-slate-700 shadow-2xs"
                       >
                         <div className="flex items-center gap-2 truncate">
-                          <Phone size={13} className="text-amber-600 shrink-0" />
-                          <span className="font-semibold">{admin.phone || 'No phone recorded'}</span>
+                          <Phone size={13} className="text-amber-700 shrink-0" />
+                          <span className="font-bold">{admin.phone || 'No phone recorded'}</span>
                         </div>
                         <div className="flex items-center gap-2 truncate">
-                          <Mail size={13} className="text-amber-600 shrink-0" />
-                          <span className="font-semibold">{admin.email || 'No email recorded'}</span>
+                          <Mail size={13} className="text-amber-700 shrink-0" />
+                          <span className="font-bold">{admin.email || 'No email recorded'}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 mt-2">
+                    <div className="grid grid-cols-2 gap-2 pt-3 border-t-2 border-slate-100 mt-2">
                       <button
                         type="button"
                         onClick={() => openEditModal(admin)}
-                        className="saas-btn saas-btn-secondary inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl"
+                        className="saas-btn saas-btn-secondary inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl border-2 border-slate-200"
                       >
                         <Edit3 size={14} />
                         <span>Edit</span>
@@ -628,22 +664,22 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     setShowAssignModal(true)
                   }}
                   style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
-                  className="border-2 border-dashed border-amber-300 bg-amber-50/30 hover:bg-amber-50/70 hover:border-amber-500 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-4 group"
+                  className="border-2 border-dashed border-amber-400 bg-amber-50/40 hover:bg-amber-50/80 hover:border-amber-500 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-4 group rounded-3xl"
                 >
                   <div
                     style={{ width: '56px', height: '56px', borderRadius: '16px' }}
-                    className="bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-all shadow-2xs"
+                    className="bg-amber-100 border-2 border-amber-300 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-all shadow-2xs"
                   >
                     <Shield size={26} />
                   </div>
                   <div>
-                    <div className="text-base font-black text-amber-900">
+                    <div className="text-base font-black text-amber-950">
                       No Owner Assigned
                     </div>
                   </div>
                   <button
                     type="button"
-                    className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1.5 font-bold rounded-xl px-4 py-2"
+                    className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1.5 font-bold rounded-xl px-4 py-2 shadow-xs"
                   >
                     <Plus size={14} />
                     <span>Assign Owner</span>
@@ -656,17 +692,18 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 <div
                   key={staffMember.id}
                   style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
-                  className="bg-white border-2 border-emerald-200/90 shadow-sm flex flex-col justify-between hover:shadow-lg transition-all group"
+                  className="relative overflow-hidden bg-white border-2 border-emerald-300 hover:border-emerald-400 shadow-[0_4px_20px_-2px_rgba(16,185,129,0.08)] flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
                 >
-                  <div className="space-y-4">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500" />
+                  <div className="space-y-4 pt-1">
                     <div className="flex items-start justify-between gap-3">
                       <div
                         style={{ width: '56px', height: '56px', borderRadius: '16px' }}
-                        className="bg-emerald-100 text-emerald-900 font-black text-lg flex items-center justify-center shrink-0 shadow-2xs"
+                        className="bg-gradient-to-br from-emerald-100 to-emerald-200 border-2 border-emerald-300 text-emerald-900 font-black text-lg flex items-center justify-center shrink-0 shadow-2xs"
                       >
                         {getInitials(staffMember.full_name)}
                       </div>
-                      <span className="text-[11px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                      <span className="text-[11px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-900 border-2 border-emerald-300 uppercase tracking-wider shadow-2xs">
                         Counter Staff
                       </span>
                     </div>
@@ -678,25 +715,25 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     </div>
 
                     <div
-                      style={{ padding: '14px', borderRadius: '16px' }}
-                      className="bg-emerald-50/50 border border-emerald-100 space-y-1.5 text-xs text-slate-600"
+                      style={{ padding: '14px 16px', borderRadius: '16px' }}
+                      className="bg-emerald-50/70 border-2 border-emerald-200/90 space-y-1.5 text-xs text-slate-700 shadow-2xs"
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <Phone size={13} className="text-emerald-600 shrink-0" />
-                        <span className="font-semibold">{staffMember.phone || 'No phone recorded'}</span>
+                        <Phone size={13} className="text-emerald-700 shrink-0" />
+                        <span className="font-bold">{staffMember.phone || 'No phone recorded'}</span>
                       </div>
                       <div className="flex items-center gap-2 truncate">
-                        <Mail size={13} className="text-emerald-600 shrink-0" />
-                        <span className="font-semibold">{staffMember.email || 'No email recorded'}</span>
+                        <Mail size={13} className="text-emerald-700 shrink-0" />
+                        <span className="font-bold">{staffMember.email || 'No email recorded'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 mt-2">
+                  <div className="grid grid-cols-2 gap-2 pt-3 border-t-2 border-slate-100 mt-2">
                     <button
                       type="button"
                       onClick={() => openEditModal(staffMember)}
-                      className="saas-btn saas-btn-secondary inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl"
+                      className="saas-btn saas-btn-secondary inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl border-2 border-slate-200"
                     >
                       <Edit3 size={14} />
                       <span>Edit</span>
@@ -722,11 +759,11 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   setShowAssignModal(true)
                 }}
                 style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
-                className="border-2 border-dashed border-blue-300 bg-blue-50/20 hover:bg-blue-50/50 hover:border-blue-500 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-4 group"
+                className="border-2 border-dashed border-blue-400 bg-blue-50/30 hover:bg-blue-50/60 hover:border-blue-500 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-4 group rounded-3xl"
               >
                 <div
                   style={{ width: '56px', height: '56px', borderRadius: '16px' }}
-                  className="bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-2xs"
+                  className="bg-blue-100 border-2 border-blue-300 text-blue-700 flex items-center justify-center group-hover:scale-105 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white transition-all shadow-2xs"
                 >
                   <Plus size={26} />
                 </div>
@@ -737,7 +774,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 </div>
                 <button
                   type="button"
-                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 font-bold rounded-xl px-4 py-2 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600"
+                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 font-bold rounded-xl px-4 py-2 border-2 border-slate-200 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600"
                 >
                   <UserPlus size={14} />
                   <span>Add Personnel</span>
@@ -773,7 +810,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     value={assignUserId}
                     onChange={e => setAssignUserId(e.target.value)}
                     required
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   >
                     <option value="">-- Choose User from Database --</option>
                     {users.map(u => (
@@ -792,7 +829,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     value={assignOutletId}
                     onChange={e => setAssignOutletId(e.target.value)}
                     required
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   >
                     {outlets.map(o => (
                       <option key={o.id} value={o.id}>
@@ -810,10 +847,10 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     <button
                       type="button"
                       onClick={() => setAssignRole('staff')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-colors ${
+                      className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-center transition-colors ${
                         assignRole === 'staff'
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
-                          : 'bg-white border-slate-200 text-slate-600'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
                       Kitchen & Counter Staff
@@ -821,10 +858,10 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     <button
                       type="button"
                       onClick={() => setAssignRole('shop_admin')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-colors ${
+                      className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-center transition-colors ${
                         assignRole === 'shop_admin'
-                          ? 'bg-amber-50 border-amber-500 text-amber-800'
-                          : 'bg-white border-slate-200 text-slate-600'
+                          ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
                       Franchise Owner
@@ -881,7 +918,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     onChange={e => setEditFullName(e.target.value)}
                     required
                     placeholder="Enter full name"
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   />
                 </div>
 
@@ -894,7 +931,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     value={editPhone}
                     onChange={e => setEditPhone(e.target.value)}
                     placeholder="+91..."
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   />
                 </div>
 
@@ -907,7 +944,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     value={editEmail}
                     onChange={e => setEditEmail(e.target.value)}
                     placeholder="user@vfood.vit.ac.in"
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   />
                 </div>
 
@@ -918,7 +955,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   <select
                     value={editOutletId}
                     onChange={e => setEditOutletId(e.target.value)}
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   >
                     <option value="">-- None (Unassigned) --</option>
                     {outlets.map(o => (
@@ -937,10 +974,10 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     <button
                       type="button"
                       onClick={() => setEditRole('staff')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-colors ${
+                      className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-center transition-colors ${
                         editRole === 'staff'
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
-                          : 'bg-white border-slate-200 text-slate-600'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
                       Counter Staff
@@ -948,10 +985,10 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     <button
                       type="button"
                       onClick={() => setEditRole('shop_admin')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-colors ${
+                      className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-center transition-colors ${
                         editRole === 'shop_admin'
-                          ? 'bg-amber-50 border-amber-500 text-amber-800'
-                          : 'bg-white border-slate-200 text-slate-600'
+                          ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
                       Franchise Owner
