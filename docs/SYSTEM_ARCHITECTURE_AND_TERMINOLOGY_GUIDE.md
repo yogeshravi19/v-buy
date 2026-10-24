@@ -62,6 +62,25 @@ These terms are frequently confused. Here is the complete breakdown in simple, e
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+### How They Connect in Real Life:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      HOW THEY CONNECT IN REAL LIFE                      │
+│                                                                         │
+│  User types: vfoods.onrender.com (DOMAIN NAME)                          │
+│                         │                                               │
+│                         ▼ (DNS translates name to numbers)              │
+│               IP: 216.24.57.1 (IP ADDRESS)                              │
+│                         │                                               │
+│                         ▼ (Routes traffic to the cloud provider)        │
+│             Render.com Singapore (HOSTING)                              │
+│                         │                                               │
+│                         ▼ (Delivers request to the physical computer)   │
+│             Linux CPU & Memory (SERVER)                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
 ### Detailed Terminology:
 
 | Term | In Plain English | Everyday Analogy | In V Foods |
@@ -241,7 +260,7 @@ A database and a file storage system serve two completely different purposes:
 | :--- | :--- | :--- | :--- | :--- |
 | 108 | Paneer Butter Masala | ₹140 | North Indian | `https://.../paneer.webp` |
 
-> **Crucial Rule:** The heavy image stays in **Storage**; only the lightweight **text URL** is saved in the **Database**.
+> **The Golden Rule**: The heavy 3MB photo is stored in **Storage (Google Drive / S3)**. The **Database (Excel table)** only saves the short text link: `https://.../biryani.webp`.
 
 ### Why Can't We Store Photos Directly Inside the Database?
 1. **Performance & Query Speed**: Databases search millions of rows in milliseconds. Storing multi-megabyte image binaries directly in database rows (as BLOBs) saturates database memory and degrades search speed.
@@ -344,7 +363,27 @@ flowchart TD
 
 ---
 
-## 10. Summary Cheat Sheet
+## 10. Frequently Asked Questions (FAQ)
+
+### Q1: Can a web app work with only a Frontend and a Database, with no backend server at all?
+* **Only for simple toy apps or public blogs.**
+* If your application handles real money, payments, or secret keys, you **cannot** run without a private backend. A browser is completely open to the user; putting private keys in a browser allows anyone to steal them.
+
+### Q2: Is Supabase and Firebase the same as MongoDB and MySQL?
+* **No.** MongoDB and MySQL are **raw database engines**. They do not have user login systems, file storage, or instant web APIs built-in.
+* Supabase and Firebase are **Backend-as-a-Service (BaaS)** platforms that bundle a database together with user authentication, file storage, and real-time syncing out of the box.
+
+### Q3: What is the difference between an API and a Server?
+* A **Server** is the physical or virtual computer.
+* An **API** is the software door or window on that computer that allows other computers to request information (like `/api/get-menu`).
+
+### Q4: Why is Render called "Hosting" and not just a "Server"?
+* A server is just the computer hardware.
+* **Hosting** is the complete managed service provided by Render: they handle the building, power, cooling, Linux setup, network firewalls, DDoS protection, SSL certificates (`https`), and automatic deployments from GitHub.
+
+---
+
+## 11. Summary Cheat Sheet
 
 | Question | Direct Answer |
 | :--- | :--- |
@@ -362,4 +401,4 @@ flowchart TD
 
 *Document: System Architecture & Technology Concepts Guide*  
 *Project: V Foods Smart Campus Dining System*  
-*Revision: 2.1.0 (Comprehensive Plain-English Edition)*  
+*Revision: 2.2.0 (Master Comprehensive Edition)*  
