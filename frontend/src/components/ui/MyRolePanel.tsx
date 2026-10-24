@@ -49,9 +49,9 @@ export const MyRolePanel: React.FC<MyRolePanelProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 id="my-role-title" className="text-base font-bold text-white m-0">My Role & Access</h3>
+                <h3 id="my-role-title" className="text-base font-bold text-white m-0">My role and access</h3>
                 <span
-                  className="px-2 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider text-white"
+                  className="px-2 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wider text-white"
                   style={{ backgroundColor: roleDef.badgeColor }}
                 >
                   {roleDef.displayName}
