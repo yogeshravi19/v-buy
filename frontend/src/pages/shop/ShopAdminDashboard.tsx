@@ -131,6 +131,18 @@ export interface SettlementRecord {
   reference_id: string
 }
 
+export interface OutletCoupon {
+  code: string
+  discount_type: 'flat' | 'percent'
+  discount_value: number
+  min_order_value?: number | null
+  max_uses?: number | null
+  used_count: number
+  outlet_id?: string | null
+  valid_to?: string
+  active: boolean
+}
+
 interface ShopAdminDashboardProps {
   currentUser: any
   setCurrentUser?: (u: any) => void
@@ -192,6 +204,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     | 'pos'
     | 'pickup-slots'
     | 'staff'
+    | 'coupons'
     | 'sales-revenue'
     | 'settlements'
     | 'reports'
@@ -206,6 +219,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     if (p.includes('/inventory') || p.includes('/stock')) return 'inventory'
     if (p.includes('/slots') || p.includes('/pickup-slots')) return 'pickup-slots'
     if (p.includes('/staff')) return 'staff'
+    if (p.includes('/coupons')) return 'coupons'
     if (p.includes('/sales') || p.includes('/revenue') || p.includes('/sales-revenue')) return 'sales-revenue'
     if (p.includes('/settlements')) return 'settlements'
     if (p.includes('/reports')) return 'reports'
@@ -371,6 +385,69 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       role: staff.role
     })
     setShowAddStaffModal(true)
+  }
+
+  // Coupons State
+  const [couponsList, setCouponsList] = useState<OutletCoupon[]>([
+    { code: 'WELCOME50', discount_type: 'percent', discount_value: 50, min_order_value: 100, max_uses: 200, used_count: 42, active: true, valid_to: '2026-12-31' },
+    { code: 'SAVE20', discount_type: 'flat', discount_value: 20, min_order_value: 80, max_uses: 500, used_count: 118, active: true, valid_to: '2026-11-30' }
+  ])
+  const [showCouponModal, setShowCouponModal] = useState(false)
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discount_type: 'percent' as 'flat' | 'percent',
+    discount_value: 10,
+    min_order_value: 50,
+    max_uses: 100
+  })
+
+  const handleSaveCoupon = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const cleanCode = couponForm.code.trim().toUpperCase()
+    if (!cleanCode) return
+
+    const newCoupon: OutletCoupon = {
+      code: cleanCode,
+      discount_type: couponForm.discount_type,
+      discount_value: Number(couponForm.discount_value),
+      min_order_value: Number(couponForm.min_order_value),
+      max_uses: Number(couponForm.max_uses),
+      used_count: 0,
+      outlet_id: activeOutletId,
+      active: true,
+      valid_to: '2026-12-31'
+    }
+
+    setCouponsList(prev => [newCoupon, ...prev.filter(c => c.code !== cleanCode)])
+    setShowCouponModal(false)
+    toast.success(`Coupon ${cleanCode} created`)
+    setCouponForm({ code: '', discount_type: 'percent', discount_value: 10, min_order_value: 50, max_uses: 100 })
+
+    try {
+      await supabase.from('coupons').upsert({
+        code: cleanCode,
+        discount_type: newCoupon.discount_type,
+        discount_value: newCoupon.discount_value,
+        min_order_value: newCoupon.min_order_value,
+        max_uses: newCoupon.max_uses,
+        outlet_id: activeOutletId,
+        active: true
+      })
+    } catch (err) {
+      console.warn('Coupon DB save fallback:', err)
+    }
+  }
+
+  const handleToggleCoupon = async (code: string) => {
+    setCouponsList(prev => prev.map(c => c.code === code ? { ...c, active: !c.active } : c))
+    try {
+      const current = couponsList.find(c => c.code === code)
+      if (current) {
+        await supabase.from('coupons').update({ active: !current.active }).eq('code', code)
+      }
+    } catch (err) {
+      console.warn('Coupon toggle error:', err)
+    }
   }
 
   // TanStack Table Columns
@@ -750,6 +827,27 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           role: s.role === 'shop_admin' ? 'Shop Admin' : 'Counter Cashier',
           is_active: true,
           created_at: s.created_at ? s.created_at.split('T')[0] : getTodayIST()
+        })))
+      }
+
+      // 4. Fetch Outlet Coupons
+      const { data: cData } = await supabase
+        .from('coupons')
+        .select('*')
+        .or(`outlet_id.eq.${activeOutletId},outlet_id.is.null`)
+        .order('valid_from', { ascending: false })
+
+      if (cData && cData.length > 0) {
+        setCouponsList(cData.map((c: any) => ({
+          code: c.code,
+          discount_type: c.discount_type || 'percent',
+          discount_value: Number(c.discount_value || 0),
+          min_order_value: c.min_order_value,
+          max_uses: c.max_uses,
+          used_count: c.used_count || 0,
+          outlet_id: c.outlet_id,
+          valid_to: c.valid_to ? c.valid_to.split('T')[0] : '2026-12-31',
+          active: c.active !== false
         })))
       }
     } catch (e) {
@@ -1396,6 +1494,17 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           </button>
 
           <button
+            className={`saas-nav-btn ${activeTab === 'coupons' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('coupons'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <Percent size={15} />
+              <span>Coupons & Deals</span>
+            </div>
+            <span className="saas-nav-badge">{couponsList.filter(c => c.active).length}</span>
+          </button>
+
+          <button
             className={`saas-nav-btn ${activeTab === 'sales-revenue' ? 'active' : ''}`}
             onClick={() => { setActiveTab('sales-revenue'); setMobileMenuOpen(false); }}
           >
@@ -1498,6 +1607,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 {activeTab === 'pos' && 'POS'}
                 {activeTab === 'pickup-slots' && 'Pickup Slots'}
                 {activeTab === 'staff' && 'Staff'}
+                {activeTab === 'coupons' && 'Coupons'}
                 {activeTab === 'sales-revenue' && 'Revenue'}
                 {activeTab === 'settlements' && 'Settlements'}
                 {activeTab === 'reports' && 'Reports'}
@@ -2497,6 +2607,77 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           )}
 
           {/* ══════════════════════════════════════════════════════════
+              TAB: COUPONS & DISCOUNTS
+              ══════════════════════════════════════════════════════════ */}
+          {activeTab === 'coupons' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlet Discount Coupons</h3>
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Configure flat and percentage promo codes for customer orders</p>
+                </div>
+                <button className="saas-btn saas-btn-primary" onClick={() => setShowCouponModal(true)}>
+                  <Plus size={15} />
+                  <span>Create Coupon</span>
+                </button>
+              </div>
+
+              <div className="saas-card" style={{ padding: '0', overflow: 'hidden' }}>
+                <table className="saas-table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Coupon Code</th>
+                      <th>Discount</th>
+                      <th>Min Order</th>
+                      <th>Redemptions</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {couponsList.map(c => (
+                      <tr key={c.code}>
+                        <td>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#1E40AF', background: '#EFF6FF', padding: '3px 8px', borderRadius: '4px', border: '1px solid #BFDBFE' }}>
+                            {c.code}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700 }}>
+                            {c.discount_type === 'percent' ? `${c.discount_value}% OFF` : `₹${c.discount_value} FLAT`}
+                          </span>
+                        </td>
+                        <td>₹{c.min_order_value || 0}</td>
+                        <td>{c.used_count || 0} / {c.max_uses || '∞'}</td>
+                        <td>
+                          <span className={`saas-badge ${c.active ? 'saas-badge-success' : 'saas-badge-neutral'}`}>
+                            {c.active ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            className="saas-btn saas-btn-secondary saas-btn-sm"
+                            onClick={() => handleToggleCoupon(c.code)}
+                          >
+                            {c.active ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {couponsList.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#64748B' }}>
+                          No coupons created yet. Click "Create Coupon" to add one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════
               TAB 9: SALES & REVENUE
               ══════════════════════════════════════════════════════════ */}
           {activeTab === 'sales-revenue' && (
@@ -3056,6 +3237,103 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                 </button>
                 <button type="submit" className="saas-btn saas-btn-primary">
                   {editingStaff ? 'Save Changes' : 'Register Staff'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CREATE COUPON MODAL ── */}
+      {showCouponModal && (
+        <div className="saas-modal-backdrop" onClick={() => setShowCouponModal(false)}>
+          <div className="saas-modal-card" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <h3 className="saas-modal-title">Create Outlet Coupon</h3>
+              <button className="saas-modal-close" onClick={() => setShowCouponModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveCoupon} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Coupon Code
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. FESTIVE25"
+                    value={couponForm.code}
+                    onChange={e => setCouponForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', fontFamily: 'monospace', textTransform: 'uppercase' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Discount Type
+                    </label>
+                    <select
+                      value={couponForm.discount_type}
+                      onChange={e => setCouponForm(prev => ({ ...prev, discount_type: e.target.value as 'flat' | 'percent' }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    >
+                      <option value="percent">Percentage (%)</option>
+                      <option value="flat">Flat Cash (₹)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Value ({couponForm.discount_type === 'percent' ? '%' : '₹'})
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={couponForm.discount_type === 'percent' ? 100 : 500}
+                      value={couponForm.discount_value}
+                      onChange={e => setCouponForm(prev => ({ ...prev, discount_value: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Min Order Value (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={couponForm.min_order_value}
+                      onChange={e => setCouponForm(prev => ({ ...prev, min_order_value: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Max Redemptions
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={couponForm.max_uses}
+                      onChange={e => setCouponForm(prev => ({ ...prev, max_uses: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="saas-modal-footer">
+                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowCouponModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="saas-btn saas-btn-primary">
+                  Create Coupon
                 </button>
               </div>
             </form>
