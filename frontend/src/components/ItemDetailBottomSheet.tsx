@@ -4,6 +4,7 @@ import { X, Plus, Minus, Clock, Flame, ShieldCheck, ShoppingBag, UtensilsCrossed
 import { VegIndicator } from './VegIndicator'
 import { getFoodImage } from '../lib/foodImages'
 import { triggerHaptic } from '../hooks/useWebHaptics'
+import { logAppError } from '../lib/errorLogger'
 
 export interface ItemDetailBottomSheetProps {
   item: any | null
@@ -35,6 +36,13 @@ export class ItemDetailErrorBoundary extends React.Component<ErrorBoundaryProps,
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ItemDetailBottomSheet caught render error:', error, errorInfo)
+    logAppError({
+      cardId: 'P-ITEM-DETAIL',
+      role: 'user',
+      route: typeof window !== 'undefined' ? window.location.pathname : '/',
+      httpStatus: 500,
+      message: error?.message || 'Item detail sheet render error'
+    })
   }
 
   render() {

@@ -28,6 +28,7 @@ const SuperAdminDashboard = React.lazy(() => import('./pages/admin/SuperAdminDas
 import { NotFoundPage } from './pages/NotFoundPage'
 import { usePwa } from './hooks/usePwa'
 import { OfflineBanner, PwaUpdateToast, InAppBrowserBanner, IosInstallModal } from './components/PwaInstallPrompt'
+import { logRedirectEvent } from './lib/errorLogger'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
@@ -1508,18 +1509,25 @@ function App() {
   // Cross-role protection: redirect to legitimate dashboard if unauthorized role accesses route
   if (isCustomer && (rawPath.startsWith('/staff') || rawPath.startsWith('/shop-admin') || rawPath.startsWith('/admin'))) {
     if (window.location.pathname !== '/') {
+      const redirectId = rawPath.startsWith('/staff') ? 'X-UNAUTH-CUSTOMER-STAFF' : rawPath.startsWith('/shop-admin') ? 'X-UNAUTH-CUSTOMER-SHOP' : 'X-UNAUTH-CUSTOMER-ADMIN'
+      logRedirectEvent(redirectId, window.location.pathname, '/', 'user', 'Customer attempting unauthorized administrative route access')
       window.history.replaceState(null, '', '/')
     }
   } else if (isStaff && (rawPath.startsWith('/admin') || rawPath.startsWith('/shop-admin') || rawPath === '/')) {
     if (!window.location.pathname.startsWith('/staff')) {
+      const redirectId = rawPath === '/' ? 'X-UNAUTH-STAFF-ROOT' : 'X-UNAUTH-STAFF-ADMIN'
+      logRedirectEvent(redirectId, window.location.pathname, '/staff', 'staff', 'Staff redirected to kitchen/POS operations hub')
       window.history.replaceState(null, '', '/staff')
     }
   } else if (isOwner && (rawPath.startsWith('/admin') || rawPath === '/')) {
     if (!window.location.pathname.startsWith('/shop-admin')) {
+      const redirectId = rawPath === '/' ? 'X-UNAUTH-SHOP-ROOT' : 'X-UNAUTH-SHOP-ADMIN'
+      logRedirectEvent(redirectId, window.location.pathname, '/shop-admin', 'shop_admin', 'Shop Admin redirected to franchise management dashboard')
       window.history.replaceState(null, '', '/shop-admin')
     }
   } else if (isAdmin && rawPath === '/') {
     if (!window.location.pathname.startsWith('/admin')) {
+      logRedirectEvent('X-SUPER-ADMIN-ROOT', window.location.pathname, '/admin', 'super_admin', 'Super Admin redirected to platform governance center')
       window.history.replaceState(null, '', '/admin')
     }
   }

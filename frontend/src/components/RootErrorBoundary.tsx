@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { AlertCircle, RefreshCw, Trash2, Home } from 'lucide-react'
+import { logAppError } from '../lib/errorLogger'
 
 interface Props {
   children: ReactNode
@@ -25,6 +26,13 @@ export class RootErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('V Foods Uncaught Application Error:', error, errorInfo)
     this.setState({ errorInfo })
+    logAppError({
+      cardId: 'P-ROOT-ERROR',
+      role: 'user',
+      route: typeof window !== 'undefined' ? window.location.pathname : '/',
+      httpStatus: 500,
+      message: error?.message || 'Uncaught Application Error'
+    })
   }
 
   private handleReload = () => {
