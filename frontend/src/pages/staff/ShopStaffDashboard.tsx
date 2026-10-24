@@ -229,6 +229,12 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [tokenInput, setTokenInput] = useState('')
   const [verifyStatus, setVerifyStatus] = useState<{ success?: boolean; message?: string } | null>(null)
 
+  // Cancel Order Modal State
+  const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null)
+  const [cancelReason, setCancelReason] = useState<string>('Item out of stock')
+  const [cancelCustomNotes, setCancelCustomNotes] = useState<string>('')
+  const [isCancelling, setIsCancelling] = useState(false)
+
   // POS State
   const [posCart, setPosCart] = useState<{ [itemId: number]: number }>({})
   const [posCustomerName, setPosCustomerName] = useState('')
@@ -470,6 +476,38 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       }
     } catch (err) {
       console.error('Error updating order:', err)
+    }
+  }
+
+  // Cancel Order Helper
+  const handleStaffCancelOrder = async () => {
+    if (!cancelModalOrder) return
+    setIsCancelling(true)
+    const fullReason = cancelReason === 'Other' && cancelCustomNotes.trim()
+      ? `Other: ${cancelCustomNotes.trim()}`
+      : cancelReason
+
+    const orderId = cancelModalOrder.id
+    try {
+      await supabase.from('orders').update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      }).eq('id', orderId)
+
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
+      if (setGlobalOrders) {
+        setGlobalOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
+      }
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Shop Staff', 'staff', 'ORDER', 'CANCEL', `Order #${orderId} cancelled: ${fullReason}`)
+      }
+      setCancelModalOrder(null)
+      setCancelCustomNotes('')
+      setCancelReason('Item out of stock')
+    } catch (err) {
+      console.error('Error cancelling order:', err)
+    } finally {
+      setIsCancelling(false)
     }
   }
 
@@ -1184,30 +1222,42 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             </span>
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            {order.status === 'placed' && (
-                              <button
-                                className="saas-btn saas-btn-primary saas-btn-sm"
-                                onClick={() => handleAdvanceStatus(order.id, 'placed')}
-                              >
-                                <span>Start Prep</span>
-                              </button>
-                            )}
-                            {order.status === 'preparing' && (
-                              <button
-                                className="saas-btn saas-btn-success saas-btn-sm"
-                                onClick={() => handleAdvanceStatus(order.id, 'preparing')}
-                              >
-                                <span>Mark Ready</span>
-                              </button>
-                            )}
-                            {order.status === 'ready' && (
-                              <button
-                                className="saas-btn saas-btn-secondary saas-btn-sm"
-                                onClick={() => handleAdvanceStatus(order.id, 'ready')}
-                              >
-                                <span>Deliver</span>
-                              </button>
-                            )}
+                            <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                              {(order.status === 'placed' || order.status === 'preparing') && (
+                                <button
+                                  className="saas-btn saas-btn-secondary saas-btn-sm"
+                                  style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                                  onClick={() => setCancelModalOrder(order)}
+                                  title="Cancel Order"
+                                >
+                                  <span>Cancel</span>
+                                </button>
+                              )}
+                              {order.status === 'placed' && (
+                                <button
+                                  className="saas-btn saas-btn-primary saas-btn-sm"
+                                  onClick={() => handleAdvanceStatus(order.id, 'placed')}
+                                >
+                                  <span>Start Prep</span>
+                                </button>
+                              )}
+                              {order.status === 'preparing' && (
+                                <button
+                                  className="saas-btn saas-btn-success saas-btn-sm"
+                                  onClick={() => handleAdvanceStatus(order.id, 'preparing')}
+                                >
+                                  <span>Mark Ready</span>
+                                </button>
+                              )}
+                              {order.status === 'ready' && (
+                                <button
+                                  className="saas-btn saas-btn-secondary saas-btn-sm"
+                                  onClick={() => handleAdvanceStatus(order.id, 'ready')}
+                                >
+                                  <span>Deliver</span>
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1360,35 +1410,47 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                             </div>
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            {order.status === 'placed' && (
-                              <button
-                                className="saas-btn saas-btn-primary saas-btn-sm"
-                                onClick={() => handleAdvanceStatus(order.id, 'placed')}
-                              >
-                                <span>Start Prep</span>
-                              </button>
-                            )}
-                            {order.status === 'preparing' && (
-                              <button
-                                className="saas-btn saas-btn-success saas-btn-sm"
-                                onClick={() => handleAdvanceStatus(order.id, 'preparing')}
-                              >
-                                <span>Mark Ready</span>
-                              </button>
-                            )}
-                            {order.status === 'ready' && (
-                              <button
-                                className="saas-btn saas-btn-secondary saas-btn-sm"
-                                onClick={() => handleAdvanceStatus(order.id, 'ready')}
-                              >
-                                <span>Handover</span>
-                              </button>
-                            )}
-                            {order.status === 'collected' && (
-                              <span style={{ fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>
-                                Delivered
-                              </span>
-                            )}
+                            <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                              {(order.status === 'placed' || order.status === 'preparing') && (
+                                <button
+                                  className="saas-btn saas-btn-secondary saas-btn-sm"
+                                  style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                                  onClick={() => setCancelModalOrder(order)}
+                                  title="Cancel Order"
+                                >
+                                  <span>Cancel</span>
+                                </button>
+                              )}
+                              {order.status === 'placed' && (
+                                <button
+                                  className="saas-btn saas-btn-primary saas-btn-sm"
+                                  onClick={() => handleAdvanceStatus(order.id, 'placed')}
+                                >
+                                  <span>Start Prep</span>
+                                </button>
+                              )}
+                              {order.status === 'preparing' && (
+                                <button
+                                  className="saas-btn saas-btn-success saas-btn-sm"
+                                  onClick={() => handleAdvanceStatus(order.id, 'preparing')}
+                                >
+                                  <span>Mark Ready</span>
+                                </button>
+                              )}
+                              {order.status === 'ready' && (
+                                <button
+                                  className="saas-btn saas-btn-secondary saas-btn-sm"
+                                  onClick={() => handleAdvanceStatus(order.id, 'ready')}
+                                >
+                                  <span>Handover</span>
+                                </button>
+                              )}
+                              {order.status === 'collected' && (
+                                <span style={{ fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>
+                                  Delivered
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )})}
@@ -1634,10 +1696,18 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                           </div>
                         )}
 
-                        <div style={{ marginTop: '10px' }}>
+                        <div style={{ marginTop: '10px', display: 'flex', gap: '6px' }}>
+                          <button
+                            className="saas-btn saas-btn-secondary saas-btn-sm"
+                            style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                            onClick={() => setCancelModalOrder(order)}
+                            title="Cancel Order"
+                          >
+                            <span>Cancel</span>
+                          </button>
                           <button
                             className="saas-btn saas-btn-primary saas-btn-sm"
-                            style={{ width: '100%', justifyContent: 'center' }}
+                            style={{ flex: 1, justifyContent: 'center' }}
                             onClick={() => handleAdvanceStatus(order.id, 'placed')}
                           >
                             <span>Start Cooking →</span>
@@ -2350,6 +2420,92 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CANCEL ORDER MODAL ── */}
+      {cancelModalOrder && (
+        <div className="saas-modal-backdrop" onClick={() => setCancelModalOrder(null)}>
+          <div className="saas-modal-card" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <h3 className="saas-modal-title">Cancel Order #{cancelModalOrder.id}</h3>
+              <button className="saas-modal-close" onClick={() => setCancelModalOrder(null)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 14px' }}>
+                Select a reason to cancel this order. The customer will be notified immediately.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                {['Item out of stock', 'Kitchen closed', 'Customer requested', 'Other'].map(reason => (
+                  <label
+                    key={reason}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: cancelReason === reason ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                      background: cancelReason === reason ? '#EFF6FF' : '#FFFFFF',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: cancelReason === reason ? 600 : 400
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value={reason}
+                      checked={cancelReason === reason}
+                      onChange={() => setCancelReason(reason)}
+                    />
+                    <span>{reason}</span>
+                  </label>
+                ))}
+              </div>
+
+              {cancelReason === 'Other' && (
+                <input
+                  type="text"
+                  placeholder="Specify cancellation reason..."
+                  value={cancelCustomNotes}
+                  onChange={e => setCancelCustomNotes(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '13px',
+                    marginBottom: '16px'
+                  }}
+                />
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-secondary"
+                  onClick={() => setCancelModalOrder(null)}
+                  disabled={isCancelling}
+                >
+                  Keep Order
+                </button>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-primary"
+                  style={{ background: '#DC2626', borderColor: '#DC2626' }}
+                  onClick={handleStaffCancelOrder}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
