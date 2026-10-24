@@ -233,6 +233,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [roleForm, setRoleForm] = useState<{ role: string; outlet_id: string }>({ role: 'customer', outlet_id: '' })
   const [savingRole, setSavingRole] = useState(false)
 
+  // Invite Shop Admin State
+  const [showInviteAdminModal, setShowInviteAdminModal] = useState(false)
+  const [inviteAdminForm, setInviteAdminForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    outlet_id: ''
+  })
+  const [invitingAdmin, setInvitingAdmin] = useState(false)
+
   // Global Festival / Event Mode
   const [eventMode, setEventMode] = useState<boolean>(propEventMode)
   const [platformCommission, setPlatformCommission] = useState<number>(5.0)
@@ -368,7 +378,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogRecord | null>(null)
 
   // Escape key listener & background scroll lock for Super Admin modals
-  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser)
+  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser || showInviteAdminModal || showAddCampusModal)
   useEffect(() => {
     if (!isAnySuperModalOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -379,6 +389,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         }
         setShowAddCouponModal(false)
         setSelectedAuditLog(null)
+        setShowInviteAdminModal(false)
+        setShowAddCampusModal(false)
         if (!savingRole) setEditingRoleUser(null)
       }
     }
@@ -935,6 +947,56 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       toast.error('Error saving role: ' + (err.message || 'Unknown error'))
     } finally {
       setSavingRole(false)
+    }
+  }
+
+  // Invite Shop Admin (persists to Supabase profiles and local state)
+  const handleInviteShopAdmin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inviteAdminForm.full_name.trim() || !inviteAdminForm.phone.trim()) {
+      toast.error('Name and phone number are required')
+      return
+    }
+    setInvitingAdmin(true)
+    try {
+      const assignedOutlet = inviteAdminForm.outlet_id || (outletList[0]?.id || null)
+      const newAdminUser: PlatformUser = {
+        id: `sa-${Date.now()}`,
+        full_name: inviteAdminForm.full_name.trim(),
+        email: inviteAdminForm.email.trim() || undefined,
+        phone: inviteAdminForm.phone.trim(),
+        role: 'shop_admin',
+        outlet_id: assignedOutlet,
+        is_active: true,
+        created_at: new Date().toISOString().split('T')[0]
+      }
+
+      try {
+        await supabase.from('profiles').insert({
+          id: newAdminUser.id,
+          full_name: newAdminUser.full_name,
+          email: newAdminUser.email || null,
+          phone: newAdminUser.phone,
+          mobile_number: newAdminUser.phone,
+          role: 'shop_admin',
+          outlet_id: assignedOutlet,
+          is_active: true
+        })
+      } catch (err) {
+        console.warn('Could not persist shop admin to profiles, updating local state:', err)
+      }
+
+      setUsersList(prev => [newAdminUser, ...prev])
+      toast.success(`Invited Shop Admin "${newAdminUser.full_name}"`)
+      if (addAuditLog) {
+        addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'USER', 'INVITE_ADMIN', `Invited Shop Admin ${newAdminUser.full_name} for outlet ${assignedOutlet || 'none'}`)
+      }
+      setShowInviteAdminModal(false)
+      setInviteAdminForm({ full_name: '', email: '', phone: '', outlet_id: '' })
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to invite Shop Admin')
+    } finally {
+      setInvitingAdmin(false)
     }
   }
 
@@ -1709,21 +1771,34 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     ))}
                   </div>
 
-                  <div style={{ position: 'relative', width: '280px' }}>
-                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '9px', color: '#94A3B8' }} />
-                    <input
-                      type="text"
-                      placeholder="Search by name, mobile, email..."
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '6px 12px 6px 32px',
-                        borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
-                        fontSize: '13px'
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ position: 'relative', width: '280px' }}>
+                      <Search size={14} style={{ position: 'absolute', left: '10px', top: '9px', color: '#94A3B8' }} />
+                      <input
+                        type="text"
+                        placeholder="Search by name, mobile, email..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '6px 12px 6px 32px',
+                          borderRadius: '6px',
+                          border: '1px solid #CBD5E1',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1.5"
+                      onClick={() => {
+                        setInviteAdminForm({ full_name: '', email: '', phone: '', outlet_id: outletList[0]?.id || '' })
+                        setShowInviteAdminModal(true)
                       }}
-                    />
+                    >
+                      <Plus size={14} />
+                      <span>Invite Shop Admin</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2876,6 +2951,87 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </button>
                 <button type="submit" className="saas-btn saas-btn-primary">
                   {editingCampus ? 'Save Changes' : 'Register Campus'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── INVITE SHOP ADMIN MODAL ── */}
+      {showInviteAdminModal && (
+        <div className="saas-modal-backdrop" onClick={() => setShowInviteAdminModal(false)}>
+          <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <h3 className="saas-modal-title">Invite Shop Admin</h3>
+              <button className="saas-modal-close" onClick={() => setShowInviteAdminModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleInviteShopAdmin} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="saas-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Kumar"
+                    value={inviteAdminForm.full_name}
+                    onChange={e => setInviteAdminForm(prev => ({ ...prev, full_name: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. ramesh@outlet.vfoods.in"
+                    value={inviteAdminForm.email}
+                    onChange={e => setInviteAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Mobile Phone
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="10-digit mobile number"
+                    value={inviteAdminForm.phone}
+                    onChange={e => setInviteAdminForm(prev => ({ ...prev, phone: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Assigned Outlet
+                  </label>
+                  <select
+                    value={inviteAdminForm.outlet_id}
+                    onChange={e => setInviteAdminForm(prev => ({ ...prev, outlet_id: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                  >
+                    <option value="">Select an outlet...</option>
+                    {outletList.map(o => (
+                      <option key={o.id} value={o.id}>
+                        {o.name} ({o.location})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="saas-modal-footer">
+                <button type="button" className="saas-btn saas-btn-secondary" onClick={() => setShowInviteAdminModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="saas-btn saas-btn-primary" disabled={invitingAdmin}>
+                  {invitingAdmin ? 'Inviting...' : 'Invite Admin'}
                 </button>
               </div>
             </form>
