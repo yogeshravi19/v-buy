@@ -43,21 +43,21 @@ export function DataTable({
   })
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Search / Filter Toolbar */}
       {searchPlaceholder && (
-        <div className="flex items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex items-center justify-between gap-4 px-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-9 pl-9 pr-3 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-colors"
+              className="saas-search-input text-xs shadow-xs"
             />
           </div>
-          <div className="text-xs text-slate-500 tabular-nums">
+          <div className="text-xs font-medium text-slate-500 tabular-nums">
             Showing {table.getRowModel().rows.length} of {data.length} records
           </div>
         </div>
@@ -66,7 +66,7 @@ export function DataTable({
       {/* Table Container */}
       <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left border-collapse text-xs">
+          <table className="saas-data-table w-full text-left border-collapse text-xs">
             <thead className="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-10 backdrop-blur-sm">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
