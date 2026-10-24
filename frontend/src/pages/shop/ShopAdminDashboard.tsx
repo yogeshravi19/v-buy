@@ -739,7 +739,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `outlet_id=eq.${activeOutletId}` }, (payload: any) => {
         if (payload.eventType === 'INSERT') {
           loadData()
-          setBannerNotice(`New Order ${formatOrderNumber(payload.new)} placed!`)
+          setBannerNotice(`New order ${formatOrderNumber(payload.new)} placed`)
           setTimeout(() => setBannerNotice(null), 4000)
         } else if (payload.eventType === 'UPDATE') {
           const updated = payload.new
@@ -1049,7 +1049,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     setLocalOrders(prev => [newOrder, ...prev])
     setPosCart({})
     setPosCustomerName('')
-    setNotice(`POS Order punched! Token #${token} generated.`)
+    setNotice(`POS order created. Token #${token} generated.`)
     setTimeout(() => setNotice(null), 3500)
 
     try {
@@ -2264,7 +2264,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
               {lowStockCount > 0 && (
                 <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', color: '#92400E', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <AlertTriangle size={16} />
-                  <span><strong>{lowStockCount} items</strong> are critically low on stock (≤ 5 remaining). Please restock below.</span>
+                  <span><strong>{lowStockCount} items</strong> are critically low on stock (≤ 5 remaining). Restock below.</span>
                 </div>
               )}
 
@@ -2767,11 +2767,11 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                     <button
                       className="saas-btn saas-btn-primary"
                       onClick={() => {
-                        setNotice('Shop parameters saved successfully.')
+                        setNotice('Shop parameters saved.')
                         setTimeout(() => setNotice(null), 3000)
                       }}
                     >
-                      Save Settings
+                      Save settings
                     </button>
                   </div>
                 </div>
