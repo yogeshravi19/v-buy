@@ -887,6 +887,34 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           changed_at: a.changed_at
         })))
       }
+
+      // 6. Fetch Pickup Slots from live pickup_slots table
+      const { data: slotData, error: slotErr } = await supabase
+        .from('pickup_slots')
+        .select('*')
+        .eq('outlet_id', activeOutletId)
+        .order('slot_time', { ascending: true })
+
+      if (!slotErr && slotData && slotData.length > 0) {
+        setPickupSlots(slotData.map((s: any) => {
+          let timeLabel = s.slot_time
+          try {
+            if (String(s.slot_time).includes('T') || String(s.slot_time).includes('-')) {
+              const d = new Date(s.slot_time)
+              if (!isNaN(d.getTime())) {
+                timeLabel = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              }
+            }
+          } catch (_) {}
+          return {
+            id: s.id,
+            slot_time: timeLabel,
+            max_orders: s.max_orders || 25,
+            booked_count: s.current_orders || s.booked_count || 0,
+            is_active: true
+          }
+        }))
+      }
     } catch (e) {
       console.warn('Shop Admin fetch fallback:', e)
     } finally {
