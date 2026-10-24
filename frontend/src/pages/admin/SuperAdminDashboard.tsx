@@ -1621,6 +1621,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               selectedOutletId={selectedStaffOutletId}
               onBackToOutlets={() => setActiveTab('outlets')}
               onUserUpdated={loadGlobalData}
+              onUpdateUserLocal={(userId: string, updates: Partial<PlatformUser>) => {
+                setUsersList(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u))
+              }}
             />
           )}
 
