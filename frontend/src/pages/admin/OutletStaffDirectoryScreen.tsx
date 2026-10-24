@@ -40,6 +40,13 @@ export interface PlatformUser {
   created_at?: string
 }
 
+const getInitials = (name?: string) => {
+  if (!name) return 'VF'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
 interface OutletStaffDirectoryScreenProps {
   outlets: OutletRecord[]
   users: PlatformUser[]
@@ -283,20 +290,20 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CASE 1: ALL CANTEENS OVERVIEW (Generous 2-Column Slice Cards)
+          CASE 1: ALL CANTEENS OVERVIEW (Spacious 3-Column Curved Squared Boxes)
           ───────────────────────────────────────────────────────────── */}
       {activeOutletFilter === 'all' && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-              Campus Canteen Roster Slices ({filteredCanteens.length})
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">
+              Campus Canteen Roster Slices ({filteredCanteens.length} Canteens)
             </h3>
             <span className="text-xs font-medium text-slate-400">
-              Click any canteen slice card to manage full roster
+              Select any canteen to open its dedicated personnel roster
             </span>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCanteens.map(canteen => {
               const admins = users.filter(u => u.outlet_id === canteen.id && (u.role === 'shop_admin' || u.role === 'owner'))
               const staff = users.filter(u => u.outlet_id === canteen.id && u.role === 'staff')
@@ -306,30 +313,17 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 <div
                   key={canteen.id}
                   onClick={() => setActiveOutletFilter(canteen.id)}
-                  className="p-7 bg-white rounded-3xl border border-slate-200/90 shadow-sm hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between gap-6 group"
+                  style={{ padding: '24px', borderRadius: '24px', minHeight: '340px' }}
+                  className="bg-white border border-slate-200/90 shadow-sm hover:border-blue-500 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group"
                 >
-                  <div className="space-y-5">
-                    {/* Header Row */}
+                  <div className="space-y-4">
+                    {/* Header Row: Curved Square Icon + Open Pill */}
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-2xs">
-                          <Store size={22} />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-blue-700 transition-colors truncate">
-                            {canteen.name}
-                          </h3>
-                          <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <Building2 size={13} className="text-slate-400" />
-                              <span>{canteen.location || 'Campus Center'}</span>
-                            </span>
-                            <span className="text-slate-300">·</span>
-                            <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-semibold">
-                              {canteen.id}
-                            </span>
-                          </div>
-                        </div>
+                      <div
+                        style={{ width: '56px', height: '56px', borderRadius: '16px' }}
+                        className="bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-2xs"
+                      >
+                        <Store size={24} />
                       </div>
 
                       <span className={cn(
@@ -340,38 +334,61 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                       </span>
                     </div>
 
-                    {/* Spacious 2-Block Roster Details (No horizontal congestion) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-                      {/* Franchise Owner Block */}
-                      <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-1.5">
+                    {/* Canteen Title & Location */}
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 group-hover:text-blue-700 transition-colors leading-snug">
+                        {canteen.name}
+                      </h3>
+                      <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Building2 size={13} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{canteen.location || 'Campus Center'}</span>
+                        </span>
+                        <span className="text-slate-300">·</span>
+                        <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-bold">
+                          {canteen.id}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Two Distinct Curved Sub-Boxes (One for Owner, One for Staff) */}
+                    <div className="space-y-2.5 pt-2">
+                      {/* Franchise Owner Curved Box */}
+                      <div
+                        style={{ padding: '14px', borderRadius: '16px' }}
+                        className="bg-amber-50/50 border border-amber-100 space-y-1"
+                      >
                         <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                           <span className="flex items-center gap-1.5">
                             <Shield size={13} className="text-amber-600" />
                             Franchise Owner
                           </span>
                           {admins.length > 0 && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
+                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
                               Shop Admin
                             </span>
                           )}
                         </div>
-                        <div className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                        <div className="text-xs font-extrabold text-slate-900 truncate">
                           {admins.length > 0 ? admins[0].full_name : <span className="text-slate-400 font-normal italic">Unassigned</span>}
                         </div>
                       </div>
 
-                      {/* Counter Staff Block */}
-                      <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-1.5">
+                      {/* Counter Staff Curved Box */}
+                      <div
+                        style={{ padding: '14px', borderRadius: '16px' }}
+                        className="bg-emerald-50/50 border border-emerald-100 space-y-1"
+                      >
                         <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                           <span className="flex items-center gap-1.5">
                             <UserCheck size={13} className="text-emerald-600" />
                             Counter Staff
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                          <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold">
                             {staff.length > 0 ? 'Active' : 'None'}
                           </span>
                         </div>
-                        <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                        <div className="text-xs font-extrabold text-slate-900">
                           {staff.length} Active Staff Member{staff.length === 1 ? '' : 's'}
                         </div>
                       </div>
@@ -379,8 +396,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   </div>
 
                   {/* Card Action Footer */}
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
+                    <div className="flex items-center gap-1.5">
                       <Users size={15} className="text-slate-400" />
                       <span className="font-extrabold text-slate-700">
                         Total Team: <span className="text-blue-700 font-black">{totalTeam}</span>
@@ -402,32 +419,38 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          CASE 2: SINGLE CANTEEN SELECTED — FULL DETAILS REGARDING THAT CANTEEN
+          CASE 2: SINGLE CANTEEN SELECTED — FULL DETAILS AS CURVED SQUARED BOXES
           ───────────────────────────────────────────────────────────── */}
       {activeOutlet && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Canteen Hero Banner Card with Free Space */}
-          <div className="p-7 bg-white rounded-3xl border border-slate-200/90 shadow-sm flex items-center justify-between flex-wrap gap-5">
+          <div
+            style={{ padding: '24px', borderRadius: '24px' }}
+            className="bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5"
+          >
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
-                <Store size={28} />
+              <div
+                style={{ width: '64px', height: '64px', borderRadius: '20px' }}
+                className="bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs"
+              >
+                <Store size={32} />
               </div>
               <div className="space-y-1.5">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-black text-slate-900">{activeOutlet.name}</h3>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="text-2xl font-black text-slate-900">{activeOutlet.name}</h3>
                   <span className={cn(
-                    'text-xs font-bold px-3 py-0.5 rounded-full border',
+                    'text-xs font-bold px-3 py-1 rounded-full border',
                     activeOutlet.is_open ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'
                   )}>
-                    {activeOutlet.is_open ? 'OPEN' : 'CLOSED'}
+                    {activeOutlet.is_open ? 'OPEN FOR ORDERS' : 'CLOSED'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                  <span>Location: <strong className="text-slate-700">{activeOutlet.location || 'Campus Center'}</strong></span>
+                  <span>Location: <strong className="text-slate-800">{activeOutlet.location || 'Campus Center'}</strong></span>
                   <span className="text-slate-300">·</span>
-                  <span>ID: <code className="font-mono text-slate-800 bg-slate-100 px-1 rounded">{activeOutlet.id}</code></span>
+                  <span>ID: <code className="font-mono text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded font-bold">{activeOutlet.id}</code></span>
                   <span className="text-slate-300">·</span>
-                  <span>{activeOutlet.is_event ? 'Event Stall' : 'Regular Canteen'}</span>
+                  <span className="font-bold text-blue-700">Total Roster: {activeAdmins.length + activeStaff.length} Members</span>
                 </p>
               </div>
             </div>
@@ -436,9 +459,9 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
               <button
                 type="button"
                 onClick={() => setActiveOutletFilter('all')}
-                className="saas-btn saas-btn-secondary inline-flex items-center gap-1.5 h-11 px-4 text-xs font-bold rounded-2xl"
+                className="saas-btn saas-btn-secondary inline-flex items-center gap-2 h-11 px-5 text-xs font-bold rounded-2xl"
               >
-                <ArrowLeft size={14} />
+                <ArrowLeft size={15} />
                 <span>All Canteens</span>
               </button>
               <button
@@ -449,197 +472,240 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   setShowAssignModal(true)
                 }}
               >
-                <Plus size={15} />
+                <Plus size={16} />
                 <span>Add Member to {activeOutlet.name}</span>
               </button>
             </div>
           </div>
 
-          {/* Full Details: Two Spacious Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Section 1: Franchise Owner for this Canteen */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                  <Shield size={18} className="text-amber-600" />
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-                    Franchise Owner / Shop Admin ({activeAdmins.length})
-                  </h3>
-                </div>
+          {/* Unified Canteen Personnel Grid (Spacious Curved Squared Boxes) */}
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 px-1">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  Assigned Personnel & Roster ({activeAdmins.length + activeStaff.length} Members)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Each personnel member is granted role-based POS billing, KDS prep, or store administration access
+                </p>
+              </div>
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
-                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 text-xs font-bold"
+                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 text-xs font-bold rounded-xl"
                   onClick={() => {
                     setAssignRole('shop_admin')
                     setAssignOutletId(activeOutlet.id)
                     setShowAssignModal(true)
                   }}
                 >
-                  <Plus size={13} />
-                  <span>Assign Owner</span>
+                  <Shield size={13} className="text-amber-600" />
+                  <span>+ Franchise Owner</span>
                 </button>
-              </div>
-
-              {activeAdmins.length === 0 ? (
-                <div className="p-8 bg-amber-50/50 rounded-2xl border border-amber-200 text-center space-y-3">
-                  <AlertCircle size={28} className="mx-auto text-amber-600" />
-                  <div className="text-sm font-extrabold text-amber-900">No Franchise Owner Assigned</div>
-                  <p className="text-xs text-amber-700 max-w-sm mx-auto">
-                    This canteen has no designated Shop Admin. Assign an owner to grant menu editing and revenue oversight access.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAssignRole('shop_admin')
-                      setAssignOutletId(activeOutlet.id)
-                      setShowAssignModal(true)
-                    }}
-                    className="saas-btn saas-btn-sm saas-btn-primary mt-1"
-                  >
-                    Assign Owner Now
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activeAdmins.map(admin => (
-                    <div
-                      key={admin.id}
-                      className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-4"
-                    >
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-base font-extrabold text-slate-900 truncate">
-                            {admin.full_name || 'Outlet Admin'}
-                          </span>
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                            Franchise Owner
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500">
-                          <span className="flex items-center gap-1.5">
-                            <Phone size={13} className="text-slate-400" />
-                            {admin.phone || '—'}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Mail size={13} className="text-slate-400" />
-                            {admin.email || '—'}
-                          </span>
-                        </div>
-
-                        <div className="pt-1 text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                          <Check size={13} />
-                          <span>Full Shop Admin Management Access Enabled</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleUnassignUser(admin.id, admin.full_name || 'Admin')}
-                          className="saas-btn saas-btn-sm saas-btn-danger inline-flex items-center gap-1.5"
-                          title="Unassign owner from this canteen"
-                        >
-                          <Trash2 size={13} />
-                          <span>Unassign</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Section 2: Kitchen & Counter Staff for this Canteen */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                  <UserCheck size={18} className="text-emerald-600" />
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-                    Kitchen & Counter Staff ({activeStaff.length})
-                  </h3>
-                </div>
                 <button
                   type="button"
-                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 text-xs font-bold"
+                  className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-xs"
                   onClick={() => {
                     setAssignRole('staff')
                     setAssignOutletId(activeOutlet.id)
                     setShowAssignModal(true)
                   }}
                 >
-                  <Plus size={13} />
-                  <span>Assign Staff</span>
+                  <UserPlus size={13} />
+                  <span>+ Counter Staff</span>
                 </button>
               </div>
+            </div>
 
-              {activeStaff.length === 0 ? (
-                <div className="p-8 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-3">
-                  <UserCheck size={28} className="mx-auto text-slate-400" />
-                  <div className="text-sm font-extrabold text-slate-700">No Kitchen Staff Assigned</div>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    No counter staff members are assigned to this canteen. Add kitchen operators to handle live orders and POS billing.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAssignRole('staff')
-                      setAssignOutletId(activeOutlet.id)
-                      setShowAssignModal(true)
-                    }}
-                    className="saas-btn saas-btn-sm saas-btn-secondary mt-1"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: '24px' }}>
+              {/* 1. Franchise Owner Curved Squared Box */}
+              {activeAdmins.length > 0 ? (
+                activeAdmins.map(admin => (
+                  <div
+                    key={admin.id}
+                    style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
+                    className="bg-white border-2 border-amber-200/90 shadow-sm flex flex-col justify-between space-y-5 hover:shadow-lg transition-all group"
                   >
-                    Assign Staff Member
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3.5">
-                  {activeStaff.map(staffMember => (
-                    <div
-                      key={staffMember.id}
-                      className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-4"
-                    >
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-base font-extrabold text-slate-900 truncate">
-                            {staffMember.full_name || 'Kitchen Staff'}
-                          </span>
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            Counter Staff
-                          </span>
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div
+                          style={{ width: '56px', height: '56px', borderRadius: '16px' }}
+                          className="bg-amber-100 text-amber-900 font-black text-lg flex items-center justify-center shrink-0 shadow-2xs"
+                        >
+                          {getInitials(admin.full_name)}
                         </div>
+                        <span className="text-[11px] font-black px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 uppercase tracking-wider">
+                          Franchise Owner
+                        </span>
+                      </div>
 
-                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500">
-                          <span className="flex items-center gap-1.5">
-                            <Phone size={13} className="text-slate-400" />
-                            {staffMember.phone || '—'}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Mail size={13} className="text-slate-400" />
-                            {staffMember.email || '—'}
-                          </span>
+                      <div>
+                        <h4 className="text-lg font-black text-slate-900 leading-snug">
+                          {admin.full_name || 'Outlet Admin'}
+                        </h4>
+                        <p className="text-xs font-bold text-amber-700 mt-0.5">
+                          Designated Shop Administrator
+                        </p>
+                      </div>
+
+                      <div
+                        style={{ padding: '14px', borderRadius: '16px' }}
+                        className="bg-amber-50/50 border border-amber-100 space-y-1.5 text-xs text-slate-600"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Phone size={13} className="text-amber-600 shrink-0" />
+                          <span className="font-semibold">{admin.phone || 'No phone recorded'}</span>
                         </div>
-
-                        <div className="pt-1 text-xs font-medium text-slate-500">
-                          Authorized for KDS Order Prep & POS Terminal Billing
+                        <div className="flex items-center gap-2 truncate">
+                          <Mail size={13} className="text-amber-600 shrink-0" />
+                          <span className="font-semibold">{admin.email || 'No email recorded'}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleUnassignUser(staffMember.id, staffMember.full_name || 'Staff')}
-                          className="saas-btn saas-btn-sm saas-btn-danger inline-flex items-center gap-1.5"
-                          title="Unassign user from this canteen"
-                        >
-                          <Trash2 size={13} />
-                          <span>Unassign</span>
-                        </button>
+                      <div className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5">
+                        <Check size={14} className="shrink-0" />
+                        <span>Full Store Menu & Financial Management</span>
                       </div>
                     </div>
-                  ))}
+
+                    <button
+                      type="button"
+                      onClick={() => handleUnassignUser(admin.id, admin.full_name || 'Admin')}
+                      className="saas-btn saas-btn-danger w-full inline-flex items-center justify-center gap-2 h-10 text-xs font-bold rounded-xl shadow-2xs mt-2"
+                      title="Unassign owner from this canteen"
+                    >
+                      <Trash2 size={14} />
+                      <span>Unassign Owner</span>
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div
+                  onClick={() => {
+                    setAssignRole('shop_admin')
+                    setAssignOutletId(activeOutlet.id)
+                    setShowAssignModal(true)
+                  }}
+                  style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
+                  className="border-2 border-dashed border-amber-300 bg-amber-50/30 hover:bg-amber-50/70 hover:border-amber-500 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-4 group"
+                >
+                  <div
+                    style={{ width: '56px', height: '56px', borderRadius: '16px' }}
+                    className="bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-all shadow-2xs"
+                  >
+                    <Shield size={26} />
+                  </div>
+                  <div>
+                    <div className="text-base font-black text-amber-900">
+                      No Franchise Owner Assigned
+                    </div>
+                    <p className="text-xs text-amber-700 mt-1 max-w-[240px]">
+                      Assign a designated shop administrator to manage menus and revenue.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1.5 font-bold rounded-xl px-4 py-2"
+                  >
+                    <Plus size={14} />
+                    <span>Assign Owner</span>
+                  </button>
                 </div>
               )}
+
+              {/* 2. Kitchen & Counter Staff Curved Squared Boxes */}
+              {activeStaff.map(staffMember => (
+                <div
+                  key={staffMember.id}
+                  style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
+                  className="bg-white border-2 border-emerald-200/90 shadow-sm flex flex-col justify-between space-y-5 hover:shadow-lg transition-all group"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div
+                        style={{ width: '56px', height: '56px', borderRadius: '16px' }}
+                        className="bg-emerald-100 text-emerald-900 font-black text-lg flex items-center justify-center shrink-0 shadow-2xs"
+                      >
+                        {getInitials(staffMember.full_name)}
+                      </div>
+                      <span className="text-[11px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                        Counter Staff
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-lg font-black text-slate-900 leading-snug">
+                        {staffMember.full_name || 'Kitchen Staff'}
+                      </h4>
+                      <p className="text-xs font-bold text-emerald-700 mt-0.5">
+                        KDS Prep & Counter Cashier
+                      </p>
+                    </div>
+
+                    <div
+                      style={{ padding: '14px', borderRadius: '16px' }}
+                      className="bg-emerald-50/50 border border-emerald-100 space-y-1.5 text-xs text-slate-600"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Phone size={13} className="text-emerald-600 shrink-0" />
+                        <span className="font-semibold">{staffMember.phone || 'No phone recorded'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 truncate">
+                        <Mail size={13} className="text-emerald-600 shrink-0" />
+                        <span className="font-semibold">{staffMember.email || 'No email recorded'}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                      <Check size={14} className="text-emerald-600 shrink-0" />
+                      <span>Authorized for KDS Order Prep & POS Terminal</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleUnassignUser(staffMember.id, staffMember.full_name || 'Staff')}
+                    className="saas-btn saas-btn-danger w-full inline-flex items-center justify-center gap-2 h-10 text-xs font-bold rounded-xl shadow-2xs mt-2"
+                    title="Unassign user from this canteen"
+                  >
+                    <Trash2 size={14} />
+                    <span>Unassign Staff</span>
+                  </button>
+                </div>
+              ))}
+
+              {/* 3. Assign New Counter Staff Matching Curved Squared Box */}
+              <div
+                onClick={() => {
+                  setAssignRole('staff')
+                  setAssignOutletId(activeOutlet.id)
+                  setShowAssignModal(true)
+                }}
+                style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
+                className="border-2 border-dashed border-blue-300 bg-blue-50/20 hover:bg-blue-50/50 hover:border-blue-500 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-4 group"
+              >
+                <div
+                  style={{ width: '56px', height: '56px', borderRadius: '16px' }}
+                  className="bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-2xs"
+                >
+                  <Plus size={26} />
+                </div>
+                <div>
+                  <div className="text-base font-black text-slate-900 group-hover:text-blue-700 transition-colors">
+                    Assign Counter Staff
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 max-w-[240px]">
+                    Add staff to operate the live KDS prep screen and POS counter terminal.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 font-bold rounded-xl px-4 py-2 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600"
+                >
+                  <UserPlus size={14} />
+                  <span>Add Personnel</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
