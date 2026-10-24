@@ -33,10 +33,10 @@ export function OutletComparisonChart({ outlets = [], orders = [], money }) {
   const eventCount = outlets.filter(o => o.is_event).length
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card className="p-4 bg-white border border-slate-200">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500">Total Canteens</span>
+          <span className="text-xs font-semibold text-slate-500">Total canteens</span>
           <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
             <Store size={16} />
           </div>
@@ -49,7 +49,7 @@ export function OutletComparisonChart({ outlets = [], orders = [], money }) {
 
       <Card className="p-4 bg-white border border-slate-200">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500">Live Kitchens</span>
+          <span className="text-xs font-semibold text-slate-500">Live kitchens</span>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           </div>
@@ -62,7 +62,7 @@ export function OutletComparisonChart({ outlets = [], orders = [], money }) {
 
       <Card className="p-4 bg-white border border-slate-200">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500">Today's Platform GMV</span>
+          <span className="text-xs font-semibold text-slate-500">Platform turnover</span>
           <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
             <TrendingUp size={16} />
           </div>
@@ -75,7 +75,7 @@ export function OutletComparisonChart({ outlets = [], orders = [], money }) {
 
       <Card className="p-4 bg-white border border-slate-200">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500">Total Orders Placed</span>
+          <span className="text-xs font-semibold text-slate-500">Total orders placed</span>
           <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
             <ShoppingBag size={16} />
           </div>

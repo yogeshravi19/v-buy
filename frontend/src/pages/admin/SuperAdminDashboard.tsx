@@ -601,7 +601,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
     setOutletList(prev => prev.map(o => o.id === outletId ? { ...o, is_open: nextState } : o))
     if (setGlobalOutlets) setGlobalOutlets(prev => prev.map(o => o.id === outletId ? { ...o, is_open: nextState } : o))
-    toast.success(`Outlet ${target.name} forced ${nextState ? 'OPEN' : 'CLOSED'}`)
+    toast.success(`Outlet ${target.name} ${nextState ? 'opened' : 'closed'}`)
     if (addAuditLog) {
       addAuditLog(currentUser?.full_name || 'Super Admin', 'super_admin', 'OUTLET', 'OVERRIDE_STATUS', `Forced outlet ${target.name} to ${nextState ? 'OPEN' : 'CLOSED'}`)
     }
@@ -630,9 +630,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       accessorKey: 'name',
       header: 'Outlet Name',
       cell: ({ row }: any) => (
-        <div>
+        <div className="py-0.5">
           <div className="font-semibold text-slate-900">{row.original.name}</div>
-          <div className="text-[11px] text-slate-500">{row.original.location}</div>
+          <div className="text-xs text-slate-500 mt-0.5">{row.original.location}</div>
         </div>
       )
     },
@@ -659,9 +659,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         const outletOrders = orders.filter(o => o.outlet_id === row.original.id)
         const volume = outletOrders.reduce((s, o) => s + (o.total || 0), 0)
         return (
-          <div>
+          <div className="py-0.5">
             <div className="font-bold text-slate-900 tabular-nums">{money(volume)}</div>
-            <div className="text-[11px] text-slate-500">{outletOrders.length} orders</div>
+            <div className="text-xs text-slate-500 mt-0.5">{outletOrders.length} orders</div>
           </div>
         )
       }
@@ -672,15 +672,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       cell: ({ row }: any) => {
         const isOpen = row.original.is_open
         return (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
                 isOpen
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : 'bg-rose-50 text-rose-700 border-rose-200'
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+              <span className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
               {isOpen ? 'Open' : 'Closed'}
             </span>
           </div>
@@ -689,14 +689,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     },
     {
       id: 'actions',
-      header: 'Master Override',
+      header: () => <div className="text-right w-full">Master Override</div>,
       cell: ({ row }: any) => {
         const outlet = row.original
         return (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2.5">
             <button
               type="button"
-              className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1"
+              className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5"
               onClick={() => openEditOutletModal(outlet)}
               title="Edit outlet details"
             >
@@ -708,7 +708,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               className={`saas-btn saas-btn-sm ${outlet.is_open ? 'saas-btn-danger' : 'saas-btn-success'}`}
               onClick={() => handleToggleOutlet(outlet.id)}
             >
-              {outlet.is_open ? 'Force Close' : 'Force Open'}
+              {outlet.is_open ? 'Force close' : 'Force open'}
             </button>
           </div>
         )
@@ -1293,7 +1293,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               title="Click to toggle Riviera / Festival mode across campus"
             >
               <Sparkles size={13} />
-              <span>{eventMode ? 'Festival Mode: ACTIVE' : 'Standard Campus Mode'}</span>
+              <span>{eventMode ? 'Festival mode: Active' : 'Standard campus mode'}</span>
             </button>
 
             <button
