@@ -248,6 +248,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // Add Campus State
   const [showAddCampusModal, setShowAddCampusModal] = useState(false)
+  const [editingCampus, setEditingCampus] = useState<CampusRecord | null>(null)
   const [campusForm, setCampusForm] = useState({
     name: '',
     city: '',
@@ -255,23 +256,54 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     students_count: 1000
   })
 
+  const openAddCampusModal = () => {
+    setEditingCampus(null)
+    setCampusForm({ name: '', city: '', outlets_count: 5, students_count: 1000 })
+    setShowAddCampusModal(true)
+  }
+
+  const openEditCampusModal = (campus: CampusRecord) => {
+    setEditingCampus(campus)
+    setCampusForm({
+      name: campus.name,
+      city: campus.city,
+      outlets_count: campus.outlets_count,
+      students_count: campus.students_count
+    })
+    setShowAddCampusModal(true)
+  }
+
   const handleSaveCampus = (e: React.FormEvent) => {
     e.preventDefault()
     if (!campusForm.name.trim() || !campusForm.city.trim()) return
-    const id = campusForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    const newCampus: CampusRecord = {
-      id: id || `campus-${Date.now()}`,
-      name: campusForm.name.trim(),
-      city: campusForm.city.trim(),
-      outlets_count: Number(campusForm.outlets_count) || 1,
-      students_count: Number(campusForm.students_count) || 500,
-      today_gmv: 0,
-      status: 'active'
+
+    if (editingCampus) {
+      setCampuses(prev => prev.map(c => c.id === editingCampus.id ? {
+        ...c,
+        name: campusForm.name.trim(),
+        city: campusForm.city.trim(),
+        outlets_count: Number(campusForm.outlets_count) || c.outlets_count,
+        students_count: Number(campusForm.students_count) || c.students_count
+      } : c))
+      toast.success(`Updated Campus Hub "${campusForm.name.trim()}"`)
+    } else {
+      const id = campusForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      const newCampus: CampusRecord = {
+        id: id || `campus-${Date.now()}`,
+        name: campusForm.name.trim(),
+        city: campusForm.city.trim(),
+        outlets_count: Number(campusForm.outlets_count) || 1,
+        students_count: Number(campusForm.students_count) || 500,
+        today_gmv: 0,
+        status: 'active'
+      }
+      setCampuses(prev => [...prev, newCampus])
+      toast.success(`Campus Hub "${newCampus.name}" registered`)
     }
-    setCampuses(prev => [...prev, newCampus])
+
     setShowAddCampusModal(false)
+    setEditingCampus(null)
     setCampusForm({ name: '', city: '', outlets_count: 5, students_count: 1000 })
-    toast.success(`Campus Hub "${newCampus.name}" registered`)
   }
 
   // Outlets master list (loaded from the `outlets` table)
@@ -1542,7 +1574,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Campus Dining Clusters</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Multi-campus network directory and hub metrics</p>
                 </div>
-                <button className="saas-btn saas-btn-primary" onClick={() => setShowAddCampusModal(true)}>
+                <button className="saas-btn saas-btn-primary" onClick={openAddCampusModal}>
                   <Plus size={15} />
                   <span>Add Campus</span>
                 </button>
@@ -1559,6 +1591,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                         <th>User Enrolment</th>
                         <th>Today's Campus GMV</th>
                         <th>Hub Status</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1571,6 +1604,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                           <td style={{ fontWeight: 800, color: '#1E40AF' }}>{money(campus.today_gmv)}</td>
                           <td>
                             <span className="saas-badge saas-badge-success">OPERATIONAL</span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              className="saas-btn saas-btn-secondary saas-btn-sm"
+                              onClick={() => openEditCampusModal(campus)}
+                              title="Edit Campus Hub"
+                            >
+                              <Edit size={12} />
+                              <span>Edit</span>
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -2762,12 +2805,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </div>
       )}
 
-      {/* ── ADD CAMPUS MODAL ── */}
+      {/* ── ADD / EDIT CAMPUS MODAL ── */}
       {showAddCampusModal && (
         <div className="saas-modal-backdrop" onClick={() => setShowAddCampusModal(false)}>
           <div className="saas-modal-card" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
             <div className="saas-modal-header">
-              <h3 className="saas-modal-title">Add Campus Hub</h3>
+              <h3 className="saas-modal-title">{editingCampus ? 'Edit Campus Hub' : 'Add Campus Hub'}</h3>
               <button className="saas-modal-close" onClick={() => setShowAddCampusModal(false)}>
                 <X size={16} />
               </button>
@@ -2832,7 +2875,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   Cancel
                 </button>
                 <button type="submit" className="saas-btn saas-btn-primary">
-                  Register Campus
+                  {editingCampus ? 'Save Changes' : 'Register Campus'}
                 </button>
               </div>
             </form>
