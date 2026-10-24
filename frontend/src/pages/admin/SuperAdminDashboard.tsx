@@ -369,6 +369,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
   const [userRoleFilter, setUserRoleFilter] = useState('all')
+  const [orderChannelFilter, setOrderChannelFilter] = useState<'all' | 'APP' | 'POS'>('all')
+  const [orderOutletFilter, setOrderOutletFilter] = useState<string>('all')
 
   // Audit Logs Telemetry state
   const [auditLogsList, setAuditLogsList] = useState<AuditLogRecord[]>([])
@@ -443,11 +445,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       } else {
         // Fallback realistic platform orders
         setOrders([
-          { id: 9801, customer_name: 'Aarav Patel', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '104', status: 'placed', payment_method: 'UPI Online', total: 140, platform_fee: 7, net_payout: 133, created_at: new Date(Date.now() - 3 * 60000).toISOString() },
-          { id: 9800, customer_name: 'Sneha Reddy', outlet_id: 'g3', outlet_name: 'Dakshin Chitra', token: '289', status: 'preparing', payment_method: 'Meal Plan Card', total: 220, platform_fee: 11, net_payout: 209, created_at: new Date(Date.now() - 8 * 60000).toISOString() },
-          { id: 9798, customer_name: 'Rohan Gupta', outlet_id: 'n2', outlet_name: 'Shawarma Nation', token: '312', status: 'ready', payment_method: 'UPI Online', total: 180, platform_fee: 9, net_payout: 171, created_at: new Date(Date.now() - 15 * 60000).toISOString() },
-          { id: 9795, customer_name: 'Pooja Nair', outlet_id: 'g4', outlet_name: 'Lassi House', token: '419', status: 'collected', payment_method: 'Wallet', total: 110, platform_fee: 5.5, net_payout: 104.5, created_at: new Date(Date.now() - 32 * 60000).toISOString() },
-          { id: 9792, customer_name: 'Ananya Roy', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '502', status: 'collected', payment_method: 'UPI Online', total: 95, platform_fee: 4.75, net_payout: 90.25, created_at: new Date(Date.now() - 55 * 60000).toISOString() }
+          { id: 9801, customer_name: 'Aarav Patel', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '104', order_source: 'APP', status: 'placed', payment_method: 'UPI Online', total: 140, platform_fee: 7, net_payout: 133, created_at: new Date(Date.now() - 3 * 60000).toISOString() },
+          { id: 9800, customer_name: 'Sneha Reddy', outlet_id: 'g3', outlet_name: 'Dakshin Chitra', token: '289', order_source: 'APP', status: 'preparing', payment_method: 'Meal Plan Card', total: 220, platform_fee: 11, net_payout: 209, created_at: new Date(Date.now() - 8 * 60000).toISOString() },
+          { id: 9798, customer_name: 'Rohan Gupta', outlet_id: 'n2', outlet_name: 'Shawarma Nation', token: '312', order_source: 'APP', status: 'ready', payment_method: 'UPI Online', total: 180, platform_fee: 9, net_payout: 171, created_at: new Date(Date.now() - 15 * 60000).toISOString() },
+          { id: 9797, customer_name: 'Walk-in Student', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '305', order_source: 'POS', status: 'collected', payment_method: 'Counter Cash', total: 120, platform_fee: 0, net_payout: 120, created_at: new Date(Date.now() - 20 * 60000).toISOString() },
+          { id: 9795, customer_name: 'Pooja Nair', outlet_id: 'g4', outlet_name: 'Lassi House', token: '419', order_source: 'APP', status: 'collected', payment_method: 'Wallet', total: 110, platform_fee: 5.5, net_payout: 104.5, created_at: new Date(Date.now() - 32 * 60000).toISOString() },
+          { id: 9794, customer_name: 'Walk-in Faculty', outlet_id: 'g3', outlet_name: 'Dakshin Chitra', token: '422', order_source: 'POS', status: 'collected', payment_method: 'Counter UPI', total: 160, platform_fee: 0, net_payout: 160, created_at: new Date(Date.now() - 40 * 60000).toISOString() },
+          { id: 9792, customer_name: 'Ananya Roy', outlet_id: 'g1', outlet_name: 'Gazebo C1', token: '502', order_source: 'APP', status: 'collected', payment_method: 'UPI Online', total: 95, platform_fee: 4.75, net_payout: 90.25, created_at: new Date(Date.now() - 55 * 60000).toISOString() }
         ])
       }
 
@@ -1130,10 +1134,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // Export Master Orders CSV
   const handleExportGlobalOrdersCsv = () => {
-    const headers = ['Order ID', 'Outlet', 'Token', 'Status', 'Payment Method', 'Total', '5% Platform Cut', 'Net Payout', 'Timestamp']
-    const rows = orders.map(o => [
+    const headers = ['Order ID', 'Outlet', 'Channel', 'Token', 'Status', 'Payment Method', 'Total', '5% Platform Cut', 'Net Payout', 'Timestamp']
+    const rows = filteredOrders.map(o => [
       o.id,
       `"${o.outlet_name || o.outlet_id}"`,
+      o.order_source || 'APP',
       o.token || '',
       o.status,
       o.payment_method || '',
@@ -1160,6 +1165,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const activeOutletsCount = outletList.filter(o => o.is_open).length
   const studentWalletFloat = 148500 // Sum of wallet balances across students
   const activeOrdersInQueue = orders.filter(o => o.status === 'placed' || o.status === 'preparing').length
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const src = o.order_source || 'APP'
+      if (orderChannelFilter !== 'all' && src !== orderChannelFilter) return false
+      if (orderOutletFilter !== 'all' && o.outlet_id !== orderOutletFilter) return false
+      return true
+    })
+  }, [orders, orderChannelFilter, orderOutletFilter])
 
   return (
     <div className="saas-layout">
@@ -1892,12 +1906,48 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </button>
               </div>
 
+              {/* Order Channel & Outlet Filters */}
+              <div className="saas-card" style={{ padding: '12px 18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Order Channel:</span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {(['all', 'APP', 'POS'] as const).map(ch => (
+                        <button
+                          key={ch}
+                          type="button"
+                          className={`saas-btn saas-btn-sm ${orderChannelFilter === ch ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                          onClick={() => setOrderChannelFilter(ch)}
+                        >
+                          {ch === 'all' ? 'All Channels' : ch === 'APP' ? 'App / Online' : 'Counter / POS'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Outlet:</span>
+                    <select
+                      value={orderOutletFilter}
+                      onChange={e => setOrderOutletFilter(e.target.value)}
+                      style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                    >
+                      <option value="all">All Outlets</option>
+                      {outletList.map(o => (
+                        <option key={o.id} value={o.id}>{o.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div className="saas-card">
                 <div className="saas-table-container">
                   <table className="saas-table">
                     <thead>
                       <tr>
                         <th>Order ID / Token</th>
+                        <th>Channel</th>
                         <th>Outlet Name</th>
                         <th>Customer</th>
                         <th>Time Placed</th>
@@ -1909,36 +1959,49 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map(order => (
-                        <tr key={order.id}>
-                          <td>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0F172A' }}>
-                                {formatOrderNumber(order)}
-                              </span>
-                              <span style={{ fontSize: '10px', color: '#94A3B8', fontFamily: 'monospace' }}>
-                                Ref: #{order.id}
-                              </span>
-                            </div>
-                          </td>
-                          <td style={{ fontWeight: 600 }}>{order.outlet_name}</td>
-                          <td style={{ fontSize: '12px' }}>{order.customer_name}</td>
-                          <td style={{ fontSize: '12px', color: '#64748B' }}>{formatElapsed(order.created_at)}</td>
-                          <td style={{ fontSize: '12px' }}>{order.payment_method}</td>
-                          <td style={{ fontWeight: 700 }}>{money(order.total)}</td>
-                          <td style={{ color: '#D97706', fontWeight: 700 }}>{money(order.platform_fee)}</td>
-                          <td style={{ color: '#15803D', fontWeight: 700 }}>{money(order.net_payout)}</td>
-                          <td>
-                            <span className={`saas-badge ${
-                              order.status === 'placed' ? 'saas-badge-warning' :
-                              order.status === 'preparing' ? 'saas-badge-info' :
-                              order.status === 'ready' ? 'saas-badge-success' : 'saas-badge-neutral'
-                            }`}>
-                              {order.status.toUpperCase()}
-                            </span>
+                      {filteredOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} style={{ textAlign: 'center', padding: '32px', color: '#94A3B8' }}>
+                            No orders found matching selected filters.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredOrders.map(order => (
+                          <tr key={order.id}>
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0F172A' }}>
+                                  {formatOrderNumber(order)}
+                                </span>
+                                <span style={{ fontSize: '10px', color: '#94A3B8', fontFamily: 'monospace' }}>
+                                  Ref: #{order.id}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`saas-badge ${order.order_source === 'POS' ? 'saas-badge-warning' : 'saas-badge-info'}`}>
+                                {order.order_source === 'POS' ? 'COUNTER / POS' : 'ONLINE APP'}
+                              </span>
+                            </td>
+                            <td style={{ fontWeight: 600 }}>{order.outlet_name}</td>
+                            <td style={{ fontSize: '12px' }}>{order.customer_name}</td>
+                            <td style={{ fontSize: '12px', color: '#64748B' }}>{formatElapsed(order.created_at)}</td>
+                            <td style={{ fontSize: '12px' }}>{order.payment_method}</td>
+                            <td style={{ fontWeight: 700 }}>{money(order.total)}</td>
+                            <td style={{ color: '#D97706', fontWeight: 700 }}>{money(order.platform_fee)}</td>
+                            <td style={{ color: '#15803D', fontWeight: 700 }}>{money(order.net_payout)}</td>
+                            <td>
+                              <span className={`saas-badge ${
+                                order.status === 'placed' ? 'saas-badge-warning' :
+                                order.status === 'preparing' ? 'saas-badge-info' :
+                                order.status === 'ready' ? 'saas-badge-success' : 'saas-badge-neutral'
+                              }`}>
+                                {order.status.toUpperCase()}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
