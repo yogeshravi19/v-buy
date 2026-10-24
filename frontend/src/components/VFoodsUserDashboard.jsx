@@ -18,6 +18,7 @@ import { InstallBannerCard } from './PwaInstallPrompt'
 import { EmptyState } from './ui/empty-state'
 import { lightHaptic, mediumHaptic } from '../lib/haptics'
 import { motionDurations, motionEasings, getSlideVariants, fadeInUp } from '../lib/motion'
+import { MyRolePanel } from './ui/MyRolePanel'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTHENTIC VIT CHENNAI FOOD COURTS (V FOODS User Dashboard)
@@ -153,6 +154,7 @@ export default function VFoodsUserDashboard({
 
   // Header Profile Dropdown & Edit Profile State
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [showMyRoleModal, setShowMyRoleModal] = useState(false)
   const [showEditProfileModal, setShowEditProfileModal] = useState(false)
   const [editName, setEditName] = useState('')
   const [editPhone, setEditPhone] = useState('')
@@ -668,6 +670,15 @@ export default function VFoodsUserDashboard({
                   >
                     <User size={15} />
                     <span>View Profile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="vfoods-profile-dd-item"
+                    onClick={() => { setShowMyRoleModal(true); setProfileMenuOpen(false) }}
+                  >
+                    <ShieldCheck size={15} />
+                    <span>My Role & Permissions</span>
                   </button>
 
                   <button
@@ -1710,6 +1721,13 @@ export default function VFoodsUserDashboard({
               addToCart(item, selectedDetailOutlet)
             }
           }}
+        />
+
+        {/* My Role & Permissions Modal */}
+        <MyRolePanel
+          isOpen={showMyRoleModal}
+          onClose={() => setShowMyRoleModal(false)}
+          currentUser={currentUser}
         />
 
       </div>
