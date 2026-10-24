@@ -1,0 +1,42 @@
+-- ============================================================================
+-- Migration: Narrow Staff Menu Item Archive Leak
+-- Target Table: public.menu_items
+-- Purpose: Prevent Shop Staff from archiving menu items (setting is_archived = true) via direct API calls.
+-- STATUS: WRITTEN BUT NOT APPLIED (Awaiting User Review per Stage 2 rules)
+-- ============================================================================
+
+-- Forward Migration:
+-- 1. Drop overly permissive update policy
+-- DROP POLICY IF EXISTS "menu_items_staff_update" ON public.menu_items;
+
+-- 2. Re-create policy with is_archived restriction for staff role
+-- CREATE POLICY "menu_items_staff_update" ON public.menu_items
+-- FOR UPDATE TO public
+-- USING (
+--   (((get_my_role() = 'staff'::text) AND (outlet_id = get_my_outlet())) OR
+--    ((get_my_role() = 'shop_admin'::text) AND (outlet_id = get_my_outlet())) OR
+--    (get_my_role() = 'super_admin'::text))
+-- )
+-- WITH CHECK (
+--   -- Shop staff cannot set is_archived = true
+--   (((get_my_role() = 'staff'::text) AND (outlet_id = get_my_outlet()) AND (is_archived = false)) OR
+--    ((get_my_role() = 'shop_admin'::text) AND (outlet_id = get_my_outlet())) OR
+--    (get_my_role() = 'super_admin'::text))
+-- );
+
+-- ============================================================================
+-- Rollback SQL:
+-- ============================================================================
+-- DROP POLICY IF EXISTS "menu_items_staff_update" ON public.menu_items;
+-- CREATE POLICY "menu_items_staff_update" ON public.menu_items
+-- FOR UPDATE TO public
+-- USING (
+--   (((get_my_role() = 'staff'::text) AND (outlet_id = get_my_outlet())) OR
+--    ((get_my_role() = 'shop_admin'::text) AND (outlet_id = get_my_outlet())) OR
+--    (get_my_role() = 'super_admin'::text))
+-- )
+-- WITH CHECK (
+--   (((get_my_role() = 'staff'::text) AND (outlet_id = get_my_outlet())) OR
+--    ((get_my_role() = 'shop_admin'::text) AND (outlet_id = get_my_outlet())) OR
+--    (get_my_role() = 'super_admin'::text))
+-- );
