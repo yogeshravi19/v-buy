@@ -230,7 +230,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // User Role Editing State
   const [editingRoleUser, setEditingRoleUser] = useState<PlatformUser | null>(null)
-  const [roleForm, setRoleForm] = useState<{ role: string; outlet_id: string }>({ role: 'student', outlet_id: '' })
+  const [roleForm, setRoleForm] = useState<{ role: string; outlet_id: string }>({ role: 'customer', outlet_id: '' })
   const [savingRole, setSavingRole] = useState(false)
 
   // Global Festival / Event Mode
@@ -840,7 +840,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const openEditRoleModal = (user: PlatformUser) => {
     setEditingRoleUser(user)
     setRoleForm({
-      role: user.role === 'customer' ? 'student' : user.role,
+      role: (user.role === 'student' || user.role === 'customer' || user.role === 'user') ? 'customer' : user.role,
       outlet_id: user.outlet_id || ''
     })
   }
@@ -1623,13 +1623,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <div className="saas-card" style={{ padding: '14px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    {(['all', 'student', 'staff', 'shop_admin', 'super_admin'] as const).map(role => (
+                    {(['all', 'user', 'staff', 'shop_admin', 'super_admin'] as const).map(role => (
                       <button
                         key={role}
                         className={`saas-btn saas-btn-sm ${userRoleFilter === role ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
                         onClick={() => setUserRoleFilter(role)}
                       >
-                        {role === 'all' ? 'All Users' : role === 'student' ? 'User' : role === 'staff' ? 'Shop Staff' : role === 'shop_admin' ? 'Shop Admin' : 'Super Admin'}
+                        {role === 'all' ? 'All Roles' : role === 'user' ? 'User' : role === 'staff' ? 'Shop Staff' : role === 'shop_admin' ? 'Shop Admin' : 'Super Admin'}
                       </button>
                     ))}
                   </div>
@@ -1669,7 +1669,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     </thead>
                     <tbody>
                       {usersList
-                        .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter || (userRoleFilter === 'student' && (u.role === 'customer' || u.role === 'student' || u.role === 'user')))
+                        .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter || (userRoleFilter === 'user' && (u.role === 'customer' || u.role === 'student' || u.role === 'user')))
                         .filter(u => {
                           if (!searchQuery) return true
                           const q = searchQuery.toLowerCase()
@@ -1686,7 +1686,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                                 user.role === 'shop_admin' ? 'saas-badge-warning' :
                                 user.role === 'staff' ? 'saas-badge-info' : 'saas-badge-success'
                               }`}>
-                                {user.role === 'customer' || user.role === 'student' ? 'CUSTOMER' : user.role.toUpperCase()}
+                                {user.role === 'customer' || user.role === 'student' || user.role === 'user' ? 'USER' : user.role === 'staff' ? 'SHOP STAFF' : user.role === 'shop_admin' ? 'SHOP ADMIN' : 'SUPER ADMIN'}
                               </span>
                             </td>
                             <td style={{ fontSize: '12px', color: '#64748B' }}>
@@ -2674,10 +2674,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       background: '#FFFFFF'
                     }}
                   >
-                    <option value="student">User / Customer (Student & Faculty)</option>
-                    <option value="staff">Shop Staff (Kitchen & Counter)</option>
-                    <option value="shop_admin">Shop Admin (Franchise Owner)</option>
-                    <option value="super_admin">Super Admin (Platform Administrator)</option>
+                    <option value="customer">User</option>
+                    <option value="staff">Shop Staff</option>
+                    <option value="shop_admin">Shop Admin</option>
+                    <option value="super_admin">Super Admin</option>
                   </select>
                 </div>
 
