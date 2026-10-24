@@ -45,7 +45,7 @@ import {
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { DataTable } from '../../components/ui/data-table'
-import { OutletComparisonChart, OutletHierarchyTree } from '../../components/admin/OutletHierarchyAndComparison'
+import { OutletComparisonChart, OutletStaffDrawer } from '../../components/admin/OutletHierarchyAndComparison'
 import { StatusBadge } from '../../components/ui/status-badge'
 import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { formatOrderNumber } from '../../utils/orderNumber'
@@ -293,6 +293,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   })
   const [outletFormError, setOutletFormError] = useState<string | null>(null)
   const [savingOutlet, setSavingOutlet] = useState(false)
+  const [showStaffDrawer, setShowStaffDrawer] = useState(false)
+  const [selectedStaffOutlet, setSelectedStaffOutlet] = useState<OutletRecord | null>(null)
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -306,7 +308,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogRecord | null>(null)
 
   // Escape key listener & background scroll lock for Super Admin modals
-  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser)
+  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser || showStaffDrawer)
   useEffect(() => {
     if (!isAnySuperModalOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -317,6 +319,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         }
         setShowAddCouponModal(false)
         setSelectedAuditLog(null)
+        setShowStaffDrawer(false)
         if (!savingRole) setEditingRoleUser(null)
       }
     }
@@ -688,6 +691,27 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       }
     },
     {
+      id: 'team',
+      header: 'Assigned Team',
+      cell: ({ row }: any) => {
+        const teamCount = usersList.filter((u: any) => u.outlet_id === row.original.id).length
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedStaffOutlet(row.original)
+              setShowStaffDrawer(true)
+            }}
+            className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5"
+            title="View & manage assigned staff"
+          >
+            <Users size={12} className="text-blue-600" />
+            <span>Staff ({teamCount})</span>
+          </button>
+        )
+      }
+    },
+    {
       id: 'actions',
       header: () => <div className="text-right w-full">Master Override</div>,
       cell: ({ row }: any) => {
@@ -714,7 +738,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         )
       }
     }
-  ], [orders, money])
+  ], [orders, money, usersList])
 
   // Create or Edit an outlet in the database
   const handleSaveOutlet = async (e: React.FormEvent) => {
@@ -1534,10 +1558,23 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlets</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Manage operational status and canteens</p>
                 </div>
-                <button className="saas-btn saas-btn-primary" onClick={openAddOutletModal}>
-                  <Plus size={15} />
-                  <span>Create New Outlet</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="saas-btn saas-btn-secondary"
+                    onClick={() => {
+                      setSelectedStaffOutlet(outletList[0] || null)
+                      setShowStaffDrawer(true)
+                    }}
+                  >
+                    <Users size={15} />
+                    <span>Staff Directory</span>
+                  </button>
+                  <button className="saas-btn saas-btn-primary" onClick={openAddOutletModal}>
+                    <Plus size={15} />
+                    <span>Create New Outlet</span>
+                  </button>
+                </div>
               </div>
 
               {outletsError && (
@@ -1559,8 +1596,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 />
               </div>
 
-              {/* Role Hierarchy Tree: Outlet -> Shop Admin -> Shop Staff */}
-              <OutletHierarchyTree outlets={outletList} users={usersList} />
+              {/* Slide-over Drawer for Outlet Staff & Management Directory */}
+              <OutletStaffDrawer
+                isOpen={showStaffDrawer}
+                onClose={() => setShowStaffDrawer(false)}
+                outlet={selectedStaffOutlet || outletList[0]}
+                outlets={outletList}
+                users={usersList}
+                onSelectOutlet={(o: any) => setSelectedStaffOutlet(o)}
+                onUserUpdated={loadGlobalData}
+              />
             </div>
           )}
 
