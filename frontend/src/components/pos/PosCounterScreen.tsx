@@ -508,7 +508,7 @@ export function PosCounterScreen({
                     <div
                       key={item.id}
                       onClick={() => !isDisabled && addToCart(item)}
-                      className={`relative flex flex-col rounded-2xl border transition-all select-none p-3 ${
+                      className={`pos-item-card relative flex flex-col rounded-2xl border transition-all select-none p-3 ${
                         isDisabled
                           ? 'bg-slate-100/80 border-slate-200 opacity-60 cursor-not-allowed'
                           : inCartLine
@@ -588,7 +588,7 @@ export function PosCounterScreen({
         </div>
 
         {/* Right: Ticket Panel (Desktop & Tablet side panel) */}
-        <div className="pos-ticket-panel hidden md:flex w-80 lg:w-88 xl:w-96 border-l border-slate-200 shadow-md z-10 shrink-0">
+        <div className="pos-ticket-panel hidden md:flex w-96 lg:w-[400px] xl:w-[430px] border-l border-slate-200 shadow-md z-10 shrink-0">
           {/* Ticket Header */}
           <div className="pos-ticket-header flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -607,26 +607,23 @@ export function PosCounterScreen({
           </div>
 
           {/* Customer Name & Instant Handover Toggle */}
-          <div className="pos-customer-bar space-y-2.5">
+          <div className="pos-customer-bar flex items-center gap-2.5">
             <input
               type="text"
               placeholder="Customer Name / Mobile"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="pos-customer-input"
+              className="pos-customer-input flex-1"
             />
-
-            <div className="flex items-center justify-between px-1">
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isQuickSale}
-                  onChange={(e) => setIsQuickSale(e.target.checked)}
-                  className="rounded text-blue-700 focus:ring-blue-600 h-4 w-4 accent-blue-700"
-                />
-                <span>Instant handover</span>
-              </label>
-            </div>
+            <label className="inline-flex items-center gap-1.5 px-3 h-[38px] rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 cursor-pointer select-none shrink-0 hover:bg-slate-50 transition-colors">
+              <input
+                type="checkbox"
+                checked={isQuickSale}
+                onChange={(e) => setIsQuickSale(e.target.checked)}
+                className="rounded text-blue-700 focus:ring-blue-600 h-3.5 w-3.5 accent-blue-700"
+              />
+              <span className="whitespace-nowrap">Instant</span>
+            </label>
           </div>
 
           {/* Cart Item Rows */}
@@ -656,14 +653,14 @@ export function PosCounterScreen({
                       placeholder="Item note..."
                       value={line.notes}
                       onChange={(e) => updateLineNote(line.item.id, e.target.value)}
-                      className="flex-1 h-7 px-2 text-[11px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none"
+                      className="pos-note-input flex-1"
                     />
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => updateLineQty(line.item.id, -1)}
-                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold transition-colors"
+                        className="pos-qty-btn"
                         aria-label="Decrease quantity"
                       >
                         <Minus size={13} />
@@ -674,7 +671,7 @@ export function PosCounterScreen({
                       <button
                         type="button"
                         onClick={() => updateLineQty(line.item.id, 1)}
-                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold transition-colors"
+                        className="pos-qty-btn"
                         aria-label="Increase quantity"
                       >
                         <Plus size={13} />
@@ -682,7 +679,7 @@ export function PosCounterScreen({
                       <button
                         type="button"
                         onClick={() => removeLine(line.item.id)}
-                        className="w-8 h-8 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center ml-1 transition-colors"
+                        className="pos-trash-btn"
                         aria-label="Remove item"
                       >
                         <Trash2 size={13} />
@@ -738,24 +735,24 @@ export function PosCounterScreen({
 
               {/* Cash Tendered & Change Calculator */}
               {paymentMode === 'CASH' && (
-                <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1.5 mt-2">
-                  <div className="flex items-center justify-between text-xs gap-2">
-                    <span className="text-emerald-900 font-semibold truncate">Cash tendered:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-slate-500">₹</span>
+                <div className="p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 mt-2">
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-950 font-semibold">
+                    <span>Tendered:</span>
+                    <div className="flex items-center bg-white border border-emerald-300 rounded-md px-2 h-7">
+                      <span className="text-[11px] text-slate-400 mr-0.5">₹</span>
                       <input
                         type="number"
                         placeholder="0"
                         value={cashTendered}
                         onChange={(e) => setCashTendered(e.target.value)}
-                        className="w-24 h-8 px-2.5 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none shrink-0"
+                        className="w-16 text-right text-xs font-bold text-slate-900 bg-transparent focus:outline-none"
                       />
                     </div>
                   </div>
                   {cashChange !== null && (
-                    <div className="flex items-center justify-between text-xs font-black text-emerald-800 pt-1.5 border-t border-emerald-200">
-                      <span>Change:</span>
-                      <span className="text-sm">₹{cashChange}</span>
+                    <div className="flex items-center gap-1 text-xs font-bold text-emerald-800">
+                      <span className="text-emerald-700 font-medium">Change:</span>
+                      <span className="text-sm font-black tabular-nums">₹{cashChange}</span>
                     </div>
                   )}
                 </div>
