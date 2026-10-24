@@ -15,7 +15,8 @@ import {
   UserPlus,
   Users,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Edit3
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { Card } from '../../components/ui/card'
@@ -181,11 +182,66 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
     }
   }
 
+  // 3. Edit Personnel State & Handlers
+  const [editingUser, setEditingUser] = useState<PlatformUser | null>(null)
+  const [editFullName, setEditFullName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editRole, setEditRole] = useState<'shop_admin' | 'staff'>('staff')
+  const [editOutletId, setEditOutletId] = useState('')
+
+  const openEditModal = (user: PlatformUser) => {
+    setEditingUser(user)
+    setEditFullName(user.full_name || '')
+    setEditPhone(user.phone || '')
+    setEditEmail(user.email || '')
+    setEditRole((user.role === 'shop_admin' || user.role === 'owner') ? 'shop_admin' : 'staff')
+    setEditOutletId(user.outlet_id || activeOutlet?.id || '')
+  }
+
+  const handleSaveEditedUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingUser) return
+    setSaving(true)
+    try {
+      const updates = {
+        full_name: editFullName.trim(),
+        phone: editPhone.trim(),
+        email: editEmail.trim(),
+        role: editRole,
+        outlet_id: editOutletId || null
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', editingUser.id)
+
+      if (error) {
+        console.warn('Supabase profiles update error, updating local state:', error.message)
+      }
+
+      if (onUpdateUserLocal) {
+        onUpdateUserLocal(editingUser.id, updates)
+      }
+
+      setNotice(`Updated ${editFullName || 'User'}`)
+      setTimeout(() => setNotice(null), 3000)
+      setEditingUser(null)
+
+      if (onUserUpdated) onUserUpdated()
+    } catch (err: any) {
+      alert('Error updating user: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="w-full space-y-7">
-      {/* Spacious, Airy Top Header */}
+      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-200">
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -195,20 +251,11 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
               <ArrowLeft size={14} />
               <span>Back to Outlets Table</span>
             </button>
-            <span className="text-slate-300">|</span>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Campus Staff Management
-            </span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight pt-1">
-            Outlet Staff & Personnel Directory
+            Staff Directory
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
-            {activeOutlet
-              ? `Managing team roster for ${activeOutlet.name}`
-              : `Select any canteen slice card to view and manage its assigned staff`}
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -296,11 +343,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
         <div className="space-y-6">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">
-              Campus Canteen Roster Slices ({filteredCanteens.length} Canteens)
+              Campus Canteens ({filteredCanteens.length})
             </h3>
-            <span className="text-xs font-medium text-slate-400">
-              Select any canteen to open its dedicated personnel roster
-            </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -317,7 +361,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   className="bg-white border border-slate-200/90 shadow-sm hover:border-blue-500 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group"
                 >
                   <div className="space-y-4">
-                    {/* Header Row: Curved Square Icon + Open Pill */}
+                    {/* Header Row */}
                     <div className="flex items-start justify-between gap-4">
                       <div
                         style={{ width: '56px', height: '56px', borderRadius: '16px' }}
@@ -351,9 +395,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                       </div>
                     </div>
 
-                    {/* Two Distinct Curved Sub-Boxes (One for Owner, One for Staff) */}
+                    {/* Sub-Boxes */}
                     <div className="space-y-2.5 pt-2">
-                      {/* Franchise Owner Curved Box */}
                       <div
                         style={{ padding: '14px', borderRadius: '16px' }}
                         className="bg-amber-50/50 border border-amber-100 space-y-1"
@@ -363,18 +406,12 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                             <Shield size={13} className="text-amber-600" />
                             Franchise Owner
                           </span>
-                          {admins.length > 0 && (
-                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
-                              Shop Admin
-                            </span>
-                          )}
                         </div>
                         <div className="text-xs font-extrabold text-slate-900 truncate">
                           {admins.length > 0 ? admins[0].full_name : <span className="text-slate-400 font-normal italic">Unassigned</span>}
                         </div>
                       </div>
 
-                      {/* Counter Staff Curved Box */}
                       <div
                         style={{ padding: '14px', borderRadius: '16px' }}
                         className="bg-emerald-50/50 border border-emerald-100 space-y-1"
@@ -384,12 +421,9 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                             <UserCheck size={13} className="text-emerald-600" />
                             Counter Staff
                           </span>
-                          <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                            {staff.length > 0 ? 'Active' : 'None'}
-                          </span>
                         </div>
                         <div className="text-xs font-extrabold text-slate-900">
-                          {staff.length} Active Staff Member{staff.length === 1 ? '' : 's'}
+                          {staff.length} Active Member{staff.length === 1 ? '' : 's'}
                         </div>
                       </div>
                     </div>
@@ -397,19 +431,29 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
 
                   {/* Card Action Footer */}
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
-                    <div className="flex items-center gap-1.5">
-                      <Users size={15} className="text-slate-400" />
-                      <span className="font-extrabold text-slate-700">
-                        Total Team: <span className="text-blue-700 font-black">{totalTeam}</span>
-                      </span>
+                    <span className="font-extrabold text-slate-700">
+                      Team: <span className="text-blue-700 font-black">{totalTeam}</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveOutletFilter(canteen.id)
+                        }}
+                        className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1 font-bold px-3 py-1.5 rounded-xl"
+                      >
+                        <Edit3 size={13} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="saas-btn saas-btn-sm saas-btn-primary inline-flex items-center gap-1 font-bold px-3.5 py-1.5 rounded-xl"
+                      >
+                        <span>Open</span>
+                        <ChevronRight size={13} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5 font-bold group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all px-3.5 py-1.5 rounded-xl shadow-2xs"
-                    >
-                      <span>Manage Roster</span>
-                      <ChevronRight size={14} />
-                    </button>
                   </div>
                 </div>
               )
@@ -423,7 +467,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
           ───────────────────────────────────────────────────────────── */}
       {activeOutlet && (
         <div className="space-y-8">
-          {/* Canteen Hero Banner Card with Free Space */}
+          {/* Canteen Hero Banner Card */}
           <div
             style={{ padding: '24px', borderRadius: '24px' }}
             className="bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5"
@@ -449,8 +493,6 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   <span>Location: <strong className="text-slate-800">{activeOutlet.location || 'Campus Center'}</strong></span>
                   <span className="text-slate-300">·</span>
                   <span>ID: <code className="font-mono text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded font-bold">{activeOutlet.id}</code></span>
-                  <span className="text-slate-300">·</span>
-                  <span className="font-bold text-blue-700">Total Roster: {activeAdmins.length + activeStaff.length} Members</span>
                 </p>
               </div>
             </div>
@@ -473,21 +515,18 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 }}
               >
                 <Plus size={16} />
-                <span>Add Member to {activeOutlet.name}</span>
+                <span>Add Member</span>
               </button>
             </div>
           </div>
 
-          {/* Unified Canteen Personnel Grid (Spacious Curved Squared Boxes) */}
+          {/* Unified Canteen Personnel Grid */}
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 px-1">
               <div>
                 <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                  Assigned Personnel & Roster ({activeAdmins.length + activeStaff.length} Members)
+                  Personnel ({activeAdmins.length + activeStaff.length})
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Each personnel member is granted role-based POS billing, KDS prep, or store administration access
-                </p>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
@@ -499,8 +538,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     setShowAssignModal(true)
                   }}
                 >
-                  <Shield size={13} className="text-amber-600" />
-                  <span>+ Franchise Owner</span>
+                  <Plus size={13} />
+                  <span>Owner</span>
                 </button>
                 <button
                   type="button"
@@ -511,8 +550,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     setShowAssignModal(true)
                   }}
                 >
-                  <UserPlus size={13} />
-                  <span>+ Counter Staff</span>
+                  <Plus size={13} />
+                  <span>Staff</span>
                 </button>
               </div>
             </div>
@@ -524,7 +563,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   <div
                     key={admin.id}
                     style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
-                    className="bg-white border-2 border-amber-200/90 shadow-sm flex flex-col justify-between space-y-5 hover:shadow-lg transition-all group"
+                    className="bg-white border-2 border-amber-200/90 shadow-sm flex flex-col justify-between hover:shadow-lg transition-all group"
                   >
                     <div className="space-y-4">
                       <div className="flex items-start justify-between gap-3">
@@ -543,9 +582,6 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                         <h4 className="text-lg font-black text-slate-900 leading-snug">
                           {admin.full_name || 'Outlet Admin'}
                         </h4>
-                        <p className="text-xs font-bold text-amber-700 mt-0.5">
-                          Designated Shop Administrator
-                        </p>
                       </div>
 
                       <div
@@ -561,22 +597,27 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                           <span className="font-semibold">{admin.email || 'No email recorded'}</span>
                         </div>
                       </div>
-
-                      <div className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5">
-                        <Check size={14} className="shrink-0" />
-                        <span>Full Store Menu & Financial Management</span>
-                      </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleUnassignUser(admin.id, admin.full_name || 'Admin')}
-                      className="saas-btn saas-btn-danger w-full inline-flex items-center justify-center gap-2 h-10 text-xs font-bold rounded-xl shadow-2xs mt-2"
-                      title="Unassign owner from this canteen"
-                    >
-                      <Trash2 size={14} />
-                      <span>Unassign Owner</span>
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(admin)}
+                        className="saas-btn saas-btn-secondary inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl"
+                      >
+                        <Edit3 size={14} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUnassignUser(admin.id, admin.full_name || 'Admin')}
+                        className="saas-btn saas-btn-danger inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl shadow-2xs"
+                        title="Unassign owner from this canteen"
+                      >
+                        <Trash2 size={14} />
+                        <span>Unassign</span>
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -597,11 +638,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   </div>
                   <div>
                     <div className="text-base font-black text-amber-900">
-                      No Franchise Owner Assigned
+                      No Owner Assigned
                     </div>
-                    <p className="text-xs text-amber-700 mt-1 max-w-[240px]">
-                      Assign a designated shop administrator to manage menus and revenue.
-                    </p>
                   </div>
                   <button
                     type="button"
@@ -618,7 +656,7 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 <div
                   key={staffMember.id}
                   style={{ padding: '24px', borderRadius: '24px', minHeight: '320px' }}
-                  className="bg-white border-2 border-emerald-200/90 shadow-sm flex flex-col justify-between space-y-5 hover:shadow-lg transition-all group"
+                  className="bg-white border-2 border-emerald-200/90 shadow-sm flex flex-col justify-between hover:shadow-lg transition-all group"
                 >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
@@ -637,9 +675,6 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                       <h4 className="text-lg font-black text-slate-900 leading-snug">
                         {staffMember.full_name || 'Kitchen Staff'}
                       </h4>
-                      <p className="text-xs font-bold text-emerald-700 mt-0.5">
-                        KDS Prep & Counter Cashier
-                      </p>
                     </div>
 
                     <div
@@ -655,22 +690,27 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                         <span className="font-semibold">{staffMember.email || 'No email recorded'}</span>
                       </div>
                     </div>
-
-                    <div className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
-                      <Check size={14} className="text-emerald-600 shrink-0" />
-                      <span>Authorized for KDS Order Prep & POS Terminal</span>
-                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleUnassignUser(staffMember.id, staffMember.full_name || 'Staff')}
-                    className="saas-btn saas-btn-danger w-full inline-flex items-center justify-center gap-2 h-10 text-xs font-bold rounded-xl shadow-2xs mt-2"
-                    title="Unassign user from this canteen"
-                  >
-                    <Trash2 size={14} />
-                    <span>Unassign Staff</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(staffMember)}
+                      className="saas-btn saas-btn-secondary inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl"
+                    >
+                      <Edit3 size={14} />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUnassignUser(staffMember.id, staffMember.full_name || 'Staff')}
+                      className="saas-btn saas-btn-danger inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl shadow-2xs"
+                      title="Unassign user from this canteen"
+                    >
+                      <Trash2 size={14} />
+                      <span>Unassign</span>
+                    </button>
+                  </div>
                 </div>
               ))}
 
@@ -692,11 +732,8 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                 </div>
                 <div>
                   <div className="text-base font-black text-slate-900 group-hover:text-blue-700 transition-colors">
-                    Assign Counter Staff
+                    Assign Staff
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 max-w-[240px]">
-                    Add staff to operate the live KDS prep screen and POS counter terminal.
-                  </p>
                 </div>
                 <button
                   type="button"
@@ -810,6 +847,133 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                   className="saas-btn saas-btn-primary"
                 >
                   {saving ? 'Saving...' : 'Save to Database'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Personnel Modal (Updates Supabase profiles + live React state) */}
+      {editingUser && (
+        <div className="saas-modal-backdrop" onClick={() => setEditingUser(null)}>
+          <div className="saas-modal-card" style={{ maxWidth: '460px' }} onClick={e => e.stopPropagation()}>
+            <div className="saas-modal-header">
+              <h3>Edit Personnel Details</h3>
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="saas-modal-close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedUser}>
+              <div className="saas-modal-body space-y-4">
+                <div className="saas-form-group">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editFullName}
+                    onChange={e => setEditFullName(e.target.value)}
+                    required
+                    placeholder="Enter full name"
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                  />
+                </div>
+
+                <div className="saas-form-group">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    placeholder="+91..."
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                  />
+                </div>
+
+                <div className="saas-form-group">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={e => setEditEmail(e.target.value)}
+                    placeholder="user@vfood.vit.ac.in"
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                  />
+                </div>
+
+                <div className="saas-form-group">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Assigned Canteen / Outlet
+                  </label>
+                  <select
+                    value={editOutletId}
+                    onChange={e => setEditOutletId(e.target.value)}
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-700"
+                  >
+                    <option value="">-- None (Unassigned) --</option>
+                    {outlets.map(o => (
+                      <option key={o.id} value={o.id}>
+                        {o.name} ({o.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="saas-form-group">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Role
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditRole('staff')}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-colors ${
+                        editRole === 'staff'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                          : 'bg-white border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      Counter Staff
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditRole('shop_admin')}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-colors ${
+                        editRole === 'shop_admin'
+                          ? 'bg-amber-50 border-amber-500 text-amber-800'
+                          : 'bg-white border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      Franchise Owner
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="saas-modal-footer">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="saas-btn saas-btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="saas-btn saas-btn-primary"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
