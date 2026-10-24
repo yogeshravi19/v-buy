@@ -1075,11 +1075,23 @@ export default function VFoodsUserDashboard({
             ══════════════════════════════════════════════════════════════════════ */}
         {tab === 'cart' && (
           <div className="vfoods-cart-view">
-            <div className="vfoods-cart-header">
-              <button className="vfoods-back-btn" onClick={() => setTab('browse')} title="Back to menu">
-                <ArrowLeft size={16} />
-              </button>
-              <h2>Your Cart</h2>
+            <div className="vfoods-cart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button className="vfoods-back-btn" onClick={() => setTab('browse')} title="Back to menu">
+                  <ArrowLeft size={16} />
+                </button>
+                <h2>Your Cart</h2>
+              </div>
+              {cart.items && cart.items.length > 0 && (
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-sm saas-btn-secondary"
+                  onClick={() => setCart({ outlet: null, items: [] })}
+                  style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                >
+                  <Trash2 size={13} /> Clear Cart
+                </button>
+              )}
             </div>
 
             <div className="vfoods-cart-content">
@@ -1355,7 +1367,7 @@ export default function VFoodsUserDashboard({
                       disabled={busy || !isOnline}
                       onClick={() => placeOrder('wallet')}
                     >
-                      Pay {money(finalDebit)} from Wallet
+                      Checkout &amp; Pay {money(finalDebit)} from Wallet
                     </button>
                   ) : (
                     <div className="vfoods-deficit-btn-row">
@@ -1371,7 +1383,7 @@ export default function VFoodsUserDashboard({
                         disabled={busy || !isOnline}
                         onClick={() => setPaymentMode('instant_gateway')}
                       >
-                        Pay via UPI
+                        Checkout via UPI
                       </button>
                     </div>
                   )
@@ -1381,7 +1393,7 @@ export default function VFoodsUserDashboard({
                     disabled={busy || !isOnline}
                     onClick={() => setIsGatewayModalOpen(true)}
                   >
-                    Pay {money(finalDebit)} via UPI
+                    Checkout &amp; Pay {money(finalDebit)} via UPI
                   </button>
                 )}
               </div>

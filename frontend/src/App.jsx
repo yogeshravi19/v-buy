@@ -3715,9 +3715,25 @@ function GroupCartModal({ activeGroup, startGroupCart, joinGroupCart, leaveGroup
 function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExploreCanteens }) {
   const [receiptOrder, setReceiptOrder] = useState(null)
   const [selectedDetailOrder, setSelectedDetailOrder] = useState(null)
+  const [ratingOrder, setRatingOrder] = useState(null)
   const active   = orders.filter(o => o.status !== 'collected' && o.status !== 'cancelled')
   const past     = orders.filter(o => o.status === 'collected' || o.status === 'cancelled')
   const [ordersTab, setOrdersTab] = useState(active.length > 0 ? 'active' : 'past')
+
+  const handleCancelOrder = async (orderToCancel) => {
+    if (!window.confirm(`Cancel order #${orderToCancel.id}?`)) return
+    try {
+      if (supabase) {
+        await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderToCancel.id)
+      }
+      orderToCancel.status = 'cancelled'
+      if (selectedDetailOrder && selectedDetailOrder.id === orderToCancel.id) {
+        setSelectedDetailOrder({ ...selectedDetailOrder, status: 'cancelled' })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   // If user tapped on an order: render dedicated OrderDetailsPage (next page view)
   if (selectedDetailOrder) {
@@ -3725,11 +3741,14 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
     return (
       <section className="tab-content-enter">
         {receiptOrder && <ReceiptModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />}
+        {ratingOrder && <RatingModal order={ratingOrder} onClose={() => setRatingOrder(null)} submitItemRating={submitItemRating} itemRatings={itemRatings} />}
         <OrderDetailsPage
           order={currentOrder}
           onBack={() => setSelectedDetailOrder(null)}
           repeatOrder={repeatOrder}
           onShowReceipt={setReceiptOrder}
+          onCancelOrder={handleCancelOrder}
+          onRateOrder={setRatingOrder}
         />
       </section>
     )
@@ -3738,6 +3757,7 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
   return (
     <section className="tab-content-enter">
       {receiptOrder && <ReceiptModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />}
+      {ratingOrder && <RatingModal order={ratingOrder} onClose={() => setRatingOrder(null)} submitItemRating={submitItemRating} itemRatings={itemRatings} />}
 
       {/* ── Segmented Orders Toggle (Active vs Past) ── */}
       <div className="orders-segmented-bar">
@@ -3789,6 +3809,9 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
                 key={order.id}
                 order={order}
                 onViewDetails={() => setSelectedDetailOrder(order)}
+                onCancelOrder={handleCancelOrder}
+                repeatOrder={repeatOrder}
+                onRateOrder={setRatingOrder}
               />
             ))
           )}
@@ -3819,6 +3842,9 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
                 key={order.id}
                 order={order}
                 onViewDetails={() => setSelectedDetailOrder(order)}
+                onCancelOrder={handleCancelOrder}
+                repeatOrder={repeatOrder}
+                onRateOrder={setRatingOrder}
               />
             ))
           )}
@@ -3828,7 +3854,7 @@ function OrdersView({ orders, repeatOrder, itemRatings, submitItemRating, onExpl
   )
 }
 
-function OrderCard({ order, onViewDetails }) {
+function OrderCard({ order, onViewDetails, onCancelOrder, repeatOrder, onRateOrder }) {
   const isReady = order.status === 'ready'
   const isCancelled = order.status === 'cancelled'
   const minsAgo = Math.max(0, Math.round((Date.now() - new Date(order.created_at)) / 60000))
@@ -3886,37 +3912,76 @@ function OrderCard({ order, onViewDetails }) {
           <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
             {money(order.total)}
           </div>
-          <button
-            type="button"
-            className="order-toggle-details-btn"
-            onClick={(e) => {
-              e.stopPropagation()
-              onViewDetails && onViewDetails()
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#059669',
-              background: '#ECFDF5',
-              border: '1px solid #A7F3D0',
-              padding: '5px 12px',
-              borderRadius: '9999px',
-              cursor: 'pointer'
-            }}
-          >
-            <span>View Details</span>
-            <ChevronRight size={14} />
-          </button>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            {order.status === 'placed' && (
+              <button
+                type="button"
+                className="saas-btn saas-btn-sm saas-btn-secondary"
+                style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCancelOrder && onCancelOrder(order)
+                }}
+              >
+                Cancel
+              </button>
+            )}
+            {order.status === 'collected' && (
+              <>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-sm saas-btn-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRateOrder && onRateOrder(order)
+                  }}
+                >
+                  <Star size={12} /> Rate
+                </button>
+                <button
+                  type="button"
+                  className="saas-btn saas-btn-sm saas-btn-primary"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    repeatOrder && repeatOrder(order)
+                  }}
+                >
+                  <Repeat size={12} /> Reorder
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              className="order-toggle-details-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                onViewDetails && onViewDetails()
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#059669',
+                background: '#ECFDF5',
+                border: '1px solid #A7F3D0',
+                padding: '5px 12px',
+                borderRadius: '9999px',
+                cursor: 'pointer'
+              }}
+            >
+              <span>View Details</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       </div>
     </article>
   )
 }
 
-function OrderDetailsPage({ order, onBack, repeatOrder, onShowReceipt }) {
+function OrderDetailsPage({ order, onBack, repeatOrder, onShowReceipt, onCancelOrder, onRateOrder }) {
   const [showQrModal, setShowQrModal] = useState(false)
   if (!order) return null
   const isReady = order.status === 'ready'
@@ -4169,6 +4234,26 @@ function OrderDetailsPage({ order, onBack, repeatOrder, onShowReceipt }) {
         >
           <FileText size={16} /> Digital Receipt
         </button>
+        {order.status === 'placed' && (
+          <button
+            type="button"
+            className="btn-secondary btn-spring"
+            style={{ width: '100%', padding: '12px', fontSize: '13.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2' }}
+            onClick={() => onCancelOrder && onCancelOrder(order)}
+          >
+            <X size={16} /> Cancel Order
+          </button>
+        )}
+        {order.status === 'collected' && (
+          <button
+            type="button"
+            className="btn-primary btn-spring"
+            style={{ width: '100%', padding: '12px', fontSize: '13.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={() => onRateOrder && onRateOrder(order)}
+          >
+            <Star size={16} /> Rate Meal
+          </button>
+        )}
         {!isCancelled && (
           <button
             type="button"
