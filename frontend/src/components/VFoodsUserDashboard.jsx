@@ -215,11 +215,11 @@ export default function VFoodsUserDashboard({
           phone: cleanPhone
         }))
       }
-      if (setNotice) setNotice('Profile updated successfully.')
+      if (setNotice) setNotice('Profile updated.')
       setShowEditProfileModal(false)
     } catch (err) {
       console.error('Error updating profile:', err)
-      if (setNotice) setNotice('Failed to update profile.')
+      if (setNotice) setNotice('Could not update profile.')
     } finally {
       setSavingProfile(false)
     }
@@ -720,7 +720,7 @@ export default function VFoodsUserDashboard({
                       className="vfoods-profile-dd-item"
                       onClick={async () => {
                         const ok = await togglePush()
-                        setNotice(ok ? (pushSubscribed ? 'Push notifications disabled' : 'Order push alerts enabled!') : 'Could not update push alerts')
+                        setNotice(ok ? (pushSubscribed ? 'Push notifications disabled' : 'Order push alerts enabled') : 'Could not update push alerts')
                       }}
                     >
                       {pushSubscribed ? <BellRing size={15} color="#2563EB" /> : <BellOff size={15} />}
@@ -1501,7 +1501,7 @@ export default function VFoodsUserDashboard({
                     <CheckCircle2 size={24} />
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '15px', color: '#166534' }}>
-                    Payment Approved by Bank!
+                    Payment approved by bank
                   </div>
                   <div style={{ fontSize: '11.5px', color: '#64748B' }}>
                     Generating kitchen order ticket and pickup token...

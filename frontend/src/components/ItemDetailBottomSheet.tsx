@@ -345,7 +345,7 @@ const ItemDetailContent: React.FC<ItemDetailBottomSheetProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <ShoppingBag size={18} />
-                  <span>{isAvailable ? 'Add to Tray' : isSoldOut ? 'Sold Out' : 'Unavailable'}</span>
+                  <span>{isAvailable ? 'Add to tray' : isSoldOut ? 'Sold Out' : 'Unavailable'}</span>
                 </div>
                 {isAvailable && <span>₹{(item.price || 0) * qty}</span>}
               </button>

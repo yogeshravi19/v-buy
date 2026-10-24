@@ -21,7 +21,7 @@ const STEPS = [
   { key: 'placed', label: 'Order Placed', icon: Clock, desc: 'Sent to Kitchen' },
   { key: 'preparing', label: 'Cooking & Prep', icon: ChefHat, desc: 'Hot & Fresh' },
   { key: 'ready', label: 'Ready at Counter', icon: Bell, desc: 'Call Token Pass' },
-  { key: 'collected', label: 'Collected', icon: CheckCircle2, desc: 'Enjoy your meal!' },
+  { key: 'collected', label: 'Collected', icon: CheckCircle2, desc: 'Order collected' },
 ]
 
 export const LiveOrderTracker: React.FC<LiveOrderTrackerProps> = ({ order, onShowQr }) => {
@@ -141,7 +141,7 @@ export const LiveOrderTracker: React.FC<LiveOrderTrackerProps> = ({ order, onSho
           {isReady ? (
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
               <Sparkles size={14} className="animate-spin text-emerald-500" />
-              HOT & READY! Please collect at counter
+              Ready for pickup at counter
             </span>
           ) : order.status === 'preparing' ? (
             <span className="text-amber-600 dark:text-amber-400 font-medium">
