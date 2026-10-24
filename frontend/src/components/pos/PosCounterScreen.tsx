@@ -363,7 +363,7 @@ export function PosCounterScreen({
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 bg-slate-50 relative overflow-hidden">
       {/* Offline Alert Banner */}
       {!isOnline && (
         <div className="bg-amber-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between shadow-sm shrink-0">
@@ -407,9 +407,9 @@ export function PosCounterScreen({
       </div>
 
       {/* Main Content Area: Split 2-Column on Tablet/Desktop */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Left: Product Catalog & Fast Grid */}
-        <div className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4 gap-3">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden p-3 sm:p-4 gap-3">
           {/* Controls: Search, Category Tabs, Veg Filter */}
           <div className="space-y-2 shrink-0">
             <div className="flex items-center gap-2">
@@ -420,8 +420,7 @@ export function PosCounterScreen({
                   placeholder="Search items..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ paddingLeft: '34px' }}
-                  className="w-full h-9 pr-3 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-700 shadow-xs"
+                  className="pos-search-input shadow-xs"
                 />
                 {searchQuery && (
                   <button
@@ -466,7 +465,7 @@ export function PosCounterScreen({
               <button
                 type="button"
                 onClick={() => setSelectedCategory('all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors ${selectedCategory === 'all' ? 'bg-blue-700 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                className={`pos-chip shrink-0 ${selectedCategory === 'all' ? 'active shadow-sm' : 'hover:bg-slate-50'}`}
               >
                 All Items ({menuItems.length})
               </button>
@@ -477,7 +476,7 @@ export function PosCounterScreen({
                     key={cat}
                     type="button"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize shrink-0 transition-colors ${selectedCategory === cat ? 'bg-blue-700 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    className={`pos-chip capitalize shrink-0 ${selectedCategory === cat ? 'active shadow-sm' : 'hover:bg-slate-50'}`}
                   >
                     {cat} ({count})
                   </button>
@@ -487,7 +486,7 @@ export function PosCounterScreen({
           </div>
 
           {/* Product Grid */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {loading ? (
               <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
                 <span>Loading counter menu catalog...</span>
@@ -589,9 +588,9 @@ export function PosCounterScreen({
         </div>
 
         {/* Right: Ticket Panel (Desktop & Tablet side panel) */}
-        <div className="hidden md:flex w-80 lg:w-88 xl:w-96 bg-white border-l border-slate-200 flex-col shadow-md z-10 shrink-0">
+        <div className="pos-ticket-panel hidden md:flex w-80 lg:w-88 xl:w-96 border-l border-slate-200 shadow-md z-10 shrink-0">
           {/* Ticket Header */}
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="pos-ticket-header flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingBag size={16} className="text-blue-700" />
               <h3 className="font-bold text-slate-900 text-sm">Order Ticket</h3>
@@ -600,7 +599,7 @@ export function PosCounterScreen({
               <button
                 type="button"
                 onClick={clearCart}
-                className="text-xs text-rose-600 hover:text-rose-800 font-semibold"
+                className="text-xs text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
               >
                 Clear
               </button>
@@ -608,13 +607,13 @@ export function PosCounterScreen({
           </div>
 
           {/* Customer Name & Instant Handover Toggle */}
-          <div className="p-4 border-b border-slate-100 bg-slate-50/70 space-y-3 shrink-0">
+          <div className="pos-customer-bar space-y-2.5">
             <input
               type="text"
               placeholder="Customer Name / Mobile"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-700"
+              className="pos-customer-input"
             />
 
             <div className="flex items-center justify-between px-1">
@@ -631,9 +630,9 @@ export function PosCounterScreen({
           </div>
 
           {/* Cart Item Rows */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="pos-cart-scroll space-y-2">
             {cartLines.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs gap-2 py-12">
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs gap-2 py-4">
                 <ShoppingBag size={28} className="text-slate-300" />
                 <span>No items selected.</span>
               </div>
@@ -696,9 +695,9 @@ export function PosCounterScreen({
           </div>
 
           {/* Footer Billing & Checkout Controls */}
-          <div className="p-4 border-t border-slate-200 bg-white space-y-3 shrink-0">
+          <div className="pos-footer">
             {/* Payment Mode Selection */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
                 Payment method
               </label>
@@ -706,33 +705,33 @@ export function PosCounterScreen({
                 <button
                   type="button"
                   onClick={() => setPaymentMode('CASH')}
-                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'CASH' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`pos-payment-btn ${paymentMode === 'CASH' ? 'active' : ''}`}
                 >
-                  <Banknote size={16} className="shrink-0" />
+                  <Banknote size={15} className="shrink-0" />
                   <span className="truncate">Cash</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('UPI_COUNTER')}
-                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'UPI_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`pos-payment-btn ${paymentMode === 'UPI_COUNTER' ? 'active' : ''}`}
                 >
-                  <QrCode size={16} className="shrink-0" />
+                  <QrCode size={15} className="shrink-0" />
                   <span className="truncate">UPI</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('CARD_COUNTER')}
-                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'CARD_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`pos-payment-btn ${paymentMode === 'CARD_COUNTER' ? 'active' : ''}`}
                 >
-                  <CreditCard size={16} className="shrink-0" />
+                  <CreditCard size={15} className="shrink-0" />
                   <span className="truncate">Card</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('OTHER')}
-                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'OTHER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`pos-payment-btn ${paymentMode === 'OTHER' ? 'active' : ''}`}
                 >
-                  <FileText size={16} className="shrink-0" />
+                  <FileText size={15} className="shrink-0" />
                   <span className="truncate">Other</span>
                 </button>
               </div>
@@ -792,7 +791,7 @@ export function PosCounterScreen({
               type="button"
               disabled={cartLines.length === 0 || isSubmitting || !isOnline}
               onClick={handlePlacePosOrder}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              className="pos-checkout-btn"
             >
               {isSubmitting ? (
                 <span>Processing...</span>
