@@ -64,3 +64,7 @@ client_secret*.json
 credentials*.json
 # Supabase CLI temp files
 supabase/.temp/
+
+# Root temporary test captures
+/*.png
+scratch_audit_data.json
