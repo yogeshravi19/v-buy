@@ -39,7 +39,8 @@ import {
   Edit,
   ShieldAlert,
   FileText,
-  Eye
+  Eye,
+  Compass
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
@@ -49,6 +50,9 @@ import { StatusBadge } from '../../components/ui/status-badge'
 import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { formatOrderNumber } from '../../utils/orderNumber'
 import { useResizableSidebar } from '../../hooks/useResizableSidebar'
+import { RolesAndPermissionsScreen } from './RolesAndPermissionsScreen'
+import { SystemMapScreen } from './SystemMapScreen'
+import { MyRolePanel } from '../../components/ui/MyRolePanel'
 
 export interface PlatformOrder {
   id: number
@@ -172,6 +176,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     | 'campuses'
     | 'outlets'
     | 'users'
+    | 'roles-permissions'
     | 'orders'
     | 'payments'
     | 'settlements'
@@ -179,11 +184,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     | 'coupons'
     | 'audit-logs'
     | 'system-settings'
+    | 'system-map'
 
   const parseSuperPath = (path: string): SuperTab => {
     const p = path.toLowerCase()
     if (p.includes('/campuses')) return 'campuses'
     if (p.includes('/outlets')) return 'outlets'
+    if (p.includes('/roles') || p.includes('/permissions')) return 'roles-permissions'
+    if (p.includes('/system-map') || p.includes('/system_map')) return 'system-map'
     if (p.includes('/users')) return 'users'
     if (p.includes('/orders')) return 'orders'
     if (p.includes('/payments')) return 'payments'
@@ -216,6 +224,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showMyRoleModal, setShowMyRoleModal] = useState(false)
   const { sidebarWidth, isResizing, handleMouseDown } = useResizableSidebar({ storageKey: 'vfoods_superadmin_sidebar_width' })
 
   // User Role Editing State
@@ -1059,7 +1068,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </div>
 
         {/* Navigation Menu (10 Sections Strictly Matching Specification) */}
+        {/* Navigation Menu (Grouped with Section Titles) */}
         <nav className="saas-nav">
+          <div className="saas-nav-section-title">OVERVIEW</div>
           <button
             className={`saas-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
@@ -1070,6 +1081,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </div>
           </button>
 
+          <div className="saas-nav-section-title">CAMPUS & OUTLETS</div>
           <button
             className={`saas-nav-btn ${activeTab === 'campuses' ? 'active' : ''}`}
             onClick={() => { setActiveTab('campuses'); setMobileMenuOpen(false); }}
@@ -1092,17 +1104,29 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <span className="saas-nav-badge">{outletList.length}</span>
           </button>
 
+          <div className="saas-nav-section-title">ACCESS & USERS</div>
           <button
             className={`saas-nav-btn ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Users size={15} />
-              <span>Users</span>
+              <span>Users & Staff</span>
             </div>
             <span className="saas-nav-badge">{usersList.length}</span>
           </button>
 
+          <button
+            className={`saas-nav-btn ${activeTab === 'roles-permissions' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('roles-permissions'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <ShieldCheck size={15} />
+              <span>Roles & Permissions</span>
+            </div>
+          </button>
+
+          <div className="saas-nav-section-title">COMMERCE & ORDERS</div>
           <button
             className={`saas-nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}
@@ -1115,8 +1139,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <span className="saas-nav-badge">{activeOrdersInQueue}</span>
             )}
           </button>
-
-
 
           <button
             className={`saas-nav-btn ${activeTab === 'payments' ? 'active' : ''}`}
@@ -1139,16 +1161,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           </button>
 
           <button
-            className={`saas-nav-btn ${activeTab === 'analytics-reports' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('analytics-reports'); setMobileMenuOpen(false); }}
-          >
-            <div className="saas-nav-item-left">
-              <BarChart3 size={15} />
-              <span>Analytics / Reports</span>
-            </div>
-          </button>
-
-          <button
             className={`saas-nav-btn ${activeTab === 'coupons' ? 'active' : ''}`}
             onClick={() => { setActiveTab('coupons'); setMobileMenuOpen(false); }}
           >
@@ -1157,6 +1169,17 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <span>Coupons</span>
             </div>
             <span className="saas-nav-badge">{coupons.filter(c => c.is_active).length}</span>
+          </button>
+
+          <div className="saas-nav-section-title">SYSTEM & TELEMETRY</div>
+          <button
+            className={`saas-nav-btn ${activeTab === 'analytics-reports' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('analytics-reports'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <BarChart3 size={15} />
+              <span>Analytics / Reports</span>
+            </div>
           </button>
 
           <button
@@ -1183,13 +1206,45 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <span>System Settings</span>
             </div>
           </button>
+
+          {import.meta.env.VITE_ENABLE_SYSTEM_MAP === 'true' && (
+            <button
+              className={`saas-nav-btn ${activeTab === 'system-map' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('system-map'); setMobileMenuOpen(false); }}
+            >
+              <div className="saas-nav-item-left">
+                <Compass size={15} />
+                <span>Developer System Map</span>
+              </div>
+            </button>
+          )}
         </nav>
 
         {/* Sidebar Footer User Info */}
         <div className="saas-sidebar-footer">
           <div className="saas-user-meta">
             <span className="saas-user-name">{currentUser?.full_name || 'Platform Admin'}</span>
-            <span className="saas-user-role-label">System Administrator</span>
+            <button
+              type="button"
+              onClick={() => setShowMyRoleModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: '#38BDF8',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+              title="Click to view full role & permissions profile"
+            >
+              <ShieldCheck size={11} />
+              <span>Super Admin • View Role Info</span>
+            </button>
           </div>
           <button
             className="saas-logout-btn"
@@ -2279,6 +2334,20 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               </div>
             </div>
           )}
+
+          {/* ══════════════════════════════════════════════════════════
+              TAB 12: ROLES & PERMISSIONS MATRIX
+              ══════════════════════════════════════════════════════════ */}
+          {activeTab === 'roles-permissions' && (
+            <RolesAndPermissionsScreen />
+          )}
+
+          {/* ══════════════════════════════════════════════════════════
+              TAB 13: DEVELOPER SYSTEM MAP
+              ══════════════════════════════════════════════════════════ */}
+          {activeTab === 'system-map' && (
+            <SystemMapScreen />
+          )}
         </div>
       </main>
 
@@ -2624,18 +2693,29 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         ]}
         moreTabs={[
           { id: 'campuses', label: 'Campuses & Hubs', icon: Building2 },
+          { id: 'roles-permissions', label: 'Roles & Permissions', icon: ShieldCheck },
           { id: 'payments', label: 'Payments & Ledger', icon: CreditCard },
           { id: 'settlements', label: 'Franchise Settlements', icon: Receipt },
           { id: 'analytics-reports', label: 'Analytics & Reports', icon: BarChart3 },
           { id: 'coupons', label: 'Platform Coupons', icon: Tag },
           { id: 'audit-logs', label: 'Security Audit Trail', icon: ShieldAlert, badge: auditLogsList.length || undefined },
           { id: 'system-settings', label: 'System Configuration', icon: Settings },
+          ...(import.meta.env.VITE_ENABLE_SYSTEM_MAP === 'true'
+            ? [{ id: 'system-map', label: 'Developer System Map', icon: Compass }]
+            : [])
         ]}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         currentUser={currentUser}
         onSignOut={handleSignOut}
         roleLabel="Super Admin"
+      />
+
+      {/* Super Admin My Role & Permissions Modal */}
+      <MyRolePanel
+        isOpen={showMyRoleModal}
+        onClose={() => setShowMyRoleModal(false)}
+        currentUser={currentUser}
       />
     </div>
   )

@@ -49,6 +49,7 @@ import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
 import { getFoodImage } from '../../lib/foodImages'
 import { useResizableSidebar } from '../../hooks/useResizableSidebar'
+import { MyRolePanel } from '../../components/ui/MyRolePanel'
 
 export interface OrderItem {
   item_id?: number
@@ -200,6 +201,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [syncing, setSyncing] = useState(false)
   const [bannerNotice, setBannerNotice] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showMyRoleModal, setShowMyRoleModal] = useState(false)
   const { sidebarWidth, isResizing, handleMouseDown } = useResizableSidebar({ storageKey: 'vfoods_shopstaff_sidebar_width' })
 
   // Figma-inspired Kitchen Rush Management & Ticket Accordion
@@ -818,8 +820,9 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
           </div>
         </div>
 
-        {/* Navigation Menu (7 sections strictly matching spec) */}
+        {/* Navigation Menu (Structured into clear operational domains) */}
         <nav className="saas-nav">
+          <div className="saas-nav-section-title">Operations</div>
           <button
             className={`saas-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
@@ -857,12 +860,23 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
           </button>
 
           <button
+            className={`saas-nav-btn ${activeTab === 'pos' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('pos'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <Calculator size={16} />
+              <span>POS Counter</span>
+            </div>
+          </button>
+
+          <div className="saas-nav-section-title">Inventory & Queue</div>
+          <button
             className={`saas-nav-btn ${activeTab === 'stock' ? 'active' : ''}`}
             onClick={() => { setActiveTab('stock'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Boxes size={16} />
-              <span>Stock</span>
+              <span>Stock & 86 List</span>
             </div>
             {lowStockCount > 0 && (
               <span className="saas-nav-badge" style={{ background: '#DC2626', color: '#FFF' }}>
@@ -886,16 +900,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
             )}
           </button>
 
-          <button
-            className={`saas-nav-btn ${activeTab === 'pos' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('pos'); setMobileMenuOpen(false); }}
-          >
-            <div className="saas-nav-item-left">
-              <Calculator size={16} />
-              <span>POS Counter</span>
-            </div>
-          </button>
-
+          <div className="saas-nav-section-title">Finance</div>
           <button
             className={`saas-nav-btn ${activeTab === 'shift-billing' ? 'active' : ''}`}
             onClick={() => { setActiveTab('shift-billing'); setMobileMenuOpen(false); }}
@@ -911,7 +916,27 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         <div className="saas-sidebar-footer">
           <div className="saas-user-meta">
             <span className="saas-user-name">{currentUser?.full_name || 'Staff User'}</span>
-            <span className="saas-user-role-label">Shop Staff</span>
+            <button
+              type="button"
+              onClick={() => setShowMyRoleModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: '#38BDF8',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+              title="Click to view full role & permissions profile"
+            >
+              <ShieldCheck size={11} />
+              <span>Shop Staff • View Role Info</span>
+            </button>
           </div>
           <button
             className="saas-logout-btn"
@@ -2442,6 +2467,12 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         currentUser={currentUser}
         onSignOut={handleSignOut}
         roleLabel="Shop Staff"
+      />
+
+      <MyRolePanel
+        isOpen={showMyRoleModal}
+        onClose={() => setShowMyRoleModal(false)}
+        currentUser={currentUser}
       />
     </div>
   )

@@ -57,6 +57,7 @@ import { supabase } from '../../lib/supabase'
 import { formatOrderNumber } from '../../utils/orderNumber'
 import { getFoodImage } from '../../lib/foodImages'
 import { useResizableSidebar } from '../../hooks/useResizableSidebar'
+import { MyRolePanel } from '../../components/ui/MyRolePanel'
 
 export interface OrderItem {
   item_id?: number
@@ -283,6 +284,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   const [syncing, setSyncing] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showMyRoleModal, setShowMyRoleModal] = useState(false)
   const { sidebarWidth, isResizing, handleMouseDown } = useResizableSidebar({ storageKey: 'vfoods_shopadmin_sidebar_width' })
 
   // Rush Hour Batch Optimization States
@@ -1227,8 +1229,9 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* Navigation Menu (12 Sections Strictly Matching Specification) */}
+        {/* Navigation Menu (Structured into clear operational domains) */}
         <nav className="saas-nav">
+          <div className="saas-nav-section-title">Operations</div>
           <button
             className={`saas-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
@@ -1258,34 +1261,8 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           >
             <div className="saas-nav-item-left">
               <ChefHat size={15} />
-              <span>KDS / Kitchen</span>
+              <span>Kitchen Display (KDS)</span>
             </div>
-          </button>
-
-          <button
-            className={`saas-nav-btn ${activeTab === 'menu-items' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('menu-items'); setMobileMenuOpen(false); }}
-          >
-            <div className="saas-nav-item-left">
-              <UtensilsCrossed size={15} />
-              <span>Menu & Items</span>
-            </div>
-            <span className="saas-nav-badge">{menuItems.length}</span>
-          </button>
-
-          <button
-            className={`saas-nav-btn ${activeTab === 'inventory' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('inventory'); setMobileMenuOpen(false); }}
-          >
-            <div className="saas-nav-item-left">
-              <Boxes size={15} />
-              <span>Inventory</span>
-            </div>
-            {lowStockCount > 0 && (
-              <span className="saas-nav-badge" style={{ background: '#DC2626', color: '#FFF' }}>
-                {lowStockCount}
-              </span>
-            )}
           </button>
 
           <button
@@ -1298,6 +1275,33 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
             </div>
           </button>
 
+          <div className="saas-nav-section-title">Catalog & Stock</div>
+          <button
+            className={`saas-nav-btn ${activeTab === 'menu-items' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('menu-items'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <UtensilsCrossed size={15} />
+              <span>Menu Management</span>
+            </div>
+            <span className="saas-nav-badge">{menuItems.length}</span>
+          </button>
+
+          <button
+            className={`saas-nav-btn ${activeTab === 'inventory' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('inventory'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <Boxes size={15} />
+              <span>Inventory Levels</span>
+            </div>
+            {lowStockCount > 0 && (
+              <span className="saas-nav-badge" style={{ background: '#DC2626', color: '#FFF' }}>
+                {lowStockCount}
+              </span>
+            )}
+          </button>
+
           <button
             className={`saas-nav-btn ${activeTab === 'pickup-slots' ? 'active' : ''}`}
             onClick={() => { setActiveTab('pickup-slots'); setMobileMenuOpen(false); }}
@@ -1308,13 +1312,14 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
             </div>
           </button>
 
+          <div className="saas-nav-section-title">Management & Finance</div>
           <button
             className={`saas-nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
             onClick={() => { setActiveTab('staff'); setMobileMenuOpen(false); }}
           >
             <div className="saas-nav-item-left">
               <Users size={15} />
-              <span>Staff</span>
+              <span>Staff Team</span>
             </div>
             <span className="saas-nav-badge">{staffList.filter(s => s.is_active).length}</span>
           </button>
@@ -1325,7 +1330,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           >
             <div className="saas-nav-item-left">
               <TrendingUp size={15} />
-              <span>Sales & Revenue</span>
+              <span>Revenue Analytics</span>
             </div>
           </button>
 
@@ -1335,7 +1340,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           >
             <div className="saas-nav-item-left">
               <Receipt size={15} />
-              <span>Settlements</span>
+              <span>Payout Settlements</span>
             </div>
           </button>
 
@@ -1345,7 +1350,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           >
             <div className="saas-nav-item-left">
               <FileSpreadsheet size={15} />
-              <span>Reports</span>
+              <span>Sales Reports</span>
             </div>
           </button>
 
@@ -1355,7 +1360,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
           >
             <div className="saas-nav-item-left">
               <Settings size={15} />
-              <span>Shop Settings</span>
+              <span>Outlet Settings</span>
             </div>
           </button>
         </nav>
@@ -1364,7 +1369,27 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         <div className="saas-sidebar-footer">
           <div className="saas-user-meta">
             <span className="saas-user-name">{currentUser?.full_name || 'Outlet Admin'}</span>
-            <span className="saas-user-role-label">Shop Admin</span>
+            <button
+              type="button"
+              onClick={() => setShowMyRoleModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: '#38BDF8',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+              title="Click to view full role & permissions profile"
+            >
+              <ShieldCheck size={11} />
+              <span>Shop Admin • View Role Info</span>
+            </button>
           </div>
           <button
             className="saas-logout-btn"
@@ -2988,6 +3013,12 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         currentUser={currentUser}
         onSignOut={handleSignOut}
         roleLabel="Shop Admin"
+      />
+
+      <MyRolePanel
+        isOpen={showMyRoleModal}
+        onClose={() => setShowMyRoleModal(false)}
+        currentUser={currentUser}
       />
     </div>
   )
