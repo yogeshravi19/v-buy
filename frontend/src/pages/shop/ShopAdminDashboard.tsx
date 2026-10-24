@@ -347,6 +347,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
   }
 
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
   const [staffToDelete, setStaffToDelete] = useState<{ id: string; name: string } | null>(null)
   const [showArchivedOnly, setShowArchivedOnly] = useState(false)
   const [showAuditLogModal, setShowAuditLogModal] = useState(false)
@@ -355,6 +356,22 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     phone: '',
     role: 'Counter Cashier'
   })
+
+  const openAddStaffModal = () => {
+    setEditingStaff(null)
+    setStaffForm({ full_name: '', phone: '', role: 'Counter Cashier' })
+    setShowAddStaffModal(true)
+  }
+
+  const openEditStaffModal = (staff: StaffMember) => {
+    setEditingStaff(staff)
+    setStaffForm({
+      full_name: staff.full_name,
+      phone: staff.phone,
+      role: staff.role
+    })
+    setShowAddStaffModal(true)
+  }
 
   // TanStack Table Columns
   const menuTableColumns = useMemo(() => [
@@ -514,6 +531,13 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
       header: 'Actions',
       cell: ({ row }: any) => (
         <div className="flex items-center gap-1.5 justify-end">
+          <button
+            onClick={() => openEditStaffModal(row.original)}
+            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            title="Edit staff member"
+          >
+            <Edit size={13} />
+          </button>
           <button
             onClick={() => handleToggleStaff(row.original.id)}
             className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
@@ -987,23 +1011,55 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
     }
   }
 
-  // Add Staff Member
-  const handleSaveStaff = (e: React.FormEvent) => {
+  // Add or Edit Staff Member
+  const handleSaveStaff = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!staffForm.full_name || !staffForm.phone) return
-    const newStaff: StaffMember = {
-      id: `st-${Date.now()}`,
-      full_name: staffForm.full_name,
-      phone: staffForm.phone,
-      role: staffForm.role,
-      is_active: true,
-      created_at: getTodayIST()
+
+    if (editingStaff) {
+      setStaffList(prev => prev.map(s => s.id === editingStaff.id ? {
+        ...s,
+        full_name: staffForm.full_name,
+        phone: staffForm.phone,
+        role: staffForm.role
+      } : s))
+      try {
+        await supabase.from('profiles').update({
+          full_name: staffForm.full_name,
+          phone: staffForm.phone
+        }).eq('id', editingStaff.id)
+      } catch (err) {
+        console.warn('Update profile error:', err)
+      }
+      toast.success(`Updated "${staffForm.full_name}"`)
+    } else {
+      const newStaff: StaffMember = {
+        id: `st-${Date.now()}`,
+        full_name: staffForm.full_name,
+        phone: staffForm.phone,
+        role: staffForm.role,
+        is_active: true,
+        created_at: getTodayIST()
+      }
+      setStaffList(prev => [...prev, newStaff])
+      try {
+        await supabase.from('profiles').insert({
+          full_name: staffForm.full_name,
+          phone: staffForm.phone,
+          role: 'staff',
+          outlet_id: activeOutletId
+        })
+      } catch (err) {
+        console.warn('Insert staff profile error:', err)
+      }
+      setNotice(`Staff member "${newStaff.full_name}" registered.`)
+      toast.success(`Registered "${newStaff.full_name}"`)
+      setTimeout(() => setNotice(null), 3000)
     }
-    setStaffList(prev => [...prev, newStaff])
+
     setShowAddStaffModal(false)
+    setEditingStaff(null)
     setStaffForm({ full_name: '', phone: '', role: 'Counter Cashier' })
-    setNotice(`Staff member "${newStaff.full_name}" registered.`)
-    setTimeout(() => setNotice(null), 3000)
   }
 
   // Toggle Staff Active
@@ -2407,7 +2463,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Outlet Staff Directory</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>Manage assigned counter operators, cooks, and credentials</p>
                 </div>
-                <button className="saas-btn saas-btn-primary" onClick={() => setShowAddStaffModal(true)}>
+                <button className="saas-btn saas-btn-primary" onClick={openAddStaffModal}>
                   <Plus size={15} />
                   <span>Add Staff Member</span>
                 </button>
@@ -2910,12 +2966,12 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
         </div>
       )}
 
-      {/* ── ADD STAFF MODAL ── */}
+      {/* ── ADD / EDIT STAFF MODAL ── */}
       {showAddStaffModal && (
         <div className="saas-modal-backdrop" onClick={() => setShowAddStaffModal(false)}>
           <div className="saas-modal-card" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
             <div className="saas-modal-header">
-              <h3 className="saas-modal-title">Add Staff Member</h3>
+              <h3 className="saas-modal-title">{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
               <button className="saas-modal-close" onClick={() => setShowAddStaffModal(false)}>
                 <X size={16} />
               </button>
@@ -2972,7 +3028,7 @@ export const ShopAdminDashboard: React.FC<ShopAdminDashboardProps> = ({
                   Cancel
                 </button>
                 <button type="submit" className="saas-btn saas-btn-primary">
-                  Register Staff
+                  {editingStaff ? 'Save Changes' : 'Register Staff'}
                 </button>
               </div>
             </form>
