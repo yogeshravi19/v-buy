@@ -415,7 +415,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         if (payload.eventType === 'INSERT') {
           loadData()
           if (soundEnabled) playNotificationChime()
-          setBannerNotice(`New Order #${payload.new?.id} (Token #${payload.new?.token}) received!`)
+          setBannerNotice(`Order #${payload.new?.id} received`)
           setTimeout(() => setBannerNotice(null), 4000)
         } else if (payload.eventType === 'UPDATE') {
           const updated = payload.new
@@ -620,7 +620,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
           })
           .eq('id', editingItem.id)
 
-        setBannerNotice(`Updated "${newItemForm.name}" successfully`)
+        setBannerNotice(`Updated "${newItemForm.name}"`)
         setTimeout(() => setBannerNotice(null), 3000)
       } catch (err) {
         console.error('Error updating item:', err)
@@ -660,7 +660,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       if (!error && data) {
         setMenuItems(prev => prev.map(i => i.id === newItem.id ? (data as MenuItem) : i))
       }
-      setBannerNotice(`Added "${newItemForm.name}" to menu successfully`)
+      setBannerNotice(`Added "${newItemForm.name}" to menu`)
       setTimeout(() => setBannerNotice(null), 3000)
     } catch (err) {
       console.error('Error inserting item:', err)
@@ -683,7 +683,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
 
     if (match) {
       const displayNum = formatOrderNumber(match)
-      setVerifyStatus({ success: true, message: `Order ${displayNum} Verified! Order Ready for Handover.` })
+      setVerifyStatus({ success: true, message: `Order ${displayNum} verified. Ready for handover.` })
       await handleAdvanceStatus(match.id, 'ready')
       setTimeout(() => {
         handleAdvanceStatus(match.id, 'ready') // Marks collected
@@ -729,7 +729,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
     setLocalOrders(prev => [newOrder, ...prev])
     setPosCart({})
     setPosCustomerName('')
-    setPosSuccessNotice(`Order punched! Token #${token} generated.`)
+    setPosSuccessNotice(`Order created. Token #${token} generated.`)
     setTimeout(() => setPosSuccessNotice(null), 4000)
 
     try {
@@ -1214,7 +1214,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                       {localOrders.filter(o => o.status !== 'collected').length === 0 && (
                         <tr>
                           <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#64748B' }}>
-                            No pending orders in queue. All caught up!
+                            No pending orders in queue.
                           </td>
                         </tr>
                       )}
@@ -2174,7 +2174,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
                 userRole="staff"
                 onOrderCreated={(newOrd) => {
                   loadData()
-                  setBannerNotice(`Counter order ${formatOrderNumber(newOrd)} punched!`)
+                  setBannerNotice(`Counter order ${formatOrderNumber(newOrd)} created`)
                   setTimeout(() => setBannerNotice(null), 3500)
                 }}
               />

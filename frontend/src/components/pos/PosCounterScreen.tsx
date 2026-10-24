@@ -498,7 +498,7 @@ export function PosCounterScreen({
                 <span>No matching dishes found in this category.</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {filteredItems.map(item => {
                   const inCartLine = cartLines.find(l => l.item.id === item.id)
                   const isSoldOut = item.stock_qty !== null && item.stock_qty <= 0
@@ -589,9 +589,9 @@ export function PosCounterScreen({
         </div>
 
         {/* Right: Ticket Panel (Desktop & Tablet side panel) */}
-        <div className="hidden md:flex w-72 lg:w-80 xl:w-84 bg-white border-l border-slate-200 flex-col shadow-md z-10 shrink-0">
+        <div className="hidden md:flex w-80 lg:w-88 xl:w-96 bg-white border-l border-slate-200 flex-col shadow-md z-10 shrink-0">
           {/* Ticket Header */}
-          <div className="p-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <ShoppingBag size={16} className="text-blue-700" />
               <h3 className="font-bold text-slate-900 text-sm">Order Ticket</h3>
@@ -600,7 +600,7 @@ export function PosCounterScreen({
               <button
                 type="button"
                 onClick={clearCart}
-                className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold"
+                className="text-xs text-rose-600 hover:text-rose-800 font-semibold"
               >
                 Clear
               </button>
@@ -608,13 +608,13 @@ export function PosCounterScreen({
           </div>
 
           {/* Customer Name & Instant Handover Toggle */}
-          <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2 shrink-0">
+          <div className="p-4 border-b border-slate-100 bg-slate-50/70 space-y-3 shrink-0">
             <input
               type="text"
               placeholder="Customer Name / Mobile"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-700"
+              className="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-700"
             />
 
             <div className="flex items-center justify-between px-1">
@@ -625,7 +625,7 @@ export function PosCounterScreen({
                   onChange={(e) => setIsQuickSale(e.target.checked)}
                   className="rounded text-blue-700 focus:ring-blue-600 h-4 w-4 accent-blue-700"
                 />
-                <span>Instant Handover</span>
+                <span>Instant handover</span>
               </label>
             </div>
           </div>
@@ -660,30 +660,33 @@ export function PosCounterScreen({
                       className="flex-1 h-7 px-2 text-[11px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none"
                     />
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => updateLineQty(line.item.id, -1)}
-                        className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold"
+                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold transition-colors"
+                        aria-label="Decrease quantity"
                       >
-                        <Minus size={11} />
+                        <Minus size={13} />
                       </button>
-                      <span className="w-5 text-center text-xs font-bold tabular-nums">
+                      <span className="w-6 text-center text-xs font-bold tabular-nums">
                         {line.qty}
                       </span>
                       <button
                         type="button"
                         onClick={() => updateLineQty(line.item.id, 1)}
-                        className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold"
+                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold transition-colors"
+                        aria-label="Increase quantity"
                       >
-                        <Plus size={11} />
+                        <Plus size={13} />
                       </button>
                       <button
                         type="button"
                         onClick={() => removeLine(line.item.id)}
-                        className="w-6 h-6 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center ml-1"
+                        className="w-8 h-8 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center ml-1 transition-colors"
+                        aria-label="Remove item"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
@@ -695,50 +698,50 @@ export function PosCounterScreen({
           {/* Footer Billing & Checkout Controls */}
           <div className="p-4 border-t border-slate-200 bg-white space-y-3 shrink-0">
             {/* Payment Mode Selection */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                Payment Method
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                Payment method
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMode('CASH')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'CASH' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'CASH' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <Banknote size={15} className="shrink-0" />
+                  <Banknote size={16} className="shrink-0" />
                   <span className="truncate">Cash</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('UPI_COUNTER')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'UPI_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'UPI_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <QrCode size={15} className="shrink-0" />
+                  <QrCode size={16} className="shrink-0" />
                   <span className="truncate">UPI</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('CARD_COUNTER')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'CARD_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'CARD_COUNTER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <CreditCard size={15} className="shrink-0" />
+                  <CreditCard size={16} className="shrink-0" />
                   <span className="truncate">Card</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('OTHER')}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-colors min-w-0 ${paymentMode === 'OTHER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                  className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 border transition-colors min-w-0 ${paymentMode === 'OTHER' ? 'bg-blue-50 border-blue-700 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                 >
-                  <FileText size={15} className="shrink-0" />
+                  <FileText size={16} className="shrink-0" />
                   <span className="truncate">Other</span>
                 </button>
               </div>
 
               {/* Cash Tendered & Change Calculator */}
               {paymentMode === 'CASH' && (
-                <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1 mt-2">
+                <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1.5 mt-2">
                   <div className="flex items-center justify-between text-xs gap-2">
-                    <span className="text-emerald-900 font-semibold truncate">Cash Tendered:</span>
+                    <span className="text-emerald-900 font-semibold truncate">Cash tendered:</span>
                     <div className="flex items-center gap-1">
                       <span className="text-xs font-bold text-slate-500">₹</span>
                       <input
@@ -746,12 +749,12 @@ export function PosCounterScreen({
                         placeholder="0"
                         value={cashTendered}
                         onChange={(e) => setCashTendered(e.target.value)}
-                        className="w-20 h-7 px-2 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none shrink-0"
+                        className="w-24 h-8 px-2.5 text-right text-xs font-bold bg-white border border-emerald-300 rounded-md focus:outline-none shrink-0"
                       />
                     </div>
                   </div>
                   {cashChange !== null && (
-                    <div className="flex items-center justify-between text-xs font-black text-emerald-800 pt-1 border-t border-emerald-200">
+                    <div className="flex items-center justify-between text-xs font-black text-emerald-800 pt-1.5 border-t border-emerald-200">
                       <span>Change:</span>
                       <span className="text-sm">₹{cashChange}</span>
                     </div>
@@ -796,7 +799,7 @@ export function PosCounterScreen({
               ) : (
                 <>
                   <CheckCircle2 size={16} />
-                  <span>Confirm Order • ₹{cartSubtotal}</span>
+                  <span>Place order • ₹{cartSubtotal}</span>
                 </>
               )}
             </button>
