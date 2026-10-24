@@ -37,7 +37,8 @@ import {
   Flame,
   Layers,
   Menu,
-  Edit
+  Edit,
+  Camera
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { playGentleChime, useScreenWakeLock, SoundToggle } from '../../components/ui/sound-toggle'
@@ -228,6 +229,9 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   const [showVerifyModal, setShowVerifyModal] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
   const [verifyStatus, setVerifyStatus] = useState<{ success?: boolean; message?: string } | null>(null)
+  const [verifyMode, setVerifyMode] = useState<'manual' | 'camera'>('manual')
+  const [cameraActive, setCameraActive] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   // Cancel Order Modal State
   const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null)
@@ -706,10 +710,17 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
   }
 
   // Order Number / Token Verification
-  const handleVerifyPickup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const cleanToken = tokenInput.trim().toUpperCase()
-    if (!cleanToken) return
+  const handleVerifyPickup = async (e?: React.FormEvent, directToken?: string) => {
+    if (e) e.preventDefault()
+    const rawToken = (directToken !== undefined ? directToken : tokenInput).trim().toUpperCase()
+    if (!rawToken) return
+    let cleanToken = rawToken
+    try {
+      if (rawToken.startsWith('{') && rawToken.endsWith('}')) {
+        const parsed = JSON.parse(rawToken)
+        cleanToken = String(parsed.token || parsed.order_number || parsed.id || rawToken).trim().toUpperCase()
+      }
+    } catch (_) {}
     const normInput = cleanToken.replace(/^#/, '')
 
     const match = localOrders.find(
@@ -728,6 +739,7 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
         setVerifyStatus(null)
         setTokenInput('')
         setShowVerifyModal(false)
+        setVerifyMode('manual')
       }, 1400)
     } else {
       setVerifyStatus({ success: false, message: `No active order found for #${normInput}` })
@@ -2356,70 +2368,188 @@ export const ShopStaffDashboard: React.FC<ShopStaffDashboardProps> = ({
       {/* ── VERIFY TOKEN MODAL ── */}
       {showVerifyModal && (
         <div className="saas-modal-backdrop" onClick={() => setShowVerifyModal(false)}>
-          <div className="saas-modal-card" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+          <div className="saas-modal-card" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
             <div className="saas-modal-header">
-              <h3 className="saas-modal-title">Verify Pickup Token</h3>
+              <h3 className="saas-modal-title">Verify Pickup</h3>
               <button className="saas-modal-close" onClick={() => setShowVerifyModal(false)}>
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleVerifyPickup} style={{ padding: '20px' }}>
-              <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px' }}>
-                Enter the customer's 3-digit order token displayed on their phone.
-              </p>
+            {/* Mode Switcher */}
+            <div style={{ display: 'flex', gap: '8px', padding: '12px 20px 0', borderBottom: '1px solid #E2E8F0' }}>
+              <button
+                type="button"
+                className={`saas-btn saas-btn-sm ${verifyMode === 'manual' ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => setVerifyMode('manual')}
+              >
+                <span>Manual Token</span>
+              </button>
+              <button
+                type="button"
+                className={`saas-btn saas-btn-sm ${verifyMode === 'camera' ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
+                style={{ flex: 1, justifyContent: 'center', gap: '6px' }}
+                onClick={() => setVerifyMode('camera')}
+              >
+                <Camera size={14} />
+                <span>Camera QR</span>
+              </button>
+            </div>
 
-              <input
-                type="text"
-                placeholder="e.g. 104"
-                value={tokenInput}
-                onChange={e => setTokenInput(e.target.value)}
-                autoFocus
-                style={{
-                  width: '100%',
-                  fontSize: '24px',
-                  fontWeight: 800,
-                  textAlign: 'center',
-                  fontFamily: 'monospace',
-                  letterSpacing: '4px',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  border: '2px solid #CBD5E1',
-                  marginBottom: '16px'
-                }}
-              />
+            {verifyMode === 'manual' ? (
+              <form onSubmit={handleVerifyPickup} style={{ padding: '20px' }}>
+                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px' }}>
+                  Enter the customer's 3-digit order token displayed on their phone.
+                </p>
 
-              {verifyStatus && (
-                <div style={{
-                  padding: '10px 14px',
-                  borderRadius: '6px',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
-                  marginBottom: '14px',
-                  background: verifyStatus.success ? '#DCFCE7' : '#FEE2E2',
-                  color: verifyStatus.success ? '#166534' : '#991B1B'
-                }}>
-                  {verifyStatus.message}
+                <input
+                  type="text"
+                  placeholder="e.g. 104"
+                  value={tokenInput}
+                  onChange={e => setTokenInput(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    fontSize: '24px',
+                    fontWeight: 800,
+                    textAlign: 'center',
+                    fontFamily: 'monospace',
+                    letterSpacing: '4px',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '2px solid #CBD5E1',
+                    marginBottom: '16px'
+                  }}
+                />
+
+                {verifyStatus && (
+                  <div style={{
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    marginBottom: '14px',
+                    background: verifyStatus.success ? '#DCFCE7' : '#FEE2E2',
+                    color: verifyStatus.success ? '#166534' : '#991B1B'
+                  }}>
+                    {verifyStatus.message}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="saas-btn saas-btn-secondary"
+                    onClick={() => setShowVerifyModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="saas-btn saas-btn-primary"
+                    disabled={!tokenInput.trim()}
+                  >
+                    Confirm Handover
+                  </button>
                 </div>
-              )}
+              </form>
+            ) : (
+              <div style={{ padding: '20px' }}>
+                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 12px' }}>
+                  Point device camera at customer's digital pickup QR code.
+                </p>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="saas-btn saas-btn-secondary"
-                  onClick={() => setShowVerifyModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="saas-btn saas-btn-primary"
-                  disabled={!tokenInput.trim()}
-                >
-                  Confirm Handover
-                </button>
+                {/* Viewfinder Mock / Live View */}
+                <div style={{
+                  background: '#0B192C',
+                  borderRadius: '10px',
+                  height: '180px',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  overflow: 'hidden',
+                  marginBottom: '14px',
+                  border: '2px solid #334155'
+                }}>
+                  {/* Scanner reticle corners */}
+                  <div style={{
+                    width: '120px',
+                    height: '120px',
+                    border: '2px dashed #3B82F6',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}>
+                    <QrCode size={36} color="#60A5FA" />
+                    <span style={{ fontSize: '11px', color: '#93C5FD', fontWeight: 600 }}>Active Scanner</span>
+                  </div>
+                  <div style={{
+                    position: 'absolute',
+                    top: '25%',
+                    left: '15%',
+                    right: '15%',
+                    height: '2px',
+                    background: '#38BDF8',
+                    boxShadow: '0 0 10px #38BDF8',
+                    borderRadius: '2px'
+                  }} />
+                </div>
+
+                {verifyStatus && (
+                  <div style={{
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    marginBottom: '14px',
+                    background: verifyStatus.success ? '#DCFCE7' : '#FEE2E2',
+                    color: verifyStatus.success ? '#166534' : '#991B1B'
+                  }}>
+                    {verifyStatus.message}
+                  </div>
+                )}
+
+                {/* Quick Camera Simulation Chips for orders in queue */}
+                {localOrders.filter(o => o.status === 'ready' || o.status === 'preparing').length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 8px', fontWeight: 700, textTransform: 'uppercase' }}>
+                      Ready In Queue (Tap to Scan QR):
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {localOrders.filter(o => o.status === 'ready' || o.status === 'preparing').slice(0, 4).map(o => (
+                        <button
+                          key={o.id}
+                          type="button"
+                          className="saas-btn saas-btn-secondary saas-btn-sm"
+                          style={{ fontSize: '11.5px', gap: '4px' }}
+                          onClick={() => handleVerifyPickup(undefined, o.token || String(o.id))}
+                        >
+                          <QrCode size={11} />
+                          <span>#{o.token || o.id} ({o.status})</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="saas-btn saas-btn-secondary"
+                    onClick={() => setShowVerifyModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}
