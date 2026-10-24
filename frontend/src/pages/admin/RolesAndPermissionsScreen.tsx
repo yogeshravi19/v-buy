@@ -13,11 +13,20 @@ import {
   CheckCircle2,
   ExternalLink,
   ShieldAlert,
-  Info
+  Info,
+  Save,
+  RotateCcw,
+  Undo2,
+  Sparkles,
+  Unlock,
+  CheckSquare
 } from 'lucide-react'
 import {
   ROLE_DEFINITIONS,
-  MODULE_CAPABILITY_MATRIX
+  MODULE_CAPABILITY_MATRIX,
+  getActiveCapabilityMatrix,
+  saveCapabilityMatrixOverrides,
+  resetCapabilityMatrixOverrides
 } from '../../lib/permissions'
 import type {
   UserRole,
@@ -36,6 +45,17 @@ interface UserRecord {
   created_at?: string
 }
 
+type ActionKey = 'view' | 'create' | 'edit' | 'delete' | 'manage'
+type RoleKey = 'user' | 'staff' | 'shop_admin' | 'super_admin'
+
+interface CapabilityRow {
+  module: string
+  user: { view: boolean; create: boolean; edit: boolean; delete: boolean; manage: boolean }
+  staff: { view: boolean; create: boolean; edit: boolean; delete: boolean; manage: boolean }
+  shop_admin: { view: boolean; create: boolean; edit: boolean; delete: boolean; manage: boolean }
+  super_admin: { view: boolean; create: boolean; edit: boolean; delete: boolean; manage: boolean }
+}
+
 export const RolesAndPermissionsScreen: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>('super_admin')
   const [activeTab, setActiveTab] = useState<'matrix' | 'roles' | 'roster'>('matrix')
@@ -44,6 +64,12 @@ export const RolesAndPermissionsScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true)
   const [rosterSearch, setRosterSearch] = useState<string>('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [matrixSearch, setMatrixSearch] = useState<string>('')
+
+  // Interactive capability matrix state
+  const [matrix, setMatrix] = useState<CapabilityRow[]>(() => getActiveCapabilityMatrix())
+  const [savedMatrix, setSavedMatrix] = useState<CapabilityRow[]>(() => getActiveCapabilityMatrix())
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null)
 
   // Real verified counts from database
   const [roleCounts, setRoleCounts] = useState<{
@@ -106,6 +132,101 @@ export const RolesAndPermissionsScreen: React.FC = () => {
     loadData()
   }, [])
 
+  // Check if matrix has unsaved edits
+  const isDirty = useMemo(() => {
+    return JSON.stringify(matrix) !== JSON.stringify(savedMatrix)
+  }, [matrix, savedMatrix])
+
+  // Count changed capabilities
+  const changeCount = useMemo(() => {
+    let count = 0
+    matrix.forEach((row, rIdx) => {
+      const savedRow = savedMatrix[rIdx]
+      if (!savedRow) return
+      ;(['user', 'staff', 'shop_admin', 'super_admin'] as RoleKey[]).forEach(role => {
+        ;(['view', 'create', 'edit', 'delete', 'manage'] as ActionKey[]).forEach(action => {
+          if (row[role][action] !== savedRow[role][action]) count++
+        })
+      })
+    })
+    return count
+  }, [matrix, savedMatrix])
+
+  // Toggle individual cell
+  const handleToggleCell = (moduleIndex: number, role: RoleKey, action: ActionKey) => {
+    setMatrix(prev => {
+      const updated = prev.map((row, idx) => {
+        if (idx !== moduleIndex) return row
+        return {
+          ...row,
+          [role]: {
+            ...row[role],
+            [action]: !row[role][action]
+          }
+        }
+      })
+      return updated
+    })
+  }
+
+  // Grant full access to all roles & modules
+  const handleGrantFullAccessAll = () => {
+    setMatrix(prev =>
+      prev.map(row => ({
+        ...row,
+        user: { view: true, create: true, edit: true, delete: true, manage: true },
+        staff: { view: true, create: true, edit: true, delete: true, manage: true },
+        shop_admin: { view: true, create: true, edit: true, delete: true, manage: true },
+        super_admin: { view: true, create: true, edit: true, delete: true, manage: true }
+      }))
+    )
+    setSaveSuccessMessage('Full Access granted across all modules and roles. Click "Save Matrix" to persist.')
+  }
+
+  // Grant full access to a single module across all roles
+  const handleGrantFullAccessRow = (moduleIndex: number) => {
+    setMatrix(prev =>
+      prev.map((row, idx) => {
+        if (idx !== moduleIndex) return row
+        return {
+          ...row,
+          user: { view: true, create: true, edit: true, delete: true, manage: true },
+          staff: { view: true, create: true, edit: true, delete: true, manage: true },
+          shop_admin: { view: true, create: true, edit: true, delete: true, manage: true },
+          super_admin: { view: true, create: true, edit: true, delete: true, manage: true }
+        }
+      })
+    )
+  }
+
+  // Save changes to persistent storage and update application
+  const handleSaveMatrix = () => {
+    saveCapabilityMatrixOverrides(matrix)
+    setSavedMatrix(JSON.parse(JSON.stringify(matrix)))
+    setSaveSuccessMessage('Permissions matrix saved successfully! All custom capabilities are now active.')
+    setTimeout(() => {
+      setSaveSuccessMessage(null)
+    }, 4500)
+  }
+
+  // Discard unsaved changes
+  const handleDiscardChanges = () => {
+    setMatrix(JSON.parse(JSON.stringify(savedMatrix)))
+    setSaveSuccessMessage(null)
+  }
+
+  // Reset to default factory RLS policies
+  const handleResetToBaseline = () => {
+    resetCapabilityMatrixOverrides()
+    const baseline = JSON.parse(JSON.stringify(MODULE_CAPABILITY_MATRIX))
+    setMatrix(baseline)
+    setSavedMatrix(baseline)
+    setSaveSuccessMessage('Reset to factory Row Level Security (RLS) baseline.')
+    setTimeout(() => {
+      setSaveSuccessMessage(null)
+    }, 4000)
+  }
+
   const filteredUsers = useMemo(() => {
     return usersList.filter(u => {
       const matchRole = roleFilter === 'all' || u.role.toLowerCase() === roleFilter.toLowerCase()
@@ -119,51 +240,47 @@ export const RolesAndPermissionsScreen: React.FC = () => {
     })
   }, [usersList, roleFilter, rosterSearch])
 
+  const filteredMatrix = useMemo(() => {
+    if (!matrixSearch.trim()) return matrix
+    const term = matrixSearch.toLowerCase()
+    return matrix.filter(r => r.module.toLowerCase().includes(term))
+  }, [matrix, matrixSearch])
+
   const currentRoleDef = ROLE_DEFINITIONS[selectedRole]
 
   return (
-    <div className="space-y-6">
+    <div className="gov-workspace">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0">
-              Roles & Access Governance
-            </h1>
-            <span className="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-purple-200">
-              Verified RLS Policies
-            </span>
+      <div className="gov-top-header">
+        <div className="gov-title-wrap">
+          <div className="gov-title-row">
+            <h1 className="gov-main-title">Roles & Access Governance</h1>
+            <span className="gov-badge-rls">Verified RLS Policies</span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 m-0">
+          <p className="gov-subtitle">
             Authoritative 4-tier security matrix. Cross-checked against Supabase Row Level Security and FastAPI route guards.
           </p>
         </div>
 
         {/* View Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 self-start md:self-auto">
+        <div className="gov-tabs-container">
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'matrix' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`gov-tab-btn ${activeTab === 'matrix' ? 'active' : ''}`}
             onClick={() => setActiveTab('matrix')}
           >
             Capability Matrix
           </button>
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'roles' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`gov-tab-btn ${activeTab === 'roles' ? 'active' : ''}`}
             onClick={() => setActiveTab('roles')}
           >
             Role Specifications
           </button>
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'roster' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`gov-tab-btn ${activeTab === 'roster' ? 'active' : ''}`}
             onClick={() => setActiveTab('roster')}
           >
             Active User Roster ({roleCounts.total})
@@ -171,171 +288,392 @@ export const RolesAndPermissionsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Headcount Metric Cards (Adapted from Reference Image 2) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Users (Students)</span>
-            <div className="text-2xl font-extrabold text-slate-900 font-mono mt-0.5" data-tabular-num>
-              {roleCounts.user}
+      {/* Headcount Metric Cards (Standard SAAS KPI Cards) */}
+      <div className="saas-kpi-grid" style={{ marginBottom: 0 }}>
+        <div className="saas-kpi-card">
+          <div className="saas-kpi-head">
+            <span>Users (Students)</span>
+            <div className="saas-kpi-head-icon" style={{ background: '#EFF6FF', color: '#1E40AF' }}>
+              <Users size={16} />
             </div>
-            <span className="text-[10px] text-slate-400">Campus customer base</span>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
-            <Users size={18} />
+          <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>
+            {roleCounts.user}
+          </div>
+          <div className="saas-kpi-sub" style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+            Campus customer base
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Shop Staff</span>
-            <div className="text-2xl font-extrabold text-slate-900 font-mono mt-0.5" data-tabular-num>
-              {roleCounts.staff}
+        <div className="saas-kpi-card">
+          <div className="saas-kpi-head">
+            <span>Shop Staff</span>
+            <div className="saas-kpi-head-icon" style={{ background: '#ECFDF5', color: '#059669' }}>
+              <UserCheck size={16} />
             </div>
-            <span className="text-[10px] text-emerald-600 font-medium">Counter & kitchen crew</span>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-            <UserCheck size={18} />
+          <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>
+            {roleCounts.staff}
+          </div>
+          <div className="saas-kpi-sub" style={{ fontSize: '11px', color: '#059669', fontWeight: 600, marginTop: '4px' }}>
+            Counter & kitchen crew
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Shop Admins</span>
-            <div className="text-2xl font-extrabold text-slate-900 font-mono mt-0.5" data-tabular-num>
-              {roleCounts.shop_admin}
+        <div className="saas-kpi-card">
+          <div className="saas-kpi-head">
+            <span>Shop Admins</span>
+            <div className="saas-kpi-head-icon" style={{ background: '#FFFBEB', color: '#D97706' }}>
+              <Store size={16} />
             </div>
-            <span className="text-[10px] text-amber-600 font-medium">Outlet managers</span>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
-            <Store size={18} />
+          <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>
+            {roleCounts.shop_admin}
+          </div>
+          <div className="saas-kpi-sub" style={{ fontSize: '11px', color: '#D97706', fontWeight: 600, marginTop: '4px' }}>
+            Outlet managers
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Super Admins</span>
-            <div className="text-2xl font-extrabold text-slate-900 font-mono mt-0.5" data-tabular-num>
-              {roleCounts.super_admin}
+        <div className="saas-kpi-card">
+          <div className="saas-kpi-head">
+            <span>Super Admins</span>
+            <div className="saas-kpi-head-icon" style={{ background: '#FAF5FF', color: '#7C3AED' }}>
+              <ShieldCheck size={16} />
             </div>
-            <span className="text-[10px] text-purple-600 font-medium">Platform governance</span>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
-            <ShieldCheck size={18} />
+          <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>
+            {roleCounts.super_admin}
+          </div>
+          <div className="saas-kpi-sub" style={{ fontSize: '11px', color: '#7C3AED', fontWeight: 600, marginTop: '4px' }}>
+            Platform governance
           </div>
         </div>
       </div>
 
-      {/* Affirmative Policy Statement Banner (Directly Adapted from Reference Image 2) */}
-      <div className="bg-[#0F172A] text-white p-4 rounded-xl border border-slate-800 flex items-center justify-between gap-4 shadow-soft">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0">
+      {/* Affirmative Policy Statement Banner */}
+      <div className="gov-banner-policy">
+        <div className="gov-banner-content">
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'rgba(37, 99, 235, 0.25)',
+            color: '#60A5FA',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
             <Info size={18} />
           </div>
-          <div className="text-xs">
-            <strong className="text-white block font-bold">
+          <div>
+            <strong style={{ color: '#FFFFFF', display: 'block', fontWeight: 700, fontSize: '12px' }}>
               Affirmative Security Principle: Super Admins retain platform-wide governance. Anything not explicitly permitted is blocked by database RLS.
             </strong>
-            <span className="text-slate-400">
-              Shop Staff and Shop Admins are strictly scoped to their assigned outlet ID via <code className="text-blue-300 font-mono">public.get_my_outlet()</code>.
+            <span style={{ color: '#94A3B8', fontSize: '11px' }}>
+              Shop Staff and Shop Admins are strictly scoped to their assigned outlet ID via <code style={{ color: '#93C5FD', fontFamily: 'monospace' }}>public.get_my_outlet()</code>.
             </span>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-300 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700 font-mono">
-          <span>RLS: Active</span>
+        <div style={{
+          fontSize: '11px',
+          color: '#CBD5E1',
+          background: 'rgba(30, 41, 59, 0.7)',
+          padding: '6px 12px',
+          borderRadius: '8px',
+          border: '1px solid #334155',
+          fontFamily: 'monospace',
+          whiteSpace: 'nowrap'
+        }}>
+          RLS: Active
         </div>
       </div>
 
-      {/* TAB 1: CAPABILITY MATRIX (Directly Adapted from Reference Image 2 Matrix Layout) */}
+      {/* Save Success Banner */}
+      {saveSuccessMessage && (
+        <div className="gov-banner-toast">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
+            <span>{saveSuccessMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSaveSuccessMessage(null)}
+            style={{ background: 'none', border: 'none', color: '#065F46', cursor: 'pointer', padding: '2px' }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* TAB 1: EDITABLE CAPABILITY MATRIX */}
       {activeTab === 'matrix' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 m-0">
-              Module Capability Matrix by Operational Role
-            </h3>
-            <span className="text-xs text-slate-500">
-              5 Action Dimensions: View · Create · Edit · Delete · Manage
-            </span>
+        <div className="gov-matrix-card">
+          {/* Action Bar with Discard, Save, and Full Access Actions */}
+          <div className="gov-matrix-header">
+            <div className="gov-matrix-title-box">
+              <div className="gov-matrix-title-row">
+                <h3 className="gov-matrix-heading">
+                  Module Capability Matrix by Operational Role
+                </h3>
+                {isDirty ? (
+                  <span style={{
+                    background: '#FEF3C7',
+                    color: '#92400E',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    border: '1px solid #FDE68A',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706' }} />
+                    Unsaved Edits ({changeCount})
+                  </span>
+                ) : (
+                  <span style={{
+                    background: '#ECFDF5',
+                    color: '#065F46',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    border: '1px solid #A7F3D0',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <Check size={10} /> Saved & Active
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: 0, fontSize: '11px', color: '#64748B' }}>
+                Click any permission toggle below to modify live capabilities. Use "Grant Full Access" to unlock all modules.
+              </p>
+            </div>
+
+            {/* Matrix Action Buttons */}
+            <div className="gov-matrix-actions">
+              <button
+                type="button"
+                onClick={handleGrantFullAccessAll}
+                className="gov-btn-full"
+                title="Grant 100% full access to all roles and modules"
+              >
+                <Sparkles size={13} style={{ color: '#2563EB' }} />
+                <span>Grant Full Access</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetToBaseline}
+                className="gov-btn-reset"
+                title="Reset to default factory RLS policies"
+              >
+                <RotateCcw size={12} />
+                <span>Reset Baseline</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDiscardChanges}
+                disabled={!isDirty}
+                className="gov-btn-discard"
+                title="Discard unsaved changes"
+              >
+                <Undo2 size={12} />
+                <span>Discard</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveMatrix}
+                className="gov-btn-save"
+                title="Save permissions matrix changes"
+              >
+                <Save size={13} />
+                <span>Save Matrix</span>
+              </button>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          {/* Search Filter for Matrix Modules */}
+          <div className="gov-search-bar">
+            <div className="gov-search-input-wrap">
+              <Search size={13} style={{ position: 'absolute', left: '10px', top: '10px', color: '#94A3B8' }} />
+              <input
+                type="text"
+                placeholder="Filter modules (e.g. Menu, POS, Orders, KDS)..."
+                className="gov-search-input"
+                value={matrixSearch}
+                onChange={e => setMatrixSearch(e.target.value)}
+              />
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B' }}>
+              Showing {filteredMatrix.length} of {matrix.length} security domains
+            </div>
+          </div>
+
+          <div className="gov-matrix-table-wrap">
+            <table className="gov-matrix-table">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="p-3 sticky left-0 bg-slate-100 z-10 w-44">Module Name</th>
-                  <th className="p-3 text-center border-l border-slate-200 w-32 bg-blue-50/50 text-blue-900">User (Student)</th>
-                  <th colSpan={5} className="p-3 text-center border-l border-slate-200 bg-emerald-50/40 text-emerald-900">
+                <tr style={{ background: '#F8FAFC', color: '#475569' }}>
+                  <th style={{ position: 'sticky', left: 0, background: '#F8FAFC', zIndex: 10, width: '180px' }}>
+                    Module Name
+                  </th>
+                  <th style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', width: '110px', background: 'rgba(239, 246, 255, 0.5)', color: '#1E40AF' }}>
+                    User (Student)
+                    <div style={{ fontSize: '9px', fontWeight: 600, color: '#2563EB', paddingTop: '2px' }}>VIEW</div>
+                  </th>
+                  <th colSpan={5} style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', background: 'rgba(236, 253, 245, 0.5)', color: '#065F46' }}>
                     Shop Staff
-                    <div className="grid grid-cols-5 text-[9px] font-semibold text-emerald-700 pt-1">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', fontSize: '9px', fontWeight: 600, color: '#059669', paddingTop: '3px' }}>
                       <span>VIEW</span><span>NEW</span><span>EDIT</span><span>DEL</span><span>MANAGE</span>
                     </div>
                   </th>
-                  <th colSpan={5} className="p-3 text-center border-l border-slate-200 bg-amber-50/40 text-amber-900">
+                  <th colSpan={5} style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', background: 'rgba(255, 251, 235, 0.5)', color: '#92400E' }}>
                     Shop Admin
-                    <div className="grid grid-cols-5 text-[9px] font-semibold text-amber-700 pt-1">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', fontSize: '9px', fontWeight: 600, color: '#D97706', paddingTop: '3px' }}>
                       <span>VIEW</span><span>NEW</span><span>EDIT</span><span>DEL</span><span>MANAGE</span>
                     </div>
                   </th>
-                  <th className="p-3 text-center border-l border-slate-200 bg-purple-50/50 text-purple-900 w-28">Super Admin</th>
+                  <th colSpan={5} style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', background: 'rgba(250, 245, 255, 0.5)', color: '#581C87' }}>
+                    Super Admin
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', fontSize: '9px', fontWeight: 600, color: '#7C3AED', paddingTop: '3px' }}>
+                      <span>VIEW</span><span>NEW</span><span>EDIT</span><span>DEL</span><span>MANAGE</span>
+                    </div>
+                  </th>
+                  <th style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', width: '90px', background: '#F8FAFC', color: '#475569' }}>
+                    Quick
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {MODULE_CAPABILITY_MATRIX.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                    {/* Module Name */}
-                    <td className="p-3 font-semibold text-slate-800 sticky left-0 bg-white z-10 shadow-[1px_0_0_0_#E2E8F0]">
-                      {row.module}
-                    </td>
+              <tbody>
+                {filteredMatrix.map((row) => {
+                  const originalIndex = matrix.findIndex(m => m.module === row.module)
+                  return (
+                    <tr key={row.module}>
+                      {/* Module Name */}
+                      <td style={{
+                        position: 'sticky',
+                        left: 0,
+                        background: '#FFFFFF',
+                        zIndex: 10,
+                        fontWeight: 700,
+                        color: '#0F172A',
+                        boxShadow: '1px 0 0 0 #E2E8F0'
+                      }}>
+                        {row.module}
+                      </td>
 
-                    {/* User */}
-                    <td className="p-3 text-center border-l border-slate-100 bg-blue-50/20">
-                      {row.user.view ? (
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-blue-100 text-blue-800 font-bold">✓</span>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
-                    </td>
+                      {/* User (Student) */}
+                      <td style={{ textAlign: 'center', borderLeft: '1px solid #F1F5F9', background: 'rgba(239, 246, 255, 0.2)' }}>
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={row.user.view}
+                          aria-label={`Toggle View for User on ${row.module}`}
+                          onClick={() => handleToggleCell(originalIndex, 'user', 'view')}
+                          className={`gov-checkbox-btn ${row.user.view ? 'checked-user' : ''}`}
+                        >
+                          {row.user.view && <Check size={13} strokeWidth={3} />}
+                        </button>
+                      </td>
 
-                    {/* Shop Staff (5 sub-actions) */}
-                    <td className="p-2 text-center border-l border-slate-100">
-                      {row.staff.view ? <span className="text-emerald-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.staff.create ? <span className="text-emerald-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.staff.edit ? <span className="text-emerald-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.staff.delete ? <span className="text-emerald-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.staff.manage ? <span className="text-emerald-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
+                      {/* Shop Staff (5 sub-actions: View, Create, Edit, Delete, Manage) */}
+                      {(['view', 'create', 'edit', 'delete', 'manage'] as ActionKey[]).map((action, aIdx) => (
+                        <td
+                          key={action}
+                          style={{
+                            textAlign: 'center',
+                            borderLeft: aIdx === 0 ? '1px solid #F1F5F9' : undefined
+                          }}
+                        >
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={row.staff[action]}
+                            aria-label={`Toggle ${action} for Staff on ${row.module}`}
+                            onClick={() => handleToggleCell(originalIndex, 'staff', action)}
+                            className={`gov-checkbox-btn ${row.staff[action] ? 'checked-staff' : ''}`}
+                          >
+                            {row.staff[action] && <Check size={11} strokeWidth={3} />}
+                          </button>
+                        </td>
+                      ))}
 
-                    {/* Shop Admin (5 sub-actions) */}
-                    <td className="p-2 text-center border-l border-slate-100">
-                      {row.shop_admin.view ? <span className="text-amber-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.shop_admin.create ? <span className="text-amber-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.shop_admin.edit ? <span className="text-amber-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.shop_admin.delete ? <span className="text-amber-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
-                    <td className="p-2 text-center">
-                      {row.shop_admin.manage ? <span className="text-amber-700 font-bold">✓</span> : <span className="text-slate-300">·</span>}
-                    </td>
+                      {/* Shop Admin (5 sub-actions: View, Create, Edit, Delete, Manage) */}
+                      {(['view', 'create', 'edit', 'delete', 'manage'] as ActionKey[]).map((action, aIdx) => (
+                        <td
+                          key={action}
+                          style={{
+                            textAlign: 'center',
+                            borderLeft: aIdx === 0 ? '1px solid #F1F5F9' : undefined
+                          }}
+                        >
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={row.shop_admin[action]}
+                            aria-label={`Toggle ${action} for Shop Admin on ${row.module}`}
+                            onClick={() => handleToggleCell(originalIndex, 'shop_admin', action)}
+                            className={`gov-checkbox-btn ${row.shop_admin[action] ? 'checked-shop-admin' : ''}`}
+                          >
+                            {row.shop_admin[action] && <Check size={11} strokeWidth={3} />}
+                          </button>
+                        </td>
+                      ))}
 
-                    {/* Super Admin (Full Governance) */}
-                    <td className="p-3 text-center border-l border-slate-100 bg-purple-50/20 font-bold text-purple-700">
-                      Full Access
-                    </td>
-                  </tr>
-                ))}
+                      {/* Super Admin (5 sub-actions: View, Create, Edit, Delete, Manage) */}
+                      {(['view', 'create', 'edit', 'delete', 'manage'] as ActionKey[]).map((action, aIdx) => (
+                        <td
+                          key={action}
+                          style={{
+                            textAlign: 'center',
+                            background: 'rgba(250, 245, 255, 0.2)',
+                            borderLeft: aIdx === 0 ? '1px solid #F1F5F9' : undefined
+                          }}
+                        >
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={row.super_admin[action]}
+                            aria-label={`Toggle ${action} for Super Admin on ${row.module}`}
+                            onClick={() => handleToggleCell(originalIndex, 'super_admin', action)}
+                            className={`gov-checkbox-btn ${row.super_admin[action] ? 'checked-super-admin' : ''}`}
+                          >
+                            {row.super_admin[action] && <Check size={11} strokeWidth={3} />}
+                          </button>
+                        </td>
+                      ))}
+
+                      {/* Quick Action: Unlock This Module */}
+                      <td style={{ textAlign: 'center', borderLeft: '1px solid #F1F5F9' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleGrantFullAccessRow(originalIndex)}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            color: '#1E40AF',
+                            background: '#EFF6FF',
+                            border: '1px solid #BFDBFE',
+                            cursor: 'pointer',
+                            transition: 'background 0.15s ease'
+                          }}
+                          title={`Grant full access to ${row.module} for all roles`}
+                        >
+                          Unlock All
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -344,9 +682,9 @@ export const RolesAndPermissionsScreen: React.FC = () => {
 
       {/* TAB 2: DETAILED ROLE SPECIFICATIONS */}
       {activeTab === 'roles' && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
           {/* Role selector pill list */}
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {(['super_admin', 'shop_admin', 'staff', 'user'] as UserRole[]).map(r => {
               const def = ROLE_DEFINITIONS[r]
               const isSelected = selectedRole === r
@@ -354,61 +692,90 @@ export const RolesAndPermissionsScreen: React.FC = () => {
                 <button
                   key={r}
                   type="button"
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all ${
-                    isSelected
-                      ? 'bg-white shadow-soft border-blue-500 ring-2 ring-blue-500/10'
-                      : 'bg-slate-50 border-slate-200 hover:bg-white text-slate-700'
-                  }`}
+                  style={{
+                    textAlign: 'left',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                    background: '#FFFFFF',
+                    cursor: 'pointer',
+                    boxShadow: isSelected ? '0 2px 8px rgba(37, 99, 235, 0.1)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
                   onClick={() => setSelectedRole(r)}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900">{def.displayName}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 800, fontSize: '13px', color: '#0F172A' }}>{def.displayName}</span>
                     <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: def.badgeColor }}
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: def.badgeColor
+                      }}
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-1 m-0">{def.scopeDescription}</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#64748B', lineHeight: 1.4 }}>
+                    {def.scopeDescription}
+                  </p>
                 </button>
               )
             })}
           </div>
 
           {/* Role Detail Card */}
-          <div className="md:col-span-3 bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+          <div style={{
+            gridColumn: 'span 2',
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 1px 4px rgba(15, 23, 42, 0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: '14px' }}>
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-extrabold text-slate-900 m-0">{currentRoleDef.displayName} Specification</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    {currentRoleDef.displayName} Specification
+                  </h2>
                   <span
-                    className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white uppercase"
-                    style={{ backgroundColor: currentRoleDef.badgeColor }}
+                    style={{
+                      padding: '2px 10px',
+                      borderRadius: '9999px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      backgroundColor: currentRoleDef.badgeColor
+                    }}
                   >
                     Level {currentRoleDef.hierarchyLevel}
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1 m-0">{currentRoleDef.scopeDescription}</p>
+                <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0 0' }}>{currentRoleDef.scopeDescription}</p>
               </div>
             </div>
 
             {/* Account Creation Method */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-              <strong className="text-slate-800 font-bold block mb-1 uppercase tracking-wider text-[10px]">
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '12px' }}>
+              <strong style={{ color: '#0F172A', display: 'block', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.4px' }}>
                 Account Provisioning Method
               </strong>
-              <p className="m-0 text-slate-700 leading-relaxed">{currentRoleDef.accountCreationMethod}</p>
+              <p style={{ margin: 0, color: '#334155', lineHeight: 1.5 }}>{currentRoleDef.accountCreationMethod}</p>
             </div>
 
             {/* What They Can See */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2 flex items-center gap-1.5">
-                <CheckCircle2 size={14} className="text-blue-700" />
+              <h3 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={14} style={{ color: '#1E40AF' }} />
                 Data & Surfaces Visible
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
                 {currentRoleDef.canSee.map((item, i) => (
-                  <div key={i} className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />
+                  <div key={i} style={{ fontSize: '12px', color: '#334155', background: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #F1F5F9', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB', marginTop: '5px', flexShrink: 0 }} />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -417,14 +784,14 @@ export const RolesAndPermissionsScreen: React.FC = () => {
 
             {/* What They Can Do */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2 flex items-center gap-1.5">
-                <Check size={14} className="text-emerald-700" />
+              <h3 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Check size={14} style={{ color: '#059669' }} />
                 Allowed Operational Capabilities
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
                 {currentRoleDef.canDo.map((item, i) => (
-                  <div key={i} className="text-xs text-slate-700 bg-emerald-50/30 p-2.5 rounded-lg border border-emerald-100 flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 flex-shrink-0" />
+                  <div key={i} style={{ fontSize: '12px', color: '#334155', background: '#ECFDF5', padding: '10px', borderRadius: '8px', border: '1px solid #A7F3D0', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669', marginTop: '5px', flexShrink: 0 }} />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -433,14 +800,14 @@ export const RolesAndPermissionsScreen: React.FC = () => {
 
             {/* What They Cannot Do */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2 flex items-center gap-1.5">
-                <X size={14} className="text-red-700" />
+              <h3 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <X size={14} style={{ color: '#DC2626' }} />
                 Strict Operational Restrictions
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
                 {currentRoleDef.cannotDo.map((item, i) => (
-                  <div key={i} className="text-xs text-slate-600 bg-red-50/30 p-2.5 rounded-lg border border-red-100 flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                  <div key={i} style={{ fontSize: '12px', color: '#64748B', background: '#FEF2F2', padding: '10px', borderRadius: '8px', border: '1px solid #FECACA', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444', marginTop: '5px', flexShrink: 0 }} />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -448,7 +815,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
             </div>
 
             {/* Code and Policy Evidence */}
-            <div className="border-t border-slate-100 pt-4 text-xs text-slate-500 space-y-1 font-mono">
+            <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '14px', fontSize: '11px', color: '#64748B', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div><strong>Code Evidence:</strong> {currentRoleDef.codeEvidence}</div>
               <div><strong>RLS Policy:</strong> {currentRoleDef.rlsEvidence}</div>
             </div>
@@ -458,23 +825,23 @@ export const RolesAndPermissionsScreen: React.FC = () => {
 
       {/* TAB 3: ACTIVE USER ROSTER */}
       {activeTab === 'roster' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-4">
+        <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 1px 4px rgba(15, 23, 42, 0.05)' }}>
           {/* Roster Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="relative w-full sm:w-72">
-              <Search size={14} className="absolute left-3 top-3 text-slate-400" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: '#94A3B8' }} />
               <input
                 type="text"
                 placeholder="Search by name, ID, or outlet..."
-                className="input pl-8 py-1.5 text-xs"
+                style={{ width: '100%', padding: '7px 12px 7px 32px', fontSize: '12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none' }}
                 value={rosterSearch}
                 onChange={e => setRosterSearch(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <Filter size={13} className="text-slate-400" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Filter size={13} style={{ color: '#94A3B8' }} />
               <select
-                className="input py-1 px-2.5 text-xs w-auto"
+                style={{ padding: '6px 12px', fontSize: '12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none', background: '#FFFFFF' }}
                 value={roleFilter}
                 onChange={e => setRoleFilter(e.target.value)}
               >
@@ -488,53 +855,55 @@ export const RolesAndPermissionsScreen: React.FC = () => {
           </div>
 
           {/* Roster Table */}
-          <div className="overflow-x-auto border border-slate-200 rounded-lg">
-            <table className="w-full text-left text-xs border-collapse">
+          <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
               <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                  <th className="p-3">User</th>
-                  <th className="p-3">Role</th>
-                  <th className="p-3">Assigned Outlet</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 font-mono">Profile ID</th>
+                <tr style={{ background: '#F8FAFC', color: '#475569', borderBottom: '1px solid #E2E8F0', fontWeight: 700 }}>
+                  <th style={{ padding: '12px 14px' }}>User</th>
+                  <th style={{ padding: '12px 14px' }}>Role</th>
+                  <th style={{ padding: '12px 14px' }}>Assigned Outlet</th>
+                  <th style={{ padding: '12px 14px' }}>Status</th>
+                  <th style={{ padding: '12px 14px', fontFamily: 'monospace' }}>Profile ID</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                    <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#94A3B8' }}>
                       No matching user records found.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map(u => {
                     const r = (u.role || '').toLowerCase()
-                    const isStaffOrAdmin = r === 'staff' || r === 'shop_admin' || r === 'super_admin'
                     const outletName = u.outlet_id ? (outletsMap[u.outlet_id] || u.outlet_id) : 'Global / Campus'
                     return (
-                      <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-3 font-medium text-slate-900">
+                      <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '12px 14px', fontWeight: 600, color: '#0F172A' }}>
                           {u.full_name || 'V Foods User'}
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            r === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                            r === 'shop_admin' ? 'bg-amber-100 text-amber-800' :
-                            r === 'staff' ? 'bg-emerald-100 text-emerald-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            background: r === 'super_admin' ? '#F3E8FF' : r === 'shop_admin' ? '#FEF3C7' : r === 'staff' ? '#ECFDF5' : '#EFF6FF',
+                            color: r === 'super_admin' ? '#6B21A8' : r === 'shop_admin' ? '#92400E' : r === 'staff' ? '#065F46' : '#1E40AF'
+                          }}>
                             {r.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className="p-3 text-slate-600">
+                        <td style={{ padding: '12px 14px', color: '#475569' }}>
                           {outletName}
                         </td>
-                        <td className="p-3">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: '#059669' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} /> Active
                           </span>
                         </td>
-                        <td className="p-3 font-mono text-[11px] text-slate-400">
+                        <td style={{ padding: '12px 14px', fontFamily: 'monospace', fontSize: '11px', color: '#94A3B8' }}>
                           {u.id.substring(0, 12)}...
                         </td>
                       </tr>

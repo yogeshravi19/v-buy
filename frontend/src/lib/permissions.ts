@@ -256,3 +256,45 @@ export function normalizeRole(rawRole?: string): UserRole {
   if (r === 'staff' || r === 'shop_staff') return 'staff'
   return 'user'
 }
+
+export const CAPABILITY_STORAGE_KEY = 'vfoods_capability_matrix_overrides'
+
+export function getActiveCapabilityMatrix(): typeof MODULE_CAPABILITY_MATRIX {
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(CAPABILITY_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to parse capability matrix overrides:', err)
+  }
+  return JSON.parse(JSON.stringify(MODULE_CAPABILITY_MATRIX))
+}
+
+export function saveCapabilityMatrixOverrides(matrix: typeof MODULE_CAPABILITY_MATRIX): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CAPABILITY_STORAGE_KEY, JSON.stringify(matrix))
+      window.dispatchEvent(new CustomEvent('vfoods-permissions-updated', { detail: matrix }))
+    }
+  } catch (err) {
+    console.warn('Failed to save capability matrix overrides:', err)
+  }
+}
+
+export function resetCapabilityMatrixOverrides(): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(CAPABILITY_STORAGE_KEY)
+      window.dispatchEvent(new CustomEvent('vfoods-permissions-updated', { detail: MODULE_CAPABILITY_MATRIX }))
+    }
+  } catch (err) {
+    console.warn('Failed to reset capability matrix overrides:', err)
+  }
+}
+

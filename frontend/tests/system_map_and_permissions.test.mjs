@@ -1,7 +1,7 @@
 import { chromium } from 'playwright'
 import { createClient } from '@supabase/supabase-js'
 
-const BASE_URL = 'http://127.0.0.1:4173'
+const BASE_URL = process.env.VITE_APP_URL || 'http://127.0.0.1:5173'
 const SUPABASE_URL = 'https://wahftohnwfoepuszvzrx.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_sFtEv2kLNn0vcmFNGzsEYg_Vx2yjHd5'
 
@@ -143,7 +143,7 @@ async function runTestSuite() {
       await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(1000)
 
-      const ownerChip = page.locator('button.quick-chip:has-text("Owner"), button.quick-chip:has-text("Admin")').first()
+      const ownerChip = page.locator('button.quick-chip:has-text("Shop Admin")').first()
       await ownerChip.waitFor({ state: 'visible', timeout: 8000 })
       await ownerChip.click()
       await page.waitForTimeout(1000)

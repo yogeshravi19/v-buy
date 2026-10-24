@@ -1053,21 +1053,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* Platform Status Banner */}
-        <div className="saas-sidebar-outlet">
-          <span className="saas-outlet-label">
-            <ShieldCheck size={11} /> Campus
-          </span>
-          <div className="saas-outlet-name">
-            VIT Chennai
-          </div>
-          <div className="saas-outlet-status">
-            <span className="saas-status-dot online" />
-            <span style={{ color: '#38BDF8', fontWeight: 600 }}>{activeOutletsCount} of {totalOutletsCount} Outlets Open</span>
-          </div>
-        </div>
-
-        {/* Navigation Menu (10 Sections Strictly Matching Specification) */}
         {/* Navigation Menu (Grouped with Section Titles) */}
         <nav className="saas-nav">
           <div className="saas-nav-section-title">OVERVIEW</div>
