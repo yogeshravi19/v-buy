@@ -21,9 +21,8 @@
   width: 265px;
   min-width: 200px;
   max-width: 480px;
-  background-color: #1E3A8A;
-  background: linear-gradient(180deg, #1E40AF 0%, #1E3A8A 55%, #172554 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: #0B192C;
+  border-right: 1px solid #1E293B;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -64,8 +63,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid #1E293B;
   flex-shrink: 0;
 }
 
@@ -124,8 +122,8 @@
 /* Outlet Info Banner inside Sidebar */
 .saas-sidebar-outlet {
   padding: 16px 20px;
-  background: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: #0F172A;
+  border-bottom: 1px solid #1E293B;
   flex-shrink: 0;
 }
 
@@ -231,16 +229,15 @@
 }
 
 .saas-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #1E293B;
   color: #FFFFFF;
 }
 
 .saas-nav-btn.active {
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: #1E40AF;
   color: #FFFFFF;
   font-weight: 800;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(30, 64, 175, 0.35);
 }
 
 .saas-nav-item-left {
@@ -277,8 +274,8 @@
 /* Sidebar Footer Profile */
 .saas-sidebar-footer {
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.18);
+  border-top: 1px solid #1E293B;
+  background: #0B192C;
   display: flex;
   align-items: center;
   justify-content: space-between;
