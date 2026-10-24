@@ -45,7 +45,8 @@ import {
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { DataTable } from '../../components/ui/data-table'
-import { OutletComparisonChart, OutletStaffDrawer } from '../../components/admin/OutletHierarchyAndComparison'
+import { OutletComparisonChart } from '../../components/admin/OutletHierarchyAndComparison'
+import { OutletStaffDirectoryScreen } from './OutletStaffDirectoryScreen'
 import { StatusBadge } from '../../components/ui/status-badge'
 import { SaasBottomTabBar } from '../../components/ui/saas-bottom-tab-bar'
 import { formatOrderNumber } from '../../utils/orderNumber'
@@ -293,8 +294,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   })
   const [outletFormError, setOutletFormError] = useState<string | null>(null)
   const [savingOutlet, setSavingOutlet] = useState(false)
-  const [showStaffDrawer, setShowStaffDrawer] = useState(false)
-  const [selectedStaffOutlet, setSelectedStaffOutlet] = useState<OutletRecord | null>(null)
+  const [selectedStaffOutletId, setSelectedStaffOutletId] = useState<string | null>(null)
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -308,7 +308,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogRecord | null>(null)
 
   // Escape key listener & background scroll lock for Super Admin modals
-  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser || showStaffDrawer)
+  const isAnySuperModalOpen = Boolean(showAddOutletModal || editingOutlet || showAddCouponModal || selectedAuditLog || editingRoleUser)
   useEffect(() => {
     if (!isAnySuperModalOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -319,7 +319,6 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         }
         setShowAddCouponModal(false)
         setSelectedAuditLog(null)
-        setShowStaffDrawer(false)
         if (!savingRole) setEditingRoleUser(null)
       }
     }
@@ -699,11 +698,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           <button
             type="button"
             onClick={() => {
-              setSelectedStaffOutlet(row.original)
-              setShowStaffDrawer(true)
+              setSelectedStaffOutletId(row.original.id)
+              setActiveTab('staff-directory')
             }}
             className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1.5"
-            title="View & manage assigned staff"
+            title="Open Staff Directory for this outlet"
           >
             <Users size={12} className="text-blue-600" />
             <span>Staff ({teamCount})</span>
@@ -1124,6 +1123,19 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <span className="saas-nav-badge">{outletList.length}</span>
           </button>
 
+          <button
+            className={`saas-nav-btn ${activeTab === 'staff-directory' ? 'active' : ''}`}
+            onClick={() => { setSelectedStaffOutletId('all'); setActiveTab('staff-directory'); setMobileMenuOpen(false); }}
+          >
+            <div className="saas-nav-item-left">
+              <Users size={15} />
+              <span>Staff Directory</span>
+            </div>
+            <span className="saas-nav-badge">
+              {usersList.filter(u => (u.role === 'staff' || u.role === 'shop_admin' || u.role === 'owner') && u.outlet_id).length}
+            </span>
+          </button>
+
           <div className="saas-nav-section-title">ACCESS & USERS</div>
           <button
             className={`saas-nav-btn ${activeTab === 'users' ? 'active' : ''}`}
@@ -1297,6 +1309,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 {activeTab === 'overview' && 'Overview'}
                 {activeTab === 'campuses' && 'Campuses'}
                 {activeTab === 'outlets' && 'Outlets'}
+                {activeTab === 'staff-directory' && 'Staff Directory'}
                 {activeTab === 'users' && 'Users'}
                 {activeTab === 'orders' && 'Orders'}
                 {activeTab === 'payments' && 'Payments'}
@@ -1563,8 +1576,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     type="button"
                     className="saas-btn saas-btn-secondary"
                     onClick={() => {
-                      setSelectedStaffOutlet(outletList[0] || null)
-                      setShowStaffDrawer(true)
+                      setSelectedStaffOutletId('all')
+                      setActiveTab('staff-directory')
                     }}
                   >
                     <Users size={15} />
@@ -1595,18 +1608,20 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   searchPlaceholder="Filter outlets by name, ID or location..."
                 />
               </div>
-
-              {/* Slide-over Drawer for Outlet Staff & Management Directory */}
-              <OutletStaffDrawer
-                isOpen={showStaffDrawer}
-                onClose={() => setShowStaffDrawer(false)}
-                outlet={selectedStaffOutlet || outletList[0]}
-                outlets={outletList}
-                users={usersList}
-                onSelectOutlet={(o: any) => setSelectedStaffOutlet(o)}
-                onUserUpdated={loadGlobalData}
-              />
             </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════
+              TAB: OUTLET STAFF & PERSONNEL DIRECTORY (Full Page)
+              ══════════════════════════════════════════════════════════ */}
+          {activeTab === 'staff-directory' && (
+            <OutletStaffDirectoryScreen
+              outlets={outletList}
+              users={usersList}
+              selectedOutletId={selectedStaffOutletId}
+              onBackToOutlets={() => setActiveTab('outlets')}
+              onUserUpdated={loadGlobalData}
+            />
           )}
 
           {/* ══════════════════════════════════════════════════════════
