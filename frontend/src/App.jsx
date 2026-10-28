@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createClient } from '@supabase/supabase-js'
 import {
   ArrowLeft, ArrowRight, Banknote, Check, Clock3, CreditCard, LogOut, Package, Plus, Minus, Mail,
   QrCode, Search, ShoppingBag, Store, X, ShieldAlert, Sparkles, User, Filter,
@@ -29,13 +28,12 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { usePwa } from './hooks/usePwa'
 import { OfflineBanner, PwaUpdateToast, InAppBrowserBanner, IosInstallModal } from './components/PwaInstallPrompt'
 import { logRedirectEvent } from './lib/errorLogger'
+import { supabase as sharedSupabase, supabaseConfigured } from './lib/supabase'
+import { normalizeRole, ROLE_HOME, pathAllowedFor } from './lib/roles'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wahftohnwfoepuszvzrx.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_sFtEv2kLNn0vcmFNGzsEYg_Vx2yjHd5'
-
-const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('YOUR-PROJECT'))
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null
+// One shared client for the whole app. A second client on the same storage key would refresh the same token twice.
+const supabase = supabaseConfigured ? sharedSupabase : null
 
 const statuses = ['placed', 'preparing', 'ready', 'collected']
 const money = v => `₹${Number(Number(v || 0).toFixed(2)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
@@ -295,35 +293,6 @@ export function matchesMindCategory(item, catId) {
   }
 }
 
-const TEST_USERS = [
-  { id: 'a6d778ae-5174-4bbf-8e68-00ef619a1ced', full_name: 'Rahul Sharma', phone: '9876543210', email: 'user.test@gmail.com', password: 'Password@123', role: 'user', balance: 2500 },
-  { id: 'c9d6fc7a-019d-48c6-ae85-ad63fa2b06df', full_name: 'Super Admin (Me)', phone: '9876543200', email: 'admin@vfood.vit.ac.in', password: 'Password@123', role: 'super_admin', is_superadmin: true, balance: 0 },
-  ...CANTEEN_STAFF_OWNER_MAP.flatMap(c => [
-    {
-      id: c.staffId,
-      full_name: `Staff — ${c.name}`,
-      phone: c.staffPhone,
-      email: c.staffEmail,
-      password: 'Password@123',
-      role: 'staff',
-      outlet_id: c.id,
-      outlet_name: c.name,
-      balance: 0
-    },
-    {
-      id: c.ownerId,
-      full_name: `Owner — ${c.name}`,
-      phone: c.ownerPhone,
-      email: c.ownerEmail,
-      password: 'Password@123',
-      role: 'shop_admin',
-      outlet_id: c.id,
-      outlet_name: c.name,
-      balance: 0
-    }
-  ])
-]
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN APP
@@ -331,6 +300,10 @@ const TEST_USERS = [
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [session, setSession]         = useState(null)
+  // 'loading' until the role is resolved from the database profile; 'error' when it cannot be resolved
+  const [authState, setAuthState]     = useState(supabase ? 'loading' : 'signedOut')
+  const loadedUserRef = useRef(null)
+  const profileReqRef = useRef(0)
   const [outlets, setOutlets]         = useState(DEMO_OUTLETS)
   const [eventMode, setEventMode]     = useState(false)
   const [orders, setOrders]           = useState([])
@@ -548,19 +521,32 @@ function App() {
     return () => clearInterval(t)
   }, [])
 
-  // Supabase Auth
+  // Supabase Auth. getSession resolves the first state; INITIAL_SESSION and TOKEN_REFRESHED never change the role.
   useEffect(() => {
     if (!supabase) return
+    let cancelled = false
     supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return
       setSession(data.session)
       if (data.session) loadProfile(data.session.user.id)
+      else setAuthState('signedOut')
     })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        if (nextSession) setSession(nextSession)
+        return
+      }
+      if (event === 'SIGNED_OUT' || !nextSession) {
+        resetSessionState()
+        return
+      }
+      // A different user signed in: drop everything that belonged to the previous one first.
+      if (loadedUserRef.current && loadedUserRef.current !== nextSession.user.id) resetSessionState()
       setSession(nextSession)
-      if (nextSession) loadProfile(nextSession.user.id)
-      else setCurrentUser(null)
+      // Deferred: awaiting Supabase calls inside this callback can deadlock the auth client.
+      setTimeout(() => loadProfile(nextSession.user.id, { force: event === 'USER_UPDATED' }), 0)
     })
-    return () => listener.subscription.unsubscribe()
+    return () => { cancelled = true; listener.subscription.unsubscribe() }
   }, [])
 
   // Live Menu Catalog Synchronizer — Keeps User Dashboard in 100% lockstep with Staff/Shop POS
@@ -701,70 +687,99 @@ function App() {
     }
   }
 
-  async function loadProfile(userId) {
-    if (!supabase) return
+  // Clears everything that belongs to the signed-in user so the next account never inherits it.
+  function resetSessionState() {
+    profileReqRef.current++
+    loadedUserRef.current = null
+    setCurrentUser(null)
+    setSession(null)
+    setOrders([])
+    setWallet({ balance: 0, transactions: [] })
+    setCart({ outlet: null, items: [] })
+    setAppliedCoupon(null)
+    setActiveGroup(null)
+    setSelectedSlotId(null)
+    setIsScheduled(false)
+    setAuthState('signedOut')
+  }
+
+  // The role is resolved here and nowhere else. A failed read is an error state, never a User fallback.
+  async function loadProfile(userId, { force = false } = {}) {
+    if (!supabase || !userId) return
+    if (!force && loadedUserRef.current === userId) return
+    const reqId = ++profileReqRef.current
+    if (loadedUserRef.current !== userId) setAuthState('loading')
     try {
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      let p = null
+      let readFailed = false
+      for (let attempt = 0; attempt < 3 && !p; attempt++) {
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+        if (reqId !== profileReqRef.current) return
+        if (error) {
+          readFailed = true
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)))
+          continue
+        }
+        readFailed = false
+        if (!data) break
+        p = data
+      }
+      if (reqId !== profileReqRef.current) return
+      if (!p && readFailed) { setAuthState('error'); return }
       if (p) {
+        if (!normalizeRole(p.role)) { setAuthState('error'); return }
         if (p.outlet_id) {
           const match = CANTEEN_STAFF_OWNER_MAP.find(c => c.id === p.outlet_id) || DEMO_OUTLETS.find(o => o.id === p.outlet_id)
           if (match) p.outlet_name = match.name
         }
         // Detect if Google OAuth user requires profile completion (mobile + password)
         const { data: authData } = await supabase.auth.getUser()
+        if (reqId !== profileReqRef.current) return
         const user = authData?.user
         const isOAuth = user?.app_metadata?.provider === 'google' || user?.identities?.some(i => i.provider === 'google')
-        if (isOAuth && (!p.mobile_number || !p.profile_completed || !p.has_password)) {
-          p.requiresProfileCompletion = true
-        } else {
-          p.requiresProfileCompletion = false
-        }
+        p.requiresProfileCompletion = Boolean(isOAuth && (!p.mobile_number || !p.profile_completed || !p.has_password))
         setCurrentUser(p)
+        loadedUserRef.current = userId
+        setAuthState('ready')
         loadUserWallet(userId)
         loadUserOrders(p)
-        if (p.role === 'staff' || p.role === 'shop_staff') {
-          if (!window.location.pathname.startsWith('/staff')) {
-            window.history.replaceState(null, '', '/staff')
-          }
-        } else if (p.role === 'shop_admin' || p.role === 'owner') {
-          if (!window.location.pathname.startsWith('/shop-admin')) {
-            window.history.replaceState(null, '', '/shop-admin')
-          }
-        } else if (p.role === 'admin' || p.role === 'superadmin' || p.role === 'super_admin') {
-          if (!window.location.pathname.startsWith('/admin')) {
-            window.history.replaceState(null, '', '/admin')
-          }
-        }
       } else {
+        // No profile row exists at all: a brand-new account. Create it as a User without ever overwriting an existing row.
         const { data: authData } = await supabase.auth.getUser()
+        if (reqId !== profileReqRef.current) return
         const user = authData?.user
-        if (user) {
-          const isOAuth = user.app_metadata?.provider === 'google' || user.identities?.some(i => i.provider === 'google')
-          const fallbackUser = {
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
-            role: 'customer',
-            mobile_number: null,
-            phone: null,
-            has_password: false,
-            profile_completed: false,
-            requiresProfileCompletion: isOAuth
-          }
-          await supabase.from('profiles').upsert({
-            id: user.id,
-            email: user.email,
-            full_name: fallbackUser.full_name,
-            role: 'customer',
-            has_password: false,
-            profile_completed: false
-          })
-          await supabase.from('wallets').upsert({ user_id: user.id, balance: 0 }).select()
-          setCurrentUser(fallbackUser)
-          loadUserWallet(user.id)
+        if (!user) { setAuthState('error'); return }
+        const isOAuth = user.app_metadata?.provider === 'google' || user.identities?.some(i => i.provider === 'google')
+        const fallbackUser = {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
+          role: 'customer',
+          mobile_number: null,
+          phone: null,
+          has_password: false,
+          profile_completed: false,
+          requiresProfileCompletion: isOAuth
         }
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          email: user.email,
+          full_name: fallbackUser.full_name,
+          role: 'customer',
+          has_password: false,
+          profile_completed: false
+        }, { onConflict: 'id', ignoreDuplicates: true })
+        await supabase.from('wallets').upsert({ user_id: user.id, balance: 0 }, { onConflict: 'user_id', ignoreDuplicates: true }).select()
+        if (reqId !== profileReqRef.current) return
+        setCurrentUser(fallbackUser)
+        loadedUserRef.current = userId
+        setAuthState('ready')
+        loadUserWallet(user.id)
       }
-    } catch (e) { console.warn('Profile fetch fallback:', e) }
+    } catch (e) {
+      console.warn('Profile load failed:', e)
+      if (reqId === profileReqRef.current) setAuthState('error')
+    }
   }
 
   // Load live outlets & menu_items from database on startup
@@ -1412,9 +1427,11 @@ function App() {
   }
 
   async function handleSignOut() {
-    if (supabase) await supabase.auth.signOut()
-    setCurrentUser(null)
-    setSession(null)
+    resetSessionState()
+    if (supabase) {
+      const { error } = await supabase.auth.signOut()
+      if (error) await supabase.auth.signOut({ scope: 'local' })
+    }
     setTab('browse')
   }
 
@@ -1430,6 +1447,23 @@ function App() {
     addAuditLog(currentUser?.full_name || 'Staff Member', currentUser?.role || 'staff', 'OUTLET', 'SWITCH_CANTEEN', `Switched active console to ${chosen.name} (${chosen.id})`)
   }
 
+  // ── ROLE RESOLUTION ──  No redirect and no dashboard until the role is known.
+  if (authState === 'loading') return <DashboardSkeleton />
+  if (authState === 'error') {
+    return (
+      <div className="app-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
+        <div role="alert" style={{ maxWidth: 420, textAlign: 'center' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px' }}>Could not load your account</h1>
+          <p style={{ color: 'var(--text-muted)', margin: '0 0 20px' }}>We could not confirm your role. Check your connection and try again.</p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button type="button" className="btn-primary" onClick={() => session?.user?.id ? loadProfile(session.user.id, { force: true }) : window.location.reload()}>Try again</button>
+            <button type="button" className="btn-secondary" onClick={handleSignOut}>Sign out</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ── MAIN APP DIRECT AUTHENTICATION ──
   if (!currentUser) {
     return (
@@ -1438,7 +1472,7 @@ function App() {
         <InAppBrowserBanner isInAppBrowser={isInAppBrowser} />
         <PwaUpdateToast updateAvailable={updateAvailable} onReload={reloadApp} />
         <IosInstallModal isOpen={showIosInstallModal} onClose={() => setShowIosInstallModal(false)} />
-        <AuthScreen onLoginUser={setCurrentUser} onInstallClick={handleInstallClick} />
+        <AuthScreen onLoginUser={(u) => u?.id && loadProfile(u.id, { force: true })} onInstallClick={handleInstallClick} />
       </>
     )
   }
@@ -1458,13 +1492,25 @@ function App() {
     )
   }
 
-  const role      = currentUser.role || 'user'
+  // Canonical role from the central table. An unrecognised role is an error, never a User.
+  const roleKey = normalizeRole(currentUser.role)
+  if (!roleKey) {
+    return (
+      <div className="app-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
+        <div role="alert" style={{ maxWidth: 420, textAlign: 'center' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px' }}>Account role not recognised</h1>
+          <p style={{ color: 'var(--text-muted)', margin: '0 0 20px' }}>Please sign out and contact support.</p>
+          <button type="button" className="btn-primary" onClick={handleSignOut}>Sign out</button>
+        </div>
+      </div>
+    )
+  }
+  const role      = currentUser.role
 
-
-  const isStaff   = role === 'staff' || role === 'shop_staff'
-  const isOwner   = role === 'owner' || role === 'shop_admin'
-  const isAdmin   = role === 'admin' || role === 'superadmin' || role === 'super_admin'
-  const isCustomer = !isStaff && !isOwner && !isAdmin
+  const isStaff   = roleKey === 'staff'
+  const isOwner   = roleKey === 'shop_admin'
+  const isAdmin   = roleKey === 'super_admin'
+  const isCustomer = roleKey === 'user'
 
   // Route validation and role protection
   const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/'
@@ -1506,30 +1552,11 @@ function App() {
     )
   }
 
-  // Cross-role protection: redirect to legitimate dashboard if unauthorized role accesses route
-  if (isCustomer && (rawPath.startsWith('/staff') || rawPath.startsWith('/shop-admin') || rawPath.startsWith('/admin'))) {
-    if (window.location.pathname !== '/') {
-      const redirectId = rawPath.startsWith('/staff') ? 'X-UNAUTH-CUSTOMER-STAFF' : rawPath.startsWith('/shop-admin') ? 'X-UNAUTH-CUSTOMER-SHOP' : 'X-UNAUTH-CUSTOMER-ADMIN'
-      logRedirectEvent(redirectId, window.location.pathname, '/', 'user', 'Customer attempting unauthorized administrative route access')
-      window.history.replaceState(null, '', '/')
-    }
-  } else if (isStaff && (rawPath.startsWith('/admin') || rawPath.startsWith('/shop-admin') || rawPath === '/')) {
-    if (!window.location.pathname.startsWith('/staff')) {
-      const redirectId = rawPath === '/' ? 'X-UNAUTH-STAFF-ROOT' : 'X-UNAUTH-STAFF-ADMIN'
-      logRedirectEvent(redirectId, window.location.pathname, '/staff', 'staff', 'Staff redirected to kitchen/POS operations hub')
-      window.history.replaceState(null, '', '/staff')
-    }
-  } else if (isOwner && (rawPath.startsWith('/admin') || rawPath === '/')) {
-    if (!window.location.pathname.startsWith('/shop-admin')) {
-      const redirectId = rawPath === '/' ? 'X-UNAUTH-SHOP-ROOT' : 'X-UNAUTH-SHOP-ADMIN'
-      logRedirectEvent(redirectId, window.location.pathname, '/shop-admin', 'shop_admin', 'Shop Admin redirected to franchise management dashboard')
-      window.history.replaceState(null, '', '/shop-admin')
-    }
-  } else if (isAdmin && rawPath === '/') {
-    if (!window.location.pathname.startsWith('/admin')) {
-      logRedirectEvent('X-SUPER-ADMIN-ROOT', window.location.pathname, '/admin', 'super_admin', 'Super Admin redirected to platform governance center')
-      window.history.replaceState(null, '', '/admin')
-    }
+  // Cross-role protection: one rule from the central table decides whether this role may be on this path.
+  if (!pathAllowedFor(roleKey, window.location.pathname)) {
+    const dest = ROLE_HOME[roleKey]
+    logRedirectEvent('X-ROLE-GUARD', window.location.pathname, dest, roleKey, 'Path not permitted for resolved role')
+    window.history.replaceState(null, '', dest)
   }
 
   if (isCustomer) {
@@ -7402,10 +7429,6 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
   // Forgot password state
   const [forgotIdentifier, setForgotIdentifier] = useState('')
 
-  // Quick Test Bar state (preserved)
-  const [selectedCanteenId, setSelectedCanteenId] = useState('g1')
-  const [showAllCanteens, setShowAllCanteens] = useState(false)
-
   // Clear errors when switching modes
   function switchMode(newMode) {
     setAuthMode(newMode)
@@ -7414,31 +7437,6 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
     setSignupStep('details')
     setSignupOtp('')
     setOtpDevHint(null)
-  }
-
-  // Quick login handler for test buttons
-  async function handleQuickLogin(userObj) {
-    if (!userObj) return
-    if (userObj.role === 'staff' || userObj.role === 'shop_staff') {
-      window.history.replaceState(null, '', '/staff')
-    } else if (userObj.role === 'shop_admin' || userObj.role === 'owner') {
-      window.history.replaceState(null, '', '/shop-admin')
-    } else if (userObj.role === 'admin' || userObj.role === 'superadmin' || userObj.role === 'super_admin') {
-      window.history.replaceState(null, '', '/admin')
-    } else {
-      window.history.replaceState(null, '', '/')
-    }
-    onLoginUser(userObj)
-    if (supabase && userObj.email) {
-      try {
-        await supabase.auth.signInWithPassword({
-          email: userObj.email,
-          password: userObj.password || 'Password@123'
-        })
-      } catch (err) {
-        console.warn('Quick login session establishment:', err)
-      }
-    }
   }
 
   // 1. UNIFIED LOGIN HANDLER (PASSWORD / MOBILE)
@@ -7473,11 +7471,6 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
           if (rpcErr) console.warn('lookup_email_by_mobile error:', rpcErr)
           resolvedEmail = lookedUpEmail
         }
-        // Fallback test users check
-        if (!resolvedEmail) {
-          const matchedTest = TEST_USERS.find(u => u.phone?.replace(/\D/g, '').slice(-10) === cleanMobile.slice(-10))
-          if (matchedTest) resolvedEmail = matchedTest.email
-        }
       }
 
       // If no account found for this mobile/email, show ONE generic error
@@ -7493,15 +7486,6 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
         })
 
         if (authErr) {
-          // Check quick test accounts fallback
-          const matchedTest = TEST_USERS.find(u =>
-            (u.email.toLowerCase() === resolvedEmail.toLowerCase()) &&
-            (u.password === loginPassword || !u.password)
-          )
-          if (matchedTest) {
-            setLoading(false)
-            return onLoginUser(matchedTest)
-          }
           // Never reveal whether email or password was wrong
           setLoading(false)
           return setError('Invalid login details')
@@ -7535,12 +7519,7 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
         setLoading(false)
         onLoginUser(userObj)
       } else {
-        const matchedTest = TEST_USERS.find(u =>
-          (u.email.toLowerCase() === resolvedEmail.toLowerCase()) &&
-          (u.password === loginPassword || !u.password)
-        )
         setLoading(false)
-        if (matchedTest) return onLoginUser(matchedTest)
         setError('Invalid login details')
       }
     } catch (err) {
@@ -7642,10 +7621,8 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
       if (supabase) {
         let isVerified = false
 
-        // Check master bypass for automated testing (123456)
-        if (code === '123456') {
-          isVerified = true
-        } else {
+        // The code is always verified by Supabase Auth.
+        {
           // Verify real OTP with Supabase Auth (tries type 'email', then type 'signup')
           let { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
             email: signupEmail.trim(),
@@ -7791,61 +7768,6 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
           setError(gErr.message)
         }
       }
-    }
-  }
-
-  // Google Test Simulator: sets up or logs into a real Google test user
-  async function handleSimulateGoogleLogin(isNewUser = true) {
-    setError('')
-    setNoticeMsg('')
-    setLoading(true)
-    const testEmail = isNewUser ? `google.new.${Date.now()}@gmail.com` : 'google.returning@gmail.com'
-    const testName = isNewUser ? 'Vikram Google' : 'Ananya Google (Returning)'
-
-    try {
-      if (supabase) {
-        if (isNewUser) {
-          // Creates real auth user with provider = 'google' and profile_completed = false
-          const { data: uid, error: createErr } = await supabase.rpc('create_google_test_user', {
-            p_email: testEmail,
-            p_name: testName
-          })
-          if (createErr) console.warn('create_google_test_user rpc:', createErr)
-        }
-
-        // Sign in using the test account's auth credentials
-        const { data: authData, error: signInErr } = await supabase.auth.signInWithPassword({
-          email: testEmail,
-          password: 'GoogleTest@123'
-        })
-
-        if (signInErr) {
-          setLoading(false)
-          return setError(`Google test simulation: ${signInErr.message}`)
-        }
-
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single()
-        const userObj = profile || { id: authData.user.id, email: testEmail, full_name: testName, role: 'user' }
-
-        if (isNewUser || !userObj.profile_completed || !userObj.mobile_number) {
-          userObj.requiresProfileCompletion = true
-        }
-
-        setLoading(false)
-        onLoginUser(userObj)
-      } else {
-        setLoading(false)
-        onLoginUser({
-          id: `usr-google-${Date.now()}`,
-          full_name: testName,
-          email: testEmail,
-          role: 'user',
-          requiresProfileCompletion: isNewUser
-        })
-      }
-    } catch (err) {
-      setLoading(false)
-      setError(err.message || 'Google simulation failed')
     }
   }
 
@@ -8276,171 +8198,6 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
             </div>
           )}
 
-          {/* ════ QUICK TEST ACCESS BOX (PRESERVED) ════ */}
-          <div className="quick-test-box">
-            <div className="quick-test-header">
-              <p style={{ margin: 0, fontWeight: 800 }}>Quick Test Access (Select Role):</p>
-              <div className="quick-canteen-row">
-                <label htmlFor="quick-canteen-select" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                  Canteen:
-                </label>
-                <select
-                  id="quick-canteen-select"
-                  value={selectedCanteenId}
-                  onChange={e => setSelectedCanteenId(e.target.value)}
-                  style={{ fontSize: '12px', fontWeight: 700, padding: '5px 8px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)', background: '#FFFFFF', color: 'var(--text-main)', cursor: 'pointer', flex: 1, minWidth: '160px' }}
-                >
-                  {CANTEEN_STAFF_OWNER_MAP.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.id.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="quick-chip-grid">
-              {/* Customer User */}
-              <button
-                type="button"
-                className="quick-chip"
-                onClick={() => handleQuickLogin(TEST_USERS.find(u => u.role === 'user' || u.role === 'student'))}
-                title="Login as Rahul Sharma (User)"
-              >
-                <User size={14} strokeWidth={2} />
-                <span style={{ fontWeight: 700 }}>User</span>
-              </button>
-
-              {/* Shop Staff for selected canteen */}
-              <button
-                type="button"
-                className="quick-chip"
-                onClick={() => {
-                  const staffUser = TEST_USERS.find(u => u.role === 'staff' && u.outlet_id === selectedCanteenId)
-                  if (staffUser) handleQuickLogin(staffUser)
-                }}
-                title={`Login as Shop Staff for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
-                style={{ background: '#1E40AF' }}
-              >
-                <ChefHat size={14} strokeWidth={2} />
-                <span style={{ fontWeight: 700 }}>Shop Staff ({selectedCanteenId.toUpperCase()})</span>
-              </button>
-
-              {/* Shop Owner for selected canteen */}
-              <button
-                type="button"
-                className="quick-chip"
-                onClick={() => {
-                  const ownerUser = TEST_USERS.find(u => (u.role === 'owner' || u.role === 'shop_admin') && u.outlet_id === selectedCanteenId)
-                  if (ownerUser) handleQuickLogin(ownerUser)
-                }}
-                title={`Login as Shop Admin for ${CANTEEN_STAFF_OWNER_MAP.find(c => c.id === selectedCanteenId)?.name}`}
-                style={{ background: '#0B192C' }}
-              >
-                <Store size={14} strokeWidth={2} />
-                <span style={{ fontWeight: 700 }}>Shop Admin ({selectedCanteenId.toUpperCase()})</span>
-              </button>
-
-              {/* Super Admin */}
-              <button
-                type="button"
-                className="quick-chip"
-                onClick={() => handleQuickLogin(TEST_USERS.find(u => u.is_superadmin))}
-                title="Login as Platform Super Admin"
-              >
-                <Shield size={14} strokeWidth={2} />
-                <span style={{ fontWeight: 700 }}>Super Admin (Me)</span>
-              </button>
-            </div>
-
-            {/* Google OAuth Test Simulator Chips */}
-            <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                id="btn-simulate-google-new"
-                type="button"
-                className="quick-chip"
-                style={{ background: '#4285F4', fontSize: '11px', padding: '5px 10px' }}
-                onClick={() => handleSimulateGoogleLogin(true)}
-                title="Simulate first-time Google sign up to test profile completion"
-              >
-                <GoogleIcon />
-                <span>Simulate Google Sign-Up (New)</span>
-              </button>
-
-              <button
-                id="btn-simulate-google-returning"
-                type="button"
-                className="quick-chip"
-                style={{ background: '#334155', fontSize: '11px', padding: '5px 10px' }}
-                onClick={() => handleSimulateGoogleLogin(false)}
-                title="Simulate returning Google sign-in (bypasses profile completion)"
-              >
-                <GoogleIcon />
-                <span>Google Sign-In (Returning)</span>
-              </button>
-            </div>
-
-            {/* Expandable toggle for All 13 Canteen Staff & Owner Matrix */}
-            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
-              <button
-                type="button"
-                onClick={() => setShowAllCanteens(!showAllCanteens)}
-                style={{
-                  background: 'none',
-                  border: 0,
-                  padding: 0,
-                  color: 'var(--blue-primary)',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>{showAllCanteens ? 'Hide' : 'Show'} All 13 Canteen Logins ({CANTEEN_STAFF_OWNER_MAP.length * 2} Dedicated Test Accounts)</span>
-              </button>
-
-              {showAllCanteens && (
-                <div className="canteen-matrix-grid">
-                  {CANTEEN_STAFF_OWNER_MAP.map(c => {
-                    const staffU = TEST_USERS.find(u => u.role === 'staff' && u.outlet_id === c.id)
-                    const ownerU = TEST_USERS.find(u => (u.role === 'owner' || u.role === 'shop_admin') && u.outlet_id === c.id)
-                    return (
-                      <div key={c.id} className="canteen-matrix-card">
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {c.name}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {c.location} · <code>{c.id}</code>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
-                          <button
-                            type="button"
-                            className="canteen-matrix-btn staff"
-                            title={`Staff Login: ${c.staffEmail} | Phone: ${c.staffPhone} | Password: Password@123`}
-                            onClick={() => handleQuickLogin(staffU)}
-                          >
-                            Staff
-                          </button>
-                          <button
-                            type="button"
-                            className="canteen-matrix-btn owner"
-                            title={`Owner Login: ${c.ownerEmail} | Phone: ${c.ownerPhone} | Password: Password@123`}
-                            onClick={() => handleQuickLogin(ownerU)}
-                          >
-                            Owner
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
