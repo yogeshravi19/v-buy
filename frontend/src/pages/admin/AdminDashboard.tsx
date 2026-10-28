@@ -1194,11 +1194,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
                           })
                         }
                         className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="student">User</option>
                         <option value="staff">Shop Staff</option>
                         <option value="shop_admin">Shop Admin</option>
-                        <option value="super_admin">Super Admin</option>
                       </select>
                     </div>
                   </div>

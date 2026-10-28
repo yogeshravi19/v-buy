@@ -916,7 +916,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const openEditRoleModal = (user: PlatformUser) => {
     setEditingRoleUser(user)
     setRoleForm({
-      role: (user.role === 'student' || user.role === 'customer' || user.role === 'user') ? 'customer' : user.role,
+      role: user.role === 'shop_admin' ? 'shop_admin' : 'staff',
       outlet_id: user.outlet_id || ''
     })
   }
@@ -2887,10 +2887,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       background: '#FFFFFF'
                     }}
                   >
-                    <option value="customer">User</option>
                     <option value="staff">Shop Staff</option>
                     <option value="shop_admin">Shop Admin</option>
-                    <option value="super_admin">Super Admin</option>
                   </select>
                 </div>
 
