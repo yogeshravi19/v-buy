@@ -512,7 +512,7 @@ export function WelcomePage({ onOpenApp }: { onOpenApp?: () => void }) {
                 From Class to Counter in 4 Simple Steps
               </h2>
               <p className="text-sm sm:text-base text-slate-600 mt-2">
-                Real-time synchronization connects student orders directly to kitchen display systems and counter token boards.
+                Real-time synchronization connects user orders directly to kitchen display systems and counter token boards.
               </p>
             </div>
 

@@ -286,7 +286,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
       <div className="saas-kpi-grid" style={{ marginBottom: 0 }}>
         <div className="saas-kpi-card">
           <div className="saas-kpi-head">
-            <span>Users (Students)</span>
+            <span>Users</span>
             <div className="saas-kpi-head-icon" style={{ background: '#EFF6FF', color: '#1E40AF' }}>
               <Users size={16} />
             </div>
@@ -479,7 +479,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
                     Module Name
                   </th>
                   <th style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', width: '110px', background: 'rgba(239, 246, 255, 0.5)', color: '#1E40AF' }}>
-                    User (Student)
+                    User
                     <div style={{ fontSize: '9px', fontWeight: 600, color: '#2563EB', paddingTop: '2px' }}>VIEW</div>
                   </th>
                   <th colSpan={5} style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', background: 'rgba(236, 253, 245, 0.5)', color: '#065F46' }}>

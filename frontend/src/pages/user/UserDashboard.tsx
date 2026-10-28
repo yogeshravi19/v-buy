@@ -1866,5 +1866,4 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onSignOut }) => {
   )
 }
 
-export const StudentDashboard = UserDashboard
 export default UserDashboard
