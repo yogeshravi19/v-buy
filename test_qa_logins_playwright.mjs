@@ -12,7 +12,8 @@ const adminPass = creds[5].trim()
 const superAdminEmail = creds[6]?.trim() || 'qa+superadmin@example.test'
 const superAdminPass = creds[7]?.trim() || 'Qa!8KrULZPQaE3wNYTm'
 
-const browser = await chromium.launch({ headless: true })
+const CHROME_PATH = process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH || 'C:\\Users\\INDIA\\AppData\\Local\\ms-playwright\\chromium-1248\\chrome-win64\\chrome.exe'
+const browser = await chromium.launch({ headless: true, executablePath: fs.existsSync(CHROME_PATH) ? CHROME_PATH : undefined })
 
 async function testRoleSession(email, pass, expectedHome, roleName, forbiddenPaths) {
   console.log(`\n======================================================`)
