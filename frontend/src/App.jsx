@@ -7405,6 +7405,31 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
   const [identifier, setIdentifier] = useState('') // email or 10-digit mobile
   const [loginPassword, setLoginPassword] = useState('')
 
+  // Quick Test Login state
+  const [selectedCanteenId, setSelectedCanteenId] = useState('g1')
+  const [showAllCanteens, setShowAllCanteens] = useState(false)
+
+  async function handleQuickLogin(email, password = 'Password@123') {
+    setIdentifier(email)
+    setLoginPassword(password)
+    setError('')
+    setNoticeMsg('')
+    setLoading(true)
+    try {
+      const { data, error: authErr } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      if (authErr) {
+        setError(authErr.message)
+      }
+    } catch (err) {
+      setError(err?.message || 'Quick login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Manual Signup state
   const [signupName, setSignupName] = useState('')
   const [signupEmail, setSignupEmail] = useState('')
@@ -7945,6 +7970,123 @@ function AuthScreen({ onLoginUser, onInstallClick }) {
                   Register New Account
                 </a>
               </p>
+
+              {/* Quick Test Logins (Development & QA Testing) */}
+              <div className="quick-test-box" style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+                <div className="quick-test-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    Quick Test Accounts
+                  </p>
+                  <div className="quick-canteen-row" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Canteen:</span>
+                    <select
+                      id="quick-canteen-select"
+                      value={selectedCanteenId}
+                      onChange={e => setSelectedCanteenId(e.target.value)}
+                      style={{ fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', border: '1.5px solid var(--blue-primary)', background: '#FFFFFF', color: 'var(--text-main)', cursor: 'pointer' }}
+                    >
+                      {CANTEEN_STAFF_OWNER_MAP.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.id.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="quick-chip-grid" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="quick-chip"
+                    onClick={() => handleQuickLogin('user.test@gmail.com', 'Password@123')}
+                    title="Login as User (Rahul Sharma)"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                  >
+                    <User size={13} strokeWidth={2} />
+                    <span>User</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="quick-chip"
+                    style={{ background: '#1E40AF', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    onClick={() => {
+                      const c = CANTEEN_STAFF_OWNER_MAP.find(x => x.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
+                      handleQuickLogin(c.staffEmail, 'Password@123')
+                    }}
+                    title={`Login as Shop Staff for ${selectedCanteenId.toUpperCase()}`}
+                  >
+                    <ChefHat size={13} strokeWidth={2} />
+                    <span>Shop Staff ({selectedCanteenId.toUpperCase()})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="quick-chip"
+                    style={{ background: '#0B192C', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    onClick={() => {
+                      const c = CANTEEN_STAFF_OWNER_MAP.find(x => x.id === selectedCanteenId) || CANTEEN_STAFF_OWNER_MAP[0]
+                      handleQuickLogin(c.ownerEmail, 'Password@123')
+                    }}
+                    title={`Login as Shop Admin for ${selectedCanteenId.toUpperCase()}`}
+                  >
+                    <Store size={13} strokeWidth={2} />
+                    <span>Shop Admin ({selectedCanteenId.toUpperCase()})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="quick-chip"
+                    style={{ background: '#475569', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    onClick={() => handleQuickLogin('admin@vfood.vit.ac.in', 'Password@123')}
+                    title="Login as Platform Super Admin"
+                  >
+                    <Shield size={13} strokeWidth={2} />
+                    <span>Super Admin (Me)</span>
+                  </button>
+                </div>
+
+                {/* Collapsible toggle for All 13 Canteens Matrix */}
+                <div style={{ marginTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCanteens(!showAllCanteens)}
+                    style={{ background: 'none', border: 0, padding: 0, color: 'var(--blue-primary)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {showAllCanteens ? 'Hide 13 Canteen Matrix ▲' : 'Show All 13 Canteen Logins (26 Dedicated Accounts) ▼'}
+                  </button>
+
+                  {showAllCanteens && (
+                    <div style={{ maxHeight: '180px', overflowY: 'auto', marginTop: '8px', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px' }}>
+                      {CANTEEN_STAFF_OWNER_MAP.map(c => (
+                        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #F1F5F9', fontSize: '11px' }}>
+                          <span style={{ fontWeight: 600, color: '#334155' }}>{c.name}</span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              type="button"
+                              className="quick-chip"
+                              style={{ padding: '2px 8px', fontSize: '10px', background: '#1E40AF' }}
+                              onClick={() => handleQuickLogin(c.staffEmail, 'Password@123')}
+                              title={`Login as staff (${c.staffEmail})`}
+                            >
+                              Staff
+                            </button>
+                            <button
+                              type="button"
+                              className="quick-chip"
+                              style={{ padding: '2px 8px', fontSize: '10px', background: '#0B192C' }}
+                              onClick={() => handleQuickLogin(c.ownerEmail, 'Password@123')}
+                              title={`Login as admin (${c.ownerEmail})`}
+                            >
+                              Admin
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
