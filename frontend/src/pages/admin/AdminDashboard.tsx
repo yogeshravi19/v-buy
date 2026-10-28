@@ -1183,22 +1183,28 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
                       </div>
                     </div>
 
-                    {/* Role Change Dropdown Trigger */}
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <select
-                        value={user.role}
-                        onChange={e =>
-                          setRoleChangeTarget({
-                            user,
-                            targetRole: e.target.value as PlatformUser['role']
-                          })
-                        }
-                        className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="staff">Shop Staff</option>
-                        <option value="shop_admin">Shop Admin</option>
-                      </select>
-                    </div>
+                    {/* Role Change Dropdown Trigger - strictly for shop staff and shop admin */}
+                    {(user.role === 'staff' || user.role === 'shop_admin') ? (
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <select
+                          value={user.role}
+                          onChange={e =>
+                            setRoleChangeTarget({
+                              user,
+                              targetRole: e.target.value as PlatformUser['role']
+                            })
+                          }
+                          className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="staff">Shop Staff</option>
+                          <option value="shop_admin">Shop Admin</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 font-mono py-1.5">
+                        Fixed Scope
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1863,15 +1863,17 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                             </td>
                             <td style={{ textAlign: 'right' }}>
                               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                                <button
-                                  type="button"
-                                  className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1"
-                                  onClick={() => openEditRoleModal(user)}
-                                  title="Edit role and outlet assignment"
-                                >
-                                  <Edit size={12} />
-                                  <span>Edit Role</span>
-                                </button>
+                                {(user.role === 'staff' || user.role === 'shop_admin') && (
+                                  <button
+                                    type="button"
+                                    className="saas-btn saas-btn-sm saas-btn-secondary inline-flex items-center gap-1"
+                                    onClick={() => openEditRoleModal(user)}
+                                    title="Edit role and outlet assignment"
+                                  >
+                                    <Edit size={12} />
+                                    <span>Edit Role</span>
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   className={`saas-btn saas-btn-sm ${user.is_active ? 'saas-btn-secondary' : 'saas-btn-primary'}`}
