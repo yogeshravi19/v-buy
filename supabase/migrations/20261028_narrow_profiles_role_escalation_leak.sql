@@ -1,0 +1,50 @@
+-- ============================================================================
+-- Migration: 20261028_narrow_profiles_role_escalation_leak.sql
+-- Target Table: public.profiles
+-- Purpose: Prevent users from self-escalating role or outlet_id via direct API calls.
+-- Vulnerability ID: F-07 / PRIVILEGE_ESCALATION
+-- STATUS: WRITTEN BUT NOT APPLIED (Awaiting User Review per Stage 2 rules)
+-- ============================================================================
+
+-- Forward Migration:
+-- ----------------------------------------------------------------------------
+-- 1. Create protective trigger function that prevents non-super-admins from mutating role or outlet_id
+-- CREATE OR REPLACE FUNCTION public.prevent_role_self_escalation()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--   IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.outlet_id IS DISTINCT FROM OLD.outlet_id) THEN
+--     IF (public.get_my_role() IS DISTINCT FROM 'super_admin') THEN
+--       RAISE EXCEPTION 'Unauthorized: Users cannot modify their own role or outlet assignment.';
+--     END IF;
+--   END IF;
+--   RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 2. Attach trigger before update on profiles
+-- DROP TRIGGER IF EXISTS trg_prevent_role_self_escalation ON public.profiles;
+-- CREATE TRIGGER trg_prevent_role_self_escalation
+-- BEFORE UPDATE ON public.profiles
+-- FOR EACH ROW
+-- EXECUTE FUNCTION public.prevent_role_self_escalation();
+
+-- 3. Narrow profiles_update_own policy
+-- DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+-- CREATE POLICY "profiles_update_own" ON public.profiles
+-- FOR UPDATE TO public
+-- USING (auth.uid() = id)
+-- WITH CHECK (
+--   auth.uid() = id AND
+--   (role IS NOT DISTINCT FROM (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid()))
+-- );
+
+-- ============================================================================
+-- Rollback SQL:
+-- ============================================================================
+-- DROP TRIGGER IF EXISTS trg_prevent_role_self_escalation ON public.profiles;
+-- DROP FUNCTION IF EXISTS public.prevent_role_self_escalation();
+-- DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+-- CREATE POLICY "profiles_update_own" ON public.profiles
+-- FOR UPDATE TO public
+-- USING (auth.uid() = id)
+-- WITH CHECK (auth.uid() = id);
