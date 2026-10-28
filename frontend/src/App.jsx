@@ -738,6 +738,12 @@ function App() {
         const user = authData?.user
         const isOAuth = user?.app_metadata?.provider === 'google' || user?.identities?.some(i => i.provider === 'google')
         p.requiresProfileCompletion = Boolean(isOAuth && (!p.mobile_number || !p.profile_completed || !p.has_password))
+        const resolvedRole = normalizeRole(p.role)
+        if (resolvedRole && !pathAllowedFor(resolvedRole, window.location.pathname)) {
+          const dest = ROLE_HOME[resolvedRole]
+          logRedirectEvent('X-ROLE-GUARD', window.location.pathname, dest, resolvedRole, 'Initial landing not permitted for role')
+          window.history.replaceState(null, '', dest)
+        }
         setCurrentUser(p)
         loadedUserRef.current = userId
         setAuthState('ready')
