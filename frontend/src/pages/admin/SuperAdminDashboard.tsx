@@ -1279,9 +1279,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           >
             <div className="saas-nav-item-left">
               <Users size={15} />
-              <span>Users & Staff</span>
+              <span>Staff & Admins</span>
             </div>
-            <span className="saas-nav-badge">{usersList.length}</span>
+            <span className="saas-nav-badge">
+              {usersList.filter(u => u.role === 'staff' || u.role === 'shop_admin' || u.role === 'super_admin').length}
+            </span>
           </button>
 
           <button
@@ -1774,13 +1776,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               <div className="saas-card" style={{ padding: '14px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    {(['all', 'user', 'staff', 'shop_admin', 'super_admin'] as const).map(role => (
+                    {(['all', 'staff', 'shop_admin', 'super_admin'] as const).map(role => (
                       <button
                         key={role}
                         className={`saas-btn saas-btn-sm ${userRoleFilter === role ? 'saas-btn-primary' : 'saas-btn-secondary'}`}
                         onClick={() => setUserRoleFilter(role)}
                       >
-                        {role === 'all' ? 'All Roles' : role === 'user' ? 'User' : role === 'staff' ? 'Shop Staff' : role === 'shop_admin' ? 'Shop Admin' : 'Super Admin'}
+                        {role === 'all' ? 'All Personnel' : role === 'staff' ? 'Shop Staff' : role === 'shop_admin' ? 'Shop Admin' : 'Super Admin'}
                       </button>
                     ))}
                   </div>
@@ -1833,7 +1835,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     </thead>
                     <tbody>
                       {usersList
-                        .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter || (userRoleFilter === 'user' && (u.role === 'customer' || u.role === 'student' || u.role === 'user')))
+                        .filter(u => u.role === 'staff' || u.role === 'shop_admin' || u.role === 'super_admin')
+                        .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter)
                         .filter(u => {
                           if (!searchQuery) return true
                           const q = searchQuery.toLowerCase()

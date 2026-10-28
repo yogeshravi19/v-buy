@@ -812,10 +812,10 @@ export const OutletStaffDirectoryScreen: React.FC<OutletStaffDirectoryScreenProp
                     required
                     className="w-full h-11 px-3.5 bg-white border-2 border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700"
                   >
-                    <option value="">-- Choose User from Database --</option>
-                    {users.map(u => (
+                    <option value="">-- Choose Staff/Admin Member --</option>
+                    {users.filter(u => u.role === 'staff' || u.role === 'shop_admin').map(u => (
                       <option key={u.id} value={u.id}>
-                        {u.full_name || 'Member'} ({u.role}) — {u.phone || u.email}
+                        {u.full_name || 'Member'} ({u.role === 'shop_admin' ? 'Shop Admin' : 'Shop Staff'}) — {u.phone || u.email}
                       </option>
                     ))}
                   </select>

@@ -540,7 +540,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
 
   // Filtered lists
   const filteredUsers = useMemo(() => {
-    let list = usersList
+    let list = usersList.filter(u => u.role === 'staff' || u.role === 'shop_admin' || u.role === 'super_admin')
     if (userRoleFilter !== 'all') {
       list = list.filter(u => u.role === userRoleFilter)
     }
@@ -1116,8 +1116,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSign
               {/* User Filter Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-4 rounded-3xl border border-slate-800">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {['all', 'student', 'staff', 'shop_admin', 'super_admin'].map(r => {
-                    const displayLabel = r === 'student' ? 'User' : r === 'shop_admin' ? 'Shop Admin' : r === 'super_admin' ? 'Super Admin' : r === 'staff' ? 'Shop Staff' : 'All Roles'
+                  {['all', 'staff', 'shop_admin', 'super_admin'].map(r => {
+                    const displayLabel = r === 'shop_admin' ? 'Shop Admin' : r === 'super_admin' ? 'Super Admin' : r === 'staff' ? 'Shop Staff' : 'All Personnel'
                     return (
                     <button
                       key={r}

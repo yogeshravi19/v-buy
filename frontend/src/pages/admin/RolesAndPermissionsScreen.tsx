@@ -226,8 +226,10 @@ export const RolesAndPermissionsScreen: React.FC = () => {
   }
 
   const filteredUsers = useMemo(() => {
-    return usersList.filter(u => {
-      const matchRole = roleFilter === 'all' || u.role.toLowerCase() === roleFilter.toLowerCase()
+    return usersList
+      .filter(u => u.role === 'staff' || u.role === 'shop_admin' || u.role === 'super_admin')
+      .filter(u => {
+        const matchRole = roleFilter === 'all' || u.role.toLowerCase() === roleFilter.toLowerCase()
       const searchLower = rosterSearch.toLowerCase()
       const matchSearch =
         !rosterSearch ||
@@ -275,27 +277,13 @@ export const RolesAndPermissionsScreen: React.FC = () => {
             className={`gov-tab-btn ${activeTab === 'roster' ? 'active' : ''}`}
             onClick={() => setActiveTab('roster')}
           >
-            Active User Roster ({roleCounts.total})
+            Staff & Admin Roster ({roleCounts.staff + roleCounts.shop_admin + roleCounts.super_admin})
           </button>
         </div>
       </div>
 
       {/* Headcount Metric Cards (Standard SAAS KPI Cards) */}
       <div className="saas-kpi-grid" style={{ marginBottom: 0 }}>
-        <div className="saas-kpi-card">
-          <div className="saas-kpi-head">
-            <span>Users</span>
-            <div className="saas-kpi-head-icon" style={{ background: '#EFF6FF', color: '#1E40AF' }}>
-              <Users size={16} />
-            </div>
-          </div>
-          <div className="saas-kpi-value" style={{ color: '#0F172A', fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>
-            {roleCounts.user}
-          </div>
-          <div className="saas-kpi-sub" style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
-            Campus customer base
-          </div>
-        </div>
 
         <div className="saas-kpi-card">
           <div className="saas-kpi-head">
@@ -622,7 +610,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
           {/* Role selector pill list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(['super_admin', 'shop_admin', 'staff', 'user'] as UserRole[]).map(r => {
+            {(['super_admin', 'shop_admin', 'staff'] as UserRole[]).map(r => {
               const def = ROLE_DEFINITIONS[r]
               const isSelected = selectedRole === r
               return (
@@ -782,11 +770,10 @@ export const RolesAndPermissionsScreen: React.FC = () => {
                 value={roleFilter}
                 onChange={e => setRoleFilter(e.target.value)}
               >
-                <option value="all">All Roles ({usersList.length})</option>
+                <option value="all">All Personnel ({roleCounts.staff + roleCounts.shop_admin + roleCounts.super_admin})</option>
                 <option value="super_admin">Super Admin ({roleCounts.super_admin})</option>
                 <option value="shop_admin">Shop Admin ({roleCounts.shop_admin})</option>
                 <option value="staff">Shop Staff ({roleCounts.staff})</option>
-                <option value="customer">Users ({roleCounts.user})</option>
               </select>
             </div>
           </div>
