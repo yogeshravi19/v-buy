@@ -143,7 +143,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
     matrix.forEach((row, rIdx) => {
       const savedRow = savedMatrix[rIdx]
       if (!savedRow) return
-      ;(['user', 'staff', 'shop_admin', 'super_admin'] as RoleKey[]).forEach(role => {
+      ;(['staff', 'shop_admin', 'super_admin'] as RoleKey[]).forEach(role => {
         ;(['view', 'create', 'edit', 'delete', 'manage'] as ActionKey[]).forEach(action => {
           if (row[role][action] !== savedRow[role][action]) count++
         })
@@ -174,7 +174,6 @@ export const RolesAndPermissionsScreen: React.FC = () => {
     setMatrix(prev =>
       prev.map(row => ({
         ...row,
-        user: { view: true, create: true, edit: true, delete: true, manage: true },
         staff: { view: true, create: true, edit: true, delete: true, manage: true },
         shop_admin: { view: true, create: true, edit: true, delete: true, manage: true },
         super_admin: { view: true, create: true, edit: true, delete: true, manage: true }
@@ -190,7 +189,6 @@ export const RolesAndPermissionsScreen: React.FC = () => {
         if (idx !== moduleIndex) return row
         return {
           ...row,
-          user: { view: true, create: true, edit: true, delete: true, manage: true },
           staff: { view: true, create: true, edit: true, delete: true, manage: true },
           shop_admin: { view: true, create: true, edit: true, delete: true, manage: true },
           super_admin: { view: true, create: true, edit: true, delete: true, manage: true }
@@ -478,10 +476,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
                   <th style={{ position: 'sticky', left: 0, background: '#F8FAFC', zIndex: 10, width: '180px' }}>
                     Module Name
                   </th>
-                  <th style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', width: '110px', background: 'rgba(239, 246, 255, 0.5)', color: '#1E40AF' }}>
-                    User
-                    <div style={{ fontSize: '9px', fontWeight: 600, color: '#2563EB', paddingTop: '2px' }}>VIEW</div>
-                  </th>
+
                   <th colSpan={5} style={{ textAlign: 'center', borderLeft: '1px solid #E2E8F0', background: 'rgba(236, 253, 245, 0.5)', color: '#065F46' }}>
                     Shop Staff
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', fontSize: '9px', fontWeight: 600, color: '#059669', paddingTop: '3px' }}>
@@ -523,19 +518,7 @@ export const RolesAndPermissionsScreen: React.FC = () => {
                         {row.module}
                       </td>
 
-                      {/* User (Student) */}
-                      <td style={{ textAlign: 'center', borderLeft: '1px solid #F1F5F9', background: 'rgba(239, 246, 255, 0.2)' }}>
-                        <button
-                          type="button"
-                          role="checkbox"
-                          aria-checked={row.user.view}
-                          aria-label={`Toggle View for User on ${row.module}`}
-                          onClick={() => handleToggleCell(originalIndex, 'user', 'view')}
-                          className={`gov-checkbox-btn ${row.user.view ? 'checked-user' : ''}`}
-                        >
-                          {row.user.view && <Check size={13} strokeWidth={3} />}
-                        </button>
-                      </td>
+
 
                       {/* Shop Staff (5 sub-actions: View, Create, Edit, Delete, Manage) */}
                       {(['view', 'create', 'edit', 'delete', 'manage'] as ActionKey[]).map((action, aIdx) => (
